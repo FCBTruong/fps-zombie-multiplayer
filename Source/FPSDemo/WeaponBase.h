@@ -4,8 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "WeaponTypes.h"
-#include "AWeaponBase.generated.h"
+#include "WeaponBase.generated.h"
 
 UCLASS()
 class FPSDEMO_API AWeaponBase : public AActor
@@ -15,12 +14,6 @@ class FPSDEMO_API AWeaponBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AWeaponBase();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	USkeletalMeshComponent* WeaponMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	EWeaponTypes WeaponType;
 
 protected:
 	// Called when the game starts or when spawned

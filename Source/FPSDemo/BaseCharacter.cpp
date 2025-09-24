@@ -1,4 +1,4 @@
-#include "ABaseCharacter.h"
+#include "BaseCharacter.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -9,7 +9,7 @@
 
 
 // Sets default values
-AABaseCharacter::AABaseCharacter()
+ABaseCharacter::ABaseCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
 
@@ -19,14 +19,15 @@ AABaseCharacter::AABaseCharacter()
     bCloseToWall = false;
     bReloading = false;
     bEquipped = false;
+    WeaponSlots.SetNum(4);
 }
 
 // Called when the game starts or when spawned
-void AABaseCharacter::BeginPlay()
+void ABaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
     cameraFps = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraTPS")));
-	mesh = GetMesh();
+    mesh = GetMesh();
 
     // Add mapping context at runtime
     if (APlayerController* PC = Cast<APlayerController>(Controller))
@@ -53,14 +54,14 @@ void AABaseCharacter::BeginPlay()
 }
 
 // Called every frame
-void AABaseCharacter::Tick(float DeltaTime)
+void ABaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     CrouchTimeline.TickTimeline(DeltaTime);
 }
 
 // Called to bind functionality to input
-void AABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
@@ -68,30 +69,30 @@ void AABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
     {
         if (IA_Shoot)
         {
-            EIC->BindAction(IA_Shoot, ETriggerEvent::Started, this, &AABaseCharacter::StartFire);
+            EIC->BindAction(IA_Shoot, ETriggerEvent::Started, this, &ABaseCharacter::StartFire);
         }
         if (IA_Movement)
         {
-            EIC->BindAction(IA_Movement, ETriggerEvent::Triggered, this, &AABaseCharacter::Move);
+            EIC->BindAction(IA_Movement, ETriggerEvent::Triggered, this, &ABaseCharacter::Move);
         }
         if (IA_JUMP)
         {
-			EIC->BindAction(IA_JUMP, ETriggerEvent::Started, this, &AABaseCharacter::Jump);
-			EIC->BindAction(IA_JUMP, ETriggerEvent::Completed, this, &AABaseCharacter::StopJumping);
-		}
+            EIC->BindAction(IA_JUMP, ETriggerEvent::Started, this, &ABaseCharacter::Jump);
+            EIC->BindAction(IA_JUMP, ETriggerEvent::Completed, this, &ABaseCharacter::StopJumping);
+        }
         if (IA_RUN)
         {
-			EIC->BindAction(IA_RUN, ETriggerEvent::Started, this, &AABaseCharacter::StartRunning);
-			EIC->BindAction(IA_RUN, ETriggerEvent::Completed, this, &AABaseCharacter::StopRunning);
+            EIC->BindAction(IA_RUN, ETriggerEvent::Started, this, &ABaseCharacter::StartRunning);
+            EIC->BindAction(IA_RUN, ETriggerEvent::Completed, this, &ABaseCharacter::StopRunning);
         }
         if (IA_CROUCH)
         {
-            EIC->BindAction(IA_CROUCH, ETriggerEvent::Started, this, &AABaseCharacter::ClickCrouch);
+            EIC->BindAction(IA_CROUCH, ETriggerEvent::Started, this, &ABaseCharacter::ClickCrouch);
         }
     }
 }
 
-void AABaseCharacter::StartFire()
+void ABaseCharacter::StartFire()
 {
     bHoldingShoot = true;
 
@@ -114,12 +115,12 @@ void AABaseCharacter::StartFire()
     }
 }
 
-void AABaseCharacter::FireRifle()
+void ABaseCharacter::FireRifle()
 {
     return;
 }
 
-bool AABaseCharacter::CanShoot()
+bool ABaseCharacter::CanShoot()
 {
     if (bRunning)   return false;
     if (bCloseToWall) return false;
@@ -127,17 +128,17 @@ bool AABaseCharacter::CanShoot()
     return true;
 }
 
-void AABaseCharacter::EquipWeapon()
+void ABaseCharacter::EquipWeapon()
 {
     return;
 }
 
-void AABaseCharacter::ChangeViewMode()
+void ABaseCharacter::ChangeViewMode()
 {
     return;
 }
 
-void AABaseCharacter::Move(const FInputActionValue& Value)
+void ABaseCharacter::Move(const FInputActionValue& Value)
 {
     moveInput = Value.Get<FVector2D>();
 
@@ -154,42 +155,42 @@ void AABaseCharacter::Move(const FInputActionValue& Value)
     }
 }
 
-void AABaseCharacter::StartRunning()
+void ABaseCharacter::StartRunning()
 {
     // log
-	UE_LOG(LogTemp, Warning, TEXT("Start Running"));
-	if (GetCharacterMovement()->IsFalling()) return;
-	if (bCrouching) return;
-	if (moveInput.IsZero()) return;
-	if (moveInput.Y != 1.f) return; // only run when moving forward
+    UE_LOG(LogTemp, Warning, TEXT("Start Running"));
+    if (GetCharacterMovement()->IsFalling()) return;
+    if (bCrouching) return;
+    if (moveInput.IsZero()) return;
+    if (moveInput.Y != 1.f) return; // only run when moving forward
     bRunning = true;
 
-	GetCharacterMovement()->MaxWalkSpeed = MAX_WALK_SPEED;
+    GetCharacterMovement()->MaxWalkSpeed = MAX_WALK_SPEED;
 }
 
-void AABaseCharacter::StopRunning()
+void ABaseCharacter::StopRunning()
 {
     bRunning = false;
     GetCharacterMovement()->MaxWalkSpeed = NORMAL_WALK_SPEED;
 }
 
-void AABaseCharacter::Jump()
+void ABaseCharacter::Jump()
 {
     if (bCrouching)
-	{
+    {
         CustomUnCrouch();
-	}
+    }
     Super::Jump();
 }
 
-void AABaseCharacter::StopJumping()
+void ABaseCharacter::StopJumping()
 {
     Super::StopJumping();
 }
 
-void AABaseCharacter::CustomCrouch()
+void ABaseCharacter::CustomCrouch()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Crouch"));
+    UE_LOG(LogTemp, Warning, TEXT("Crouch"));
     if (bRunning)
     {
         StopRunning();
@@ -198,36 +199,36 @@ void AABaseCharacter::CustomCrouch()
     bCrouching = true;
     GetCharacterMovement()->MaxWalkSpeed = CROUCH_WALK_SPEED;
 
-	// update capsule half height with timeline
-	PlayCrouchTimeline(true);
+    // update capsule half height with timeline
+    PlayCrouchTimeline(true);
     if (mesh)
     {
         mesh->SetRelativeLocation(FVector(0.f, 0.f, -50.f));
-		UE_LOG(LogTemp, Warning, TEXT("Mesh found and moved!"));
+        UE_LOG(LogTemp, Warning, TEXT("Mesh found and moved!"));
     }
     else {
-		UE_LOG(LogTemp, Warning, TEXT("Mesh not found!"));
+        UE_LOG(LogTemp, Warning, TEXT("Mesh not found!"));
     }
 }
 
-void AABaseCharacter::CustomUnCrouch()
+void ABaseCharacter::CustomUnCrouch()
 {
     if (!bCrouching) return;
-	UE_LOG(LogTemp, Warning, TEXT("UnCrouch"));
+    UE_LOG(LogTemp, Warning, TEXT("UnCrouch"));
     bCrouching = false;
     GetCharacterMovement()->MaxWalkSpeed = NORMAL_WALK_SPEED;
     // update capsule half height with timeline
-	PlayCrouchTimeline(false);
+    PlayCrouchTimeline(false);
 }
 
 
-void AABaseCharacter::HandleCrouchProgress(float Value)
+void ABaseCharacter::HandleCrouchProgress(float Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Crouch Progress: %f"), Value);
+    UE_LOG(LogTemp, Warning, TEXT("Crouch Progress: %f"), Value);
     GetCapsuleComponent()->SetCapsuleHalfHeight(Value);
 }
 
-void AABaseCharacter::PlayCrouchTimeline(bool bCrouchDown)
+void ABaseCharacter::PlayCrouchTimeline(bool bCrouchDown)
 {
     if (bCrouchDown)
     {
@@ -239,7 +240,7 @@ void AABaseCharacter::PlayCrouchTimeline(bool bCrouchDown)
     }
 }
 
-void AABaseCharacter::ClickCrouch()
+void ABaseCharacter::ClickCrouch()
 {
     if (bCrouching)
     {
@@ -249,4 +250,47 @@ void AABaseCharacter::ClickCrouch()
     {
         CustomCrouch();
     }
+}
+
+
+void ABaseCharacter::AddWeapon(AWeaponBase* NewWeapon)
+{
+    if (!NewWeapon) return;
+
+	AddWeaponToSlot(NewWeapon, 0); // for simplicity, add to slot 0
+	EquipSlot(0); // auto equip
+}
+
+
+void ABaseCharacter::AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex)
+{
+    if (!WeaponSlots.IsValidIndex(SlotIndex)) return;
+
+    WeaponSlots[SlotIndex] = NewWeapon;
+
+    // Hide world pickup
+    NewWeapon->SetActorHiddenInGame(true);
+    NewWeapon->SetActorEnableCollision(false);
+
+    // Attach to character mesh
+    NewWeapon->AttachToComponent(GetMesh(),
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        TEXT("WeaponSocket"));
+}
+
+
+void ABaseCharacter::EquipSlot(int32 SlotIndex)
+{
+    if (!WeaponSlots.IsValidIndex(SlotIndex)) return;
+
+	if (CurrentWeapon == WeaponSlots[SlotIndex]) return; // already equipped
+
+    // Hide current weapon
+    if (CurrentWeapon) {
+        CurrentWeapon->SetActorHiddenInGame(true);
+    }
+
+    // Show new weapon
+	CurrentWeapon = WeaponSlots[SlotIndex];
+	CurrentWeapon->SetActorHiddenInGame(false);
 }

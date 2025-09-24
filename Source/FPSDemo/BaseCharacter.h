@@ -5,23 +5,23 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "WeaponTypes.h"
+#include "WeaponBase.h"
 #include "InputActionValue.h"
 #include "Camera/CameraComponent.h"
-#include "AWeaponBase.h"
 #include "Components/TimelineComponent.h"
-#include "ABaseCharacter.generated.h"
+#include "BaseCharacter.generated.h"
 
 
 UCLASS()
-class FPSDEMO_API AABaseCharacter : public ACharacter
+class FPSDEMO_API ABaseCharacter : public ACharacter
 {
     GENERATED_BODY()
 
 public:
-    AABaseCharacter();
+    ABaseCharacter();
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
-	float Health = 100.f;
+    float Health = 100.f;
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bHoldingShoot = false;
 
@@ -46,12 +46,11 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     EWeaponTypes weaponType = EWeaponTypes::Unarmed;
 
-    // ABaseCharacter.h
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-    TArray<AAWeaponBase*> Inventory;
+    TArray<AWeaponBase*> WeaponSlots;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-    AAWeaponBase* CurrentWeapon;
+    AWeaponBase* CurrentWeapon;
 protected:
     // Enhanced Input assets to assign in Editor
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -66,25 +65,22 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_JUMP;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_AIM;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	class UInputAction* IA_RELOAD;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_RELOAD;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_RUN;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	class UInputAction* IA_CROUCH;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_CROUCH;
     UCameraComponent* cameraFps;
     USkeletalMeshComponent* mesh;
 
     UPROPERTY(EditDefaultsOnly, Category = "Crouch")
     UCurveFloat* CrouchCurve;   // assign in editor
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-    TArray<AWeaponBase*> Inventory;
 
     FTimeline CrouchTimeline;
     UFUNCTION()
@@ -103,17 +99,20 @@ protected:
     void EquipWeapon();
     void ChangeViewMode();
     void Move(const FInputActionValue& Value);
-	void StartRunning();
-	void StopRunning();
+    void StartRunning();
+    void StopRunning();
     virtual void Jump() override;
     virtual void StopJumping() override;
-	void CustomCrouch();
-	void CustomUnCrouch();
-	void ClickCrouch();
+    void CustomCrouch();
+    void CustomUnCrouch();
+    void ClickCrouch();
+	void AddWeapon(AWeaponBase* weapon);
+    void AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex);
+	void EquipSlot(int32 SlotIndex);
 
 public:
     virtual void Tick(float DeltaTime) override;
     static constexpr float MAX_WALK_SPEED = 600.f;
-	static constexpr float NORMAL_WALK_SPEED = 400.f;
-	static constexpr float CROUCH_WALK_SPEED = 200.f;
+    static constexpr float NORMAL_WALK_SPEED = 400.f;
+    static constexpr float CROUCH_WALK_SPEED = 200.f;
 };
