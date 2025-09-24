@@ -106,7 +106,6 @@ protected:
     void CustomCrouch();
     void CustomUnCrouch();
     void ClickCrouch();
-	void AddWeapon(AWeaponBase* weapon);
     void AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex);
 	void EquipSlot(int32 SlotIndex);
 
@@ -115,4 +114,5 @@ public:
     static constexpr float MAX_WALK_SPEED = 600.f;
     static constexpr float NORMAL_WALK_SPEED = 400.f;
     static constexpr float CROUCH_WALK_SPEED = 200.f;
+    void AddWeapon(AWeaponBase* weapon);
 };

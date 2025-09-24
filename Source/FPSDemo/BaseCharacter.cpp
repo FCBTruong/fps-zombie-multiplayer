@@ -293,4 +293,8 @@ void ABaseCharacter::EquipSlot(int32 SlotIndex)
     // Show new weapon
 	CurrentWeapon = WeaponSlots[SlotIndex];
 	CurrentWeapon->SetActorHiddenInGame(false);
+
+    CurrentWeapon->AttachToComponent(GetMesh(),
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        TEXT("weapon_socket"));
 }
