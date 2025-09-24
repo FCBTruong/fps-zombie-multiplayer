@@ -3,5 +3,14 @@
 	"EngineAssociation": "5.6",
 	"Category": "",
 	"Description": "",
-	"Plugins": []
+	"Modules": [
+		{
+			"Name": "FPSDemo",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	]
 }
