@@ -43,6 +43,9 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FVector2D moveInput;
+	FVector2D LookInput;
+	float AimSensitivity = 1.0f;
+
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     EWeaponTypes weaponType = EWeaponTypes::Unarmed;
 
@@ -76,7 +79,11 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_CROUCH;
-    UCameraComponent* cameraFps;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_CAMERA;
+
+    UCameraComponent* camera;
     USkeletalMeshComponent* mesh;
 
     UPROPERTY(EditDefaultsOnly, Category = "Crouch")
@@ -99,6 +106,7 @@ protected:
     void EquipWeapon();
     void ChangeViewMode();
     void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
     void StartRunning();
     void StopRunning();
     virtual void Jump() override;

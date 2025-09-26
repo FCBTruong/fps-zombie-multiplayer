@@ -26,7 +26,6 @@ ABaseCharacter::ABaseCharacter()
 void ABaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
-    cameraFps = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraTPS")));
     mesh = GetMesh();
 
     // Add mapping context at runtime
@@ -88,6 +87,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         if (IA_CROUCH)
         {
             EIC->BindAction(IA_CROUCH, ETriggerEvent::Started, this, &ABaseCharacter::ClickCrouch);
+        }
+        if (IA_CAMERA)
+        {
+            EIC->BindAction(IA_CAMERA, ETriggerEvent::Triggered, this, &ABaseCharacter::Look);
         }
     }
 }
@@ -297,4 +300,19 @@ void ABaseCharacter::EquipSlot(int32 SlotIndex)
     CurrentWeapon->AttachToComponent(GetMesh(),
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
         TEXT("weapon_socket"));
+
+	weaponType = EWeaponTypes::Rifle; // For simplicity, assume rifle
+}
+
+
+void ABaseCharacter::Look(const FInputActionValue& Value)
+{
+    FVector2D LookAxisVector = Value.Get<FVector2D>();
+    if (Controller != nullptr)
+    {
+		LookInput = LookAxisVector;
+        // add yaw and pitch input to controller
+        AddControllerYawInput(LookAxisVector.X * AimSensitivity);
+        AddControllerPitchInput(LookAxisVector.Y * -1 * AimSensitivity);
+    }
 }
