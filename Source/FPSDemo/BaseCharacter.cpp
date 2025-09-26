@@ -14,7 +14,6 @@ ABaseCharacter::ABaseCharacter()
     PrimaryActorTick.bCanEverTick = true;
 
     bHoldingShoot = false;
-    weaponType = EWeaponTypes::Unarmed;
     bRunning = false;
     bCloseToWall = false;
     bReloading = false;
