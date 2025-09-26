@@ -68,6 +68,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         if (IA_Shoot)
         {
             EIC->BindAction(IA_Shoot, ETriggerEvent::Started, this, &ABaseCharacter::StartFire);
+			EIC->BindAction(IA_Shoot, ETriggerEvent::Completed, this, &ABaseCharacter::StopFire);
         }
         if (IA_Movement)
         {
@@ -96,29 +97,50 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void ABaseCharacter::StartFire()
 {
+    if (bHoldingShoot) {
+        return;
+    }
+
     bHoldingShoot = true;
 
     switch (weaponType)
     {
-    case EWeaponTypes::Unarmed:
-        break;
-    case EWeaponTypes::Rifle:
-        UE_LOG(LogTemp, Warning, TEXT("Rifle Fire"));
-        break;
-    case EWeaponTypes::Pistol:
-        UE_LOG(LogTemp, Warning, TEXT("Pistol Fire"));
-        break;
-    case EWeaponTypes::Melee:
-        UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
-        break;
-    case EWeaponTypes::Throwable:
-        UE_LOG(LogTemp, Warning, TEXT("Throw Grenade"));
-        break;
+        case EWeaponTypes::Unarmed:
+            break;
+        case EWeaponTypes::Rifle:
+            UE_LOG(LogTemp, Warning, TEXT("Rifle Fire"));
+		    FireRifle();
+            GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ABaseCharacter::FireRifle, 0.1f, true);
+            break;
+        case EWeaponTypes::Pistol:
+            UE_LOG(LogTemp, Warning, TEXT("Pistol Fire"));
+            break;
+        case EWeaponTypes::Melee:
+            UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
+            break;
+        case EWeaponTypes::Throwable:
+            UE_LOG(LogTemp, Warning, TEXT("Throw Grenade"));
+            break;
     }
+}
+
+void ABaseCharacter::StopFire()
+{
+    GetWorldTimerManager().ClearTimer(FireTimerHandle);
+    bHoldingShoot = false;
 }
 
 void ABaseCharacter::FireRifle()
 {
+    if (!CanShoot()) {
+        GetWorldTimerManager().ClearTimer(FireTimerHandle);
+        return;
+    }
+
+    if (FireMontage && mesh)
+    {
+        mesh->GetAnimInstance()->Montage_Play(FireMontage);
+	}
     return;
 }
 

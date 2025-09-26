@@ -54,6 +54,10 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
     AWeaponBase* CurrentWeapon;
+    FTimerHandle FireTimerHandle;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UAnimMontage* FireMontage;
 protected:
     // Enhanced Input assets to assign in Editor
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -83,6 +87,12 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_CAMERA;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_FIRST_RIFLE;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_SECOND_RIFLE;
+
     UCameraComponent* camera;
     USkeletalMeshComponent* mesh;
 
@@ -101,6 +111,7 @@ protected:
 
     // Input handlers
     void StartFire();
+	void StopFire();
     void FireRifle();
     bool CanShoot();
     void EquipWeapon();
