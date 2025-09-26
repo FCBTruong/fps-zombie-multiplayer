@@ -132,14 +132,16 @@ void ABaseCharacter::StopFire()
 
 void ABaseCharacter::FireRifle()
 {
+    UE_LOG(LogTemp, Warning, TEXT("DEBUGG1"));
     if (!CanShoot()) {
         GetWorldTimerManager().ClearTimer(FireTimerHandle);
         return;
     }
+    UE_LOG(LogTemp, Warning, TEXT("DEBUGG12"));
 
-    if (FireMontage && mesh)
+    if (FireRifleMontage && mesh)
     {
-        mesh->GetAnimInstance()->Montage_Play(FireMontage);
+        mesh->GetAnimInstance()->Montage_Play(FireRifleMontage);
 	}
     return;
 }

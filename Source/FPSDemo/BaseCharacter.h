@@ -57,7 +57,7 @@ public:
     FTimerHandle FireTimerHandle;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-    UAnimMontage* FireMontage;
+    UAnimMontage* FireRifleMontage;
 protected:
     // Enhanced Input assets to assign in Editor
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
