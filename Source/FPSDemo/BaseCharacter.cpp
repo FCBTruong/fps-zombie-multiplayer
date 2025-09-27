@@ -233,7 +233,6 @@ void ABaseCharacter::CustomCrouch()
     PlayCrouchTimeline(true);
     if (mesh)
     {
-        mesh->SetRelativeLocation(FVector(0.f, 0.f, -50.f));
         UE_LOG(LogTemp, Warning, TEXT("Mesh found and moved!"));
     }
     else {
@@ -256,6 +255,7 @@ void ABaseCharacter::HandleCrouchProgress(float Value)
 {
     UE_LOG(LogTemp, Warning, TEXT("Crouch Progress: %f"), Value);
     GetCapsuleComponent()->SetCapsuleHalfHeight(Value);
+    mesh->SetRelativeLocation(FVector(0.f, 0.f, -Value));
 }
 
 void ABaseCharacter::PlayCrouchTimeline(bool bCrouchDown)
