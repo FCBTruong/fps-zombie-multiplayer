@@ -92,6 +92,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         {
             EIC->BindAction(IA_CAMERA, ETriggerEvent::Triggered, this, &ABaseCharacter::Look);
         }
+        if (IA_CHANGE_VIEW)
+        {
+            EIC->BindAction(IA_CHANGE_VIEW, ETriggerEvent::Started, this, &ABaseCharacter::ChangeView);
+        }
     }
 }
 
@@ -338,4 +342,10 @@ void ABaseCharacter::Look(const FInputActionValue& Value)
         AddControllerYawInput(LookAxisVector.X * AimSensitivity);
         AddControllerPitchInput(LookAxisVector.Y * -1 * AimSensitivity);
     }
+}
+
+
+void ABaseCharacter::ChangeView()
+{
+	bIsFPS = !bIsFPS;
 }

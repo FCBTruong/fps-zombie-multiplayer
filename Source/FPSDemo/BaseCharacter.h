@@ -40,6 +40,9 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bCrouching = false;
 
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bIsFPS = false;
+
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FVector2D moveInput;
@@ -93,6 +96,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_SELECT_SECOND_RIFLE;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_CHANGE_VIEW;
+
     UCameraComponent* camera;
     USkeletalMeshComponent* mesh;
 
@@ -127,6 +133,7 @@ protected:
     void ClickCrouch();
     void AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex);
 	void EquipSlot(int32 SlotIndex);
+	void ChangeView();
 
 public:
     virtual void Tick(float DeltaTime) override;
