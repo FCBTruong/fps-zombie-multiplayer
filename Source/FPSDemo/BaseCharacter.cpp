@@ -112,6 +112,7 @@ void ABaseCharacter::StartFire()
     }
 
     bHoldingShoot = true;
+    float timeBetweenShots = 0.2f; // Example value, adjust as needed
 
     switch (weaponType)
     {
@@ -119,8 +120,17 @@ void ABaseCharacter::StartFire()
             break;
         case EWeaponTypes::Rifle:
             UE_LOG(LogTemp, Warning, TEXT("Rifle Fire"));
-		    FireRifle();
-            GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ABaseCharacter::FireRifle, 0.1f, true);
+            if (HasAuthority())
+            {
+                FireRifle();
+            }
+            else
+            {
+                ServerFire();
+            }
+
+/*		    FireRifle();
+            */GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ABaseCharacter::FireRifle, timeBetweenShots, true);
             break;
         case EWeaponTypes::Pistol:
             UE_LOG(LogTemp, Warning, TEXT("Pistol Fire"));
@@ -149,10 +159,10 @@ void ABaseCharacter::FireRifle()
     }
     UE_LOG(LogTemp, Warning, TEXT("DEBUGG12"));
 
-    if (FireRifleMontage)
+	if (HasAuthority()) // only server makes changes
     {
-        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireRifleMontage);
-	}
+        MulticastPlayFireRifle();
+    }
     return;
 }
 
@@ -232,49 +242,43 @@ void ABaseCharacter::CustomCrouch()
         StopRunning();
     }
     if (bCrouching) return;
-    bCrouching = true;
-    GetCharacterMovement()->MaxWalkSpeed = CROUCH_WALK_SPEED;
 
-    // update capsule half height with timeline
-    PlayCrouchTimeline(true);
-    if (mesh)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Mesh found and moved!"));
-    }
-    else {
-        UE_LOG(LogTemp, Warning, TEXT("Mesh not found!"));
-    }
+    // Tell server to update state
+    ServerSetCrouching(true);
 }
 
 void ABaseCharacter::CustomUnCrouch()
 {
     if (!bCrouching) return;
     UE_LOG(LogTemp, Warning, TEXT("UnCrouch"));
-    bCrouching = false;
-    GetCharacterMovement()->MaxWalkSpeed = NORMAL_WALK_SPEED;
-    // update capsule half height with timeline
-    PlayCrouchTimeline(false);
+	ServerSetCrouching(false);
 }
 
-
-void ABaseCharacter::HandleCrouchProgress(float Value)
+void ABaseCharacter::ServerSetCrouching_Implementation(bool bNewCrouching)
 {
-    UE_LOG(LogTemp, Warning, TEXT("Crouch Progress: %f"), Value);
-    GetCapsuleComponent()->SetCapsuleHalfHeight(Value);
-    mesh->SetRelativeLocation(FVector(0.f, 0.f, -Value));
+    if (bNewCrouching && bRunning) StopRunning();
+    if (bCrouching == bNewCrouching) return;
+
+    bCrouching = bNewCrouching;
+    OnRep_Crouching(); // apply on server copy too
 }
 
-void ABaseCharacter::PlayCrouchTimeline(bool bCrouchDown)
+void ABaseCharacter::OnRep_Crouching()
 {
-    if (bCrouchDown)
-    {
+    GetCharacterMovement()->MaxWalkSpeed = bCrouching ? CROUCH_WALK_SPEED : NORMAL_WALK_SPEED;
+    if (bCrouching) {
         CrouchTimeline.PlayFromStart();
     }
-    else
-    {
+    else {
         CrouchTimeline.ReverseFromEnd();
     }
 }
+
+void ABaseCharacter::HandleCrouchProgress(float Value) {
+    GetCapsuleComponent()->SetCapsuleHalfHeight(Value);
+    if (mesh) mesh->SetRelativeLocation(FVector(0.f, 0.f, -Value));
+}
+
 
 void ABaseCharacter::ClickCrouch()
 {
@@ -345,9 +349,10 @@ void ABaseCharacter::Look(const FInputActionValue& Value)
     if (Controller != nullptr)
     {
 		LookInput = LookAxisVector;
+        //Server_UpdateLookInput(LookAxisVector);
         // add yaw and pitch input to controller
-        AddControllerYawInput(LookAxisVector.X * AimSensitivity);
-        AddControllerPitchInput(LookAxisVector.Y * -1 * AimSensitivity);
+        AddControllerYawInput(LookInput.X * AimSensitivity);
+        AddControllerPitchInput(LookInput.Y * -1 * AimSensitivity);
     }
 }
 
@@ -407,7 +412,7 @@ void ABaseCharacter::UpdateView()
             FName(*GetRifleSocketName())
         );
         if (bIsFPS) {
-			CurrentWeapon->SetActorRelativeLocation(FVector(0.f, -5.0f, 0.f));
+			CurrentWeapon->SetActorRelativeLocation(FVector(0.f, 0.f, -6.f));
         }
     }
 }
@@ -435,4 +440,33 @@ FString ABaseCharacter::GetRifleSocketName()
     {
         return FString("weapon_socket");
 	}
+}
+
+void ABaseCharacter::ServerFire_Implementation()
+{
+	FireRifle();
+}
+
+
+void ABaseCharacter::MulticastPlayFireRifle_Implementation()
+{
+    if (FireRifleMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+    {
+        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireRifleMontage);
+    }
+}
+
+void ABaseCharacter::Server_UpdateLookInput_Implementation(FVector2D NewLookInput)
+{
+    LookInput = NewLookInput; 
+
+    AddControllerYawInput(LookInput.X * AimSensitivity);
+    AddControllerPitchInput(LookInput.Y * -1 * AimSensitivity);
+}
+
+void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ABaseCharacter, LookInput);
+    DOREPLIFETIME(ABaseCharacter, bCrouching);
 }

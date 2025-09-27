@@ -6,11 +6,11 @@
 #include "GameFramework/Character.h"
 #include "WeaponTypes.h"
 #include "WeaponBase.h"
+#include "Net/UnrealNetwork.h"
 #include "InputActionValue.h"
 #include "Camera/CameraComponent.h"
 #include "Components/TimelineComponent.h"
 #include "BaseCharacter.generated.h"
-
 
 UCLASS()
 class FPSDEMO_API ABaseCharacter : public ACharacter
@@ -37,7 +37,7 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bEquipped = false;
 
-    UPROPERTY(BlueprintReadOnly, Category = "State")
+    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Crouching, Category = "State")
     bool bCrouching = false;
 
     UPROPERTY(BlueprintReadOnly, Category = "State")
@@ -49,7 +49,7 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FVector2D moveInput;
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Data")
 	FVector2D LookInput;
 	float AimSensitivity = 1.0f;
 
@@ -121,8 +121,6 @@ protected:
     UFUNCTION()
     void HandleCrouchProgress(float Value);
 
-    void PlayCrouchTimeline(bool bCrouchDown);
-
     // Lifecycle
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -150,6 +148,19 @@ protected:
     USkeletalMeshComponent* GetCurrentMesh();
     FString GetRifleSocketName();
 
+	// Server functions
+    UFUNCTION(Server, Reliable)
+    void ServerFire();
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPlayFireRifle();
+    UFUNCTION(Server, Reliable)
+    void Server_UpdateLookInput(FVector2D NewLookInput);
+
+    UFUNCTION(Server, Reliable)
+    void ServerSetCrouching(bool bNewCrouching);
+
+	UFUNCTION()
+	void OnRep_Crouching();
 public:
     virtual void Tick(float DeltaTime) override;
     static constexpr float MAX_WALK_SPEED = 600.f;
