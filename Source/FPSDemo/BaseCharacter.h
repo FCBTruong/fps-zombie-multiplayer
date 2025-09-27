@@ -25,9 +25,6 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bHoldingShoot = false;
 
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bRunning = false;
-
     UPROPERTY(BlueprintReadWrite, Category = "State")
     bool bCloseToWall = false;
 
@@ -45,6 +42,7 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bAiming = false;
+	bool bHoldingShift = false;
 
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
@@ -145,6 +143,7 @@ protected:
 	void EquipSlot(int32 SlotIndex);
 	void ChangeView();
 	void UpdateView();
+	bool IsRunning();
     USkeletalMeshComponent* GetCurrentMesh();
     FString GetRifleSocketName();
 

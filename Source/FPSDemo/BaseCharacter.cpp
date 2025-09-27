@@ -14,7 +14,6 @@ ABaseCharacter::ABaseCharacter()
     PrimaryActorTick.bCanEverTick = true;
 
     bHoldingShoot = false;
-    bRunning = false;
     bCloseToWall = false;
     bReloading = false;
     bEquipped = false;
@@ -62,6 +61,11 @@ void ABaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     CrouchTimeline.TickTimeline(DeltaTime);
+
+    if (mesh) {
+        float HalfHeight = GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
+        mesh->SetRelativeLocation(FVector(0.f, 0.f, -HalfHeight));
+    }
 }
 
 // Called to bind functionality to input
@@ -168,7 +172,7 @@ void ABaseCharacter::FireRifle()
 
 bool ABaseCharacter::CanShoot()
 {
-    if (bRunning)   return false;
+    if (IsRunning())   return false;
     if (bCloseToWall) return false;
     if (bReloading)   return false;
     return true;
@@ -187,6 +191,12 @@ void ABaseCharacter::ChangeViewMode()
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
     moveInput = Value.Get<FVector2D>();
+    if (bHoldingShift && moveInput.Y > 0.f) {
+        GetCharacterMovement()->MaxWalkSpeed = MAX_WALK_SPEED;
+    }
+    else {
+        GetCharacterMovement()->MaxWalkSpeed = NORMAL_WALK_SPEED;
+	}
 
     if (Controller)
     {
@@ -203,21 +213,12 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 
 void ABaseCharacter::StartRunning()
 {
-    // log
-    UE_LOG(LogTemp, Warning, TEXT("Start Running"));
-    if (GetCharacterMovement()->IsFalling()) return;
-    if (bCrouching) return;
-    if (moveInput.IsZero()) return;
-    if (moveInput.Y != 1.f) return; // only run when moving forward
-    bRunning = true;
-
-    GetCharacterMovement()->MaxWalkSpeed = MAX_WALK_SPEED;
+	bHoldingShift = true;
 }
 
 void ABaseCharacter::StopRunning()
 {
-    bRunning = false;
-    GetCharacterMovement()->MaxWalkSpeed = NORMAL_WALK_SPEED;
+	bHoldingShift = false;
 }
 
 void ABaseCharacter::Jump()
@@ -229,6 +230,19 @@ void ABaseCharacter::Jump()
     Super::Jump();
 }
 
+bool ABaseCharacter::IsRunning()
+{
+    const float Speed = GetVelocity().Size2D();
+
+    return bHoldingShift
+        && Speed > NORMAL_WALK_SPEED
+        && !bCrouching
+        && !GetCharacterMovement()->IsFalling()
+        && moveInput.Y > 0.f;   // any forward movement
+}
+
+
+
 void ABaseCharacter::StopJumping()
 {
     Super::StopJumping();
@@ -237,7 +251,7 @@ void ABaseCharacter::StopJumping()
 void ABaseCharacter::CustomCrouch()
 {
     UE_LOG(LogTemp, Warning, TEXT("Crouch"));
-    if (bRunning)
+    if (IsRunning())
     {
         StopRunning();
     }
@@ -256,7 +270,7 @@ void ABaseCharacter::CustomUnCrouch()
 
 void ABaseCharacter::ServerSetCrouching_Implementation(bool bNewCrouching)
 {
-    if (bNewCrouching && bRunning) StopRunning();
+    if (bNewCrouching && IsRunning()) StopRunning();
     if (bCrouching == bNewCrouching) return;
 
     bCrouching = bNewCrouching;
@@ -276,12 +290,17 @@ void ABaseCharacter::OnRep_Crouching()
 
 void ABaseCharacter::HandleCrouchProgress(float Value) {
     GetCapsuleComponent()->SetCapsuleHalfHeight(Value);
-    if (mesh) mesh->SetRelativeLocation(FVector(0.f, 0.f, -Value));
+   /* if (mesh) {
+        mesh->SetRelativeLocation(FVector(0.f, 0.f, -Value));
+    }*/
 }
 
 
 void ABaseCharacter::ClickCrouch()
 {
+    if (GetCharacterMovement()->IsFalling()) {
+        return;
+    }
     if (bCrouching)
     {
         CustomUnCrouch();
