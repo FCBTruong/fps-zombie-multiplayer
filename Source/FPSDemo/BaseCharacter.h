@@ -103,8 +103,16 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_CHANGE_VIEW;
 
-    UCameraComponent* camera;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
+    UCameraComponent* CurrentCamera;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
+	UCameraComponent* FirstPersonCamera;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
+	UCameraComponent* ThirdPersonCamera;
+
     USkeletalMeshComponent* mesh;
+	USkeletalMeshComponent* MeshFps;
 
     UPROPERTY(EditDefaultsOnly, Category = "Crouch")
     UCurveFloat* CrouchCurve;   // assign in editor
@@ -138,6 +146,9 @@ protected:
     void AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex);
 	void EquipSlot(int32 SlotIndex);
 	void ChangeView();
+	void UpdateView();
+    USkeletalMeshComponent* GetCurrentMesh();
+    FString GetRifleSocketName();
 
 public:
     virtual void Tick(float DeltaTime) override;

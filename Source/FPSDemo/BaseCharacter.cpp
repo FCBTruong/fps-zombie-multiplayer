@@ -27,6 +27,10 @@ void ABaseCharacter::BeginPlay()
     Super::BeginPlay();
     mesh = GetMesh();
 
+	MeshFps = Cast<USkeletalMeshComponent>(GetDefaultSubobjectByName(TEXT("MeshFps")));
+	FirstPersonCamera = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraFps")));
+	ThirdPersonCamera = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraTps")));
+
     // Add mapping context at runtime
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
@@ -49,6 +53,8 @@ void ABaseCharacter::BeginPlay()
         ProgressFunction.BindUFunction(this, FName("HandleCrouchProgress"));
         CrouchTimeline.AddInterpFloat(CrouchCurve, ProgressFunction);
     }
+
+    UpdateView();
 }
 
 // Called every frame
@@ -143,9 +149,9 @@ void ABaseCharacter::FireRifle()
     }
     UE_LOG(LogTemp, Warning, TEXT("DEBUGG12"));
 
-    if (FireRifleMontage && mesh)
+    if (FireRifleMontage)
     {
-        mesh->GetAnimInstance()->Montage_Play(FireRifleMontage);
+        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireRifleMontage);
 	}
     return;
 }
@@ -324,9 +330,10 @@ void ABaseCharacter::EquipSlot(int32 SlotIndex)
 	CurrentWeapon = WeaponSlots[SlotIndex];
 	CurrentWeapon->SetActorHiddenInGame(false);
 
-    CurrentWeapon->AttachToComponent(GetMesh(),
+    CurrentWeapon->AttachToComponent(GetCurrentMesh(),
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-        TEXT("weapon_socket"));
+        FName(*GetRifleSocketName())
+    );
 
 	weaponType = EWeaponTypes::Rifle; // For simplicity, assume rifle
 }
@@ -348,4 +355,84 @@ void ABaseCharacter::Look(const FInputActionValue& Value)
 void ABaseCharacter::ChangeView()
 {
 	bIsFPS = !bIsFPS;
+
+    UpdateView();
+}
+
+void ABaseCharacter::UpdateView()
+{
+    if (bIsFPS)
+    {
+        if (FirstPersonCamera)
+        {
+            FirstPersonCamera->SetActive(true);
+            CurrentCamera = FirstPersonCamera;
+        }
+        if (ThirdPersonCamera)
+        {
+            ThirdPersonCamera->SetActive(false);
+        }
+        if (mesh)
+        {
+            mesh->SetOwnerNoSee(true);
+        }
+        if (MeshFps)
+        {
+            MeshFps->SetOwnerNoSee(false);
+        }
+    }
+    else
+    {
+        if (FirstPersonCamera)
+        {
+            FirstPersonCamera->SetActive(false);
+        }
+        if (ThirdPersonCamera)
+        {
+            ThirdPersonCamera->SetActive(true);
+            CurrentCamera = ThirdPersonCamera;
+        }
+        if (mesh)
+        {
+            mesh->SetOwnerNoSee(false);
+        }
+        if (MeshFps)
+        {
+            MeshFps->SetOwnerNoSee(true);
+        }
+    }
+    if (CurrentWeapon) {
+        CurrentWeapon->AttachToComponent(GetCurrentMesh(),
+            FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+            FName(*GetRifleSocketName())
+        );
+        if (bIsFPS) {
+			CurrentWeapon->SetActorRelativeLocation(FVector(0.f, -5.0f, 0.f));
+        }
+    }
+}
+
+
+USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh()
+{
+    if (bIsFPS)
+    {
+        return MeshFps;
+    }
+    else
+    {
+        return mesh;
+    }
+}
+
+FString ABaseCharacter::GetRifleSocketName()
+{
+    if (bIsFPS)
+    {
+        return FString("ik_hand_gun");
+    }
+    else
+    {
+        return FString("weapon_socket");
+	}
 }
