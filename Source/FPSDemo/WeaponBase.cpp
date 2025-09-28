@@ -9,8 +9,6 @@
 AWeaponBase::AWeaponBase()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
 	PrimaryActorTick.bCanEverTick = false;
 
 	PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
@@ -20,6 +18,12 @@ AWeaponBase::AWeaponBase()
 		PickupSphere->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 		RootComponent = PickupSphere;
 	}
+}
+
+void AWeaponBase::PreInitializeComponents()
+{
+	Super::PreInitializeComponents();
+	SetReplicates(true);
 }
 
 // Called when the game starts or when spawned
