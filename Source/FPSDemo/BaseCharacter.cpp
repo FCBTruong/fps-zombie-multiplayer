@@ -6,7 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
-
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -124,17 +124,10 @@ void ABaseCharacter::StartFire()
             break;
         case EWeaponTypes::Rifle:
             UE_LOG(LogTemp, Warning, TEXT("Rifle Fire"));
-            if (HasAuthority())
-            {
-                FireRifle();
-            }
-            else
-            {
-                ServerFire();
-            }
+           
+            ServerFire();
 
-/*		    FireRifle();
-            */GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ABaseCharacter::FireRifle, timeBetweenShots, true);
+            GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ABaseCharacter::ServerFire, timeBetweenShots, true);
             break;
         case EWeaponTypes::Pistol:
             UE_LOG(LogTemp, Warning, TEXT("Pistol Fire"));
@@ -472,6 +465,10 @@ void ABaseCharacter::MulticastPlayFireRifle_Implementation()
     if (FireRifleMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
     {
         GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireRifleMontage);
+    }
+
+    if (CurrentWeapon) {
+		CurrentWeapon->OnFire();
     }
 }
 

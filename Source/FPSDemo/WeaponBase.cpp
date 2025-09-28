@@ -1,5 +1,7 @@
 #include "WeaponBase.h"
-#include "Components/SphereComponent.h" // <-- Add this include
+#include "Components/SphereComponent.h" 
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "BaseCharacter.h"
 
 // Sets default values
@@ -25,6 +27,7 @@ void AWeaponBase::BeginPlay()
 	Super::BeginPlay();
     // Fix: Change AWeaponPickup to AWeaponBase in the AddDynamic binding
     PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::OnOverlapBegin);
+	WeaponMesh = Cast<USkeletalMeshComponent>(GetDefaultSubobjectByName(TEXT("Mesh")));
 }
 
 // Called every frame
@@ -45,5 +48,28 @@ void AWeaponBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 		// Call function on character to give weapon
 		Player->AddWeapon(this);  // implement EquipWeapon in your character
 		PickupSphere->SetHiddenInGame(true);
+	}
+}
+
+
+void AWeaponBase::OnFire()
+{
+	// Implement firing logic here
+	UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
+	UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAttached(
+		MuzzleFlash,                 // particle system
+		WeaponMesh,                   // attach to this component
+		TEXT("Muzzle"),        // socket name
+		FVector::ZeroVector,         // location offset
+		FRotator::ZeroRotator,       // rotation offset
+		EAttachLocation::SnapToTarget, // attach rules
+		true                         // auto destroy
+	);
+
+	if (PSC)
+	{
+        // ... rest of your code remains unchanged ...
+		UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));	
+		PSC->SetWorldScale3D(FVector(0.05f));
 	}
 }
