@@ -151,7 +151,7 @@ protected:
     UFUNCTION(Server, Reliable)
     void ServerFire();
     UFUNCTION(NetMulticast, Reliable)
-    void MulticastPlayFireRifle();
+    void MulticastPlayFireRifle(FVector TargetPoint);
     UFUNCTION(Server, Reliable)
     void Server_UpdateLookInput(FVector2D NewLookInput);
 

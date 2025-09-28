@@ -3,6 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "BaseCharacter.h"
+#include "BulletBase.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -52,7 +53,7 @@ void AWeaponBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 }
 
 
-void AWeaponBase::OnFire()
+void AWeaponBase::OnFire(FVector TargetPoint)
 {
 	// Implement firing logic here
 	UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
@@ -72,4 +73,19 @@ void AWeaponBase::OnFire()
 		UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));	
 		PSC->SetWorldScale3D(FVector(0.05f));
 	}
+
+	FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
+
+	FRotator SpawnRotation = (TargetPoint - MuzzleLocation).Rotation();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = GetInstigator();
+
+	GetWorld()->SpawnActor<ABulletBase>(
+		BulletClass,
+		MuzzleLocation,
+		SpawnRotation,
+		SpawnParams
+	);
 }

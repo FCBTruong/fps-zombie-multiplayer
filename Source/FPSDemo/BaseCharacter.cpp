@@ -154,11 +154,31 @@ void ABaseCharacter::FireRifle()
         GetWorldTimerManager().ClearTimer(FireTimerHandle);
         return;
     }
-    UE_LOG(LogTemp, Warning, TEXT("DEBUGG12"));
+    // get camera viewpoint
+    FVector CameraLocation;
+    FRotator CameraRotation;
+    Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
+    FVector ShotDirection = CameraRotation.Vector();
+
+    FVector TraceEnd = CameraLocation + (ShotDirection * 10000.f);
+
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    bool bHit = GetWorld()->LineTraceSingleByChannel(
+        Hit,
+        CameraLocation,
+        TraceEnd,
+        ECC_Visibility,
+        Params
+    );
+
+    FVector TargetPoint = bHit ? Hit.ImpactPoint : TraceEnd;
 
 	if (HasAuthority()) // only server makes changes
     {
-        MulticastPlayFireRifle();
+        MulticastPlayFireRifle(TargetPoint);
     }
     return;
 }
@@ -460,7 +480,7 @@ void ABaseCharacter::ServerFire_Implementation()
 }
 
 
-void ABaseCharacter::MulticastPlayFireRifle_Implementation()
+void ABaseCharacter::MulticastPlayFireRifle_Implementation(FVector TargetPoint)
 {
     if (FireRifleMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
     {
@@ -468,7 +488,7 @@ void ABaseCharacter::MulticastPlayFireRifle_Implementation()
     }
 
     if (CurrentWeapon) {
-		CurrentWeapon->OnFire();
+		CurrentWeapon->OnFire(TargetPoint);
     }
 }
 
