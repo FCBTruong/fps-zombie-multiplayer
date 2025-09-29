@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "WeaponKnifeBasic.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -54,6 +55,26 @@ void ABaseCharacter::BeginPlay()
     }
 
     UpdateView();
+
+    if (KnifeClass)
+    {
+        FActorSpawnParameters Params;
+        Params.Owner = this;
+        Params.Instigator = GetInstigator();
+
+        AWeaponBase* Knife = GetWorld()->SpawnActor<AWeaponBase>(
+            KnifeClass,
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            Params
+        );
+
+        if (Knife)
+        {
+            AddWeaponToSlot(Knife, 3);
+            EquipSlot(3);
+        }
+    }
 }
 
 // Called every frame
@@ -200,11 +221,6 @@ bool ABaseCharacter::CanShoot()
 }
 
 void ABaseCharacter::EquipWeapon()
-{
-    return;
-}
-
-void ABaseCharacter::ChangeViewMode()
 {
     return;
 }
@@ -392,7 +408,7 @@ void ABaseCharacter::EquipSlot(int32 SlotIndex)
         FName(*GetRifleSocketName())
     );
 
-	weaponType = EWeaponTypes::Rifle; // For simplicity, assume rifle
+    weaponType = CurrentWeapon->GetWeaponType();
 }
 
 

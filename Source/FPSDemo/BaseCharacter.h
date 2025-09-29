@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "WeaponTypes.h"
 #include "WeaponBase.h"
+#include "WeaponKnifeBasic.h"
 #include "Net/UnrealNetwork.h"
 #include "InputActionValue.h"
 #include "Camera/CameraComponent.h"
@@ -37,7 +38,7 @@ public:
     UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Crouching, Category = "State")
     bool bCrouching = false;
 
-    UPROPERTY(BlueprintReadOnly, Category = "State")
+    UPROPERTY(BlueprintReadWrite, Category = "State")
     bool bIsFPS = false;
 
     UPROPERTY(BlueprintReadWrite, Category = "State")
@@ -64,6 +65,8 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
     UAnimMontage* FireRifleMontage;
+    UPROPERTY(EditAnywhere, Category = "Weapon")
+    TSubclassOf<AWeaponKnifeBasic> KnifeClass;
 protected:
     // Enhanced Input assets to assign in Editor
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -130,7 +133,6 @@ protected:
     void FireRifle();
     bool CanShoot();
     void EquipWeapon();
-    void ChangeViewMode();
     void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
     void StartRunning();
@@ -143,6 +145,7 @@ protected:
     void AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex);
 	void EquipSlot(int32 SlotIndex);
 	void ChangeView();
+    UFUNCTION(BlueprintCallable)
 	void UpdateView();
 	bool IsRunning();
     USkeletalMeshComponent* GetCurrentMesh();
