@@ -16,5 +16,5 @@ class FPSDEMO_API AWeaponKnifeBasic : public AWeaponBase
 	GENERATED_BODY()
 
 public:
-	EWeaponTypes GetWeaponType();
+	EWeaponTypes GetWeaponType() override;
 };

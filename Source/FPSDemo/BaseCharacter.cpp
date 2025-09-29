@@ -146,6 +146,7 @@ void ABaseCharacter::StartFire()
 
     bHoldingShoot = true;
     float timeBetweenShots = 0.2f; // Example value, adjust as needed
+    UE_LOG(LogTemp, Warning, TEXT("HHHH %d"), (int32)weaponType);
 
     switch (weaponType)
     {
@@ -173,13 +174,14 @@ void ABaseCharacter::StartFire()
 void ABaseCharacter::StopFire()
 {
     GetWorldTimerManager().ClearTimer(FireTimerHandle);
+
     bHoldingShoot = false;
 }
 
 void ABaseCharacter::FireRifle()
 {
     UE_LOG(LogTemp, Warning, TEXT("DEBUGG1"));
-    if (!CanShoot()) {
+    if (!CanShoot()) {   
         GetWorldTimerManager().ClearTimer(FireTimerHandle);
         return;
     }

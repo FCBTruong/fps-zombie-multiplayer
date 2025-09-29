@@ -53,7 +53,7 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "State")
 	float AimSensitivity = 1.0f;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    UPROPERTY(BlueprintReadOnly, Replicated, Category = "Data")
     EWeaponTypes weaponType = EWeaponTypes::Unarmed;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
