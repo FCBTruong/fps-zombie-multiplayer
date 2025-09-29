@@ -106,6 +106,14 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         {
             EIC->BindAction(IA_CHANGE_VIEW, ETriggerEvent::Started, this, &ABaseCharacter::ChangeView);
         }
+        if (IA_SELECT_FIRST_RIFLE)
+        {
+            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, 0);
+		}
+        if (IA_SELECT_SECOND_RIFLE)
+        {
+            EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, 1);
+        }
     }
 }
 
@@ -327,10 +335,21 @@ void ABaseCharacter::ClickCrouch()
 
 void ABaseCharacter::AddWeapon(AWeaponBase* NewWeapon)
 {
+	EWeaponTypes NewWeaponType = NewWeapon->GetWeaponType();
     if (!NewWeapon) return;
-
-	AddWeaponToSlot(NewWeapon, 0); // for simplicity, add to slot 0
-	EquipSlot(0); // auto equip
+    if (NewWeaponType == EWeaponTypes::Rifle) {
+        for (int i = 0; i < 2; i++)
+        {
+            if (WeaponSlots[i] == NewWeapon) return; // already have it
+            if (WeaponSlots[i] == nullptr) {
+                AddWeaponToSlot(NewWeapon, i);
+                if (!CurrentWeapon) {
+                    EquipSlot(i); // auto equip if no weapon
+                }
+                return;
+            }
+        }
+    }
 }
 
 
@@ -345,9 +364,9 @@ void ABaseCharacter::AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex)
     NewWeapon->SetActorEnableCollision(false);
 
     // Attach to character mesh
-    NewWeapon->AttachToComponent(GetMesh(),
+    NewWeapon->AttachToComponent(GetCurrentMesh(),
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-        TEXT("WeaponSocket"));
+        FName(*GetRifleSocketName()));
 }
 
 
@@ -356,6 +375,8 @@ void ABaseCharacter::EquipSlot(int32 SlotIndex)
     if (!WeaponSlots.IsValidIndex(SlotIndex)) return;
 
 	if (CurrentWeapon == WeaponSlots[SlotIndex]) return; // already equipped
+
+	if (!WeaponSlots[SlotIndex]) return; // empty slot
 
     // Hide current weapon
     if (CurrentWeapon) {

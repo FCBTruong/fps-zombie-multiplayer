@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/SphereComponent.h"
+#include "WeaponTypes.h"
 #include "WeaponBase.generated.h"
 
 UCLASS()
@@ -40,4 +41,5 @@ public:
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 		bool bFromSweep, const FHitResult& SweepResult);
 	void OnFire(FVector TargetPoint);
+	EWeaponTypes GetWeaponType();
 };

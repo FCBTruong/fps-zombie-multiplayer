@@ -40,7 +40,7 @@ public:
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsFPS = false;
 
-    UPROPERTY(BlueprintReadOnly, Category = "State")
+    UPROPERTY(BlueprintReadWrite, Category = "State")
     bool bAiming = false;
 	bool bHoldingShift = false;
 
@@ -49,6 +49,7 @@ public:
     FVector2D moveInput;
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "Data")
 	FVector2D LookInput;
+    UPROPERTY(BlueprintReadWrite, Category = "State")
 	float AimSensitivity = 1.0f;
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")

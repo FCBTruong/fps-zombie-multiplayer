@@ -93,3 +93,8 @@ void AWeaponBase::OnFire(FVector TargetPoint)
 		SpawnParams
 	);
 }
+
+EWeaponTypes AWeaponBase::GetWeaponType()
+{
+	return EWeaponTypes::Rifle; // Example, change as needed
+}
