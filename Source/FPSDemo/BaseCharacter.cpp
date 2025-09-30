@@ -71,8 +71,8 @@ void ABaseCharacter::BeginPlay()
 
         if (Knife)
         {
-            AddWeaponToSlot(Knife, 3);
-            EquipSlot(3);
+            AddWeaponToSlot(Knife, SLOT_MELEE);
+            EquipSlot(SLOT_MELEE);
         }
     }
 }
@@ -129,11 +129,23 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         }
         if (IA_SELECT_FIRST_RIFLE)
         {
-            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, 0);
+            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_RIFLE_1);
 		}
         if (IA_SELECT_SECOND_RIFLE)
         {
-            EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, 1);
+            EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_RIFLE_2);
+        }
+        if (IA_SELECT_MELEE)
+        {
+            EIC->BindAction(IA_SELECT_MELEE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_MELEE);
+        }
+        if (IA_SELECT_PISTOL)
+        {
+            EIC->BindAction(IA_SELECT_PISTOL, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_PISTOL);
+        }
+        if (IA_DROP_WEAPON)
+        {
+            EIC->BindAction(IA_DROP_WEAPON, ETriggerEvent::Started, this, &ABaseCharacter::DropWeapon);
         }
     }
 }
@@ -146,9 +158,8 @@ void ABaseCharacter::StartFire()
 
     bHoldingShoot = true;
     float timeBetweenShots = 0.2f; // Example value, adjust as needed
-    UE_LOG(LogTemp, Warning, TEXT("HHHH %d"), (int32)weaponType);
-
-    switch (weaponType)
+ 
+    switch (GetWeaponType())
     {
         case EWeaponTypes::Unarmed:
             break;
@@ -380,16 +391,14 @@ void ABaseCharacter::AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex)
     // Hide world pickup
     NewWeapon->SetActorHiddenInGame(true);
     NewWeapon->SetActorEnableCollision(false);
-
-    // Attach to character mesh
-    NewWeapon->AttachToComponent(GetCurrentMesh(),
-        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-        FName(*GetRifleSocketName()));
 }
 
 
 void ABaseCharacter::EquipSlot(int32 SlotIndex)
 {
+    UE_LOG(LogTemp, Warning, TEXT("Equip Slot %d"), SlotIndex);
+
+
     if (!WeaponSlots.IsValidIndex(SlotIndex)) return;
 
 	if (CurrentWeapon == WeaponSlots[SlotIndex]) return; // already equipped
@@ -405,12 +414,7 @@ void ABaseCharacter::EquipSlot(int32 SlotIndex)
 	CurrentWeapon = WeaponSlots[SlotIndex];
 	CurrentWeapon->SetActorHiddenInGame(false);
 
-    CurrentWeapon->AttachToComponent(GetCurrentMesh(),
-        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-        FName(*GetRifleSocketName())
-    );
-
-    weaponType = CurrentWeapon->GetWeaponType();
+    UpdateAttachLocationWeapon();
 }
 
 
@@ -477,14 +481,33 @@ void ABaseCharacter::UpdateView()
             MeshFps->SetOwnerNoSee(true);
         }
     }
+    UpdateAttachLocationWeapon();
+}
+
+void ABaseCharacter::UpdateAttachLocationWeapon() {
     if (CurrentWeapon) {
+        EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
+
+        FVector offset;
+        FString SocketName = "ik_hand_gun";
+        if (WeaType == EWeaponTypes::Rifle) {
+            if (bIsFPS) {
+                SocketName = "ik_hand_gun";
+                offset = FVector(0.f, 0.f, -6.f);
+            }
+            else {
+                SocketName = "weapon_socket";
+            }
+        }
+        else if (WeaType == EWeaponTypes::Melee) {
+            SocketName = "melee_socket";
+        }
+
         CurrentWeapon->AttachToComponent(GetCurrentMesh(),
             FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-            FName(*GetRifleSocketName())
+            FName(SocketName)
         );
-        if (bIsFPS) {
-			CurrentWeapon->SetActorRelativeLocation(FVector(0.f, 0.f, -6.f));
-        }
+        CurrentWeapon->SetActorRelativeLocation(offset);
     }
 }
 
@@ -499,18 +522,6 @@ USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh()
     {
         return mesh;
     }
-}
-
-FString ABaseCharacter::GetRifleSocketName()
-{
-    if (bIsFPS)
-    {
-        return FString("ik_hand_gun");
-    }
-    else
-    {
-        return FString("weapon_socket");
-	}
 }
 
 void ABaseCharacter::ServerFire_Implementation()
@@ -544,4 +555,49 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ABaseCharacter, LookInput);
     DOREPLIFETIME(ABaseCharacter, bCrouching);
+}
+
+void ABaseCharacter::DropWeapon()
+{
+    if (CurrentWeapon) {
+        CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+        UPrimitiveComponent* WeaponRoot = Cast<UPrimitiveComponent>(CurrentWeapon->GetRootComponent());
+        if (WeaponRoot && WeaponRoot->IsSimulatingPhysics() == false)
+        {
+            WeaponRoot->SetSimulatePhysics(true);
+            WeaponRoot->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        }
+
+        // Throw it forward
+        FVector ForwardVector = GetActorForwardVector();
+        FVector LaunchVelocity = ForwardVector * 800.0f + FVector(0.f, 0.f, 200.f); // forward + a bit upward
+        if (WeaponRoot)
+        {
+            WeaponRoot->AddImpulse(LaunchVelocity, NAME_None, true);
+        }
+        CurrentWeapon->PickupSphere->SetHiddenInGame(false);
+        CurrentWeapon->WeaponMesh->SetSimulatePhysics(true);
+
+        // Clear reference so character has no weapon
+        for (int32 i = 0; i < WeaponSlots.Num(); i++)
+        {
+            if (WeaponSlots[i] == CurrentWeapon)
+            {
+                WeaponSlots[i] = nullptr;
+            }
+        }
+
+        CurrentWeapon = nullptr;
+    }
+}
+
+EWeaponTypes ABaseCharacter::GetWeaponType()
+{
+    if (CurrentWeapon) {
+        return CurrentWeapon->GetWeaponType();
+    }
+    else {
+        return EWeaponTypes::Unarmed;
+    }
 }

@@ -53,9 +53,6 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "State")
 	float AimSensitivity = 1.0f;
 
-    UPROPERTY(BlueprintReadOnly, Replicated, Category = "Data")
-    EWeaponTypes weaponType = EWeaponTypes::Unarmed;
-
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
     TArray<AWeaponBase*> WeaponSlots;
 
@@ -101,6 +98,12 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_SELECT_SECOND_RIFLE;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_MELEE;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_PISTOL;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_DROP_WEAPON;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_CHANGE_VIEW;
@@ -147,9 +150,10 @@ protected:
 	void ChangeView();
     UFUNCTION(BlueprintCallable)
 	void UpdateView();
+    UFUNCTION(BlueprintPure)
+    EWeaponTypes GetWeaponType();
 	bool IsRunning();
     USkeletalMeshComponent* GetCurrentMesh();
-    FString GetRifleSocketName();
 
 	// Server functions
     UFUNCTION(Server, Reliable)
@@ -164,10 +168,17 @@ protected:
 
 	UFUNCTION()
 	void OnRep_Crouching();
+    void UpdateAttachLocationWeapon();
+    void DropWeapon();
+    
 public:
     virtual void Tick(float DeltaTime) override;
     static constexpr float MAX_WALK_SPEED = 600.f;
     static constexpr float NORMAL_WALK_SPEED = 400.f;
     static constexpr float CROUCH_WALK_SPEED = 200.f;
+    static constexpr int SLOT_RIFLE_1 = 0;
+    static constexpr int SLOT_RIFLE_2 = 1;
+    static constexpr int SLOT_PISTOL = 2;
+    static constexpr int SLOT_MELEE = 3;
     void AddWeapon(AWeaponBase* weapon);
 };

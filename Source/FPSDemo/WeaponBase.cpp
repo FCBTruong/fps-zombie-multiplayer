@@ -17,6 +17,10 @@ AWeaponBase::AWeaponBase()
 		PickupSphere->InitSphereRadius(100.f);
 		PickupSphere->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 		RootComponent = PickupSphere;
+
+		PickupSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		PickupSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+		PickupSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	}
 }
 
@@ -33,6 +37,13 @@ void AWeaponBase::BeginPlay()
     // Fix: Change AWeaponPickup to AWeaponBase in the AddDynamic binding
     PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::OnOverlapBegin);
 	WeaponMesh = Cast<USkeletalMeshComponent>(GetDefaultSubobjectByName(TEXT("Mesh")));
+
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	WeaponMesh->SetCollisionObjectType(ECC_PhysicsBody);
+	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+
+	WeaponMesh->SetSimulatePhysics(false); // default, you enable when dropping
 }
 
 // Called every frame
@@ -50,6 +61,7 @@ void AWeaponBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));	
 	if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
 	{
+		SetReplicateMovement(false);
 		// Call function on character to give weapon
 		Player->AddWeapon(this);  // implement EquipWeapon in your character
 		PickupSphere->SetHiddenInGame(true);
