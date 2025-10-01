@@ -560,24 +560,23 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 void ABaseCharacter::DropWeapon()
 {
     if (CurrentWeapon) {
-        CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-
-        UPrimitiveComponent* WeaponRoot = Cast<UPrimitiveComponent>(CurrentWeapon->GetRootComponent());
-        if (WeaponRoot && WeaponRoot->IsSimulatingPhysics() == false)
-        {
-            WeaponRoot->SetSimulatePhysics(true);
-            WeaponRoot->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-        }
+       
+        // Enable physics on the skeletal mesh
+        CurrentWeapon->EnableCollision(true);
+        CurrentWeapon->WeaponMesh->SetSimulatePhysics(true);
+  
+        //CurrentWeapon->WeaponMesh->SetCollisionObjectType(ECC_PhysicsBody);
 
         // Throw it forward
         FVector ForwardVector = GetActorForwardVector();
-        FVector LaunchVelocity = ForwardVector * 800.0f + FVector(0.f, 0.f, 200.f); // forward + a bit upward
-        if (WeaponRoot)
-        {
-            WeaponRoot->AddImpulse(LaunchVelocity, NAME_None, true);
-        }
-        CurrentWeapon->PickupSphere->SetHiddenInGame(false);
-        CurrentWeapon->WeaponMesh->SetSimulatePhysics(true);
+        FVector LaunchVelocity = ForwardVector * 800.f + FVector(0.f, 0.f, 200.f);
+
+        //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
+
+        // Re-enable pickup sphere (overlap only)
+        CurrentWeapon->PickupSphere->SetActive(true);
+        CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
 
         // Clear reference so character has no weapon
         for (int32 i = 0; i < WeaponSlots.Num(); i++)
