@@ -12,16 +12,10 @@ AWeaponBase::AWeaponBase()
 	PrimaryActorTick.bCanEverTick = false;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	
 	RootComponent = WeaponMesh;
 
 	PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
-	if (PickupSphere)
-	{
-		PickupSphere->InitSphereRadius(100.f);
-		PickupSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		PickupSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
-		PickupSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	}
 	PickupSphere->SetupAttachment(WeaponMesh);
 
 	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::OnOverlapBegin);
@@ -32,8 +26,19 @@ void AWeaponBase::PreInitializeComponents()
 	Super::PreInitializeComponents();
 	SetReplicates(true);
 
-	EnableCollision(true);
 	WeaponMesh->SetSimulatePhysics(true);
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	WeaponMesh->SetCollisionObjectType(ECC_PhysicsBody);
+	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+
+	if (PickupSphere)
+	{
+		PickupSphere->InitSphereRadius(100.f);
+		PickupSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		PickupSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+		PickupSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -58,7 +63,7 @@ void AWeaponBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
 	{
 		WeaponMesh->SetSimulatePhysics(false);
-		EnableCollision(false);
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		SetReplicateMovement(false);
 		// Call function on character to give weapon
 		Player->AddWeapon(this);  // implement EquipWeapon in your character
@@ -109,14 +114,3 @@ EWeaponTypes AWeaponBase::GetWeaponType()
 	return EWeaponTypes::Rifle; // Example, change as needed
 }
 
-void AWeaponBase::EnableCollision(bool enabled) {
-	if (enabled) {
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		WeaponMesh->SetCollisionObjectType(ECC_PhysicsBody);
-		WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
-		WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	}
-	else {
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-}

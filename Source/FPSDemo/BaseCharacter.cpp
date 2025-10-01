@@ -390,7 +390,6 @@ void ABaseCharacter::AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex)
 
     // Hide world pickup
     NewWeapon->SetActorHiddenInGame(true);
-    NewWeapon->SetActorEnableCollision(false);
 }
 
 
@@ -560,23 +559,24 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 void ABaseCharacter::DropWeapon()
 {
     if (CurrentWeapon) {
-       
-        // Enable physics on the skeletal mesh
-        CurrentWeapon->EnableCollision(true);
+        if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Melee) {
+            return;
+        }
+        CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+        CurrentWeapon->WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
         CurrentWeapon->WeaponMesh->SetSimulatePhysics(true);
-  
-        //CurrentWeapon->WeaponMesh->SetCollisionObjectType(ECC_PhysicsBody);
 
         // Throw it forward
         FVector ForwardVector = GetActorForwardVector();
-        FVector LaunchVelocity = ForwardVector * 800.f + FVector(0.f, 0.f, 200.f);
+        FVector LaunchVelocity = ForwardVector * 400.f + FVector(0.f, 0.f, 100.f);
 
-        //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
+        CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
 
         // Re-enable pickup sphere (overlap only)
         CurrentWeapon->PickupSphere->SetActive(true);
-        CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-
+        CurrentWeapon->SetReplicateMovement(true);
+    
 
         // Clear reference so character has no weapon
         for (int32 i = 0; i < WeaponSlots.Num(); i++)
@@ -588,6 +588,7 @@ void ABaseCharacter::DropWeapon()
         }
 
         CurrentWeapon = nullptr;
+        EquipSlot(SLOT_MELEE);
     }
 }
 

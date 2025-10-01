@@ -42,5 +42,4 @@ public:
 		bool bFromSweep, const FHitResult& SweepResult);
 	void OnFire(FVector TargetPoint);
 	virtual EWeaponTypes GetWeaponType();
-	void EnableCollision(bool enabled);
 };
