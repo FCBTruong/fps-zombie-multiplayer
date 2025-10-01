@@ -414,6 +414,14 @@ void ABaseCharacter::EquipSlot(int32 SlotIndex)
 	CurrentWeapon->SetActorHiddenInGame(false);
 
     UpdateAttachLocationWeapon();
+
+    if (UAnimInstance* AnimInst = GetCurrentMesh()->GetAnimInstance())
+    {
+        if (EquipMontage) // assign AM_FP_AssaultRifle_Equip in BP or constructor
+        {
+            AnimInst->Montage_Play(EquipMontage);
+        }
+    }
 }
 
 

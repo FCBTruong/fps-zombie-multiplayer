@@ -126,6 +126,9 @@ protected:
     UFUNCTION()
     void HandleCrouchProgress(float Value);
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    UAnimMontage* EquipMontage;
+
     // Lifecycle
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
