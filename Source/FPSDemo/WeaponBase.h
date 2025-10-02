@@ -27,7 +27,6 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<class ABulletBase> BulletClass;
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

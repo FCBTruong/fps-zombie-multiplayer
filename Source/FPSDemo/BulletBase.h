@@ -14,7 +14,14 @@ class FPSDEMO_API ABulletBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ABulletBase();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
+	class UProjectileMovementComponent* ProjectileMovement;
 
+	UPROPERTY(VisibleAnywhere, Category = "Mesh")
+	UStaticMeshComponent* BulletMesh;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "Projectile")
+	class USphereComponent* CollisionComp;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

@@ -62,6 +62,10 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
     UAnimMontage* FireRifleMontage;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UAnimMontage* FireMeleeMontage;
+
     UPROPERTY(EditAnywhere, Category = "Weapon")
     TSubclassOf<AWeaponKnifeBasic> KnifeClass;
 protected:
@@ -173,6 +177,9 @@ protected:
 	void OnRep_Crouching();
     void UpdateAttachLocationWeapon();
     void DropWeapon();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPlayFireMelee();
     
 public:
     virtual void Tick(float DeltaTime) override;

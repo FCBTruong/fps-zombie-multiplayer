@@ -174,6 +174,7 @@ void ABaseCharacter::StartFire()
             UE_LOG(LogTemp, Warning, TEXT("Pistol Fire"));
             break;
         case EWeaponTypes::Melee:
+            ServerFire();
             UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
             break;
         case EWeaponTypes::Throwable:
@@ -533,7 +534,28 @@ USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh()
 
 void ABaseCharacter::ServerFire_Implementation()
 {
-	FireRifle();
+    switch (GetWeaponType())
+    {
+        case EWeaponTypes::Unarmed:
+            break;
+        case EWeaponTypes::Rifle:
+            FireRifle();
+            break;
+        case EWeaponTypes::Melee:
+            if (HasAuthority()) // only server makes changes
+            {
+                MulticastPlayFireMelee();
+            }
+            break;
+    }
+}
+
+void ABaseCharacter::MulticastPlayFireMelee_Implementation()
+{
+    if (FireMeleeMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+    {
+        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireMeleeMontage);
+    }
 }
 
 

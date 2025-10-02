@@ -68,6 +68,7 @@ void AWeaponBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 		// Call function on character to give weapon
 		Player->AddWeapon(this);  // implement EquipWeapon in your character
 		PickupSphere->SetActive(false);
+		SetInstigator(Player);
 	}
 }
 
@@ -99,9 +100,12 @@ void AWeaponBase::OnFire(FVector TargetPoint)
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
-	SpawnParams.Instigator = GetInstigator();
+	APawn* Shooter = GetInstigator();
+	SpawnParams.Instigator = Shooter;
+	UE_LOG(LogTemp, Warning, TEXT("Shooter: %s"), *Shooter->GetName());
 
-	GetWorld()->SpawnActor<ABulletBase>(
+
+	ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
 		BulletClass,
 		MuzzleLocation,
 		SpawnRotation,
