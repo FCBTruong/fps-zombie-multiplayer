@@ -163,15 +163,12 @@ void ABaseCharacter::StartFire()
     {
         case EWeaponTypes::Unarmed:
             break;
-        case EWeaponTypes::Rifle:
+        case EWeaponTypes::Firearm:
             UE_LOG(LogTemp, Warning, TEXT("Rifle Fire"));
            
             ServerFire();
 
             GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ABaseCharacter::ServerFire, timeBetweenShots, true);
-            break;
-        case EWeaponTypes::Pistol:
-            UE_LOG(LogTemp, Warning, TEXT("Pistol Fire"));
             break;
         case EWeaponTypes::Melee:
             ServerFire();
@@ -367,7 +364,7 @@ void ABaseCharacter::AddWeapon(AWeaponBase* NewWeapon)
 {
 	EWeaponTypes NewWeaponType = NewWeapon->GetWeaponType();
     if (!NewWeapon) return;
-    if (NewWeaponType == EWeaponTypes::Rifle) {
+    if (NewWeaponType == EWeaponTypes::Firearm) {
         for (int i = 0; i < 2; i++)
         {
             if (WeaponSlots[i] == NewWeapon) return; // already have it
@@ -498,7 +495,7 @@ void ABaseCharacter::UpdateAttachLocationWeapon() {
 
         FVector offset;
         FString SocketName = "ik_hand_gun";
-        if (WeaType == EWeaponTypes::Rifle) {
+        if (WeaType == EWeaponTypes::Firearm) {
             if (bIsFPS) {
                 SocketName = "ik_hand_gun";
                 offset = FVector(0.f, 0.f, -6.f);
@@ -538,7 +535,7 @@ void ABaseCharacter::ServerFire_Implementation()
     {
         case EWeaponTypes::Unarmed:
             break;
-        case EWeaponTypes::Rifle:
+        case EWeaponTypes::Firearm:
             FireRifle();
             break;
         case EWeaponTypes::Melee:

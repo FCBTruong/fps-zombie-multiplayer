@@ -115,6 +115,6 @@ void AWeaponBase::OnFire(FVector TargetPoint)
 
 EWeaponTypes AWeaponBase::GetWeaponType()
 {
-	return EWeaponTypes::Rifle; // Example, change as needed
+	return EWeaponTypes::Firearm; // Example, change as needed
 }
 

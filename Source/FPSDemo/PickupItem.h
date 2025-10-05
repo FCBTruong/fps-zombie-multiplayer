@@ -24,9 +24,10 @@ protected:
 	USkeletalMeshComponent* ItemMesh;
 	USphereComponent* PickupSphere;
 
-	void SetData(FPickupData NewData);
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	void SetData(const FPickupData& NewData);
 
 };

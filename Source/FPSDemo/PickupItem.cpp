@@ -2,6 +2,7 @@
 
 
 #include "PickupItem.h"
+#include "WeaponDataManager.h"
 
 // Sets default values
 APickupItem::APickupItem()
@@ -33,8 +34,23 @@ void APickupItem::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void APickupItem::SetData(FPickupData NewData)
+void APickupItem::SetData(const FPickupData& NewData)
 {
-	Data = NewData;
-	// Update visual representation based on Data if needed
+    Data = NewData;
+
+    UGameInstance* GI = GetGameInstance();
+    if (!GI)
+        return;
+
+    UWeaponDataManager* WeaponDataMgr = GI->GetSubsystem<UWeaponDataManager>();
+    if (!WeaponDataMgr)
+        return;
+
+    // local variable
+    UWeaponData* WeaponData = WeaponDataMgr->GetWeaponById(Data.ItemId);
+    if (WeaponData && WeaponData->Mesh && ItemMesh)
+    {
+        ItemMesh->SetSkeletalMesh(WeaponData->Mesh);
+    }
 }
+
