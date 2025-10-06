@@ -14,31 +14,13 @@ AWeaponBase::AWeaponBase()
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	
 	RootComponent = WeaponMesh;
-
-	PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
-	PickupSphere->SetupAttachment(WeaponMesh);
-
-	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeaponBase::OnOverlapBegin);
 }
 
 void AWeaponBase::PreInitializeComponents()
 {
 	Super::PreInitializeComponents();
 	SetReplicates(true);
-
-	WeaponMesh->SetSimulatePhysics(true);
-	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	WeaponMesh->SetCollisionObjectType(ECC_PhysicsBody);
-	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Block);
-	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-
-	if (PickupSphere)
-	{
-		PickupSphere->InitSphereRadius(100.f);
-		PickupSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		PickupSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
-		PickupSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	}
+	SetReplicateMovement(false);
 }
 
 // Called when the game starts or when spawned
@@ -52,24 +34,6 @@ void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-}
-
-
-void AWeaponBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-	bool bFromSweep, const FHitResult& SweepResult)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));	
-	if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
-	{
-		WeaponMesh->SetSimulatePhysics(false);
-		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		SetReplicateMovement(false);
-		// Call function on character to give weapon
-		Player->AddWeapon(this);  // implement EquipWeapon in your character
-		PickupSphere->SetActive(false);
-		SetInstigator(Player);
-	}
 }
 
 

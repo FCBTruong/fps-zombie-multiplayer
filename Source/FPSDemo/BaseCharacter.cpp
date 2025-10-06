@@ -591,19 +591,13 @@ void ABaseCharacter::DropWeapon()
         }
         CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-        CurrentWeapon->WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-        CurrentWeapon->WeaponMesh->SetSimulatePhysics(true);
-
+       
         // Throw it forward
         FVector ForwardVector = GetActorForwardVector();
         FVector LaunchVelocity = ForwardVector * 400.f + FVector(0.f, 0.f, 100.f);
 
-        CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
+        //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
 
-        // Re-enable pickup sphere (overlap only)
-        CurrentWeapon->PickupSphere->SetActive(true);
-        CurrentWeapon->SetReplicateMovement(true);
-    
 
         // Clear reference so character has no weapon
         for (int32 i = 0; i < WeaponSlots.Num(); i++)

@@ -3,6 +3,7 @@
 
 #include "PickupItem.h"
 #include "WeaponDataManager.h"
+#include "BaseCharacter.h"
 
 // Sets default values
 APickupItem::APickupItem()
@@ -18,6 +19,8 @@ APickupItem::APickupItem()
 	PickupSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	PickupSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
 	PickupSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+
+	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &APickupItem::OnOverlapBegin);
 }
 
 
@@ -54,3 +57,16 @@ void APickupItem::SetData(const FPickupData& NewData)
     }
 }
 
+void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+	bool bFromSweep, const FHitResult& SweepResult)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));
+	if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
+	{
+		SetReplicateMovement(false);
+		// Call function on character to give weapon
+		//Player->AddWeapon(this);  // implement EquipWeapon in your character
+		this->Destroy();
+	}
+}

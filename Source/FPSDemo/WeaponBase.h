@@ -16,8 +16,6 @@ class FPSDEMO_API AWeaponBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AWeaponBase();
-	UPROPERTY(VisibleAnywhere)
-	USphereComponent* PickupSphere;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	UParticleSystem* MuzzleFlash;
@@ -34,11 +32,6 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-		bool bFromSweep, const FHitResult& SweepResult);
 	void OnFire(FVector TargetPoint);
 	virtual EWeaponTypes GetWeaponType();
 };
