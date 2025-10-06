@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "WeaponTypes.h"
-#include "WeaponBase.h"
-#include "WeaponKnifeBasic.h"
+#include "Weapons/WeaponTypes.h"
+#include "Weapons/WeaponBase.h"
+#include "Weapons/WeaponKnifeBasic.h"
 #include "Net/UnrealNetwork.h"
 #include "InputActionValue.h"
 #include "Camera/CameraComponent.h"

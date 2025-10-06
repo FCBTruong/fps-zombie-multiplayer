@@ -1,5 +1,5 @@
 // WeaponDataManager.cpp
-#include "WeaponDataManager.h"
+#include "Weapons/WeaponDataManager.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 UWeaponData* UWeaponDataManager::GetWeaponById(FName Id) const
 {

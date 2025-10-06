@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "WeaponBase.h"
+#include "Weapons/WeaponBase.h"
 #include "GameFramework/GameMode.h"
 #include "ShooterGameMode.generated.h"
 

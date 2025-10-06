@@ -1,9 +1,9 @@
-#include "WeaponBase.h"
+#include "Weapons/WeaponBase.h"
 #include "Components/SphereComponent.h" 
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
-#include "BaseCharacter.h"
-#include "BulletBase.h"
+#include "Characters/BaseCharacter.h"
+#include "Projectile/BulletBase.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()

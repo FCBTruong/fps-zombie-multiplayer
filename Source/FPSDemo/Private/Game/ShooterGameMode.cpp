@@ -1,6 +1,6 @@
-#include "ShooterGameMode.h"
-#include "ShooterGameState.h"
-#include "WeaponDataManager.h"
+#include "Game/ShooterGameMode.h"
+#include "Game/ShooterGameState.h"
+#include "Weapons/WeaponDataManager.h"
 
 void AShooterGameMode::StartPlay()
 {

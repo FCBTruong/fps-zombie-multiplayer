@@ -1,4 +1,4 @@
-#include "BaseCharacter.h"
+#include "Characters/BaseCharacter.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -6,7 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "WeaponKnifeBasic.h"
+#include "Weapons/WeaponKnifeBasic.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values

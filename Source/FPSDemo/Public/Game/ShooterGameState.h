@@ -1,7 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
-#include "PickupData.h"
+#include "Pickup/PickupData.h"
 #include "ShooterGameState.generated.h"
 
 UCLASS()

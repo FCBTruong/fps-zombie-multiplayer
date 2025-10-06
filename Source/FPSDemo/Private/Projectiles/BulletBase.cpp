@@ -1,4 +1,4 @@
-#include "BulletBase.h"
+#include "Projectile/BulletBase.h"
 #include "Components/SphereComponent.h" // Add this include
 #include "GameFramework/ProjectileMovementComponent.h"
 
