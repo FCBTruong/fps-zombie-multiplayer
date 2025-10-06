@@ -66,8 +66,6 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));
 	if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
 	{
-		// Call function on character to give weapon
-		//Player->AddWeapon(this);  // implement EquipWeapon in your character
-		this->Destroy();
+		Player->GetPickupComponent()->PickupItem(this);
 	}
 }

@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include "Components/PickupComponent.h"
+#include "Components/InventoryComponent.h"
+#include "Components/WeaponComponent.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Weapons/WeaponTypes.h"
@@ -18,6 +21,15 @@ class FPSDEMO_API ABaseCharacter : public ACharacter
 {
     GENERATED_BODY()
 
+private:
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup", meta = (AllowPrivateAccess = "true"))
+    UPickupComponent* PickupComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup", meta = (AllowPrivateAccess = "true"))
+    UInventoryComponent* InventoryComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup", meta = (AllowPrivateAccess = "true"))
+    UWeaponComponent* WeaponComponent;
 public:
     ABaseCharacter();
 
@@ -191,4 +203,7 @@ public:
     static constexpr int SLOT_PISTOL = 2;
     static constexpr int SLOT_MELEE = 3;
     void AddWeapon(AWeaponBase* weapon);
+    FORCEINLINE UPickupComponent* GetPickupComponent() const {
+        return PickupComponent;
+    }
 };

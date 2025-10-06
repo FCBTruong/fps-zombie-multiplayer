@@ -17,12 +17,14 @@ public:
 	// Sets default values for this actor's properties
 	APickupItem();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+private:
 	FPickupData Data;
 	USkeletalMeshComponent* ItemMesh;
 	USphereComponent* PickupSphere;
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 
 	
 public:	
@@ -33,4 +35,6 @@ public:
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 		bool bFromSweep, const FHitResult& SweepResult);
+
+	FORCEINLINE FPickupData GetData() const { return Data; }
 };

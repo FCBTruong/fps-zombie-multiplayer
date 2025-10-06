@@ -19,6 +19,8 @@ ABaseCharacter::ABaseCharacter()
     bReloading = false;
     bEquipped = false;
     WeaponSlots.SetNum(4);
+
+    PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
 }
 
 // Called when the game starts or when spawned

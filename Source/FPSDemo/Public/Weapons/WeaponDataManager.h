@@ -15,7 +15,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Weapons")
 	TArray<UWeaponData*> WeaponList;
 
-	UWeaponData* GetWeaponById(FName Id) const;
+	UWeaponData* GetWeaponById(EItemId Id) const;
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 };

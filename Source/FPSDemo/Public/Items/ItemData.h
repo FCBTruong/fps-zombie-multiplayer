@@ -4,26 +4,27 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "WeaponTypes.h"
-#include "WeaponConfig.h"
-#include "Items/ItemData.h"
-#include "WeaponData.generated.h"
+#include "Items/ItemIds.h"
+#include "ItemData.generated.h"
 
 /**
  * 
  */
-UCLASS(BlueprintType)
-class FPSDEMO_API UWeaponData : public UItemData
+UCLASS()
+class FPSDEMO_API UItemData : public UDataAsset
 {
 	GENERATED_BODY()
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	FWeaponConfig Config;
+	EItemId Id;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	EWeaponTypes WeaponType;
+	USkeletalMesh* Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
-	EWeaponSubTypes WeaponSubType;
+	UTexture2D* Icon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	FText DisplayName;
 };

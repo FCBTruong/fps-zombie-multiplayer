@@ -1,7 +1,7 @@
 // WeaponDataManager.cpp
 #include "Weapons/WeaponDataManager.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-UWeaponData* UWeaponDataManager::GetWeaponById(FName Id) const
+UWeaponData* UWeaponDataManager::GetWeaponById(EItemId Id) const
 {
 	for (UWeaponData* Data : WeaponList)
 	{
