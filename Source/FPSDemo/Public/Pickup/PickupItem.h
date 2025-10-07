@@ -19,7 +19,9 @@ public:
 
 private:
 	FPickupData Data;
+	UPROPERTY()
 	USkeletalMeshComponent* ItemMesh;
+	UPROPERTY()
 	USphereComponent* PickupSphere;
 
 protected:

@@ -5,14 +5,17 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/SphereComponent.h"
-#include "WeaponTypes.h"
+#include "Weapons/WeaponTypes.h"
+#include "Weapons/WeaponData.h"
 #include "WeaponBase.generated.h"
 
 UCLASS()
 class FPSDEMO_API AWeaponBase : public AActor
 {
 	GENERATED_BODY()
-	
+
+private:
+	UWeaponData* Data;
 public:	
 	// Sets default values for this actor's properties
 	AWeaponBase();
@@ -33,5 +36,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	void OnFire(FVector TargetPoint);
-	virtual EWeaponTypes GetWeaponType();
+	EWeaponTypes GetWeaponType();
+	void InitFromData(class UWeaponData* InData);
+	UWeaponData* GetWeaponData() { return Data; };
 };

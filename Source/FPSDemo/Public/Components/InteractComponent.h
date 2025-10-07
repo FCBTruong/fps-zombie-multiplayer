@@ -3,24 +3,21 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapons/WeaponBase.h"
-#include "Items/ItemIds.h"
+#include "Pickup/PickupItem.h"
 #include "Components/ActorComponent.h"
-#include "WeaponComponent.generated.h"
+#include "InteractComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class FPSDEMO_API UWeaponComponent : public UActorComponent
+class FPSDEMO_API UInteractComponent : public UActorComponent
 {
 	GENERATED_BODY()
-
 private:
-	bool bIsReloading;
-	bool bIsAiming;
-	AWeaponBase* CurrentWeapon;
+	UPROPERTY()
+	APickupItem* FocusedPickup;
 public:	
 	// Sets default values for this component's properties
-	UWeaponComponent();
+	UInteractComponent();
 
 protected:
 	// Called when the game starts
@@ -29,8 +26,6 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-	void EquipWeapon(AWeaponBase* NewWeapon);
-	void OnNewItemPickup(EItemId ItemId);
-	EWeaponTypes GetCurrentWeaponType();
+	void TraceForPickup();
+	void TryPickup();	
 };

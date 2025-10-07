@@ -14,6 +14,8 @@
 #include "InputActionValue.h"
 #include "Camera/CameraComponent.h"
 #include "Components/TimelineComponent.h"
+#include "Components/InteractComponent.h"
+#include "UI/PlayerUI.h"
 #include "BaseCharacter.generated.h"
 
 UCLASS()
@@ -25,11 +27,14 @@ private:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup", meta = (AllowPrivateAccess = "true"))
     UPickupComponent* PickupComponent;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup", meta = (AllowPrivateAccess = "true"))
-    UInventoryComponent* InventoryComponent;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+    UInventoryComponent* InventoryComp;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup", meta = (AllowPrivateAccess = "true"))
-    UWeaponComponent* WeaponComponent;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+    UWeaponComponent* WeaponComp;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact", meta = (AllowPrivateAccess = "true"))
+    UInteractComponent* InteractComp;
 public:
     ABaseCharacter();
 
@@ -65,11 +70,6 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "State")
 	float AimSensitivity = 1.0f;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-    TArray<AWeaponBase*> WeaponSlots;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-    AWeaponBase* CurrentWeapon;
     FTimerHandle FireTimerHandle;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
@@ -80,6 +80,9 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "Weapon")
     TSubclassOf<AWeaponKnifeBasic> KnifeClass;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
+    UPlayerUI* PlayerUI;
 protected:
     // Enhanced Input assets to assign in Editor
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -120,6 +123,8 @@ protected:
     class UInputAction* IA_SELECT_PISTOL;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_DROP_WEAPON;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_PICKUP;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_CHANGE_VIEW;
@@ -154,7 +159,6 @@ protected:
 	void StopFire();
     void FireRifle();
     bool CanShoot();
-    void EquipWeapon();
     void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
     void StartRunning();
@@ -164,15 +168,13 @@ protected:
     void CustomCrouch();
     void CustomUnCrouch();
     void ClickCrouch();
-    void AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex);
-	void EquipSlot(int32 SlotIndex);
 	void ChangeView();
     UFUNCTION(BlueprintCallable)
 	void UpdateView();
     UFUNCTION(BlueprintPure)
     EWeaponTypes GetWeaponType();
 	bool IsRunning();
-    USkeletalMeshComponent* GetCurrentMesh();
+    
 
 	// Server functions
     UFUNCTION(Server, Reliable)
@@ -206,4 +208,12 @@ public:
     FORCEINLINE UPickupComponent* GetPickupComponent() const {
         return PickupComponent;
     }
+    FORCEINLINE UInventoryComponent* GetInventoryComponent() const {
+        return InventoryComp;
+    }
+    FORCEINLINE UWeaponComponent* GetWeaponComponent() const {
+        return WeaponComp;
+    }
+    UFUNCTION()
+    USkeletalMeshComponent* GetCurrentMesh();
 };

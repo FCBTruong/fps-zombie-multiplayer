@@ -13,7 +13,13 @@ APickupItem::APickupItem()
 	ItemMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ItemMesh"));
 	RootComponent = ItemMesh;
 
-	PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	ItemMesh->SetCollisionObjectType(ECC_WorldDynamic);
+	ItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	ItemMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	ItemMesh->SetGenerateOverlapEvents(true);
+
+	/*PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
 	PickupSphere->SetupAttachment(RootComponent);
 	PickupSphere->SetSphereRadius(50.f);
 	PickupSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -21,7 +27,7 @@ APickupItem::APickupItem()
 	PickupSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	PickupSphere->SetHiddenInGame(true);
 
-	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &APickupItem::OnOverlapBegin);
+	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &APickupItem::OnOverlapBegin);*/
 	UE_LOG(LogTemp, Warning, TEXT("PickupItem BeginPlay called"));
 }
 
@@ -63,9 +69,9 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));
-	if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
-	{
-		Player->GetPickupComponent()->PickupItem(this);
-	}
+	//UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));
+	//if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
+	//{
+	//	Player->GetPickupComponent()->PickupItem(this);
+	//}
 }

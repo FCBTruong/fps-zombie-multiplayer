@@ -4,6 +4,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Characters/BaseCharacter.h"
 #include "Projectile/BulletBase.h"
+#include "Weapons/WeaponData.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -79,6 +80,18 @@ void AWeaponBase::OnFire(FVector TargetPoint)
 
 EWeaponTypes AWeaponBase::GetWeaponType()
 {
-	return EWeaponTypes::Firearm; // Example, change as needed
+	if (Data) {
+		return Data->WeaponType;
+	}
+	return EWeaponTypes::Unarmed;
 }
 
+
+void AWeaponBase::InitFromData(UWeaponData* InData)
+{
+	Data = InData;
+	if (Data && Data->Mesh)
+	{
+		WeaponMesh->SetSkeletalMesh(Data->Mesh);
+	}
+}

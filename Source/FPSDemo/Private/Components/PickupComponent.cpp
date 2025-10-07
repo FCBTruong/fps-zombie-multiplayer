@@ -4,6 +4,7 @@
 #include "Components/PickupComponent.h"
 #include "Components/InventoryComponent.h"
 #include "Weapons/WeaponDataManager.h"
+#include "Components/WeaponComponent.h"
 #include "Pickup/PickupItem.h"
 // Sets default values for this component's properties
 UPickupComponent::UPickupComponent()
@@ -31,7 +32,6 @@ void UPickupComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
 }
 
 void UPickupComponent::PickupItem(APickupItem* Item)
@@ -44,6 +44,7 @@ void UPickupComponent::PickupItem(APickupItem* Item)
 	UE_LOG(LogTemp, Warning, TEXT("Picked up item with ID: %s"), *ItemName);
 
 	UInventoryComponent* Inventory = GetOwner()->FindComponentByClass<UInventoryComponent>();
+	bool IsPickedUp = false;
 	if (Inventory)
 	{
 		// Get the item data from your items manager
@@ -53,11 +54,17 @@ void UPickupComponent::PickupItem(APickupItem* Item)
 		if (ItemData)
 		{
 			Inventory->AddItem(*ItemData); // Assuming you have an AddItem method in your inventory component
+
+			UWeaponComponent* WeaponComp = GetOwner()->FindComponentByClass<UWeaponComponent>();
+			WeaponComp->OnNewItemPickup(PickupData.ItemId);
+			IsPickedUp = true;
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("ItemData not found for ItemId: %s"), *ItemName);
 		}
 	}
-	Item->Destroy();
+	if (IsPickedUp) {
+		Item->Destroy();
+	}
 }

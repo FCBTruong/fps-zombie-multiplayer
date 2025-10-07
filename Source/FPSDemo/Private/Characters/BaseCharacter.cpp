@@ -18,9 +18,11 @@ ABaseCharacter::ABaseCharacter()
     bCloseToWall = false;
     bReloading = false;
     bEquipped = false;
-    WeaponSlots.SetNum(4);
 
     PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
+    InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+    WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
+    InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 }
 
 // Called when the game starts or when spawned
@@ -73,8 +75,7 @@ void ABaseCharacter::BeginPlay()
 
         if (Knife)
         {
-            AddWeaponToSlot(Knife, SLOT_MELEE);
-            EquipSlot(SLOT_MELEE);
+          
         }
     }
 }
@@ -131,23 +132,28 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         }
         if (IA_SELECT_FIRST_RIFLE)
         {
-            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_RIFLE_1);
+            //EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_RIFLE_1);
 		}
         if (IA_SELECT_SECOND_RIFLE)
         {
-            EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_RIFLE_2);
+            //EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_RIFLE_2);
         }
         if (IA_SELECT_MELEE)
         {
-            EIC->BindAction(IA_SELECT_MELEE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_MELEE);
+            //EIC->BindAction(IA_SELECT_MELEE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_MELEE);
         }
         if (IA_SELECT_PISTOL)
         {
-            EIC->BindAction(IA_SELECT_PISTOL, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_PISTOL);
+            //EIC->BindAction(IA_SELECT_PISTOL, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_PISTOL);
         }
         if (IA_DROP_WEAPON)
         {
             EIC->BindAction(IA_DROP_WEAPON, ETriggerEvent::Started, this, &ABaseCharacter::DropWeapon);
+        }
+        if (IA_PICKUP)
+        {
+            // With this line, using Enhanced Input system:
+            EIC->BindAction(IA_PICKUP, ETriggerEvent::Started, InteractComp, &UInteractComponent::TryPickup);
         }
     }
 }
@@ -233,10 +239,6 @@ bool ABaseCharacter::CanShoot()
     return true;
 }
 
-void ABaseCharacter::EquipWeapon()
-{
-    return;
-}
 
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
@@ -364,66 +366,19 @@ void ABaseCharacter::ClickCrouch()
 
 void ABaseCharacter::AddWeapon(AWeaponBase* NewWeapon)
 {
-	EWeaponTypes NewWeaponType = NewWeapon->GetWeaponType();
-    if (!NewWeapon) return;
-    if (NewWeaponType == EWeaponTypes::Firearm) {
-        for (int i = 0; i < 2; i++)
-        {
-            if (WeaponSlots[i] == NewWeapon) return; // already have it
-            if (WeaponSlots[i] == nullptr) {
-                AddWeaponToSlot(NewWeapon, i);
-                if (!CurrentWeapon) {
-                    EquipSlot(i); // auto equip if no weapon
-                }
-                return;
-            }
-        }
-    }
+	
 }
 
 
-void ABaseCharacter::AddWeaponToSlot(AWeaponBase* NewWeapon, int32 SlotIndex)
+
+/*
+if (UAnimInstance* AnimInst = GetCurrentMesh()->GetAnimInstance())
 {
-    if (!WeaponSlots.IsValidIndex(SlotIndex)) return;
-
-    WeaponSlots[SlotIndex] = NewWeapon;
-
-    // Hide world pickup
-    NewWeapon->SetActorHiddenInGame(true);
-}
-
-
-void ABaseCharacter::EquipSlot(int32 SlotIndex)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Equip Slot %d"), SlotIndex);
-
-
-    if (!WeaponSlots.IsValidIndex(SlotIndex)) return;
-
-	if (CurrentWeapon == WeaponSlots[SlotIndex]) return; // already equipped
-
-	if (!WeaponSlots[SlotIndex]) return; // empty slot
-
-    // Hide current weapon
-    if (CurrentWeapon) {
-        CurrentWeapon->SetActorHiddenInGame(true);
-    }
-
-    // Show new weapon
-	CurrentWeapon = WeaponSlots[SlotIndex];
-	CurrentWeapon->SetActorHiddenInGame(false);
-
-    UpdateAttachLocationWeapon();
-
-    if (UAnimInstance* AnimInst = GetCurrentMesh()->GetAnimInstance())
+    if (EquipMontage) // assign AM_FP_AssaultRifle_Equip in BP or constructor
     {
-        if (EquipMontage) // assign AM_FP_AssaultRifle_Equip in BP or constructor
-        {
-            AnimInst->Montage_Play(EquipMontage);
-        }
+        AnimInst->Montage_Play(EquipMontage);
     }
-}
-
+}*/
 
 void ABaseCharacter::Look(const FInputActionValue& Value)
 {
@@ -492,30 +447,7 @@ void ABaseCharacter::UpdateView()
 }
 
 void ABaseCharacter::UpdateAttachLocationWeapon() {
-    if (CurrentWeapon) {
-        EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
 
-        FVector offset;
-        FString SocketName = "ik_hand_gun";
-        if (WeaType == EWeaponTypes::Firearm) {
-            if (bIsFPS) {
-                SocketName = "ik_hand_gun";
-                offset = FVector(0.f, 0.f, -6.f);
-            }
-            else {
-                SocketName = "weapon_socket";
-            }
-        }
-        else if (WeaType == EWeaponTypes::Melee) {
-            SocketName = "melee_socket";
-        }
-
-        CurrentWeapon->AttachToComponent(GetCurrentMesh(),
-            FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-            FName(SocketName)
-        );
-        CurrentWeapon->SetActorRelativeLocation(offset);
-    }
 }
 
 
@@ -565,9 +497,9 @@ void ABaseCharacter::MulticastPlayFireRifle_Implementation(FVector TargetPoint)
         GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireRifleMontage);
     }
 
-    if (CurrentWeapon) {
+    /*if (CurrentWeapon) {
 		CurrentWeapon->OnFire(TargetPoint);
-    }
+    }*/
 }
 
 void ABaseCharacter::Server_UpdateLookInput_Implementation(FVector2D NewLookInput)
@@ -587,40 +519,23 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void ABaseCharacter::DropWeapon()
 {
-    if (CurrentWeapon) {
-        if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Melee) {
-            return;
-        }
-        CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+   
+        //if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Melee) {
+        //    return;
+        //}
+        //CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
        
-        // Throw it forward
-        FVector ForwardVector = GetActorForwardVector();
-        FVector LaunchVelocity = ForwardVector * 400.f + FVector(0.f, 0.f, 100.f);
+        //// Throw it forward
+        //FVector ForwardVector = GetActorForwardVector();
+        //FVector LaunchVelocity = ForwardVector * 400.f + FVector(0.f, 0.f, 100.f);
 
-        //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
-
-
-        // Clear reference so character has no weapon
-        for (int32 i = 0; i < WeaponSlots.Num(); i++)
-        {
-            if (WeaponSlots[i] == CurrentWeapon)
-            {
-                WeaponSlots[i] = nullptr;
-            }
-        }
-
-        CurrentWeapon = nullptr;
-        EquipSlot(SLOT_MELEE);
-    }
+        ////CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
 }
 
 EWeaponTypes ABaseCharacter::GetWeaponType()
 {
-    if (CurrentWeapon) {
-        return CurrentWeapon->GetWeaponType();
-    }
-    else {
-        return EWeaponTypes::Unarmed;
-    }
+	return WeaponComp->GetCurrentWeaponType();
 }
+
+
