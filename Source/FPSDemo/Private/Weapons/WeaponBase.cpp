@@ -37,47 +37,6 @@ void AWeaponBase::Tick(float DeltaTime)
 
 }
 
-
-void AWeaponBase::OnFire(FVector TargetPoint)
-{
-	// Implement firing logic here
-	UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
-	UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAttached(
-		MuzzleFlash,                 // particle system
-		WeaponMesh,                   // attach to this component
-		TEXT("Muzzle"),        // socket name
-		FVector::ZeroVector,         // location offset
-		FRotator::ZeroRotator,       // rotation offset
-		EAttachLocation::SnapToTarget, // attach rules
-		true                         // auto destroy
-	);
-
-	if (PSC)
-	{
-        // ... rest of your code remains unchanged ...
-		UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));	
-		PSC->SetWorldScale3D(FVector(0.05f));
-	}
-
-	FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
-
-	FRotator SpawnRotation = (TargetPoint - MuzzleLocation).Rotation();
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	APawn* Shooter = GetInstigator();
-	SpawnParams.Instigator = Shooter;
-	UE_LOG(LogTemp, Warning, TEXT("Shooter: %s"), *Shooter->GetName());
-
-
-	ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
-		BulletClass,
-		MuzzleLocation,
-		SpawnRotation,
-		SpawnParams
-	);
-}
-
 EWeaponTypes AWeaponBase::GetWeaponType()
 {
 	if (Data) {
@@ -94,4 +53,10 @@ void AWeaponBase::InitFromData(UWeaponData* InData)
 	{
 		WeaponMesh->SetSkeletalMesh(Data->Mesh);
 	}
+}
+
+void AWeaponBase::OnFire(FVector TargetPoint)
+{
+	// Implement firing logic here
+	UE_LOG(LogTemp, Warning, TEXT("WeaponBase OnFire called"));
 }

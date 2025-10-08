@@ -1,6 +1,7 @@
 #include "Projectile/BulletBase.h"
 #include "Components/SphereComponent.h" // Add this include
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ABulletBase::ABulletBase()
@@ -11,16 +12,27 @@ ABulletBase::ABulletBase()
     CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
     CollisionComp->InitSphereRadius(5.f);
     CollisionComp->SetCollisionProfileName("Projectile");
+	CollisionComp->OnComponentHit.AddDynamic(this, &ABulletBase::OnHit);    // set up a notification for when this component hits something blocking
     RootComponent = CollisionComp;
 
     BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
     BulletMesh->SetupAttachment(RootComponent);
     BulletMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    BulletMesh->SetSimulatePhysics(false);
+	BulletMesh->SetRelativeScale3D(FVector(0.1f));
 
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
     ProjectileMovement->UpdatedComponent = CollisionComp;
+    ProjectileMovement->InitialSpeed = 40000.f;
+    ProjectileMovement->MaxSpeed = 50000.f;
+    ProjectileMovement->bRotationFollowsVelocity = true;
+    ProjectileMovement->bShouldBounce = false;
 
     InitialLifeSpan = 3.0f;
+
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Engine/EditorMeshes/ArcadeEditorSphere.ArcadeEditorSphere"));
+    if (MeshAsset.Succeeded())
+        BulletMesh->SetStaticMesh(MeshAsset.Object);
 }
 
 // Called when the game starts or when spawned
@@ -46,4 +58,31 @@ void ABulletBase::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+}
+
+void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
+    UPrimitiveComponent* OtherComp, FVector NormalImpulse,
+    const FHitResult& Hit)
+{
+    if (!OtherActor || OtherActor == this || !OtherComp)
+        return;
+
+    UE_LOG(LogTemp, Warning, TEXT("Hit actor: %s"), *OtherActor->GetName());
+
+    // explosion FX
+    if (ExplosionFX)
+        UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionFX, Hit.ImpactPoint);
+
+    // apply damage
+    if (Damage > 0.f)
+        UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigatorController(),
+            this, UDamageType::StaticClass());
+
+    // spawn decal
+    if (HitDecal)
+        UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal,
+            FVector(10.f), Hit.ImpactPoint,
+            Hit.ImpactNormal.Rotation());
+
+    Destroy();
 }

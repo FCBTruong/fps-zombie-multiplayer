@@ -107,3 +107,94 @@ EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
     }
     return EWeaponTypes::Unarmed;
 }
+
+void UWeaponComponent::DropWeapon() {
+    if (CurrentWeapon) {
+        CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		CurrentWeapon->Destroy();
+        CurrentWeapon = nullptr;
+    }
+}
+
+void UWeaponComponent::RequestFireStart() {
+    if (!GetOwner()->HasAuthority()) {
+        ServerStartFire();
+        return;
+    }
+    HandleStartFire();
+}
+
+void UWeaponComponent::RequestFireStop() {
+    if (!GetOwner()->HasAuthority()) {
+        ServerStopFire();
+        return;
+	}
+	HandleStopFire();
+}
+
+void UWeaponComponent::StartReload() {
+    if (CurrentWeapon && !bIsReloading) {
+        
+    }
+}
+
+void UWeaponComponent::ServerStartFire_Implementation() {
+	UE_LOG(LogTemp, Warning, TEXT("ServerStartFire called"));
+	HandleStartFire();
+}
+
+void UWeaponComponent::ServerStopFire_Implementation() {
+	HandleStopFire();
+}
+
+void UWeaponComponent::StartAiming() {
+    bIsAiming = true;
+}
+
+bool UWeaponComponent::CanShoot() {
+    if (bIsReloading) {
+        return false;
+    }
+    if (!CurrentWeapon) {
+        return false;
+    }
+    if (CurrentWeapon->GetWeaponType() != EWeaponTypes::Firearm) {
+        return false;
+    }
+    AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon);
+    if (Firearm) {
+        return Firearm->CanFire();
+    }
+    return false;
+}
+
+void UWeaponComponent::HandleStartFire() {
+    if (CanShoot()) {
+        bIsFiring = true;
+        float timeBetweenShots = 0.2f; // Example value, adjust as needed
+
+        OnFire();
+        GetOwner()->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UWeaponComponent::OnFire, timeBetweenShots, true);
+    }
+}
+
+void UWeaponComponent::HandleStopFire() {
+    if (bIsFiring) {
+        GetOwner()->GetWorldTimerManager().ClearTimer(FireTimerHandle);
+        bIsFiring = false;
+	}
+}
+
+void UWeaponComponent::OnFire() {
+    if (CurrentWeapon) {
+        ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+        if (Character) {
+            FVector CameraLocation;
+            FRotator CameraRotation;
+            Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
+            FVector ShotDirection = CameraRotation.Vector();
+            FVector TraceEnd = CameraLocation + (ShotDirection * 10000.f);
+            CurrentWeapon->OnFire(TraceEnd);
+        }
+    }
+}

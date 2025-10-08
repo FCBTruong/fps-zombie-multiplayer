@@ -101,8 +101,8 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
     {
         if (IA_Shoot)
         {
-            EIC->BindAction(IA_Shoot, ETriggerEvent::Started, this, &ABaseCharacter::StartFire);
-			EIC->BindAction(IA_Shoot, ETriggerEvent::Completed, this, &ABaseCharacter::StopFire);
+            EIC->BindAction(IA_Shoot, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::RequestFireStart);
+			EIC->BindAction(IA_Shoot, ETriggerEvent::Completed, WeaponComp, &UWeaponComponent::RequestFireStop);
         }
         if (IA_Movement)
         {
@@ -173,10 +173,7 @@ void ABaseCharacter::StartFire()
             break;
         case EWeaponTypes::Firearm:
             UE_LOG(LogTemp, Warning, TEXT("Rifle Fire"));
-           
-            ServerFire();
-
-            GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ABaseCharacter::ServerFire, timeBetweenShots, true);
+       
             break;
         case EWeaponTypes::Melee:
             ServerFire();
@@ -188,20 +185,9 @@ void ABaseCharacter::StartFire()
     }
 }
 
-void ABaseCharacter::StopFire()
-{
-    GetWorldTimerManager().ClearTimer(FireTimerHandle);
-
-    bHoldingShoot = false;
-}
 
 void ABaseCharacter::FireRifle()
 {
-    UE_LOG(LogTemp, Warning, TEXT("DEBUGG1"));
-    if (!CanShoot()) {   
-        GetWorldTimerManager().ClearTimer(FireTimerHandle);
-        return;
-    }
     // get camera viewpoint
     FVector CameraLocation;
     FRotator CameraRotation;
@@ -519,7 +505,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void ABaseCharacter::DropWeapon()
 {
-   
+	WeaponComp->DropWeapon();
         //if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Melee) {
         //    return;
         //}

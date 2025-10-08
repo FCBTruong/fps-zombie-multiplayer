@@ -13,5 +13,10 @@ UCLASS()
 class FPSDEMO_API AWeaponFirearm : public AWeaponBase
 {
 	GENERATED_BODY()
-	
+
+public:
+	virtual bool CanFire() {
+		return true;
+	};
+	void OnFire(FVector TargetPoint) override;
 };

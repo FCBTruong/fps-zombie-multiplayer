@@ -6,6 +6,7 @@
 #include "Weapons/WeaponBase.h"
 #include "Items/ItemIds.h"
 #include "Components/ActorComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "WeaponComponent.generated.h"
 
 
@@ -17,7 +18,9 @@ class FPSDEMO_API UWeaponComponent : public UActorComponent
 private:
 	bool bIsReloading;
 	bool bIsAiming;
+	bool bIsFiring;
 	AWeaponBase* CurrentWeapon;
+	FTimerHandle FireTimerHandle;
 public:	
 	// Sets default values for this component's properties
 	UWeaponComponent();
@@ -33,4 +36,19 @@ public:
 	void EquipWeapon(AWeaponBase* NewWeapon);
 	void OnNewItemPickup(EItemId ItemId);
 	EWeaponTypes GetCurrentWeaponType();
+	void DropWeapon();
+	void RequestFireStart();
+
+	UFUNCTION(Server, Reliable)
+	void ServerStartFire();
+	void RequestFireStop();
+	UFUNCTION(Server, Reliable)
+	void ServerStopFire();
+
+	void HandleStartFire();
+	void HandleStopFire();
+	void OnFire();
+	void StartAiming();
+	void StartReload();
+	bool CanShoot();
 };

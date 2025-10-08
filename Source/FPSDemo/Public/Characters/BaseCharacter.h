@@ -70,7 +70,6 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "State")
 	float AimSensitivity = 1.0f;
 
-    FTimerHandle FireTimerHandle;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
     UAnimMontage* FireRifleMontage;
