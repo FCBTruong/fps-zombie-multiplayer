@@ -1,4 +1,4 @@
-#include "Projectile/BulletBase.h"
+#include "Projectiles/BulletBase.h"
 #include "Components/SphereComponent.h" // Add this include
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -10,16 +10,19 @@ ABulletBase::ABulletBase()
     PrimaryActorTick.bCanEverTick = true;
 
     CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
-    CollisionComp->InitSphereRadius(5.f);
-    CollisionComp->SetCollisionProfileName("Projectile");
-	CollisionComp->OnComponentHit.AddDynamic(this, &ABulletBase::OnHit);    // set up a notification for when this component hits something blocking
+    CollisionComp->InitSphereRadius(10.f);
+    CollisionComp->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	//CollisionComp->SetHiddenInGame(false);
+	CollisionComp->SetGenerateOverlapEvents(false);
+   
+
     RootComponent = CollisionComp;
+    CollisionComp->OnComponentHit.AddDynamic(this, &ABulletBase::OnHit);
 
     BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
     BulletMesh->SetupAttachment(RootComponent);
     BulletMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    BulletMesh->SetSimulatePhysics(false);
-	BulletMesh->SetRelativeScale3D(FVector(0.1f));
+	BulletMesh->SetRelativeScale3D(FVector(0.01f));
 
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
     ProjectileMovement->UpdatedComponent = CollisionComp;
@@ -28,17 +31,20 @@ ABulletBase::ABulletBase()
     ProjectileMovement->bRotationFollowsVelocity = true;
     ProjectileMovement->bShouldBounce = false;
 
-    InitialLifeSpan = 3.0f;
+    InitialLifeSpan = 10.0f;
 
     static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Engine/EditorMeshes/ArcadeEditorSphere.ArcadeEditorSphere"));
     if (MeshAsset.Succeeded())
+    {
         BulletMesh->SetStaticMesh(MeshAsset.Object);
+    }
 }
 
 // Called when the game starts or when spawned
 void ABulletBase::BeginPlay()
 {
     Super::BeginPlay();
+    
     if (AActor* MyOwner = GetOwner())
     {        
         UE_LOG(LogTemp, Warning, TEXT("MyInstigatorOWner"));
@@ -51,6 +57,9 @@ void ABulletBase::BeginPlay()
 
         CollisionComp->IgnoreActorWhenMoving(MyInstigator, true);
     }
+
+    ProjectileMovement->SetVelocityInLocalSpace(FVector::ForwardVector * ProjectileMovement->InitialSpeed);
+    ProjectileMovement->Activate(true);
 }
 
 // Called every frame
@@ -64,6 +73,9 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     UPrimitiveComponent* OtherComp, FVector NormalImpulse,
     const FHitResult& Hit)
 {
+	// print debug message
+    UE_LOG(LogTemp, Warning, TEXT("AKKKKKALO"));
+	UE_LOG(LogTemp, Warning, TEXT("Bullet hit something: %s"), *GetName());
     if (!OtherActor || OtherActor == this || !OtherComp)
         return;
 
@@ -85,4 +97,17 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
             Hit.ImpactNormal.Rotation());
 
     Destroy();
+}
+
+
+void ABulletBase::InitFromData(UBulletData* InData)
+{
+    Data = InData;
+    if (Data)
+    {
+        if (Data->ExplosionFX)
+            ExplosionFX = Data->ExplosionFX;
+        if (Data->HitDecal)
+            HitDecal = Data->HitDecal;
+    }
 }

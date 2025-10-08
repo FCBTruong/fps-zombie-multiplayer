@@ -2,7 +2,7 @@
 
 
 #include "Weapons/WeaponFirearm.h"
-#include "Projectile/BulletBase.h"
+#include "Projectiles/BulletBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 
@@ -40,11 +40,11 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 	SpawnParams.Instigator = Shooter;
 	UE_LOG(LogTemp, Warning, TEXT("Shooter: %s"), *Shooter->GetName());
 
-
 	ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
 		ABulletBase::StaticClass(),
 		MuzzleLocation,
 		SpawnRotation,
 		SpawnParams
 	);
+	Bullet->InitFromData(Data->BulletData);
 }

@@ -7,6 +7,7 @@
 #include "WeaponTypes.h"
 #include "WeaponConfig.h"
 #include "Items/ItemData.h"
+#include "Projectiles/BulletData.h"
 #include "WeaponData.generated.h"
 
 /**
@@ -26,4 +27,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	EWeaponSubTypes WeaponSubType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet")
+	UBulletData* BulletData;
 };

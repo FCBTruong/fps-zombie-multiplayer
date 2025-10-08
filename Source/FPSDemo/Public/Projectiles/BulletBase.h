@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Projectiles/BulletData.h"
+
 #include "BulletBase.generated.h"
 
 UCLASS()
@@ -12,6 +14,8 @@ class FPSDEMO_API ABulletBase : public AActor
 	GENERATED_BODY()
 
 protected:
+	UBulletData* Data;
+
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	UParticleSystem* ExplosionFX;
 
@@ -33,6 +37,7 @@ public:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Projectile")
 	class USphereComponent* CollisionComp;
 
+	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
 		const FHitResult& Hit);
@@ -43,5 +48,5 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
+	void InitFromData(class UBulletData* InData);
 };

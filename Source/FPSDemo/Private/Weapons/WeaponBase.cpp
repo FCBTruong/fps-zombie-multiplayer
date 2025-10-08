@@ -3,7 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Characters/BaseCharacter.h"
-#include "Projectile/BulletBase.h"
+#include "Projectiles/BulletBase.h"
 #include "Weapons/WeaponData.h"
 
 // Sets default values
