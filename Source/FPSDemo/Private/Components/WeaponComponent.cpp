@@ -5,6 +5,7 @@
 #include "Characters/BaseCharacter.h"
 #include "Weapons/WeaponDataManager.h"
 #include "Weapons/WeaponFirearm.h"
+#include "Characters/PlayerCharacter.h"
 
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
@@ -194,7 +195,48 @@ void UWeaponComponent::OnFire() {
             Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
             FVector ShotDirection = CameraRotation.Vector();
             FVector TraceEnd = CameraLocation + (ShotDirection * 10000.f);
-            CurrentWeapon->OnFire(TraceEnd);
+            
+            PlayEffectFire(TraceEnd);
+            if (GetOwner()->HasAuthority()) // only server makes changes
+            {
+                MulticastPlayFireRifle(TraceEnd);
+            }
         }
     }
+}
+
+void UWeaponComponent::PlayEffectFire(FVector TraceEnd) {
+    // print log
+	UE_LOG(LogTemp, Warning, TEXT("PlayEffectFire called"));
+
+    if (!CurrentWeapon) {
+        return;
+    }
+    
+    if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
+        APlayerCharacter* Player = Cast<APlayerCharacter>(GetOwner());
+        Player->PlayFireRifleMontage(TraceEnd);
+
+        CurrentWeapon->OnFire(TraceEnd);
+    }
+}
+
+void UWeaponComponent::MulticastPlayFireRifle_Implementation(FVector TargetPoint) {
+    if (IsLocalControl()) {
+        return;
+    }
+    PlayEffectFire(TargetPoint);
+}
+
+bool UWeaponComponent::IsLocalControl() {
+    ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
+    if (!OwnerChar) return false;
+
+    // Skip local player
+    if (OwnerChar->IsLocallyControlled())
+    {
+        return true;
+    }
+
+    return false;
 }

@@ -13,5 +13,11 @@ UCLASS()
 class FPSDEMO_API APlayerCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
-	
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimMontage* FireRifleMontage;
+
+public:
+	void PlayFireRifleMontage(FVector TargetPoint);
 };

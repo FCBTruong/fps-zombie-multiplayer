@@ -93,8 +93,8 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     // spawn decal
     if (HitDecal)
         UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal,
-            FVector(10.f), Hit.ImpactPoint,
-            Hit.ImpactNormal.Rotation());
+            FVector(5.f), Hit.ImpactPoint,
+            Hit.ImpactNormal.Rotation(), 10.0f);
 
     Destroy();
 }

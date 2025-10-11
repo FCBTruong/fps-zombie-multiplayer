@@ -185,38 +185,6 @@ void ABaseCharacter::StartFire()
     }
 }
 
-
-void ABaseCharacter::FireRifle()
-{
-    // get camera viewpoint
-    FVector CameraLocation;
-    FRotator CameraRotation;
-    Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
-    FVector ShotDirection = CameraRotation.Vector();
-
-    FVector TraceEnd = CameraLocation + (ShotDirection * 10000.f);
-
-    FHitResult Hit;
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
-
-    bool bHit = GetWorld()->LineTraceSingleByChannel(
-        Hit,
-        CameraLocation,
-        TraceEnd,
-        ECC_Visibility,
-        Params
-    );
-
-    FVector TargetPoint = bHit ? Hit.ImpactPoint : TraceEnd;
-
-	if (HasAuthority()) // only server makes changes
-    {
-        MulticastPlayFireRifle(TargetPoint);
-    }
-    return;
-}
-
 bool ABaseCharacter::CanShoot()
 {
     if (IsRunning())   return false;
@@ -475,18 +443,6 @@ void ABaseCharacter::MulticastPlayFireMelee_Implementation()
     }
 }
 
-
-void ABaseCharacter::MulticastPlayFireRifle_Implementation(FVector TargetPoint)
-{
-    if (FireRifleMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
-    {
-        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireRifleMontage);
-    }
-
-    /*if (CurrentWeapon) {
-		CurrentWeapon->OnFire(TargetPoint);
-    }*/
-}
 
 void ABaseCharacter::Server_UpdateLookInput_Implementation(FVector2D NewLookInput)
 {

@@ -21,6 +21,8 @@ private:
 	bool bIsFiring;
 	AWeaponBase* CurrentWeapon;
 	FTimerHandle FireTimerHandle;
+
+	void PlayEffectFire(FVector TraceEnd);
 public:	
 	// Sets default values for this component's properties
 	UWeaponComponent();
@@ -51,4 +53,8 @@ public:
 	void StartAiming();
 	void StartReload();
 	bool CanShoot();
+	bool IsLocalControl();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayFireRifle(FVector TargetPoint);
 };

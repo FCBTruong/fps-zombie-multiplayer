@@ -70,10 +70,6 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "State")
 	float AimSensitivity = 1.0f;
 
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-    UAnimMontage* FireRifleMontage;
-
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
     UAnimMontage* FireMeleeMontage;
 
@@ -178,8 +174,7 @@ protected:
 	// Server functions
     UFUNCTION(Server, Reliable)
     void ServerFire();
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastPlayFireRifle(FVector TargetPoint);
+  
     UFUNCTION(Server, Reliable)
     void Server_UpdateLookInput(FVector2D NewLookInput);
 
