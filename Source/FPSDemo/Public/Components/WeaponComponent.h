@@ -19,10 +19,11 @@ private:
 	bool bIsReloading;
 	bool bIsAiming;
 	bool bIsFiring;
+	bool bIsScopeEquipped;
 	AWeaponBase* CurrentWeapon;
 	FTimerHandle FireTimerHandle;
 
-	void PlayEffectFire(FVector TraceEnd);
+	void PlayEffectFire(FVector TargetPoint);
 public:	
 	// Sets default values for this component's properties
 	UWeaponComponent();
@@ -57,4 +58,12 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayFireRifle(FVector TargetPoint);
+
+	UFUNCTION(BlueprintPure)
+	bool IsScopeEquipped();
+
+	UFUNCTION(Server, Reliable)
+	void ServerDropWeapon();
+
+	void HandleDropWeapon();
 };

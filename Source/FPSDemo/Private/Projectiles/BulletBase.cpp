@@ -108,9 +108,13 @@ void ABulletBase::InitFromData(UBulletData* InData, FVector FireDestination)
     if (Data)
     {
         if (Data->ExplosionFX)
+        {
             ExplosionFX = Data->ExplosionFX;
+        }
         if (Data->HitDecal)
+        {
             HitDecal = Data->HitDecal;
+        }
     }
 
     FireTowards(FireDestination);

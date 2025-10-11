@@ -155,6 +155,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
             // With this line, using Enhanced Input system:
             EIC->BindAction(IA_PICKUP, ETriggerEvent::Started, InteractComp, &UInteractComponent::TryPickup);
         }
+        if (IA_AIM)
+        {
+            EIC->BindAction(IA_AIM, ETriggerEvent::Started, this, &ABaseCharacter::ClickAim);
+        }
     }
 }
 
@@ -456,27 +460,42 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ABaseCharacter, LookInput);
     DOREPLIFETIME(ABaseCharacter, bCrouching);
+    DOREPLIFETIME(ABaseCharacter, bAiming);
 }
 
 void ABaseCharacter::DropWeapon()
 {
 	WeaponComp->DropWeapon();
-        //if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Melee) {
-        //    return;
-        //}
-        //CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-
-       
-        //// Throw it forward
-        //FVector ForwardVector = GetActorForwardVector();
-        //FVector LaunchVelocity = ForwardVector * 400.f + FVector(0.f, 0.f, 100.f);
-
-        ////CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
 }
 
 EWeaponTypes ABaseCharacter::GetWeaponType()
 {
-	return WeaponComp->GetCurrentWeaponType();
+    if (WeaponComp) {
+        return WeaponComp->GetCurrentWeaponType();
+    }
+	return EWeaponTypes::Unarmed;
 }
 
 
+void ABaseCharacter::ClickAim()
+{
+    
+}
+
+void ABaseCharacter::OnRep_IsAiming()
+{
+    // debug
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_IsAiming: %s"), bAiming ? TEXT("true") : TEXT("false"));
+    UpdateAimingState();
+}
+
+void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
+{
+    bAiming = bNewAiming;
+    OnRep_IsAiming();
+}
+
+void ABaseCharacter::UpdateAimingState()
+{
+   
+}

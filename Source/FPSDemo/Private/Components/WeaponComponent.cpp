@@ -111,8 +111,26 @@ EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
 
 void UWeaponComponent::DropWeapon() {
     if (CurrentWeapon) {
+        if (!GetOwner()->HasAuthority()) {
+            ServerDropWeapon();
+            return;
+        }   
+		HandleDropWeapon();
+    }
+}
+
+void UWeaponComponent::ServerDropWeapon_Implementation() {
+	HandleDropWeapon();
+}
+
+void UWeaponComponent::HandleDropWeapon() {
+    if (CurrentWeapon) {
         CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		CurrentWeapon->Destroy();
+        // Throw it forward
+        ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+        FVector ForwardVector = Character->GetActorForwardVector();
+        FVector LaunchVelocity = ForwardVector * 400.f + FVector(0.f, 0.f, 100.f);
+        //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
         CurrentWeapon = nullptr;
     }
 }
@@ -153,6 +171,10 @@ void UWeaponComponent::StartAiming() {
 }
 
 bool UWeaponComponent::CanShoot() {
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (Character->IsRunning()) {
+		return false;
+    }
     if (bIsReloading) {
         return false;
     }
@@ -194,18 +216,33 @@ void UWeaponComponent::OnFire() {
             FRotator CameraRotation;
             Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
             FVector ShotDirection = CameraRotation.Vector();
+
             FVector TraceEnd = CameraLocation + (ShotDirection * 10000.f);
+
+            FHitResult Hit;
+            FCollisionQueryParams Params;
+            Params.AddIgnoredActor(Character);
+
+            bool bHit = GetWorld()->LineTraceSingleByChannel(
+                Hit,
+                CameraLocation,
+                TraceEnd,
+                ECC_Visibility,
+                Params
+            );
+
+            FVector TargetPoint = bHit ? Hit.ImpactPoint : TraceEnd;
            
-            PlayEffectFire(TraceEnd);
+            PlayEffectFire(TargetPoint);
             if (GetOwner()->HasAuthority()) // only server makes changes
             {
-                MulticastPlayFireRifle(TraceEnd);
+                MulticastPlayFireRifle(TargetPoint);
             }
         }
     }
 }
 
-void UWeaponComponent::PlayEffectFire(FVector TraceEnd) {
+void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
     // print log
 	UE_LOG(LogTemp, Warning, TEXT("PlayEffectFire ccdalled"));
 
@@ -215,9 +252,9 @@ void UWeaponComponent::PlayEffectFire(FVector TraceEnd) {
     
     if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
         APlayerCharacter* Player = Cast<APlayerCharacter>(GetOwner());
-        Player->PlayFireRifleMontage(TraceEnd);
+        Player->PlayFireRifleMontage(TargetPoint);
 
-        CurrentWeapon->OnFire(TraceEnd);
+        CurrentWeapon->OnFire(TargetPoint);
     }
 }
 
@@ -239,4 +276,9 @@ bool UWeaponComponent::IsLocalControl() {
     }
 
     return false;
+}
+
+bool UWeaponComponent::IsScopeEquipped()
+{
+    return bIsScopeEquipped;
 }

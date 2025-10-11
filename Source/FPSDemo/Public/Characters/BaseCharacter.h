@@ -23,7 +23,7 @@ class FPSDEMO_API ABaseCharacter : public ACharacter
 {
     GENERATED_BODY()
 
-private:
+protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup", meta = (AllowPrivateAccess = "true"))
     UPickupComponent* PickupComponent;
 
@@ -58,8 +58,9 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "State")
     bool bIsFPS = false;
 
-    UPROPERTY(BlueprintReadWrite, Category = "State")
+    UPROPERTY(ReplicatedUsing = OnRep_IsAiming, BlueprintReadOnly, Category = "State")
     bool bAiming = false;
+
 	bool bHoldingShift = false;
 
 
@@ -167,9 +168,8 @@ protected:
 	void UpdateView();
     UFUNCTION(BlueprintPure)
     EWeaponTypes GetWeaponType();
-	bool IsRunning();
-    
-
+	
+ 
 	// Server functions
     UFUNCTION(Server, Reliable)
     void ServerFire();
@@ -187,6 +187,14 @@ protected:
 
     UFUNCTION(NetMulticast, Reliable)
     void MulticastPlayFireMelee();
+
+    UFUNCTION(Server, Reliable)
+    void ServerSetAiming(bool bNewAiming);
+
+    UFUNCTION()
+    void OnRep_IsAiming();
+
+	virtual void UpdateAimingState();
     
 public:
     virtual void Tick(float DeltaTime) override;
@@ -209,4 +217,7 @@ public:
     }
     UFUNCTION()
     USkeletalMeshComponent* GetCurrentMesh();
+
+    virtual void ClickAim();
+    bool IsRunning();
 };

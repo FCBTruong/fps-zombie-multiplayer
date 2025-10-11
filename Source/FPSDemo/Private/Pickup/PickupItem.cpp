@@ -13,11 +13,10 @@ APickupItem::APickupItem()
 	ItemMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ItemMesh"));
 	RootComponent = ItemMesh;
 
-	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	ItemMesh->SetCollisionObjectType(ECC_WorldDynamic);
-	ItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
-	ItemMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-	ItemMesh->SetGenerateOverlapEvents(true);
+	ItemMesh->SetCollisionProfileName(TEXT("PhysicsActor"));
+	ItemMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	ItemMesh->SetSimulatePhysics(true);
+	ItemMesh->CanCharacterStepUpOn = ECB_Yes;
 
 	/*PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
 	PickupSphere->SetupAttachment(RootComponent);
