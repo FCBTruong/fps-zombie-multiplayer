@@ -47,7 +47,7 @@ void UWeaponComponent::EquipWeapon(AWeaponBase* NewWeapon)
 	{
         EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
 
-        FVector offset;
+        FVector offset = FVector(0.f, 0.f, 0.f);
         FString SocketName = "ik_hand_gun";
 		bool bIsFPS = true;
         if (WeaType == EWeaponTypes::Firearm) {
@@ -195,7 +195,7 @@ void UWeaponComponent::OnFire() {
             Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
             FVector ShotDirection = CameraRotation.Vector();
             FVector TraceEnd = CameraLocation + (ShotDirection * 10000.f);
-            
+           
             PlayEffectFire(TraceEnd);
             if (GetOwner()->HasAuthority()) // only server makes changes
             {
@@ -207,7 +207,7 @@ void UWeaponComponent::OnFire() {
 
 void UWeaponComponent::PlayEffectFire(FVector TraceEnd) {
     // print log
-	UE_LOG(LogTemp, Warning, TEXT("PlayEffectFire called"));
+	UE_LOG(LogTemp, Warning, TEXT("PlayEffectFire ccdalled"));
 
     if (!CurrentWeapon) {
         return;

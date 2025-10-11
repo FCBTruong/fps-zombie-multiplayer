@@ -152,7 +152,6 @@ protected:
     // Input handlers
     void StartFire();
 	void StopFire();
-    void FireRifle();
     bool CanShoot();
     void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);

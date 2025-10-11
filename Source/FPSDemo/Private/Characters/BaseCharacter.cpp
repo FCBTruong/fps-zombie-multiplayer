@@ -424,7 +424,6 @@ void ABaseCharacter::ServerFire_Implementation()
         case EWeaponTypes::Unarmed:
             break;
         case EWeaponTypes::Firearm:
-            FireRifle();
             break;
         case EWeaponTypes::Melee:
             if (HasAuthority()) // only server makes changes

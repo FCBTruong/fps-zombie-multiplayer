@@ -10,19 +10,20 @@ ABulletBase::ABulletBase()
     PrimaryActorTick.bCanEverTick = true;
 
     CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
-    CollisionComp->InitSphereRadius(10.f);
-    CollisionComp->SetCollisionProfileName(TEXT("BlockAllDynamic"));
-	//CollisionComp->SetHiddenInGame(false);
+    CollisionComp->InitSphereRadius(2.f);
+	CollisionComp->SetHiddenInGame(false);
 	CollisionComp->SetGenerateOverlapEvents(false);
+    CollisionComp->SetCollisionProfileName(TEXT("Projectile"));
+    //CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
    
 
     RootComponent = CollisionComp;
     CollisionComp->OnComponentHit.AddDynamic(this, &ABulletBase::OnHit);
 
-    BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
+   /* BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
     BulletMesh->SetupAttachment(RootComponent);
     BulletMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	BulletMesh->SetRelativeScale3D(FVector(0.01f));
+	BulletMesh->SetRelativeScale3D(FVector(0.01f));*/
 
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
     ProjectileMovement->UpdatedComponent = CollisionComp;
@@ -36,7 +37,7 @@ ABulletBase::ABulletBase()
     static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Engine/EditorMeshes/ArcadeEditorSphere.ArcadeEditorSphere"));
     if (MeshAsset.Succeeded())
     {
-        BulletMesh->SetStaticMesh(MeshAsset.Object);
+        //BulletMesh->SetStaticMesh(MeshAsset.Object);
     }
 }
 
@@ -44,22 +45,19 @@ ABulletBase::ABulletBase()
 void ABulletBase::BeginPlay()
 {
     Super::BeginPlay();
-    
     if (AActor* MyOwner = GetOwner())
     {        
-        UE_LOG(LogTemp, Warning, TEXT("MyInstigatorOWner"));
+        UE_LOG(LogTemp, Warning, TEXT("MyInstigatorOWner %s"), *MyOwner->GetName());
         CollisionComp->IgnoreActorWhenMoving(MyOwner, true);
     }
 
     if (APawn* MyInstigator = GetInstigator())
     {
-        UE_LOG(LogTemp, Warning, TEXT("MyInstigator"));
+        UE_LOG(LogTemp, Warning, TEXT("MyInstigator: %s"), *MyInstigator->GetName());
+
 
         CollisionComp->IgnoreActorWhenMoving(MyInstigator, true);
     }
-
-    ProjectileMovement->SetVelocityInLocalSpace(FVector::ForwardVector * ProjectileMovement->InitialSpeed);
-    ProjectileMovement->Activate(true);
 }
 
 // Called every frame
@@ -74,7 +72,6 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     const FHitResult& Hit)
 {
 	// print debug message
-    UE_LOG(LogTemp, Warning, TEXT("AKKKKKALO"));
 	UE_LOG(LogTemp, Warning, TEXT("Bullet hit something: %s"), *GetName());
     if (!OtherActor || OtherActor == this || !OtherComp)
         return;
@@ -83,24 +80,29 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 
     // explosion FX
     if (ExplosionFX)
+    {
         UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionFX, Hit.ImpactPoint);
+    }
 
     // apply damage
     if (Damage > 0.f)
+    {
         UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigatorController(),
             this, UDamageType::StaticClass());
+    }
 
     // spawn decal
-    if (HitDecal)
+    if (HitDecal) {
         UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal,
             FVector(5.f), Hit.ImpactPoint,
             Hit.ImpactNormal.Rotation(), 10.0f);
+    }
 
     Destroy();
 }
 
 
-void ABulletBase::InitFromData(UBulletData* InData)
+void ABulletBase::InitFromData(UBulletData* InData, FVector FireDestination)
 {
     Data = InData;
     if (Data)
@@ -110,4 +112,16 @@ void ABulletBase::InitFromData(UBulletData* InData)
         if (Data->HitDecal)
             HitDecal = Data->HitDecal;
     }
+
+    FireTowards(FireDestination);
+}
+
+
+void ABulletBase::FireTowards(const FVector& Target)
+{
+    FVector Start = GetActorLocation();
+    FVector Dir = (Target - Start).GetSafeNormal();
+	SetActorRelativeRotation(Dir.Rotation());
+    ProjectileMovement->SetVelocityInLocalSpace(FVector::ForwardVector * ProjectileMovement->InitialSpeed);
+    ProjectileMovement->Activate(true);
 }

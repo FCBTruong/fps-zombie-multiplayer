@@ -48,5 +48,6 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	void InitFromData(class UBulletData* InData);
+	void InitFromData(class UBulletData* InData, FVector FinalDestination);
+	void FireTowards(const FVector& Target);
 };

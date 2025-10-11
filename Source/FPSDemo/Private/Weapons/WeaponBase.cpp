@@ -13,8 +13,11 @@ AWeaponBase::AWeaponBase()
 	PrimaryActorTick.bCanEverTick = false;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
-	
+
 	RootComponent = WeaponMesh;
+
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 }
 
 void AWeaponBase::PreInitializeComponents()

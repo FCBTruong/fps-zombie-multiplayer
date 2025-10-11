@@ -32,19 +32,19 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 
 	FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
 
-	FRotator SpawnRotation = (TargetPoint - MuzzleLocation).Rotation();
-
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	APawn* Shooter = GetInstigator();
 	SpawnParams.Instigator = Shooter;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
 	UE_LOG(LogTemp, Warning, TEXT("Shooter: %s"), *Shooter->GetName());
 
 	ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
 		ABulletBase::StaticClass(),
 		MuzzleLocation,
-		SpawnRotation,
+		FRotator::ZeroRotator,
 		SpawnParams
 	);
-	Bullet->InitFromData(Data->BulletData);
+	Bullet->InitFromData(Data->BulletData, TargetPoint);
 }
