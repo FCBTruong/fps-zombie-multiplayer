@@ -57,13 +57,16 @@ void UInteractComponent::TraceForPickup()
 		if (FocusedPickup)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Focused on pickup: %s"), *FocusedPickup->GetName());
-			
-            Character->PlayerUI->ShowPickupMessage(*FocusedPickup->GetName());
+			if (Character->PlayerUI) {
+				Character->PlayerUI->ShowPickupMessage(*FocusedPickup->GetName());
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("No longer focused on any pickup"));
-			Character->PlayerUI->HidePickupMessage();
+			if (Character->PlayerUI) {
+				UE_LOG(LogTemp, Warning, TEXT("No longer focused on any pickup"));
+				Character->PlayerUI->HidePickupMessage();
+			}
 		}
 	}
 }

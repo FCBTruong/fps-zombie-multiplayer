@@ -5,27 +5,22 @@
 #include <Net/UnrealNetwork.h>
 #include "Pickup/PickupItem.h"
 
+AShooterGameState::AShooterGameState()
+{
+    // Enable replication
+    bReplicates = true;
+}
+
 void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     
 }
 
-
-void AShooterGameState::Multicast_UpdateItemsOnMap_Implementation(const TArray<FPickupData>& NewItems)
+TArray<FPickupData> AShooterGameState::GetItemsOnMap() const
 {
-    UWorld* World = GetWorld();
-    if (!World) return;
-
-    for (const FPickupData& Data : NewItems)
-    {
-        APickupItem* Node = World->SpawnActor<APickupItem>(
-            APickupItem::StaticClass(),
-            Data.Location,
-            FRotator::ZeroRotator
-        );
-		Node->SetData(Data);
-    }
-
-    UE_LOG(LogTemp, Log, TEXT("UpdateItemsOnMap %d items on map"), NewItems.Num());
+    TArray<FPickupData> OutItems;
+    ItemsOnMap.GenerateValueArray(OutItems);
+    return OutItems;
 }
+

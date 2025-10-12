@@ -21,4 +21,5 @@ protected:
     // Configurable in editor
     UPROPERTY(EditDefaultsOnly, Category = "Weapons")
     TArray<TSubclassOf<AWeaponBase>> WeaponClasses;
+    virtual void PostLogin(APlayerController* NewPlayer) override;
 };

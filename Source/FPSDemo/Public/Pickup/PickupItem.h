@@ -39,4 +39,5 @@ public:
 		bool bFromSweep, const FHitResult& SweepResult);
 
 	FORCEINLINE FPickupData GetData() const { return Data; }
+	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const { return ItemMesh; }
 };

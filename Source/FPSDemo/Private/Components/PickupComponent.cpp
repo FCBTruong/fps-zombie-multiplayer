@@ -6,6 +6,8 @@
 #include "Weapons/WeaponDataManager.h"
 #include "Components/WeaponComponent.h"
 #include "Pickup/PickupItem.h"
+#include <Game/GameManager.h>
+
 // Sets default values for this component's properties
 UPickupComponent::UPickupComponent()
 {
@@ -36,35 +38,55 @@ void UPickupComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UPickupComponent::PickupItem(APickupItem* Item)
 {
-	if (!Item) return;
-	FPickupData PickupData = Item->GetData();
+	ServerPickupItem(Item->GetData().Id);
+}
 
-	// Add to inventory logic here
-	FString ItemName = StaticEnum<EItemId>()->GetNameStringByValue(static_cast<int64>(PickupData.ItemId));
-	UE_LOG(LogTemp, Warning, TEXT("Picked up item with ID: %s"), *ItemName);
+void UPickupComponent::ServerPickupItem_Implementation(int32 ItemOnMapId)
+{
+	HandlePickupItem(ItemOnMapId);
+}
 
+void UPickupComponent::HandlePickupItem(int32 ItemOnMapId) {
 	UInventoryComponent* Inventory = GetOwner()->FindComponentByClass<UInventoryComponent>();
-	bool IsPickedUp = false;
-	if (Inventory)
-	{
-		// Get the item data from your items manager
-		UWeaponDataManager* WeaponDataMgr = GetOwner()->GetGameInstance()->GetSubsystem<UWeaponDataManager>();
-		
-		UItemData* ItemData = WeaponDataMgr->GetWeaponById(PickupData.ItemId);
-		if (ItemData)
-		{
-			Inventory->AddItem(*ItemData); // Assuming you have an AddItem method in your inventory component
-
-			UWeaponComponent* WeaponComp = GetOwner()->FindComponentByClass<UWeaponComponent>();
-			WeaponComp->OnNewItemPickup(PickupData.ItemId);
-			IsPickedUp = true;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ItemData not found for ItemId: %s"), *ItemName);
-		}
+	if (!Inventory) {
+		UE_LOG(LogTemp, Warning, TEXT("Inventory component not found on actor: %s"), *GetOwner()->GetName());
+		return;
 	}
+	UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+	if (!GMR)
+	{
+		return;
+	}
+
+	FPickupData PickupData = GMR->GetDataPickupItem(ItemOnMapId);
+	if (PickupData.Id == -1) {
+		UE_LOG(LogTemp, Warning, TEXT("Pickup data not found for ItemOnMapId: %d"), ItemOnMapId);
+		return;
+	}
+
+	// Check if player nearby or not
+	FVector ItemLocation = PickupData.Location;
+
+	bool IsPickedUp = false;
+	
+	// Get the item data from your items manager
+	UWeaponDataManager* WeaponDataMgr = GetOwner()->GetGameInstance()->GetSubsystem<UWeaponDataManager>();
+
+	UItemData* ItemData = WeaponDataMgr->GetWeaponById(PickupData.ItemId);
+	if (ItemData)
+	{
+		Inventory->AddItem(*ItemData); // Assuming you have an AddItem method in your inventory component
+
+		UWeaponComponent* WeaponComp = GetOwner()->FindComponentByClass<UWeaponComponent>();
+		WeaponComp->OnNewItemPickup(PickupData.ItemId);
+		IsPickedUp = true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ItemData not found for ItemId"));
+	}
+	
 	if (IsPickedUp) {
-		Item->Destroy();
+		GMR->FindAndDestroyItem(ItemOnMapId);
 	}
 }

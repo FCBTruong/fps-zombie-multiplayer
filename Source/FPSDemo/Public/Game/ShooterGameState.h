@@ -8,11 +8,11 @@ UCLASS()
 class FPSDEMO_API AShooterGameState : public AGameState
 {
     GENERATED_BODY()
-public:
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-    UPROPERTY()
-    TMap<int32, FPickupData> ItemsOnMap;
 
-    UFUNCTION(NetMulticast, Reliable)
-    void Multicast_UpdateItemsOnMap(const TArray<FPickupData>& NewItems);
+public:
+	AShooterGameState();
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+    TMap<int32, FPickupData> ItemsOnMap;
+	TArray<FPickupData> GetItemsOnMap() const;
 };

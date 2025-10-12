@@ -1,6 +1,8 @@
 #include "Game/ShooterGameMode.h"
 #include "Game/ShooterGameState.h"
 #include "Weapons/WeaponDataManager.h"
+#include "Controllers/MyPlayerController.h"
+#include "Game/GameManager.h"
 
 void AShooterGameMode::StartPlay()
 {
@@ -34,8 +36,35 @@ void AShooterGameMode::StartPlay()
         ItemArray.Add(P);
     }
 
-  
-	GS->Multicast_UpdateItemsOnMap(ItemArray);
+    UGameManager* GMR = GetGameInstance()->GetSubsystem<UGameManager>();
+    if (!GMR)
+    {
+        return;
+    }
+    GMR->GenItemsOnMap(ItemArray);
 
     UE_LOG(LogTemp, Log, TEXT("Generated %d items on map"), GS->ItemsOnMap.Num());
+}
+
+void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Player Logged In: %s"), *GetNameSafe(NewPlayer));
+    Super::PostLogin(NewPlayer);
+
+    if (!NewPlayer->IsLocalController())
+    {
+        AMyPlayerController* MyPC = Cast<AMyPlayerController>(NewPlayer);
+        if (MyPC)
+        {
+            FTimerHandle TimerHandle;
+            GetWorld()->GetTimerManager().SetTimer(TimerHandle, [MyPC, this]()
+                {
+                    AShooterGameState* GS = GetGameState<AShooterGameState>();
+                    if (GS)
+                    {
+                        MyPC->Client_ReceiveItemsOnMap(GS->GetItemsOnMap());
+                    }
+                }, 0.5f, false);
+        }
+    }
 }

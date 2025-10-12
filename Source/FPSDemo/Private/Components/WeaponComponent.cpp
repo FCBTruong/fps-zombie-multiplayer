@@ -136,6 +136,23 @@ void UWeaponComponent::HandleDropWeapon() {
         FVector ForwardVector = Character->GetActorForwardVector();
         FVector LaunchVelocity = ForwardVector * 400.f + FVector(0.f, 0.f, 100.f);
         //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
+
+		// Spawn Pickup item
+        APickupItem* Pickup = GetWorld()->SpawnActor<APickupItem>(
+            APickupItem::StaticClass(),
+            CurrentWeapon->GetActorLocation(),
+            FRotator::ZeroRotator
+		);
+
+        if (Pickup) {
+			FPickupData Data;
+			Data.ItemId = CurrentWeapon->GetWeaponData()->Id;
+			Data.Amount = 1;
+			Data.Location = CurrentWeapon->GetActorLocation();
+
+			Pickup->SetData(Data);
+            Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
+		}
         CurrentWeapon = nullptr;
     }
 }
@@ -286,4 +303,11 @@ bool UWeaponComponent::IsLocalControl() {
 bool UWeaponComponent::IsScopeEquipped()
 {
     return bIsScopeEquipped;
+}
+
+void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(UWeaponComponent, CurrentWeapon);
 }

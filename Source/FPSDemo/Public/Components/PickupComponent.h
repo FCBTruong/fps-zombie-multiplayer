@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Items/ItemIds.h"
 #include "PickupComponent.generated.h"
 
 
@@ -25,4 +26,9 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void PickupItem(class APickupItem* Item);
+
+	UFUNCTION(Server, Reliable)
+	void ServerPickupItem(int32 ItemOnMapId);
+
+	void HandlePickupItem(int32 ItemOnMapId);
 };

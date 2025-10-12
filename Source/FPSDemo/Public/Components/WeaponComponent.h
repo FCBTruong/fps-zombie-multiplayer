@@ -24,7 +24,10 @@ protected:
 	bool bIsAiming;
 	bool bIsFiring;
 	bool bIsScopeEquipped;
+
+	UPROPERTY(Replicated)
 	AWeaponBase* CurrentWeapon;
+
 	FTimerHandle FireTimerHandle;
 
 	void PlayEffectFire(FVector TargetPoint);
@@ -34,6 +37,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void EquipWeapon(AWeaponBase* NewWeapon);
 	void OnNewItemPickup(EItemId ItemId);
