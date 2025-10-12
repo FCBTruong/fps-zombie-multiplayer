@@ -24,17 +24,17 @@ class FPSDEMO_API ABaseCharacter : public ACharacter
     GENERATED_BODY()
 
 protected:
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pickup")
+    UPROPERTY()
     UPickupComponent* PickupComponent;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+    UPROPERTY()
     UInventoryComponent* InventoryComp;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
-    UWeaponComponent* WeaponComp;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact")
+    UPROPERTY()
     UInteractComponent* InteractComp;
+
+    UPROPERTY()
+    UWeaponComponent* WeaponComp;
 public:
     ABaseCharacter();
 

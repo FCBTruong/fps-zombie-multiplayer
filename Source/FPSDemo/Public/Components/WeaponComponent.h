@@ -59,7 +59,6 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayFireRifle(FVector TargetPoint);
 
-	UFUNCTION(BlueprintPure)
 	bool IsScopeEquipped();
 
 	UFUNCTION(Server, Reliable)
