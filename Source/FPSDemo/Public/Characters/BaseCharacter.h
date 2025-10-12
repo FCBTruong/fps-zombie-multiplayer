@@ -24,16 +24,12 @@ class FPSDEMO_API ABaseCharacter : public ACharacter
     GENERATED_BODY()
 
 protected:
-    UPROPERTY()
     UPickupComponent* PickupComponent;
 
-    UPROPERTY()
     UInventoryComponent* InventoryComp;
 
-    UPROPERTY()
     UInteractComponent* InteractComp;
 
-    UPROPERTY()
     UWeaponComponent* WeaponComp;
 public:
     ABaseCharacter();

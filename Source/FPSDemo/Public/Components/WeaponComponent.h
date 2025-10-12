@@ -15,7 +15,11 @@ class FPSDEMO_API UWeaponComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-private:
+public:	
+	// Sets default values for this component's properties
+	UWeaponComponent();
+
+protected:
 	bool bIsReloading;
 	bool bIsAiming;
 	bool bIsFiring;
@@ -24,11 +28,6 @@ private:
 	FTimerHandle FireTimerHandle;
 
 	void PlayEffectFire(FVector TargetPoint);
-public:	
-	// Sets default values for this component's properties
-	UWeaponComponent();
-
-protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 

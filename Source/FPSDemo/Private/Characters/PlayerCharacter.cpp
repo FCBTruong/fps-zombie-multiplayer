@@ -45,18 +45,12 @@ void APlayerCharacter::PlayFireRifleMontage(FVector TargetPoint)
 
 void APlayerCharacter::ClickAim()
 {
-	if (WeaponComp) {
-		UE_LOG(LogTemp, Warning, TEXT("ClickAim called, current aiming state: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("ClickAim called, but WeaponComp is null"));
-	}
-	/*if (bAiming) {
+	if (bAiming) {
 		ServerSetAiming(false);
 	}
 	else {
 		ServerSetAiming(true);
-	}*/
+	}
 }
 
 void APlayerCharacter::UpdateAimingState()
