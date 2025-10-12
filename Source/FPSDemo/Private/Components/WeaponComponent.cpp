@@ -38,6 +38,9 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UWeaponComponent::EquipWeapon(AWeaponBase* NewWeapon)
 {
+    if (!NewWeapon) {
+		return;
+    }
 	if (CurrentWeapon)
 	{
 		CurrentWeapon->Destroy();
@@ -110,6 +113,7 @@ EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
 }
 
 void UWeaponComponent::DropWeapon() {
+	UE_LOG(LogTemp, Warning, TEXT("DropWeapon called"));
     if (CurrentWeapon) {
         if (!GetOwner()->HasAuthority()) {
             ServerDropWeapon();
@@ -126,6 +130,7 @@ void UWeaponComponent::ServerDropWeapon_Implementation() {
 void UWeaponComponent::HandleDropWeapon() {
     if (CurrentWeapon) {
         CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+        CurrentWeapon->Destroy();
         // Throw it forward
         ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
         FVector ForwardVector = Character->GetActorForwardVector();

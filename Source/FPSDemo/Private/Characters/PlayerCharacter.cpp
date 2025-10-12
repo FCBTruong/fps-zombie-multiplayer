@@ -4,6 +4,7 @@
 #include "Characters/PlayerCharacter.h"
 
 APlayerCharacter::APlayerCharacter() {
+	
 }
 
 void APlayerCharacter::BeginPlay() {
@@ -14,6 +15,20 @@ void APlayerCharacter::BeginPlay() {
 			CurrentScopeWidget->AddToViewport();
 			CurrentScopeWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
+	}
+
+	if (WeaponComp) {
+		UE_LOG(LogTemp, Warning, TEXT("WeaponComp NOT null"));
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("WeaponComp is NULLLL"));
+	}
+
+	if (PickupComponent) {
+		UE_LOG(LogTemp, Warning, TEXT("PickupComponent NOT null"));
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("PickupComponent is NULLLL"));
 	}
 }
 
@@ -30,12 +45,18 @@ void APlayerCharacter::PlayFireRifleMontage(FVector TargetPoint)
 
 void APlayerCharacter::ClickAim()
 {
-	if (bAiming) {
+	if (WeaponComp) {
+		UE_LOG(LogTemp, Warning, TEXT("ClickAim called, current aiming state: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("ClickAim called, but WeaponComp is null"));
+	}
+	/*if (bAiming) {
 		ServerSetAiming(false);
 	}
 	else {
 		ServerSetAiming(true);
-	}
+	}*/
 }
 
 void APlayerCharacter::UpdateAimingState()

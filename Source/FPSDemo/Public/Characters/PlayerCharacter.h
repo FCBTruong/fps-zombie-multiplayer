@@ -13,7 +13,7 @@ UCLASS()
 class FPSDEMO_API APlayerCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
-	APlayerCharacter();
+	APlayerCharacter();	
 protected:
 	virtual void BeginPlay() override;
 

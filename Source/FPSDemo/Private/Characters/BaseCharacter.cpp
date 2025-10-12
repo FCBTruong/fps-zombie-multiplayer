@@ -23,6 +23,14 @@ ABaseCharacter::ABaseCharacter()
     InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
     WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
     InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
+
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter constructor called"));
+
+    if (!WeaponComp)
+    {
+        UE_LOG(LogTemp, Error, TEXT("WeaponComp is null in ABaseCharacter constructor"));
+	}
+    UE_LOG(LogTemp, Warning, TEXT("Player WeaponComp: %s"), *GetNameSafe(WeaponComp));
 }
 
 // Called when the game starts or when spawned
