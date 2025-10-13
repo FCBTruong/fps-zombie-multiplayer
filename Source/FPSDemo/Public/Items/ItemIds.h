@@ -7,6 +7,7 @@
 UENUM(BlueprintType)
 enum class EItemId : uint8
 {
+	NONE = 0 UMETA(DisplayName = "None"),
     RIFLE_AK_47,
     RIFLE_AKS_74,
     RIFLE_M4_CARBINE,

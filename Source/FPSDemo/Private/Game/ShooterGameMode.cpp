@@ -41,7 +41,20 @@ void AShooterGameMode::StartPlay()
     {
         return;
     }
-    GMR->GenItemsOnMap(ItemArray);
+
+    UWorld* World = GetWorld();
+    if (World)
+    {
+        if (World->GetNetMode() == NM_DedicatedServer)
+        {
+            UE_LOG(LogTemp, Log, TEXT("Skip GenItemNodesOnMap on dedicated server"));
+            return;
+        }
+        else {
+            GMR->GenItemNodesOnMap(ItemArray);
+        }
+    }
+    
 
     UE_LOG(LogTemp, Log, TEXT("Generated %d items on map"), GS->ItemsOnMap.Num());
 }

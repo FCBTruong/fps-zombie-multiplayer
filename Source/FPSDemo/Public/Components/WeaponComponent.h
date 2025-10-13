@@ -7,6 +7,7 @@
 #include "Items/ItemIds.h"
 #include "Components/ActorComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Game/GameManager.h"
 #include "WeaponComponent.generated.h"
 
 
@@ -20,12 +21,14 @@ public:
 	UWeaponComponent();
 
 protected:
+	UGameManager* GMR;
+
 	bool bIsReloading;
 	bool bIsAiming;
 	bool bIsFiring;
 	bool bIsScopeEquipped;
 
-	UPROPERTY(Replicated)
+	// For client only, server DOES NOT use this pointer
 	AWeaponBase* CurrentWeapon;
 
 	FTimerHandle FireTimerHandle;
@@ -34,13 +37,18 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+	UPROPERTY(ReplicatedUsing=OnRep_CurrentInventoryId)
+	int32 CurrentInventoryId;
+
+	UFUNCTION()
+	void OnRep_CurrentInventoryId();
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	void EquipWeapon(AWeaponBase* NewWeapon);
-	void OnNewItemPickup(EItemId ItemId);
+	void EquipWeapon(int32 InventoryId);
+	void OnNewItemPickup(int32 NewInventoryId);
 	EWeaponTypes GetCurrentWeaponType();
 	void DropWeapon();
 	void RequestFireStart();
@@ -68,4 +76,7 @@ public:
 	void ServerDropWeapon();
 
 	void HandleDropWeapon();
+
+	UFUNCTION(Server, Reliable)
+	void ServerEquipWeapon(int32 InventoryId);
 };

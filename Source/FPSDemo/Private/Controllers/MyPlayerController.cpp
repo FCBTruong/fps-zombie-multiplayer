@@ -14,5 +14,5 @@ void AMyPlayerController::Client_ReceiveItemsOnMap_Implementation(const TArray<F
     {
         return;
     }
-    GMR->GenItemsOnMap(Items);
+    GMR->OnReceivedItemsFromServer(Items);
 }

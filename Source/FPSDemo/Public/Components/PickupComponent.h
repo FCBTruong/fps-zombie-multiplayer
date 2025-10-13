@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Items/ItemIds.h"
+#include "Game/GameManager.h"
 #include "PickupComponent.generated.h"
 
 
@@ -20,6 +21,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	UGameManager* GMR;
 
 public:	
 	// Called every frame
@@ -31,4 +33,7 @@ public:
 	void ServerPickupItem(int32 ItemOnMapId);
 
 	void HandlePickupItem(int32 ItemOnMapId);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPickupItem(int32 ItemOnMapId);
 };

@@ -4,8 +4,9 @@
 #include "Game/GameManager.h"
 #include "Pickup/PickupItem.h"
 #include "Game/ShooterGameState.h"
+#include "Weapons/WeaponDataManager.h"
 
-void UGameManager::GenItemsOnMap(const TArray<FPickupData>& Items)
+void UGameManager::GenItemNodesOnMap(const TArray<FPickupData>& Items)
 {
     UWorld* World = GetWorld();
     if (!World) return;
@@ -28,7 +29,10 @@ FPickupData UGameManager::GetDataPickupItem(int32 ItemOnMapId) {
     AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
     if (GS)
     {
-		return GS->ItemsOnMap[ItemOnMapId];
+        if (GS->ItemsOnMap.Contains(ItemOnMapId))
+        {
+            return GS->ItemsOnMap[ItemOnMapId];
+        }
     }
 	FPickupData temp;
 	temp.Id = -1;
@@ -36,6 +40,12 @@ FPickupData UGameManager::GetDataPickupItem(int32 ItemOnMapId) {
 }
 
 void UGameManager::FindAndDestroyItem(int32 ItemOnMapId) {
+	// First, remove from game state
+	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+    if (GS && GS->ItemsOnMap.Contains(ItemOnMapId))
+    {
+        GS->ItemsOnMap.Remove(ItemOnMapId);
+	}
     if (AActor** ItemPtr = ItemsOnMap.Find(ItemOnMapId))
     {
         if (*ItemPtr)
@@ -44,4 +54,38 @@ void UGameManager::FindAndDestroyItem(int32 ItemOnMapId) {
         }
         ItemsOnMap.Remove(ItemOnMapId);
     }
+}
+
+UItemData * UGameManager::GetItemDataById(EItemId ItemId) {
+    UWorld* World = GetWorld();
+    if (!World) return nullptr;
+    UGameInstance* GI = World->GetGameInstance();
+    if (!GI) return nullptr;
+    UWeaponDataManager* WeaponDataMgr = GI->GetSubsystem<UWeaponDataManager>();
+    if (!WeaponDataMgr) return nullptr;
+    return WeaponDataMgr->GetWeaponById(ItemId);
+}
+
+void UGameManager::OnReceivedItemsFromServer(const TArray<FPickupData>& Items)
+{
+    // First, clear existing items on the map
+    for (auto& Pair : ItemsOnMap)
+    {
+        if (Pair.Value)
+        {
+            Pair.Value->Destroy();
+        }
+    }
+    ItemsOnMap.Empty();
+	// Update game state
+	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+    if (GS) {
+		GS->ItemsOnMap.Empty();
+        for (const FPickupData& Data : Items) {
+            GS->ItemsOnMap.Add(Data.Id, Data);
+        }
+    }
+
+    // Now, generate new items based on the received data
+    GenItemNodesOnMap(Items);
 }

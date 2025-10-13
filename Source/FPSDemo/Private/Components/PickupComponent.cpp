@@ -6,7 +6,8 @@
 #include "Weapons/WeaponDataManager.h"
 #include "Components/WeaponComponent.h"
 #include "Pickup/PickupItem.h"
-#include <Game/GameManager.h>
+#include "Game/GameManager.h"
+#include "Characters/BaseCharacter.h"
 
 // Sets default values for this component's properties
 UPickupComponent::UPickupComponent()
@@ -24,8 +25,7 @@ void UPickupComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
+	GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
 }
 
 
@@ -46,15 +46,18 @@ void UPickupComponent::ServerPickupItem_Implementation(int32 ItemOnMapId)
 	HandlePickupItem(ItemOnMapId);
 }
 
+// This function runs on the server
 void UPickupComponent::HandlePickupItem(int32 ItemOnMapId) {
+	UE_LOG(LogTemp, Log, TEXT("HandlePickupItem called with ItemOnMapId: %d"), ItemOnMapId);
 	UInventoryComponent* Inventory = GetOwner()->FindComponentByClass<UInventoryComponent>();
 	if (!Inventory) {
 		UE_LOG(LogTemp, Warning, TEXT("Inventory component not found on actor: %s"), *GetOwner()->GetName());
 		return;
 	}
-	UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+
 	if (!GMR)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("GameManager subsystem not found"));
 		return;
 	}
 
@@ -66,27 +69,27 @@ void UPickupComponent::HandlePickupItem(int32 ItemOnMapId) {
 
 	// Check if player nearby or not
 	FVector ItemLocation = PickupData.Location;
-
-	bool IsPickedUp = false;
+	FVector PlayerLocation = GetOwner()->GetActorLocation();
+	float Distance = FVector::Dist(ItemLocation, PlayerLocation);
+	if (Distance > 300.f) {
+		UE_LOG(LogTemp, Warning, TEXT("Player is too far to pick up the item. Distance: %f"), Distance);
+		return;
+	}
 	
 	// Get the item data from your items manager
-	UWeaponDataManager* WeaponDataMgr = GetOwner()->GetGameInstance()->GetSubsystem<UWeaponDataManager>();
+	UItemData* ItemData = GMR->GetItemDataById(PickupData.ItemId);
+	int32 NewInventoryId = Inventory->AddItem(*ItemData);
 
-	UItemData* ItemData = WeaponDataMgr->GetWeaponById(PickupData.ItemId);
-	if (ItemData)
-	{
-		Inventory->AddItem(*ItemData); // Assuming you have an AddItem method in your inventory component
+	UWeaponComponent* WeaponComp = GetOwner()->FindComponentByClass<UWeaponComponent>();
+	WeaponComp->OnNewItemPickup(NewInventoryId);
 
-		UWeaponComponent* WeaponComp = GetOwner()->FindComponentByClass<UWeaponComponent>();
-		WeaponComp->OnNewItemPickup(PickupData.ItemId);
-		IsPickedUp = true;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ItemData not found for ItemId"));
-	}
-	
-	if (IsPickedUp) {
-		GMR->FindAndDestroyItem(ItemOnMapId);
-	}
+	MulticastPickupItem(ItemOnMapId);
+	GMR->FindAndDestroyItem(ItemOnMapId);
+}
+
+// This function runs on all clients
+void UPickupComponent::MulticastPickupItem_Implementation(int32 ItemOnMapId)
+{
+	FPickupData PickupData = GMR->GetDataPickupItem(ItemOnMapId);
+	GMR->FindAndDestroyItem(ItemOnMapId);
 }

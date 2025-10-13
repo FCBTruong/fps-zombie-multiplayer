@@ -13,8 +13,7 @@ UWeaponComponent::UWeaponComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
+	SetIsReplicated(true);
 }
 
 
@@ -23,8 +22,7 @@ void UWeaponComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
+    GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
 }
 
 
@@ -36,72 +34,117 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
-void UWeaponComponent::EquipWeapon(AWeaponBase* NewWeapon)
+void UWeaponComponent::EquipWeapon(int32 InventoryId)
 {
-    if (!NewWeapon) {
-		return;
+	ServerEquipWeapon(InventoryId);
+
+    if (GetWorld()->GetNetMode() == NM_ListenServer) {
+        // Host / Listen server
+        
+		// For host, we need to manually call the OnRep function since replication won't trigger it locally
+        OnRep_CurrentInventoryId();
     }
-	if (CurrentWeapon)
-	{
-		CurrentWeapon->Destroy();
-	}
-	CurrentWeapon = NewWeapon;
-	if (CurrentWeapon)
-	{
-        EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
-
-        FVector offset = FVector(0.f, 0.f, 0.f);
-        FString SocketName = "ik_hand_gun";
-		bool bIsFPS = true;
-        if (WeaType == EWeaponTypes::Firearm) {
-            if (bIsFPS) {
-                SocketName = "ik_hand_gun";
-                offset = FVector(0.f, 0.f, -6.f);
-            }
-            else {
-                SocketName = "weapon_socket";
-            }
-        }
-        else if (WeaType == EWeaponTypes::Melee) {
-            SocketName = "melee_socket";
-        }
-
-        ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-        CurrentWeapon->AttachToComponent(Character->GetCurrentMesh(),
-            FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-            FName(SocketName)
-        );
-
-        CurrentWeapon->SetActorRelativeLocation(offset);
-	}
 }
 
 
-void UWeaponComponent::OnNewItemPickup(EItemId ItemId) {
-    bool ShouldEquipNow = !CurrentWeapon or CurrentWeapon->GetWeaponType() != EWeaponTypes::Firearm;
+void UWeaponComponent::ServerEquipWeapon_Implementation(int32 InventoryId)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ServerEquipWeapon_Implementation called withaaaa InventoryId: %d"), InventoryId);
+    CurrentInventoryId = InventoryId;
+}
+
+// Client function, handles weapon spawning and attaching
+void UWeaponComponent::OnRep_CurrentInventoryId()
+{
+    UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId called with"));
+	// Gen new Weapon based on InventoryId
+    if (CurrentInventoryId <= 0) {
+		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Invalid InventoryId"));
+        return;
+	}
+
+	UInventoryComponent* Inventory = GetOwner()->FindComponentByClass<UInventoryComponent>();
+	if (!Inventory) {
+		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Inventory component not found"));
+		return;
+	}
+	// debug ,print size inventory
+	int32 x = Inventory->GetItemCount();
+    UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Inventory has %d items"), x);
+ 
+	FInventoryItem* Item = Inventory->GetItemByInventoryId(CurrentInventoryId);
+	if (!Item) {
+		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Item not found in inventory"));
+		return;
+	}
+
+	UWeaponData* WeaponData = Cast<UWeaponData>(GMR->GetItemDataById(Item->ItemId));
+	if (!WeaponData) {
+		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Weapon data not found for ItemId %d"), (int32)Item->ItemId);
+		return;
+	}
+	FActorSpawnParameters Params;
+	Params.Owner = GetOwner();
+	Params.Instigator = Cast<APawn>(GetOwner());
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AWeaponBase* NewWeapon = nullptr;
+	if (WeaponData->WeaponType == EWeaponTypes::Firearm) {
+		NewWeapon = GetWorld()->SpawnActor<AWeaponFirearm>(
+			AWeaponFirearm::StaticClass(),
+			FVector::ZeroVector,
+			FRotator::ZeroRotator,
+			Params
+		);
+	}
+	else {
+		// Handle other weapon types (e.g., Melee)
+	}
+
+	if (!NewWeapon) {
+        UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Failed to spawn weapon actor"));
+        return;
+	}
+	
+	NewWeapon->InitFromData(WeaponData); // optional setup
+
+    if (CurrentWeapon)
+    {
+        CurrentWeapon->Destroy();
+    }
+    CurrentWeapon = NewWeapon;
+   
+    EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
+
+    FVector offset = FVector(0.f, 0.f, 0.f);
+    FString SocketName = "ik_hand_gun";
+    bool bIsFPS = true;
+    if (WeaType == EWeaponTypes::Firearm) {
+        if (bIsFPS) {
+            SocketName = "ik_hand_gun";
+            offset = FVector(0.f, 0.f, -6.f);
+        }
+        else {
+            SocketName = "weapon_socket";
+        }
+    }
+    else if (WeaType == EWeaponTypes::Melee) {
+        SocketName = "melee_socket";
+    }
+
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    CurrentWeapon->AttachToComponent(Character->GetCurrentMesh(),
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        FName(SocketName)
+    );
+
+    CurrentWeapon->SetActorRelativeLocation(offset);
+}
+
+void UWeaponComponent::OnNewItemPickup(int32 NewInventoryId) {
+    bool ShouldEquipNow = true;
 
     if (ShouldEquipNow) {
-        // try get Item data from inventory
-        UInventoryComponent* Inventory = GetOwner()->FindComponentByClass<UInventoryComponent>();
-        UWeaponDataManager* WeaponDataMgr = GetOwner()->GetGameInstance()->GetSubsystem<UWeaponDataManager>();
-
-        FActorSpawnParameters Params;
-        Params.Owner = GetOwner();
-        Params.Instigator = Cast<APawn>(GetOwner());
-        Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-        UWeaponData* WeaponData = Cast<UWeaponData>(WeaponDataMgr->GetWeaponById(ItemId));
-        if (WeaponData)
-        {
-            AWeaponFirearm* WeaponFirearm = GetWorld()->SpawnActor<AWeaponFirearm>(
-                AWeaponFirearm::StaticClass(),
-                FVector::ZeroVector,
-                FRotator::ZeroRotator,
-                Params
-            );
-            WeaponFirearm->InitFromData(WeaponData); // optional setup
-            EquipWeapon(WeaponFirearm);
-        }
+		EquipWeapon(NewInventoryId);
     }
 }
 
@@ -309,5 +352,5 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME(UWeaponComponent, CurrentWeapon);
+    DOREPLIFETIME(UWeaponComponent, CurrentInventoryId);
 }
