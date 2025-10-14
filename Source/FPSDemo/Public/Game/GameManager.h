@@ -18,11 +18,14 @@ class FPSDEMO_API UGameManager : public UGameInstanceSubsystem
 
 private:
 	UPROPERTY()
-	TMap<int32, AActor*> ItemsOnMap;
+	TMap<int32, AActor*> ItemNodesOnMap;
 public:
 	void GenItemNodesOnMap(const TArray<FPickupData>& Items);
 	void OnReceivedItemsFromServer(const TArray<FPickupData>& Items);
 	FPickupData GetDataPickupItem(int32 ItemOnMapId);
 	void FindAndDestroyItem(int32 ItemOnMapId);
 	UItemData* GetItemDataById(EItemId ItemId);
+	void OnNewItemDataSpawned(const TArray<FPickupData>& Items);
+	void OnNewItemNodeSpawned(AActor* Item, int32 OnMapId);
+	int32 GetNextItemOnMapId();
 };

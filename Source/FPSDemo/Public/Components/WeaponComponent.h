@@ -8,8 +8,10 @@
 #include "Components/ActorComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Game/GameManager.h"
+#include "Structs/WeaponRuntimeData.h"
 #include "WeaponComponent.generated.h"
 
+class UInventoryComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponComponent : public UActorComponent
@@ -23,8 +25,13 @@ public:
 protected:
 	UGameManager* GMR;
 
+	UPROPERTY(Replicated)
 	bool bIsReloading;
+
+	UPROPERTY(Replicated)
 	bool bIsAiming;
+
+	UPROPERTY(Replicated)
 	bool bIsFiring;
 	bool bIsScopeEquipped;
 
@@ -42,6 +49,10 @@ protected:
 
 	UFUNCTION()
 	void OnRep_CurrentInventoryId();
+
+	UInventoryComponent* InventoryComp;
+
+	FWeaponRuntimeData CurrentWeaponData;
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -67,8 +78,11 @@ public:
 	bool CanShoot();
 	bool IsLocalControl();
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayFireRifle(FVector TargetPoint);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastDropWeapon(int32 OnMapId, FVector DropPoint);
 
 	bool IsScopeEquipped();
 
@@ -79,4 +93,6 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(int32 InventoryId);
+	const int32 INVENTORY_ID_NONE = -1;
+	void OnUpdateCurrentWeaponData();
 };

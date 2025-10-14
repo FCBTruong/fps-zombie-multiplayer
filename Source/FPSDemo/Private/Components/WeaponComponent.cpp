@@ -13,6 +13,7 @@ UWeaponComponent::UWeaponComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
+    CurrentInventoryId = UWeaponComponent::INVENTORY_ID_NONE;
 	SetIsReplicated(true);
 }
 
@@ -23,6 +24,7 @@ void UWeaponComponent::BeginPlay()
 	Super::BeginPlay();
 
     GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+	InventoryComp = GetOwner()->FindComponentByClass<UInventoryComponent>();
 }
 
 
@@ -51,28 +53,40 @@ void UWeaponComponent::ServerEquipWeapon_Implementation(int32 InventoryId)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ServerEquipWeapon_Implementation called withaaaa InventoryId: %d"), InventoryId);
     CurrentInventoryId = InventoryId;
+    OnUpdateCurrentWeaponData();
+}
+
+void UWeaponComponent::OnUpdateCurrentWeaponData() {
+    if (CurrentInventoryId == UWeaponComponent::INVENTORY_ID_NONE) {
+        CurrentWeaponData.WeaponData = nullptr;
+        return;
+	}
+	FInventoryItem* Item = InventoryComp->GetItemByInventoryId(CurrentInventoryId);
+	UWeaponData* WeaponData = Cast<UWeaponData>(GMR->GetItemDataById(Item->ItemId));
+    CurrentWeaponData.WeaponData = WeaponData;
 }
 
 // Client function, handles weapon spawning and attaching
 void UWeaponComponent::OnRep_CurrentInventoryId()
 {
+    OnUpdateCurrentWeaponData();
     UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId called with"));
 	// Gen new Weapon based on InventoryId
-    if (CurrentInventoryId <= 0) {
+    if (CurrentInventoryId == UWeaponComponent::INVENTORY_ID_NONE) {
 		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Invalid InventoryId"));
         return;
 	}
 
-	UInventoryComponent* Inventory = GetOwner()->FindComponentByClass<UInventoryComponent>();
-	if (!Inventory) {
-		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Inventory component not found"));
-		return;
+	if (!InventoryComp) {
+        UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Inventory component not found"));
+        return;
 	}
+	
 	// debug ,print size inventory
-	int32 x = Inventory->GetItemCount();
+	int32 x = InventoryComp->GetItemCount();
     UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Inventory has %d items"), x);
  
-	FInventoryItem* Item = Inventory->GetItemByInventoryId(CurrentInventoryId);
+	FInventoryItem* Item = InventoryComp->GetItemByInventoryId(CurrentInventoryId);
 	if (!Item) {
 		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Item not found in inventory"));
 		return;
@@ -117,7 +131,8 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
 
     FVector offset = FVector(0.f, 0.f, 0.f);
     FString SocketName = "ik_hand_gun";
-    bool bIsFPS = true;
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    bool bIsFPS = Character->IsFpsViewMode();
     if (WeaType == EWeaponTypes::Firearm) {
         if (bIsFPS) {
             SocketName = "ik_hand_gun";
@@ -131,7 +146,6 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
         SocketName = "melee_socket";
     }
 
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     CurrentWeapon->AttachToComponent(Character->GetCurrentMesh(),
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
         FName(SocketName)
@@ -149,20 +163,21 @@ void UWeaponComponent::OnNewItemPickup(int32 NewInventoryId) {
 }
 
 EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
-    if (CurrentWeapon) {
-        return CurrentWeapon->GetWeaponType();
-    }
-    return EWeaponTypes::Unarmed;
+    if (CurrentWeaponData.WeaponData) {
+        return CurrentWeaponData.WeaponData->WeaponType;
+	}
+	return EWeaponTypes::Unarmed;
 }
 
 void UWeaponComponent::DropWeapon() {
 	UE_LOG(LogTemp, Warning, TEXT("DropWeapon called"));
-    if (CurrentWeapon) {
+    if (CurrentWeaponData.WeaponData) {
         if (!GetOwner()->HasAuthority()) {
             ServerDropWeapon();
-            return;
-        }   
-		HandleDropWeapon();
+        }
+        else {
+            HandleDropWeapon();
+        }
     }
 }
 
@@ -170,32 +185,62 @@ void UWeaponComponent::ServerDropWeapon_Implementation() {
 	HandleDropWeapon();
 }
 
+
+// Server function
 void UWeaponComponent::HandleDropWeapon() {
+	// Remove from inventory
+    if (InventoryComp) {
+        InventoryComp->RemoveItemByInventoryId(CurrentInventoryId);
+    }
+
+	// spawn new pickup item on map
+    FVector DropPoint = GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 100.f;
+    FPickupData Data;
+	Data.Location = DropPoint;
+	Data.Amount = 1;
+	Data.ItemId = CurrentWeaponData.WeaponData->Id;
+	Data.Id = GMR->GetNextItemOnMapId();
+    GMR->OnNewItemDataSpawned({ Data });
+
+    // Detach and spawn pickup
+    CurrentInventoryId = UWeaponComponent::INVENTORY_ID_NONE;
+	OnUpdateCurrentWeaponData();
+
+	MulticastDropWeapon(Data.Id, DropPoint);
+}
+
+void UWeaponComponent::MulticastDropWeapon_Implementation(int32 OnMapId, FVector DropPoint) {
     if (CurrentWeapon) {
         CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-        CurrentWeapon->Destroy();
+
         // Throw it forward
         ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
         FVector ForwardVector = Character->GetActorForwardVector();
         FVector LaunchVelocity = ForwardVector * 400.f + FVector(0.f, 0.f, 100.f);
         //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
 
-		// Spawn Pickup item
+        // Spawn Pickup item
         APickupItem* Pickup = GetWorld()->SpawnActor<APickupItem>(
             APickupItem::StaticClass(),
             CurrentWeapon->GetActorLocation(),
             FRotator::ZeroRotator
-		);
+        );
 
         if (Pickup) {
-			FPickupData Data;
-			Data.ItemId = CurrentWeapon->GetWeaponData()->Id;
-			Data.Amount = 1;
-			Data.Location = CurrentWeapon->GetActorLocation();
+            FPickupData Data;
+            Data.ItemId = CurrentWeapon->GetWeaponData()->Id;
+            Data.Amount = 1;
+            Data.Location = CurrentWeapon->GetActorLocation();
+			Data.Id = OnMapId;
 
-			Pickup->SetData(Data);
+            Pickup->SetData(Data);
             Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
-		}
+
+			// add pickup data to game state due to server will not update for clients
+			GMR->OnNewItemDataSpawned({ Data });
+			GMR->OnNewItemNodeSpawned(Pickup, OnMapId);
+        }
+        CurrentWeapon->Destroy();
         CurrentWeapon = nullptr;
     }
 }
@@ -217,7 +262,7 @@ void UWeaponComponent::RequestFireStop() {
 }
 
 void UWeaponComponent::StartReload() {
-    if (CurrentWeapon && !bIsReloading) {
+    if (!bIsReloading) {
         
     }
 }
@@ -243,17 +288,10 @@ bool UWeaponComponent::CanShoot() {
     if (bIsReloading) {
         return false;
     }
-    if (!CurrentWeapon) {
+    if (CurrentInventoryId == UWeaponComponent::INVENTORY_ID_NONE) {
         return false;
     }
-    if (CurrentWeapon->GetWeaponType() != EWeaponTypes::Firearm) {
-        return false;
-    }
-    AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon);
-    if (Firearm) {
-        return Firearm->CanFire();
-    }
-    return false;
+    return true;
 }
 
 void UWeaponComponent::HandleStartFire() {
@@ -273,36 +311,37 @@ void UWeaponComponent::HandleStopFire() {
 	}
 }
 
+// Server function
 void UWeaponComponent::OnFire() {
-    if (CurrentWeapon) {
-        ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-        if (Character) {
-            FVector CameraLocation;
-            FRotator CameraRotation;
-            Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
-            FVector ShotDirection = CameraRotation.Vector();
+	UE_LOG(LogTemp, Warning, TEXT("OnFire: called"));
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (Character) {
+        FVector CameraLocation;
+        FRotator CameraRotation;
+        Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
+        FVector ShotDirection = CameraRotation.Vector();
 
-            FVector TraceEnd = CameraLocation + (ShotDirection * 10000.f);
+        FVector TraceEnd = CameraLocation + (ShotDirection * 10000.f);
 
-            FHitResult Hit;
-            FCollisionQueryParams Params;
-            Params.AddIgnoredActor(Character);
+        FHitResult Hit;
+        FCollisionQueryParams Params;
+        Params.AddIgnoredActor(Character);
 
-            bool bHit = GetWorld()->LineTraceSingleByChannel(
-                Hit,
-                CameraLocation,
-                TraceEnd,
-                ECC_Visibility,
-                Params
-            );
+        bool bHit = GetWorld()->LineTraceSingleByChannel(
+            Hit,
+            CameraLocation,
+            TraceEnd,
+            ECC_Visibility,
+            Params
+        );
 
-            FVector TargetPoint = bHit ? Hit.ImpactPoint : TraceEnd;
+        FVector TargetPoint = bHit ? Hit.ImpactPoint : TraceEnd;
            
-            PlayEffectFire(TargetPoint);
-            if (GetOwner()->HasAuthority()) // only server makes changes
-            {
-                MulticastPlayFireRifle(TargetPoint);
-            }
+        /*PlayEffectFire(TargetPoint);*/
+        if (GetOwner()->HasAuthority()) // only server makes changes
+        {
+			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server calling MulticastPlayFireRifle"));
+            MulticastPlayFireRifle(TargetPoint);
         }
     }
 }
@@ -324,9 +363,6 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
 }
 
 void UWeaponComponent::MulticastPlayFireRifle_Implementation(FVector TargetPoint) {
-    if (IsLocalControl()) {
-        return;
-    }
     PlayEffectFire(TargetPoint);
 }
 
@@ -354,3 +390,4 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
     DOREPLIFETIME(UWeaponComponent, CurrentInventoryId);
 }
+

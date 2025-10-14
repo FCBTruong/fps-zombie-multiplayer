@@ -67,3 +67,17 @@ FInventoryItem* UInventoryComponent::GetItemByInventoryId(int32 InventoryId)
 	}
 	return nullptr;
 }
+
+void UInventoryComponent::RemoveItemByInventoryId(int32 InventoryId)
+{
+	for (int32 i = 0; i < Items.Num(); ++i)
+	{
+		if (Items[i].InventoryId == InventoryId)
+		{
+			Items.RemoveAt(i);
+			UE_LOG(LogTemp, Log, TEXT("Item with InventoryId %d removed from inventory."), InventoryId);
+			return;
+		}
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Item with InventoryId %d not found in inventory."), InventoryId);
+}

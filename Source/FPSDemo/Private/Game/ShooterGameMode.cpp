@@ -17,6 +17,11 @@ void AShooterGameMode::StartPlay()
     if (!WeaponDataMgr || WeaponDataMgr->WeaponList.Num() == 0)
         return;
 
+    UGameManager* GMR = GetGameInstance()->GetSubsystem<UGameManager>();
+    if (!GMR)
+    {
+        return;
+    }
     TArray<FPickupData> ItemArray;
     for (int32 i = 0; i < 10; i++)
     {
@@ -27,20 +32,15 @@ void AShooterGameMode::StartPlay()
             continue;
 
         FPickupData P;
-        P.Id = i;
+		P.Id = GMR->GetNextItemOnMapId();
         P.ItemId = PickupObj->Id;
         P.Amount = 1;
         P.Location = SpawnLocation;
 
-        GS->ItemsOnMap.Add(i, P);
+        GS->ItemsOnMap.Add(P.Id, P);
         ItemArray.Add(P);
     }
 
-    UGameManager* GMR = GetGameInstance()->GetSubsystem<UGameManager>();
-    if (!GMR)
-    {
-        return;
-    }
 
     UWorld* World = GetWorld();
     if (World)

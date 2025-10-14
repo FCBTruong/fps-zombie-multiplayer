@@ -19,7 +19,7 @@ void UGameManager::GenItemNodesOnMap(const TArray<FPickupData>& Items)
             FRotator::ZeroRotator
         );
         Node->SetData(Data);
-		ItemsOnMap.Add(Data.Id, Node);
+        ItemNodesOnMap.Add(Data.Id, Node);
     }
 
     UE_LOG(LogTemp, Log, TEXT("GenItemsOnMap %d items on map"), Items.Num());
@@ -46,13 +46,13 @@ void UGameManager::FindAndDestroyItem(int32 ItemOnMapId) {
     {
         GS->ItemsOnMap.Remove(ItemOnMapId);
 	}
-    if (AActor** ItemPtr = ItemsOnMap.Find(ItemOnMapId))
+    if (AActor** ItemPtr = ItemNodesOnMap.Find(ItemOnMapId))
     {
         if (*ItemPtr)
         {
             (*ItemPtr)->Destroy();
         }
-        ItemsOnMap.Remove(ItemOnMapId);
+        ItemNodesOnMap.Remove(ItemOnMapId);
     }
 }
 
@@ -69,14 +69,14 @@ UItemData * UGameManager::GetItemDataById(EItemId ItemId) {
 void UGameManager::OnReceivedItemsFromServer(const TArray<FPickupData>& Items)
 {
     // First, clear existing items on the map
-    for (auto& Pair : ItemsOnMap)
+    for (auto& Pair : ItemNodesOnMap)
     {
         if (Pair.Value)
         {
             Pair.Value->Destroy();
         }
     }
-    ItemsOnMap.Empty();
+    ItemNodesOnMap.Empty();
 	// Update game state
 	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
     if (GS) {
@@ -88,4 +88,24 @@ void UGameManager::OnReceivedItemsFromServer(const TArray<FPickupData>& Items)
 
     // Now, generate new items based on the received data
     GenItemNodesOnMap(Items);
+}
+
+void UGameManager::OnNewItemDataSpawned(const TArray<FPickupData>& Items) {
+    AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+    if (GS) {
+        for (const FPickupData& Data : Items) {
+            GS->ItemsOnMap.Add(Data.Id, Data);
+        }
+    }
+}
+
+int32 UGameManager::GetNextItemOnMapId() {
+    static int32 CurrentId = 1000; // Start from 1000 to avoid conflicts with predefined IDs
+    return CurrentId++;
+}
+
+void UGameManager::OnNewItemNodeSpawned(AActor* Item, int32 OnMapId) {
+    if (Item) {
+        ItemNodesOnMap.Add(OnMapId, Item);
+    }
 }

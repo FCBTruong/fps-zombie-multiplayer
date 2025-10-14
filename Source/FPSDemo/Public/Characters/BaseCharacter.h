@@ -216,4 +216,5 @@ public:
 
     virtual void ClickAim();
     bool IsRunning();
+	bool IsFpsViewMode() const { return bIsFPS; }
 };

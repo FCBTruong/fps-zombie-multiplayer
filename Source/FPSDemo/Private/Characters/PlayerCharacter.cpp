@@ -56,30 +56,32 @@ void APlayerCharacter::ClickAim()
 void APlayerCharacter::UpdateAimingState()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Updating Aiming State: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
-    if (bAiming)
-    {
-        // Smooth FOV zoom
-		TargetFOV = 70.f;
+	if (IsLocallyControlled()) {
+		if (bAiming)
+		{
+			// Smooth FOV zoom
+			TargetFOV = 70.f;
 
-		if (WeaponComp->IsScopeEquipped()) {
-			TargetFOV = 20.f;
-			FirstPersonCamera->SetRelativeLocation(FVector(0.f, 20.f, 0.f));
-			AimSensitivity = 0.2f;
-			if (CurrentScopeWidget) {
-				CurrentScopeWidget->SetVisibility(ESlateVisibility::Visible);
+			if (WeaponComp->IsScopeEquipped()) {
+				TargetFOV = 20.f;
+				FirstPersonCamera->SetRelativeLocation(FVector(0.f, 20.f, 0.f));
+				AimSensitivity = 0.2f;
+				if (CurrentScopeWidget) {
+					CurrentScopeWidget->SetVisibility(ESlateVisibility::Visible);
+				}
 			}
 		}
-    }
-    else
-    {
-		TargetFOV = 90.f;
+		else
+		{
+			TargetFOV = 90.f;
 
-		FirstPersonCamera->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
-		AimSensitivity = 1.0f;
-		if (CurrentScopeWidget) {
-			CurrentScopeWidget->SetVisibility(ESlateVisibility::Hidden);
+			FirstPersonCamera->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+			AimSensitivity = 1.0f;
+			if (CurrentScopeWidget) {
+				CurrentScopeWidget->SetVisibility(ESlateVisibility::Hidden);
+			}
 		}
-    }
+	}
 }
 
 void APlayerCharacter::Tick(float DeltaTime)

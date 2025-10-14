@@ -36,4 +36,5 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	int32 GetItemCount() const { return Items.Num(); }
+	void RemoveItemByInventoryId(int32 InventoryId);
 };
