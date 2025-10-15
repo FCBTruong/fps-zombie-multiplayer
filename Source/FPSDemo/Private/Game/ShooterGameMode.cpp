@@ -22,10 +22,18 @@ void AShooterGameMode::StartPlay()
     {
         return;
     }
+
+    FVector Origin(0.f, 0.f, 100.f);
+    float RangeX = 5000.f;
+    float RangeY = 5000.f;
     TArray<FPickupData> ItemArray;
-    for (int32 i = 0; i < 10; i++)
+    for (int32 i = 0; i < 20; i++)
     {
-        FVector SpawnLocation(200.f * i, 0.f, 100.f);
+        float RandX = FMath::FRandRange(-RangeX, RangeX);
+        float RandY = FMath::FRandRange(-RangeY, RangeY);
+        float RandZ = 100.f;
+
+        FVector SpawnLocation(RandX, RandY, RandZ);
 
         UWeaponData* PickupObj = WeaponDataMgr->WeaponList[FMath::RandRange(0, WeaponDataMgr->WeaponList.Num() - 1)];
         if (!PickupObj)

@@ -11,7 +11,6 @@ AWeaponBase::AWeaponBase()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-	bReplicates = true;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 
@@ -24,8 +23,6 @@ AWeaponBase::AWeaponBase()
 void AWeaponBase::PreInitializeComponents()
 {
 	Super::PreInitializeComponents();
-	SetReplicates(true);
-	SetReplicateMovement(false);
 }
 
 // Called when the game starts or when spawned
@@ -55,7 +52,11 @@ void AWeaponBase::InitFromData(UWeaponData* InData)
 	Data = InData;
 	if (Data && Data->Mesh)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("WeaponBase InitFromData: Setting Mesh"));
 		WeaponMesh->SetSkeletalMesh(Data->Mesh);
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("WeaponBase InitFromData: Invalid Data or Mesh"));
 	}
 }
 

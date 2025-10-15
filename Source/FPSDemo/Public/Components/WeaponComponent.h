@@ -9,6 +9,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Game/GameManager.h"
 #include "Structs/WeaponRuntimeData.h"
+#include "GameConstants.h"
 #include "WeaponComponent.generated.h"
 
 class UInventoryComponent;
@@ -53,6 +54,11 @@ protected:
 	UInventoryComponent* InventoryComp;
 
 	FWeaponRuntimeData CurrentWeaponData;
+
+	bool bIsInitialized = false;
+
+
+	void InitState();
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -93,6 +99,6 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(int32 InventoryId);
-	const int32 INVENTORY_ID_NONE = -1;
 	void OnUpdateCurrentWeaponData();
+	void EquipSlot(int32 SlotIndex);
 };

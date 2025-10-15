@@ -3,6 +3,9 @@
 
 #include "Components/InventoryComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "GameConstants.h"
+#include "Items/ItemIds.h"
+#include "Weapons/WeaponData.h"
 
 // Sets default values for this component's properties
 UInventoryComponent::UInventoryComponent()
@@ -10,7 +13,6 @@ UInventoryComponent::UInventoryComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
 	SetIsReplicated(true);
 }
 
@@ -18,11 +20,42 @@ UInventoryComponent::UInventoryComponent()
 // Called when the game starts
 void UInventoryComponent::BeginPlay()
 {
+	GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
 	Super::BeginPlay();
+	GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+		{
+			InitState();
+		});
 
-	// ...
-	
+	// Default slot melee weapon
+	if (GetOwnerRole() == ROLE_Authority)
+	{
+		FInventoryItem MeleeItem;
+		MeleeItem.ItemId = EItemId::MELEE_KNIFE_BASIC;
+		MeleeItem.Count = 1;
+		MeleeItem.InventoryId = IdCounter++;
+		MeleeItem.AmmoInMag = 0;
+		Items.Add(MeleeItem);
+	}
+	//FInventoryItem MeleeItem;
+	//MeleeItem.ItemId = EItemId::MELEE_KNIFE_BASIC;
+	//MeleeItem.Count = 1;
+	//MeleeItem.InventoryId = IdCounter++;
+	//MeleeItem.AmmoInMag = 0;
+	//Items.Add(MeleeItem);
 }
+
+void UInventoryComponent::InitState() {
+	if (GetOwnerRole() == ROLE_Authority)
+	{
+		
+	}
+	else
+	{
+		OnRep_Items();
+	}
+}
+
 
 
 // Called every frame
@@ -80,4 +113,46 @@ void UInventoryComponent::RemoveItemByInventoryId(int32 InventoryId)
 		}
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Item with InventoryId %d not found in inventory."), InventoryId);
+}
+
+int32 UInventoryComponent::GetInventoryIdBySlot(int32 Slot){
+	if (SlotMap.Contains(Slot)) {
+		return SlotMap[Slot];
+	}
+
+	return FGameConstants::INVENTORY_ID_NONE; // Not found
+}
+
+void UInventoryComponent::OnRep_Items()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Inventory updated, new count: %d"), Items.Num());
+	// Refresh UI or rebuild slot map here
+
+	if (SlotMap.Contains(FGameConstants::SLOT_MELEE)) {
+		int32 OldMeleeId = SlotMap[FGameConstants::SLOT_MELEE];
+		if (GetItemByInventoryId(OldMeleeId) == nullptr) {
+			SlotMap.Remove(FGameConstants::SLOT_MELEE);
+		}
+	}
+	
+	if (!SlotMap.Contains(FGameConstants::SLOT_MELEE)) {
+		// Assign first melee weapon found to melee slot
+		for (const FInventoryItem& Item : Items) {
+			if (GMR) {
+				const UItemData* ItemData = GMR->GetItemDataById(Item.ItemId);
+				UE_LOG(LogTemp, Warning, TEXT("Checking item InventoryId %d for melee assignment. %d"), Item.InventoryId, Item.ItemId);
+	
+				if (ItemData && ItemData->IsA(UWeaponData::StaticClass())) {
+					// log debug
+					UE_LOG(LogTemp, Warning, TEXT("ItemData found for InventoryId %d, checking weapon type."), Item.InventoryId);
+					const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
+					if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Melee) {
+						UE_LOG(LogTemp, Warning, TEXT("Assigning melee weapon InventoryId %d to melee slot."), Item.InventoryId);
+						SlotMap.Add(FGameConstants::SLOT_MELEE, Item.InventoryId);
+						break;
+					}
+				}
+			}
+		}
+	}
 }

@@ -6,6 +6,8 @@
 #include "Weapons/WeaponDataManager.h"
 #include "Weapons/WeaponFirearm.h"
 #include "Characters/PlayerCharacter.h"
+#include "Weapons/WeaponMelee.h"
+
 
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
@@ -13,7 +15,8 @@ UWeaponComponent::UWeaponComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-    CurrentInventoryId = UWeaponComponent::INVENTORY_ID_NONE;
+    CurrentInventoryId = FGameConstants::INVENTORY_ID_NONE;
+	bIsInitialized = false;
 	SetIsReplicated(true);
 }
 
@@ -25,6 +28,25 @@ void UWeaponComponent::BeginPlay()
 
     GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
 	InventoryComp = GetOwner()->FindComponentByClass<UInventoryComponent>();
+
+	bIsInitialized = true;
+    EquipSlot(FGameConstants::SLOT_MELEE);
+
+    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+        {
+            InitState();
+        });
+}
+
+void UWeaponComponent::InitState() {
+    if (GetOwnerRole() == ROLE_Authority)
+    {
+
+    }
+    else
+    {
+        OnRep_CurrentInventoryId();
+    }
 }
 
 
@@ -51,13 +73,27 @@ void UWeaponComponent::EquipWeapon(int32 InventoryId)
 
 void UWeaponComponent::ServerEquipWeapon_Implementation(int32 InventoryId)
 {
+    if (InventoryId == CurrentInventoryId) {
+		return; // already equipped
+    }
+	// check if user has this item in inventory
+    if (!InventoryComp) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerEquipWeapon_Implementation: Inventory component not found"));
+        return;
+	}
+	FInventoryItem* Item = InventoryComp->GetItemByInventoryId(InventoryId);
+    if (!Item) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerEquipWeapon_Implementation: Item with InventoryId %d not found in inventory"), InventoryId);
+        return;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("ServerEquipWeapon_Implementation called withaaaa InventoryId: %d"), InventoryId);
     CurrentInventoryId = InventoryId;
     OnUpdateCurrentWeaponData();
 }
 
 void UWeaponComponent::OnUpdateCurrentWeaponData() {
-    if (CurrentInventoryId == UWeaponComponent::INVENTORY_ID_NONE) {
+    if (CurrentInventoryId == FGameConstants::INVENTORY_ID_NONE) {
         CurrentWeaponData.WeaponData = nullptr;
         return;
 	}
@@ -69,10 +105,13 @@ void UWeaponComponent::OnUpdateCurrentWeaponData() {
 // Client function, handles weapon spawning and attaching
 void UWeaponComponent::OnRep_CurrentInventoryId()
 {
+    if (!bIsInitialized) {
+		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId called before initialization"));
+		return;
+	}
     OnUpdateCurrentWeaponData();
-    UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId called with"));
 	// Gen new Weapon based on InventoryId
-    if (CurrentInventoryId == UWeaponComponent::INVENTORY_ID_NONE) {
+    if (CurrentInventoryId == FGameConstants::INVENTORY_ID_NONE) {
 		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Invalid InventoryId"));
         return;
 	}
@@ -85,18 +124,8 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
 	// debug ,print size inventory
 	int32 x = InventoryComp->GetItemCount();
     UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Inventory has %d items"), x);
- 
-	FInventoryItem* Item = InventoryComp->GetItemByInventoryId(CurrentInventoryId);
-	if (!Item) {
-		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Item not found in inventory"));
-		return;
-	}
 
-	UWeaponData* WeaponData = Cast<UWeaponData>(GMR->GetItemDataById(Item->ItemId));
-	if (!WeaponData) {
-		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Weapon data not found for ItemId %d"), (int32)Item->ItemId);
-		return;
-	}
+	UWeaponData* WeaponData = CurrentWeaponData.WeaponData;
 	FActorSpawnParameters Params;
 	Params.Owner = GetOwner();
 	Params.Instigator = Cast<APawn>(GetOwner());
@@ -109,6 +138,14 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
 			FRotator::ZeroRotator,
 			Params
 		);
+	}
+	else if (WeaponData->WeaponType == EWeaponTypes::Melee) {
+        // Handle Melee weapon spawning
+        NewWeapon = GetWorld()->SpawnActor<AWeaponMelee>(
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            Params
+        );
 	}
 	else {
 		// Handle other weapon types (e.g., Melee)
@@ -152,6 +189,25 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
     );
 
     CurrentWeapon->SetActorRelativeLocation(offset);
+	CurrentWeapon->SetActorHiddenInGame(false);
+
+    // debug log, print socket name, is hideen, current fps
+    UE_LOG(LogTemp, Warning, TEXT("Equipped weapon %s | Hidden: %d | FPS: %d | Socket: %s"),
+        *CurrentWeapon->GetName(),
+        CurrentWeapon->IsHidden(),
+        bIsFPS,
+        *SocketName);
+    if (UWorld* World = GetWorld())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Worldxxx: %s | Scene: %s"),
+            *World->GetName(),
+            *World->GetMapName());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No valid world for %s"), *GetName());
+    }
+
 }
 
 void UWeaponComponent::OnNewItemPickup(int32 NewInventoryId) {
@@ -194,7 +250,7 @@ void UWeaponComponent::HandleDropWeapon() {
     }
 
 	// spawn new pickup item on map
-    FVector DropPoint = GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 100.f;
+	FVector DropPoint = GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 300.f + FVector(0.f, 0.f, 100.f);
     FPickupData Data;
 	Data.Location = DropPoint;
 	Data.Amount = 1;
@@ -203,7 +259,7 @@ void UWeaponComponent::HandleDropWeapon() {
     GMR->OnNewItemDataSpawned({ Data });
 
     // Detach and spawn pickup
-    CurrentInventoryId = UWeaponComponent::INVENTORY_ID_NONE;
+    CurrentInventoryId = FGameConstants::INVENTORY_ID_NONE;
 	OnUpdateCurrentWeaponData();
 
 	MulticastDropWeapon(Data.Id, DropPoint);
@@ -216,7 +272,7 @@ void UWeaponComponent::MulticastDropWeapon_Implementation(int32 OnMapId, FVector
         // Throw it forward
         ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
         FVector ForwardVector = Character->GetActorForwardVector();
-        FVector LaunchVelocity = ForwardVector * 400.f + FVector(0.f, 0.f, 100.f);
+        FVector LaunchVelocity = ForwardVector * 300.f + FVector(0.f, 0.f, 100.f);
         //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
 
         // Spawn Pickup item
@@ -288,7 +344,7 @@ bool UWeaponComponent::CanShoot() {
     if (bIsReloading) {
         return false;
     }
-    if (CurrentInventoryId == UWeaponComponent::INVENTORY_ID_NONE) {
+    if (CurrentInventoryId == FGameConstants::INVENTORY_ID_NONE) {
         return false;
     }
     return true;
@@ -391,3 +447,14 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(UWeaponComponent, CurrentInventoryId);
 }
 
+// Clients press 1, 2, 3 to equip weapon in that slot
+void UWeaponComponent::EquipSlot(int32 SlotIndex)
+{
+    int32 InventoryId = InventoryComp->GetInventoryIdBySlot(SlotIndex);
+	UE_LOG(LogTemp, Warning, TEXT("EquipSlot called for slot %d, found InventoryId %d"), SlotIndex, InventoryId);
+
+    if (InventoryId != FGameConstants::INVENTORY_ID_NONE)
+    {
+        EquipWeapon(InventoryId);
+    }
+}

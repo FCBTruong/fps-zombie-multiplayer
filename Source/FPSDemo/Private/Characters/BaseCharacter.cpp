@@ -8,6 +8,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Weapons/WeaponKnifeBasic.h"
 #include "Kismet/GameplayStatics.h"
+#include "Structs/InventoryItem.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -140,19 +141,19 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         }
         if (IA_SELECT_FIRST_RIFLE)
         {
-            //EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_RIFLE_1);
+            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_RIFLE_GUN_1);
 		}
         if (IA_SELECT_SECOND_RIFLE)
         {
-            //EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_RIFLE_2);
+            EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_RIFLE_GUN_2);
         }
         if (IA_SELECT_MELEE)
         {
-            //EIC->BindAction(IA_SELECT_MELEE, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_MELEE);
+            EIC->BindAction(IA_SELECT_MELEE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_MELEE);
         }
         if (IA_SELECT_PISTOL)
         {
-            //EIC->BindAction(IA_SELECT_PISTOL, ETriggerEvent::Started, this, &ABaseCharacter::EquipSlot, SLOT_PISTOL);
+            EIC->BindAction(IA_SELECT_PISTOL, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_PISTOL);
         }
         if (IA_DROP_WEAPON)
         {

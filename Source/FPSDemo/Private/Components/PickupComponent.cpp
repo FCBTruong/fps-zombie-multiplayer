@@ -70,8 +70,9 @@ void UPickupComponent::HandlePickupItem(int32 ItemOnMapId) {
 	// Check if player nearby or not
 	FVector ItemLocation = PickupData.Location;
 	FVector PlayerLocation = GetOwner()->GetActorLocation();
-	float Distance = FVector::Dist(ItemLocation, PlayerLocation);
-	if (Distance > 300.f) {
+	float Distance = FVector::Dist2D(ItemLocation, PlayerLocation);
+
+	if (Distance > 500.f) {
 		UE_LOG(LogTemp, Warning, TEXT("Player is too far to pick up the item. Distance: %f"), Distance);
 		return;
 	}

@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "Items/ItemData.h"
 #include "Structs/InventoryItem.h"
+#include "Game/GameManager.h"
 #include "InventoryComponent.generated.h"
 
 
@@ -17,8 +18,11 @@ class FPSDEMO_API UInventoryComponent : public UActorComponent
 private:
 	int32 IdCounter = 1000;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_Items)
 	TArray<FInventoryItem> Items;
+
+	UGameManager* GMR;
+	TMap<int32, int32> SlotMap; // Slot -> InventoryId
 public:	
 	// Sets default values for this component's properties
 	UInventoryComponent();
@@ -26,7 +30,9 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
+	UFUNCTION()
+	void OnRep_Items();
+	void InitState();
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -37,4 +43,5 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	int32 GetItemCount() const { return Items.Num(); }
 	void RemoveItemByInventoryId(int32 InventoryId);
+	int32 GetInventoryIdBySlot(int32 Slot);
 };

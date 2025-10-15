@@ -14,6 +14,7 @@ enum class EWeaponTypes : uint8
 UENUM(BlueprintType)
 enum class EWeaponSubTypes : uint8
 {
+	None	 UMETA(DisplayName = "None"),
 	Rifle     UMETA(DisplayName = "Rifle"),
 	Sniper       UMETA(DisplayName = "Sniper"),
 	Pistol		UMETA(DisplayName = "Pistol"),
