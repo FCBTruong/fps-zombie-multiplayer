@@ -15,7 +15,6 @@ ABaseCharacter::ABaseCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    bHoldingShoot = false;
     bCloseToWall = false;
     bReloading = false;
     bEquipped = false;
@@ -94,11 +93,6 @@ void ABaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     CrouchTimeline.TickTimeline(DeltaTime);
-
-    if (mesh) {
-        float HalfHeight = GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
-        mesh->SetRelativeLocation(FVector(0.f, 0.f, -HalfHeight));
-    }
 }
 
 // Called to bind functionality to input
@@ -171,51 +165,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
     }
 }
 
-void ABaseCharacter::StartFire()
-{
-    if (bHoldingShoot) {
-        return;
-    }
-
-    bHoldingShoot = true;
-    float timeBetweenShots = 0.2f; // Example value, adjust as needed
- 
-    switch (GetWeaponType())
-    {
-        case EWeaponTypes::Unarmed:
-            break;
-        case EWeaponTypes::Firearm:
-            UE_LOG(LogTemp, Warning, TEXT("Rifle Fire"));
-       
-            break;
-        case EWeaponTypes::Melee:
-            ServerFire();
-            UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
-            break;
-        case EWeaponTypes::Throwable:
-            UE_LOG(LogTemp, Warning, TEXT("Throw Grenade"));
-            break;
-    }
-}
-
-bool ABaseCharacter::CanShoot()
-{
-    if (IsRunning())   return false;
-    if (bCloseToWall) return false;
-    if (bReloading)   return false;
-    return true;
-}
-
 
 void ABaseCharacter::Move(const FInputActionValue& Value)
 {
     moveInput = Value.Get<FVector2D>();
-    if (bHoldingShift && moveInput.Y > 0.f) {
-        GetCharacterMovement()->MaxWalkSpeed = MAX_WALK_SPEED;
-    }
-    else {
-        GetCharacterMovement()->MaxWalkSpeed = NORMAL_WALK_SPEED;
-	}
 
     if (Controller)
     {
@@ -232,7 +185,7 @@ void ABaseCharacter::Move(const FInputActionValue& Value)
 
 void ABaseCharacter::StartRunning()
 {
-	bHoldingShift = true;
+	//bHoldingShift = true;
 }
 
 void ABaseCharacter::StopRunning()
@@ -289,16 +242,21 @@ void ABaseCharacter::CustomUnCrouch()
 
 void ABaseCharacter::ServerSetCrouching_Implementation(bool bNewCrouching)
 {
-    if (bNewCrouching && IsRunning()) StopRunning();
-    if (bCrouching == bNewCrouching) return;
+    if (bNewCrouching && IsRunning()) {
+        StopRunning();
+    }
+    if (bCrouching == bNewCrouching) {
+        return;
+    }
 
     bCrouching = bNewCrouching;
-    OnRep_Crouching(); // apply on server copy too
+    OnRep_Crouching(); // apply on server too
 }
 
 void ABaseCharacter::OnRep_Crouching()
 {
-    GetCharacterMovement()->MaxWalkSpeed = bCrouching ? CROUCH_WALK_SPEED : NORMAL_WALK_SPEED;
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_Crouching: %s"), bCrouching ? TEXT("true") : TEXT("false"));
+    GetCharacterMovement()->MaxWalkSpeed = bCrouching ? CROUCH_WALK_SPEED : GetSpeedWalkCurrently();
     if (bCrouching) {
         CrouchTimeline.PlayFromStart();
     }
@@ -309,9 +267,8 @@ void ABaseCharacter::OnRep_Crouching()
 
 void ABaseCharacter::HandleCrouchProgress(float Value) {
     GetCapsuleComponent()->SetCapsuleHalfHeight(Value);
-   /* if (mesh) {
-        mesh->SetRelativeLocation(FVector(0.f, 0.f, -Value));
-    }*/
+    BaseTranslationOffset.Z = -GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	mesh->SetRelativeLocation(BaseTranslationOffset);
 }
 
 
@@ -336,16 +293,6 @@ void ABaseCharacter::AddWeapon(AWeaponBase* NewWeapon)
 	
 }
 
-
-
-/*
-if (UAnimInstance* AnimInst = GetCurrentMesh()->GetAnimInstance())
-{
-    if (EquipMontage) // assign AM_FP_AssaultRifle_Equip in BP or constructor
-    {
-        AnimInst->Montage_Play(EquipMontage);
-    }
-}*/
 
 void ABaseCharacter::Look(const FInputActionValue& Value)
 {
@@ -430,32 +377,6 @@ USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh()
     }
 }
 
-void ABaseCharacter::ServerFire_Implementation()
-{
-    switch (GetWeaponType())
-    {
-        case EWeaponTypes::Unarmed:
-            break;
-        case EWeaponTypes::Firearm:
-            break;
-        case EWeaponTypes::Melee:
-            if (HasAuthority()) // only server makes changes
-            {
-                MulticastPlayFireMelee();
-            }
-            break;
-    }
-}
-
-void ABaseCharacter::MulticastPlayFireMelee_Implementation()
-{
-    if (FireMeleeMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
-    {
-        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireMeleeMontage);
-    }
-}
-
-
 void ABaseCharacter::Server_UpdateLookInput_Implementation(FVector2D NewLookInput)
 {
     LookInput = NewLookInput; 
@@ -470,6 +391,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     DOREPLIFETIME(ABaseCharacter, LookInput);
     DOREPLIFETIME(ABaseCharacter, bCrouching);
     DOREPLIFETIME(ABaseCharacter, bAiming);
+	DOREPLIFETIME(ABaseCharacter, SpeedWalkCurrently);
 }
 
 void ABaseCharacter::DropWeapon()
@@ -507,4 +429,30 @@ void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
 void ABaseCharacter::UpdateAimingState()
 {
    
+}
+
+void ABaseCharacter::PlayEquipWeaponAnimation(EWeaponTypes WeaponType)
+{
+    if (EquipMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+    {
+        GetCurrentMesh()->GetAnimInstance()->Montage_Play(EquipMontage);
+    }
+}
+
+float ABaseCharacter::GetSpeedWalkCurrently()
+{
+	return SpeedWalkCurrently;
+}
+
+// This function called on server to set new speed
+void ABaseCharacter::SetSpeedWalkCurrently(float NewSpeed)
+{
+    SpeedWalkCurrently = NewSpeed;
+    HandleUpdateSpeedWalkCurrently();
+}
+
+void ABaseCharacter::HandleUpdateSpeedWalkCurrently() {
+    if (!bCrouching) {
+        GetCharacterMovement()->MaxWalkSpeed = SpeedWalkCurrently;
+    }
 }

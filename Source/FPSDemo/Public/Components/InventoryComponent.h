@@ -18,6 +18,7 @@ class FPSDEMO_API UInventoryComponent : public UActorComponent
 private:
 	int32 IdCounter = 1000;
 
+	//UPROPERTY(ReplicatedUsing = OnRep_Items)
 	UPROPERTY(ReplicatedUsing = OnRep_Items)
 	TArray<FInventoryItem> Items;
 

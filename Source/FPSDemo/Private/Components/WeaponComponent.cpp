@@ -90,7 +90,25 @@ void UWeaponComponent::ServerEquipWeapon_Implementation(int32 InventoryId)
 	UE_LOG(LogTemp, Warning, TEXT("ServerEquipWeapon_Implementation called withaaaa InventoryId: %d"), InventoryId);
     CurrentInventoryId = InventoryId;
     OnUpdateCurrentWeaponData();
+
+	// update speed based on weapon
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (Character && CurrentWeaponData.WeaponData) {
+		// melee, rifle, pistol
+        float NewSpeed = ABaseCharacter::NORMAL_WALK_SPEED;
+
+		EWeaponTypes WeaType = CurrentWeaponData.WeaponData->WeaponType;
+        if (WeaType == EWeaponTypes::Firearm) {
+            NewSpeed = ABaseCharacter::NORMAL_WALK_SPEED;
+        }
+        else if (WeaType == EWeaponTypes::Melee) {
+            NewSpeed = ABaseCharacter::MELEE_WALK_SPEED;
+        }
+		Character->SetSpeedWalkCurrently(NewSpeed);
+	}
 }
+
+
 
 void UWeaponComponent::OnUpdateCurrentWeaponData() {
     if (CurrentInventoryId == FGameConstants::INVENTORY_ID_NONE) {
@@ -98,6 +116,17 @@ void UWeaponComponent::OnUpdateCurrentWeaponData() {
         return;
 	}
 	FInventoryItem* Item = InventoryComp->GetItemByInventoryId(CurrentInventoryId);
+
+    if (!Item) {
+        CurrentWeaponData.WeaponData = nullptr;
+        return;
+    }
+    if (!GMR) {
+        UE_LOG(LogTemp, Warning, TEXT("OnUpdateCurrentWeaponData: GameManager subsystem not found"));
+        CurrentWeaponData.WeaponData = nullptr;
+        return;
+	}
+
 	UWeaponData* WeaponData = Cast<UWeaponData>(GMR->GetItemDataById(Item->ItemId));
     CurrentWeaponData.WeaponData = WeaponData;
 }
@@ -126,6 +155,10 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
     UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Inventory has %d items"), x);
 
 	UWeaponData* WeaponData = CurrentWeaponData.WeaponData;
+    if (!WeaponData) {
+        UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentInventoryId: Weapon data not found for InventoryId %d"), CurrentInventoryId);
+        return;
+	}
 	FActorSpawnParameters Params;
 	Params.Owner = GetOwner();
 	Params.Instigator = Cast<APawn>(GetOwner());
@@ -189,7 +222,9 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
     );
 
     CurrentWeapon->SetActorRelativeLocation(offset);
-	CurrentWeapon->SetActorHiddenInGame(false);
+	
+	// Play holster animation
+	Character->PlayEquipWeaponAnimation(WeaType);
 
     // debug log, print socket name, is hideen, current fps
     UE_LOG(LogTemp, Warning, TEXT("Equipped weapon %s | Hidden: %d | FPS: %d | Socket: %s"),
@@ -244,6 +279,16 @@ void UWeaponComponent::ServerDropWeapon_Implementation() {
 
 // Server function
 void UWeaponComponent::HandleDropWeapon() {
+	if (CurrentInventoryId == FGameConstants::INVENTORY_ID_NONE) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: No weapon to drop"));
+        return;
+	}
+    // Can not drop meleee
+    if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Melee) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: Can not drop melee weapon"));
+        return;
+	}
+
 	// Remove from inventory
     if (InventoryComp) {
         InventoryComp->RemoveItemByInventoryId(CurrentInventoryId);

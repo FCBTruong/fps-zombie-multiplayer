@@ -36,8 +36,6 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     float Health = 100.f;
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bHoldingShoot = false;
 
     UPROPERTY(BlueprintReadWrite, Category = "State")
     bool bCloseToWall = false;
@@ -57,6 +55,7 @@ public:
     UPROPERTY(ReplicatedUsing = OnRep_IsAiming, BlueprintReadOnly, Category = "State")
     bool bAiming = false;
 
+    UPROPERTY()
 	bool bHoldingShift = false;
 
 
@@ -76,6 +75,10 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
     UPlayerUI* PlayerUI;
 protected:
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+	float SpeedWalkCurrently = NORMAL_WALK_SPEED;
+
+
     // Enhanced Input assets to assign in Editor
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_Movement;
@@ -147,9 +150,6 @@ protected:
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
     // Input handlers
-    void StartFire();
-	void StopFire();
-    bool CanShoot();
     void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
     void StartRunning();
@@ -164,11 +164,6 @@ protected:
 	void UpdateView();
     UFUNCTION(BlueprintPure)
     EWeaponTypes GetWeaponType();
-	
- 
-	// Server functions
-    UFUNCTION(Server, Reliable)
-    void ServerFire();
   
     UFUNCTION(Server, Reliable)
     void Server_UpdateLookInput(FVector2D NewLookInput);
@@ -180,9 +175,6 @@ protected:
 	void OnRep_Crouching();
     void UpdateAttachLocationWeapon();
     void DropWeapon();
-
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastPlayFireMelee();
 
     UFUNCTION(Server, Reliable)
     void ServerSetAiming(bool bNewAiming);
@@ -196,6 +188,7 @@ public:
     virtual void Tick(float DeltaTime) override;
     static constexpr float MAX_WALK_SPEED = 600.f;
     static constexpr float NORMAL_WALK_SPEED = 400.f;
+    static constexpr float MELEE_WALK_SPEED = 500.f;
     static constexpr float CROUCH_WALK_SPEED = 200.f;
     void AddWeapon(AWeaponBase* weapon);
     FORCEINLINE UPickupComponent* GetPickupComponent() const {
@@ -213,4 +206,8 @@ public:
     virtual void ClickAim();
     bool IsRunning();
 	bool IsFpsViewMode() const { return bIsFPS; }
+    void PlayEquipWeaponAnimation(EWeaponTypes WeaponType);
+	float GetSpeedWalkCurrently();
+    void SetSpeedWalkCurrently(float NewSpeed);
+	void HandleUpdateSpeedWalkCurrently();
 };

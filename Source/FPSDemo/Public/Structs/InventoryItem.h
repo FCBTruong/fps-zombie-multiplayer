@@ -10,12 +10,16 @@ USTRUCT(BlueprintType)
 struct FInventoryItem
 {
     GENERATED_BODY()
-
+    
+	UPROPERTY()
     EItemId ItemId = EItemId::NONE;
 
+	UPROPERTY()
     int32 Count = 0;
 
+    UPROPERTY()
     int32 InventoryId = -1;
 
+	UPROPERTY()
     int32 AmmoInMag = 0;
 };

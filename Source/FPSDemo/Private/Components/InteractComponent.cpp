@@ -45,7 +45,7 @@ void UInteractComponent::TraceForPickup()
 	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
 
 	FColor LineColor = bHit ? FColor::Red : FColor::Green;
-	DrawDebugLine(GetWorld(), Start, End, LineColor, false, 0.1f, 0, 1.f);
+	//DrawDebugLine(GetWorld(), Start, End, LineColor, false, 0.1f, 0, 1.f);
 
 	APickupItem* NewPickup = bHit ? Cast<APickupItem>(Hit.GetActor()) : nullptr;
 	if (NewPickup != FocusedPickup)
