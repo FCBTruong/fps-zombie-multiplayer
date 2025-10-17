@@ -10,9 +10,11 @@
 #include "Game/GameManager.h"
 #include "Structs/WeaponRuntimeData.h"
 #include "GameConstants.h"
+#include "Components/SplineComponent.h"
 #include "WeaponComponent.generated.h"
 
 class UInventoryComponent;
+class ABaseCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponComponent : public UActorComponent
@@ -57,7 +59,17 @@ protected:
 
 	bool bIsInitialized = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throw")
+	TSubclassOf<AActor> BP_TrajectoryPreviewClass;
+	UPROPERTY()
+	AActor* TrajectoryPreviewRef;
+	UPROPERTY()
+	FTimerHandle ThrowProjectileTimer;
+	
+	float ThrowAngle = 30.f;
+	float GrenadeInitSpeed = 1000.f;
 
+	ABaseCharacter* Character;
 	void InitState();
 public:	
 	// Called every frame
@@ -70,15 +82,15 @@ public:
 	void DropWeapon();
 	void RequestFireStart();
 
-	UFUNCTION(Server, Reliable)
-	void ServerStartFire();
+	
 	void RequestFireStop();
 	UFUNCTION(Server, Reliable)
-	void ServerStopFire();
+	void ServerOnFire(FVector TargetPoint);
 
 	void HandleStartFire();
 	void HandleStopFire();
 	void OnFire();
+	void HandleOnFire(FVector TargetPoint);
 	void StartAiming();
 	void StartReload();
 	bool CanShoot();
@@ -101,4 +113,13 @@ public:
 	void ServerEquipWeapon(int32 InventoryId);
 	void OnUpdateCurrentWeaponData();
 	void EquipSlot(int32 SlotIndex);
+
+	UFUNCTION()
+	void DrawProjectileCurve();
+
+	UFUNCTION()
+	void UpdateProjectileCurve();
+
+	UFUNCTION()
+	FVector GetVelocityGrenade() const;
 };

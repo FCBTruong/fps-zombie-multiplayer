@@ -4,13 +4,14 @@
 #include "Pickup/PickupItem.h"
 #include "Weapons/WeaponDataManager.h"
 #include "Characters/BaseCharacter.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 // Sets default values
 APickupItem::APickupItem()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	ItemMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ItemMesh"));
+	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
 	RootComponent = ItemMesh;
 
 	ItemMesh->SetCollisionProfileName(TEXT("PhysicsActor"));
@@ -28,6 +29,7 @@ APickupItem::APickupItem()
 
 	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &APickupItem::OnOverlapBegin);*/
 	UE_LOG(LogTemp, Warning, TEXT("PickupItem BeginPlay called"));
+	SetActorTickEnabled(false);
 }
 
 
@@ -58,9 +60,9 @@ void APickupItem::SetData(const FPickupData& NewData)
 
     // local variable
     UWeaponData* WeaponData = WeaponDataMgr->GetWeaponById(Data.ItemId);
-    if (WeaponData && WeaponData->Mesh && ItemMesh)
+    if (WeaponData && WeaponData->StaticMesh && ItemMesh)
     {
-        ItemMesh->SetSkeletalMesh(WeaponData->Mesh);
+        ItemMesh->SetStaticMesh(WeaponData->StaticMesh);
     }
 }
 

@@ -13,4 +13,5 @@ enum class EItemId : uint8
     RIFLE_M4_CARBINE,
     RIFLE_RUSSIAN_AS_VAL,
 	MELEE_KNIFE_BASIC,
+    GRENADE_FRAG_BASIC
 };

@@ -7,6 +7,8 @@
 #include "Weapons/WeaponFirearm.h"
 #include "Characters/PlayerCharacter.h"
 #include "Weapons/WeaponMelee.h"
+#include "Weapons/WeaponThrowable.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values for this component's properties
@@ -18,6 +20,13 @@ UWeaponComponent::UWeaponComponent()
     CurrentInventoryId = FGameConstants::INVENTORY_ID_NONE;
 	bIsInitialized = false;
 	SetIsReplicated(true);
+
+    static ConstructorHelpers::FClassFinder<AActor> TrajectoryPreviewBP(
+        TEXT("/Game/Main/BP_Trajectory_Preview.BP_Trajectory_Preview_C"));
+    if (TrajectoryPreviewBP.Succeeded())
+    {
+        BP_TrajectoryPreviewClass = TrajectoryPreviewBP.Class;
+    }
 }
 
 
@@ -28,6 +37,7 @@ void UWeaponComponent::BeginPlay()
 
     GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
 	InventoryComp = GetOwner()->FindComponentByClass<UInventoryComponent>();
+    Character = Cast<ABaseCharacter>(GetOwner());
 
 	bIsInitialized = true;
     EquipSlot(FGameConstants::SLOT_MELEE);
@@ -92,7 +102,6 @@ void UWeaponComponent::ServerEquipWeapon_Implementation(int32 InventoryId)
     OnUpdateCurrentWeaponData();
 
 	// update speed based on weapon
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (Character && CurrentWeaponData.WeaponData) {
 		// melee, rifle, pistol
         float NewSpeed = ABaseCharacter::NORMAL_WALK_SPEED;
@@ -180,8 +189,12 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
             Params
         );
 	}
-	else {
-		// Handle other weapon types (e.g., Melee)
+	else if (WeaponData->WeaponType == EWeaponTypes::Throwable) {
+        NewWeapon = GetWorld()->SpawnActor<AWeaponThrowable>(
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            Params
+        );
 	}
 
 	if (!NewWeapon) {
@@ -201,7 +214,6 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
 
     FVector offset = FVector(0.f, 0.f, 0.f);
     FString SocketName = "ik_hand_gun";
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     bool bIsFPS = Character->IsFpsViewMode();
     if (WeaType == EWeaponTypes::Firearm) {
         if (bIsFPS) {
@@ -214,6 +226,9 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
     }
     else if (WeaType == EWeaponTypes::Melee) {
         SocketName = "melee_socket";
+    }
+    else if (WeaType == EWeaponTypes::Throwable) {
+		SocketName = "throwable_socket";
     }
 
     CurrentWeapon->AttachToComponent(Character->GetCurrentMesh(),
@@ -315,7 +330,6 @@ void UWeaponComponent::MulticastDropWeapon_Implementation(int32 OnMapId, FVector
         CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
         // Throw it forward
-        ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
         FVector ForwardVector = Character->GetActorForwardVector();
         FVector LaunchVelocity = ForwardVector * 300.f + FVector(0.f, 0.f, 100.f);
         //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
@@ -336,6 +350,11 @@ void UWeaponComponent::MulticastDropWeapon_Implementation(int32 OnMapId, FVector
 
             Pickup->SetData(Data);
             Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
+            Pickup->GetItemMesh()->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+            Pickup->GetItemMesh()->SetEnableGravity(true);
+            Pickup->GetItemMesh()->SetLinearDamping(0.8f);
+            Pickup->GetItemMesh()->SetAngularDamping(0.8f);
+            Pickup->GetItemMesh()->SetPhysicsMaxAngularVelocityInDegrees(720.f);
 
 			// add pickup data to game state due to server will not update for clients
 			GMR->OnNewItemDataSpawned({ Data });
@@ -347,18 +366,10 @@ void UWeaponComponent::MulticastDropWeapon_Implementation(int32 OnMapId, FVector
 }
 
 void UWeaponComponent::RequestFireStart() {
-    if (!GetOwner()->HasAuthority()) {
-        ServerStartFire();
-        return;
-    }
     HandleStartFire();
 }
 
 void UWeaponComponent::RequestFireStop() {
-    if (!GetOwner()->HasAuthority()) {
-        ServerStopFire();
-        return;
-	}
 	HandleStopFire();
 }
 
@@ -368,21 +379,11 @@ void UWeaponComponent::StartReload() {
     }
 }
 
-void UWeaponComponent::ServerStartFire_Implementation() {
-	UE_LOG(LogTemp, Warning, TEXT("ServerStartFire called"));
-	HandleStartFire();
-}
-
-void UWeaponComponent::ServerStopFire_Implementation() {
-	HandleStopFire();
-}
-
 void UWeaponComponent::StartAiming() {
     bIsAiming = true;
 }
 
 bool UWeaponComponent::CanShoot() {
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (Character->IsRunning()) {
 		return false;
     }
@@ -396,13 +397,32 @@ bool UWeaponComponent::CanShoot() {
 }
 
 void UWeaponComponent::HandleStartFire() {
-    if (CanShoot()) {
-        bIsFiring = true;
-        float timeBetweenShots = 0.2f; // Example value, adjust as needed
+    if (CurrentWeaponData.WeaponData == nullptr) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleStartFire: No weapon equipped"));
+        return;
+	}
 
-        OnFire();
-        GetOwner()->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UWeaponComponent::OnFire, timeBetweenShots, true);
+    // is fire arm
+    if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Firearm) {
+        if (CanShoot()) {
+            bIsFiring = true;
+            float timeBetweenShots = 0.2f; // Example value, adjust as needed
+
+            OnFire();
+            GetOwner()->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UWeaponComponent::OnFire, timeBetweenShots, true);
+        }
     }
+    else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Melee) {
+        // Handle melee attack
+        OnFire();
+    }
+    else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Melee) {
+        // Handle throwable attack
+        OnFire();
+	}
+    else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Throwable) {
+		DrawProjectileCurve();
+	}
 }
 
 void UWeaponComponent::HandleStopFire() {
@@ -412,10 +432,9 @@ void UWeaponComponent::HandleStopFire() {
 	}
 }
 
-// Server function
+// Client function, Client detects hit point and sends to server
 void UWeaponComponent::OnFire() {
 	UE_LOG(LogTemp, Warning, TEXT("OnFire: called"));
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (Character) {
         FVector CameraLocation;
         FRotator CameraRotation;
@@ -438,12 +457,45 @@ void UWeaponComponent::OnFire() {
 
         FVector TargetPoint = bHit ? Hit.ImpactPoint : TraceEnd;
            
-        /*PlayEffectFire(TargetPoint);*/
-        if (GetOwner()->HasAuthority()) // only server makes changes
+		ServerOnFire(TargetPoint);
+    }
+}
+
+void UWeaponComponent::ServerOnFire_Implementation(FVector TargetPoint) {
+	HandleOnFire(TargetPoint);
+}
+
+
+// Server function
+void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
+    if (GetOwner()->HasAuthority()) // only server makes changes
+    {
+        if (!Character) return;
+
+        // start from head or eyes
+        FVector Start = Character->GetPawnViewLocation();
+        FVector End = TargetPoint;
+
+        FHitResult Hit;
+        FCollisionQueryParams Params;
+        Params.AddIgnoredActor(Character);
+
+        bool bHit = GetWorld()->LineTraceSingleByChannel(
+            Hit, Start, End, ECC_Visibility, Params
+        );
+
+		float Damage = 25.f; // Example damage value
+        if (bHit && Damage > 0.f)
         {
-			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server calling MulticastPlayFireRifle"));
-            MulticastPlayFireRifle(TargetPoint);
+			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applying damage to %s"), *Hit.GetActor()->GetName());
+            UGameplayStatics::ApplyDamage(
+                Hit.GetActor(), Damage, Character->GetController(),
+                Character, UDamageType::StaticClass()
+            );
         }
+
+        UE_LOG(LogTemp, Warning, TEXT("OnFire: Server calling MulticastPlayFireRifle"));
+        MulticastPlayFireRifle(TargetPoint);
     }
 }
 
@@ -503,3 +555,69 @@ void UWeaponComponent::EquipSlot(int32 SlotIndex)
         EquipWeapon(InventoryId);
     }
 }
+
+void UWeaponComponent::DrawProjectileCurve()
+{
+	UE_LOG(LogTemp, Warning, TEXT("DrawProjectileCurve called"));
+    GetOwner()->GetWorldTimerManager().SetTimer(
+        ThrowProjectileTimer,
+        this,
+        &UWeaponComponent::UpdateProjectileCurve,
+        0.03f,
+        true
+    );
+
+    TrajectoryPreviewRef = GetWorld()->SpawnActor<AActor>(
+        BP_TrajectoryPreviewClass,
+        FVector::ZeroVector,
+        FRotator::ZeroRotator
+    );
+}
+
+void UWeaponComponent::UpdateProjectileCurve()
+{
+    if (!Character || !Character->ThrowSpline)
+    {
+        return;
+	}
+    FVector StartPos = Character->GetMesh()->GetSocketLocation(TEXT("throwable_socket"));;
+    FVector LaunchVelocity = GetVelocityGrenade();
+
+    FPredictProjectilePathParams Params;
+    Params.StartLocation = StartPos;
+    Params.LaunchVelocity = LaunchVelocity;
+    Params.ProjectileRadius = 0.0f;
+    Params.TraceChannel = ECC_WorldDynamic;
+    Params.bTraceComplex = true;
+    Params.MaxSimTime = 2.0f;
+    Params.SimFrequency = 15.0f;
+    Params.DrawDebugTime = 0.0f;
+    Params.DrawDebugType = EDrawDebugTrace::None;
+    Params.OverrideGravityZ = 0.0f;
+    Params.ActorsToIgnore.Add(Character);
+
+    FPredictProjectilePathResult Result;
+    UGameplayStatics::PredictProjectilePath(this, Params, Result);
+
+    Character->ThrowSpline->ClearSplinePoints();
+
+    for (const FPredictProjectilePathPointData& Point : Result.PathData)
+    {
+        Character->ThrowSpline->AddSplinePoint(Point.Location, ESplineCoordinateSpace::World);
+    }
+}
+
+FVector UWeaponComponent::GetVelocityGrenade() const
+{
+    FRotator ControlRot = Character->GetControlRotation();
+
+    // Add pitch offset (ThrowAngle is a float variable you define)
+    FRotator ThrowRot = FRotator(ControlRot.Pitch + ThrowAngle, ControlRot.Yaw, ControlRot.Roll);
+
+    // Convert to forward vector
+    FVector Forward = ThrowRot.Vector();
+
+    // Multiply by initial grenade speed (float variable)
+    return Forward * GrenadeInitSpeed;
+}
+

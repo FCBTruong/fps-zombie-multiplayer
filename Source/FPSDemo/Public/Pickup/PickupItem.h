@@ -20,7 +20,7 @@ public:
 private:
 	FPickupData Data;
 	UPROPERTY()
-	USkeletalMeshComponent* ItemMesh;
+	UStaticMeshComponent* ItemMesh;
 	UPROPERTY()
 	USphereComponent* PickupSphere;
 
@@ -39,5 +39,5 @@ public:
 		bool bFromSweep, const FHitResult& SweepResult);
 
 	FORCEINLINE FPickupData GetData() const { return Data; }
-	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const { return ItemMesh; }
+	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
 };

@@ -84,12 +84,6 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
         UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionFX, Hit.ImpactPoint);
     }
 
-    // apply damage
-    if (Damage > 0.f)
-    {
-        UGameplayStatics::ApplyDamage(OtherActor, Damage, GetInstigatorController(),
-            this, UDamageType::StaticClass());
-    }
 
     // spawn decal
     if (HitDecal) {

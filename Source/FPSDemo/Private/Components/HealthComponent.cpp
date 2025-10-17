@@ -32,3 +32,8 @@ void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
+void UHealthComponent::ApplyDamage(float DamageAmount)
+{
+	// Implement damage application logic here
+}
+

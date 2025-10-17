@@ -16,6 +16,7 @@
 #include "Components/TimelineComponent.h"
 #include "Components/InteractComponent.h"
 #include "UI/PlayerUI.h"
+#include "Components/HealthComponent.h"
 #include "BaseCharacter.generated.h"
 
 UCLASS()
@@ -31,11 +32,10 @@ protected:
     UInteractComponent* InteractComp;
 
     UWeaponComponent* WeaponComp;
+
+	UHealthComponent* HealthComp;
 public:
     ABaseCharacter();
-
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
-    float Health = 100.f;
 
     UPROPERTY(BlueprintReadWrite, Category = "State")
     bool bCloseToWall = false;
@@ -74,10 +74,14 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
     UPlayerUI* PlayerUI;
-protected:
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
-	float SpeedWalkCurrently = NORMAL_WALK_SPEED;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Throw")
+    USplineComponent* ThrowSpline;
+protected:
+    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRepSpeedWalkCurrently, Category = "Data")
+	float SpeedWalkCurrently = NORMAL_WALK_SPEED;
+    UFUNCTION()
+	void OnRepSpeedWalkCurrently();
 
     // Enhanced Input assets to assign in Editor
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -210,4 +214,10 @@ public:
 	float GetSpeedWalkCurrently();
     void SetSpeedWalkCurrently(float NewSpeed);
 	void HandleUpdateSpeedWalkCurrently();
+    virtual float TakeDamage(
+        float DamageAmount,
+        struct FDamageEvent const& DamageEvent,
+        class AController* EventInstigator,
+        class AActor* DamageCauser
+    ) override;
 };

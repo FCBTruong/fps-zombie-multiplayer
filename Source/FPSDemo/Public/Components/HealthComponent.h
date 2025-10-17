@@ -12,6 +12,9 @@ class FPSDEMO_API UHealthComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+private:
+	float Health;
+	float MaxHealth;
 public:	
 	// Sets default values for this component's properties
 	UHealthComponent();
@@ -24,5 +27,6 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	void ApplyDamage(float DamageAmount);
 		
 };

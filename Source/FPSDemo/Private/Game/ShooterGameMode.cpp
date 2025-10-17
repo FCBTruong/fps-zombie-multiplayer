@@ -27,7 +27,7 @@ void AShooterGameMode::StartPlay()
     float RangeX = 5000.f;
     float RangeY = 5000.f;
     TArray<FPickupData> ItemArray;
-    for (int32 i = 0; i < 20; i++)
+    for (int32 i = 0; i < 50; i++)
     {
         float RandX = FMath::FRandRange(-RangeX, RangeX);
         float RandY = FMath::FRandRange(-RangeY, RangeY);

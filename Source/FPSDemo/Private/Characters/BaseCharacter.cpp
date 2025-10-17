@@ -23,6 +23,9 @@ ABaseCharacter::ABaseCharacter()
     InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
     WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
     InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
+	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+
+    ThrowSpline = CreateDefaultSubobject<USplineComponent>(TEXT("SplineThrow"));
 
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter constructor called"));
 
@@ -68,24 +71,7 @@ void ABaseCharacter::BeginPlay()
 
     UpdateView();
 
-    if (KnifeClass)
-    {
-        FActorSpawnParameters Params;
-        Params.Owner = this;
-        Params.Instigator = GetInstigator();
-
-        AWeaponBase* Knife = GetWorld()->SpawnActor<AWeaponBase>(
-            KnifeClass,
-            FVector::ZeroVector,
-            FRotator::ZeroRotator,
-            Params
-        );
-
-        if (Knife)
-        {
-          
-        }
-    }
+    GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 }
 
 // Called every frame
@@ -455,4 +441,16 @@ void ABaseCharacter::HandleUpdateSpeedWalkCurrently() {
     if (!bCrouching) {
         GetCharacterMovement()->MaxWalkSpeed = SpeedWalkCurrently;
     }
+}
+
+void ABaseCharacter::OnRepSpeedWalkCurrently()
+{
+    HandleUpdateSpeedWalkCurrently();
+}
+
+float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
+    AController* EventInstigator, AActor* DamageCauser)
+{
+    HealthComp->ApplyDamage(DamageAmount);
+    return DamageAmount;
 }
