@@ -26,6 +26,7 @@ ABaseCharacter::ABaseCharacter()
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 
     ThrowSpline = CreateDefaultSubobject<USplineComponent>(TEXT("SplineThrow"));
+    ThrowSpline->SetupAttachment(RootComponent);
 
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter constructor called"));
 

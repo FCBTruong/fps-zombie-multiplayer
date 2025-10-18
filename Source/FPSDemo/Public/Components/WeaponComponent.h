@@ -11,6 +11,7 @@
 #include "Structs/WeaponRuntimeData.h"
 #include "GameConstants.h"
 #include "Components/SplineComponent.h"
+#include "Projectiles/TrajectoryPreview.h"
 #include "WeaponComponent.generated.h"
 
 class UInventoryComponent;
@@ -59,10 +60,8 @@ protected:
 
 	bool bIsInitialized = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throw")
-	TSubclassOf<AActor> BP_TrajectoryPreviewClass;
 	UPROPERTY()
-	AActor* TrajectoryPreviewRef;
+	ATrajectoryPreview* TrajectoryPreviewRef;
 	UPROPERTY()
 	FTimerHandle ThrowProjectileTimer;
 	

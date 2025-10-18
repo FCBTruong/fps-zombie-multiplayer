@@ -6,6 +6,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Pickup/PickupData.h"
 #include "Items/ItemData.h"
+#include "Game/GlobalDataAsset.h"
 #include "GameManager.generated.h"
 
 /**
@@ -28,4 +29,7 @@ public:
 	void OnNewItemDataSpawned(const TArray<FPickupData>& Items);
 	void OnNewItemNodeSpawned(AActor* Item, int32 OnMapId);
 	int32 GetNextItemOnMapId();
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+
+	UGlobalDataAsset* GlobalData;
 };

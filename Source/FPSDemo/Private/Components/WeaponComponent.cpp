@@ -20,13 +20,6 @@ UWeaponComponent::UWeaponComponent()
     CurrentInventoryId = FGameConstants::INVENTORY_ID_NONE;
 	bIsInitialized = false;
 	SetIsReplicated(true);
-
-    static ConstructorHelpers::FClassFinder<AActor> TrajectoryPreviewBP(
-        TEXT("/Game/Main/BP_Trajectory_Preview.BP_Trajectory_Preview_C"));
-    if (TrajectoryPreviewBP.Succeeded())
-    {
-        BP_TrajectoryPreviewClass = TrajectoryPreviewBP.Class;
-    }
 }
 
 
@@ -430,6 +423,22 @@ void UWeaponComponent::HandleStopFire() {
         GetOwner()->GetWorldTimerManager().ClearTimer(FireTimerHandle);
         bIsFiring = false;
 	}
+
+    if (CurrentWeaponData.WeaponData && CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Throwable) {
+        // Throw the grenade
+        if (TrajectoryPreviewRef) {
+            TrajectoryPreviewRef->Destroy();
+            TrajectoryPreviewRef = nullptr;
+        }
+        FVector LaunchVelocity = GetVelocityGrenade();
+        if (CurrentWeapon) {
+            AWeaponThrowable* ThrowableWeapon = Cast<AWeaponThrowable>(CurrentWeapon);
+            /*if (ThrowableWeapon) {
+                ThrowableWeapon->ThrowGrenade(LaunchVelocity);
+            }*/
+        }
+        GetOwner()->GetWorldTimerManager().ClearTimer(ThrowProjectileTimer);
+	}
 }
 
 // Client function, Client detects hit point and sends to server
@@ -567,11 +576,15 @@ void UWeaponComponent::DrawProjectileCurve()
         true
     );
 
-    TrajectoryPreviewRef = GetWorld()->SpawnActor<AActor>(
-        BP_TrajectoryPreviewClass,
+
+    TrajectoryPreviewRef = GetWorld()->SpawnActor<ATrajectoryPreview>(
         FVector::ZeroVector,
         FRotator::ZeroRotator
     );
+    if (!Character->ThrowSpline) {
+		UE_LOG(LogTemp, Warning, TEXT("DrawProjectileCurve: SplineRef is invalid"));
+    }
+    TrajectoryPreviewRef->SplineRef = Character->ThrowSpline;
 }
 
 void UWeaponComponent::UpdateProjectileCurve()

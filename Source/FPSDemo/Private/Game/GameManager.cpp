@@ -6,6 +6,14 @@
 #include "Game/ShooterGameState.h"
 #include "Weapons/WeaponDataManager.h"
 
+void UGameManager::Initialize(FSubsystemCollectionBase& Collection)
+{
+    Super::Initialize(Collection);
+    GlobalData = TSoftObjectPtr<UGlobalDataAsset>(
+        FSoftObjectPath(TEXT("/Game/Main/Data/GlobalData.GlobalData"))
+    ).LoadSynchronous();
+}
+
 void UGameManager::GenItemNodesOnMap(const TArray<FPickupData>& Items)
 {
     UWorld* World = GetWorld();

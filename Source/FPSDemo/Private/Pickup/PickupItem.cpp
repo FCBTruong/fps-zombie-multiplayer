@@ -28,8 +28,8 @@ APickupItem::APickupItem()
 	PickupSphere->SetHiddenInGame(true);
 
 	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &APickupItem::OnOverlapBegin);*/
-	UE_LOG(LogTemp, Warning, TEXT("PickupItem BeginPlay called"));
 	SetActorTickEnabled(false);
+	UE_LOG(LogTemp, Warning, TEXT("PickupItem Constructor called"));
 }
 
 

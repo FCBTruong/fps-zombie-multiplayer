@@ -75,7 +75,6 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
     UPlayerUI* PlayerUI;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Throw")
     USplineComponent* ThrowSpline;
 protected:
     UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRepSpeedWalkCurrently, Category = "Data")
