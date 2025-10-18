@@ -389,7 +389,7 @@ bool UWeaponComponent::CanShoot() {
     return true;
 }
 
-void UWeaponComponent::HandleStartFire() {
+void UWeaponComponent::OnLeftClickStart() {
     if (CurrentWeaponData.WeaponData == nullptr) {
         UE_LOG(LogTemp, Warning, TEXT("HandleStartFire: No weapon equipped"));
         return;
@@ -415,10 +415,11 @@ void UWeaponComponent::HandleStartFire() {
 	}
     else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Throwable) {
 		DrawProjectileCurve();
+        ServerSetIsPriming(true);
 	}
 }
 
-void UWeaponComponent::HandleStopFire() {
+void UWeaponComponent::OnLeftClickRelease() {
     if (bIsFiring) {
         GetOwner()->GetWorldTimerManager().ClearTimer(FireTimerHandle);
         bIsFiring = false;
@@ -426,19 +427,31 @@ void UWeaponComponent::HandleStopFire() {
 
     if (CurrentWeaponData.WeaponData && CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Throwable) {
         // Throw the grenade
-        if (TrajectoryPreviewRef) {
-            TrajectoryPreviewRef->Destroy();
-            TrajectoryPreviewRef = nullptr;
-        }
-        FVector LaunchVelocity = GetVelocityGrenade();
-        if (CurrentWeapon) {
-            AWeaponThrowable* ThrowableWeapon = Cast<AWeaponThrowable>(CurrentWeapon);
-            /*if (ThrowableWeapon) {
-                ThrowableWeapon->ThrowGrenade(LaunchVelocity);
-            }*/
-        }
-        GetOwner()->GetWorldTimerManager().ClearTimer(ThrowProjectileTimer);
+        ServerThrow();
 	}
+}
+
+void UWeaponComponent::ServerThrow_Implementation() {
+    // Logic throw, move object, and explode
+    // Because on server, there's no current weapon, so we need to handle this
+
+    MulticastThrowAction();
+}
+
+void UWeaponComponent::MulticastThrowAction_Implementation() {
+    if (TrajectoryPreviewRef) {
+        TrajectoryPreviewRef->Destroy();
+        TrajectoryPreviewRef = nullptr;
+    }
+
+    FVector LaunchVelocity = GetVelocityGrenade();
+    if (CurrentWeapon) {
+        AWeaponThrowable* ThrowableWeapon = Cast<AWeaponThrowable>(CurrentWeapon);
+        if (ThrowableWeapon) {
+            ThrowableWeapon->OnActivate(LaunchVelocity);
+        }
+    }
+    GetOwner()->GetWorldTimerManager().ClearTimer(ThrowProjectileTimer);
 }
 
 // Client function, Client detects hit point and sends to server
@@ -551,6 +564,7 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(UWeaponComponent, CurrentInventoryId);
+	DOREPLIFETIME(UWeaponComponent, bIsPriming);
 }
 
 // Clients press 1, 2, 3 to equip weapon in that slot
@@ -634,3 +648,26 @@ FVector UWeaponComponent::GetVelocityGrenade() const
     return Forward * GrenadeInitSpeed;
 }
 
+
+void UWeaponComponent::OnRep_IsPriming()
+{
+    // Handle changes when bIsPriming is replicated
+    if (bIsPriming)
+    {
+        // Start priming effects
+        UE_LOG(LogTemp, Warning, TEXT("OnRep_IsPriming: Started priming"));
+		Character->PlayThrowNadeMontage();
+    }
+    else
+    {
+        // Stop priming effects
+        UE_LOG(LogTemp, Warning, TEXT("OnRep_IsPriming: Stopped priming"));
+    }
+}
+
+
+void UWeaponComponent::ServerSetIsPriming_Implementation(bool bNewIsPriming)
+{
+    bIsPriming = bNewIsPriming;
+    OnRep_IsPriming();
+}

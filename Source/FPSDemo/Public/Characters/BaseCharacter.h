@@ -148,6 +148,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
     UAnimMontage* EquipMontage;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    UAnimMontage* ThrowNadeMontage;
+
     // Lifecycle
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -219,4 +222,6 @@ public:
         class AController* EventInstigator,
         class AActor* DamageCauser
     ) override;
+
+	void PlayThrowNadeMontage();
 };

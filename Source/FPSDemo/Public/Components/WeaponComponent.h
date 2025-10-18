@@ -39,6 +39,12 @@ protected:
 	bool bIsFiring;
 	bool bIsScopeEquipped;
 
+	UPROPERTY(ReplicatedUsing = OnRep_IsPriming)
+	bool bIsPriming;
+	UFUNCTION(Server, Unreliable) void ServerSetIsPriming(bool bNewIsPriming);
+
+	UFUNCTION() void OnRep_IsPriming();
+
 	// For client only, server DOES NOT use this pointer
 	AWeaponBase* CurrentWeapon;
 
@@ -54,6 +60,9 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentInventoryId();
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastThrowAction();
+
 	UInventoryComponent* InventoryComp;
 
 	FWeaponRuntimeData CurrentWeaponData;
@@ -66,7 +75,7 @@ protected:
 	FTimerHandle ThrowProjectileTimer;
 	
 	float ThrowAngle = 30.f;
-	float GrenadeInitSpeed = 1000.f;
+	float GrenadeInitSpeed = 1200.f;
 
 	ABaseCharacter* Character;
 	void InitState();
@@ -86,14 +95,16 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerOnFire(FVector TargetPoint);
 
-	void HandleStartFire();
-	void HandleStopFire();
+	void OnLeftClickStart();
+	void OnLeftClickRelease();
 	void OnFire();
 	void HandleOnFire(FVector TargetPoint);
 	void StartAiming();
 	void StartReload();
 	bool CanShoot();
 	bool IsLocalControl();
+
+	UFUNCTION(Server, Reliable) void ServerThrow();
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayFireRifle(FVector TargetPoint);

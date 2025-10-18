@@ -91,8 +91,8 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
     {
         if (IA_Shoot)
         {
-            EIC->BindAction(IA_Shoot, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::RequestFireStart);
-			EIC->BindAction(IA_Shoot, ETriggerEvent::Completed, WeaponComp, &UWeaponComponent::RequestFireStop);
+            EIC->BindAction(IA_Shoot, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::OnLeftClickStart);
+			EIC->BindAction(IA_Shoot, ETriggerEvent::Completed, WeaponComp, &UWeaponComponent::OnLeftClickRelease);
         }
         if (IA_Movement)
         {
@@ -454,4 +454,12 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 {
     HealthComp->ApplyDamage(DamageAmount);
     return DamageAmount;
+}
+
+void ABaseCharacter::PlayThrowNadeMontage()
+{
+    if (ThrowNadeMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+    {
+        GetCurrentMesh()->GetAnimInstance()->Montage_Play(ThrowNadeMontage);
+    }
 }
