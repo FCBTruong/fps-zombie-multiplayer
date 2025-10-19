@@ -136,6 +136,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         {
             EIC->BindAction(IA_SELECT_PISTOL, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_PISTOL);
         }
+        if (IA_SELECT_THROWABLE)
+        {
+            EIC->BindAction(IA_SELECT_THROWABLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_THROWABLE);
+        }
         if (IA_DROP_WEAPON)
         {
             EIC->BindAction(IA_DROP_WEAPON, ETriggerEvent::Started, this, &ABaseCharacter::DropWeapon);

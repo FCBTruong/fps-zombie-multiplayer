@@ -37,6 +37,13 @@ void UInventoryComponent::BeginPlay()
 		MeleeItem.InventoryId = IdCounter++;
 		MeleeItem.AmmoInMag = 0;
 		Items.Add(MeleeItem);
+
+		FInventoryItem Item2;
+		Item2.ItemId = EItemId::GRENADE_FRAG_BASIC;
+		Item2.Count = 1;
+		Item2.InventoryId = IdCounter++;
+		Item2.AmmoInMag = 0;
+		Items.Add(Item2);
 	}
 }
 
@@ -180,4 +187,24 @@ void UInventoryComponent::OnRep_Items()
 			}
 		}
 	}
+}
+
+int32 UInventoryComponent::GetFirstInventoryIdByType(EWeaponTypes ItemType)
+{
+	for (const FInventoryItem& Item : Items)
+	{
+		if (GMR)
+		{
+			const UItemData* ItemData = GMR->GetItemDataById(Item.ItemId);
+			if (ItemData && ItemData->IsA(UWeaponData::StaticClass()))
+			{
+				const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
+				if (WeaponData && WeaponData->WeaponType == ItemType)
+				{
+					return Item.InventoryId;
+				}
+			}
+		}
+	}
+	return FGameConstants::INVENTORY_ID_NONE; // Not found
 }

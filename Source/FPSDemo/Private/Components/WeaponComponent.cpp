@@ -9,6 +9,7 @@
 #include "Weapons/WeaponMelee.h"
 #include "Weapons/WeaponThrowable.h"
 #include "Kismet/GameplayStatics.h"
+#include "Projectiles/AThrownProjectile.h"
 
 
 // Sets default values for this component's properties
@@ -358,14 +359,6 @@ void UWeaponComponent::MulticastDropWeapon_Implementation(int32 OnMapId, FVector
     }
 }
 
-void UWeaponComponent::RequestFireStart() {
-    HandleStartFire();
-}
-
-void UWeaponComponent::RequestFireStop() {
-	HandleStopFire();
-}
-
 void UWeaponComponent::StartReload() {
     if (!bIsReloading) {
         
@@ -427,29 +420,41 @@ void UWeaponComponent::OnLeftClickRelease() {
 
     if (CurrentWeaponData.WeaponData && CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Throwable) {
         // Throw the grenade
-        ServerThrow();
+        ServerThrow(GetVelocityGrenade());
 	}
 }
 
-void UWeaponComponent::ServerThrow_Implementation() {
+void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
     // Logic throw, move object, and explode
     // Because on server, there's no current weapon, so we need to handle this
+	// gen object throwable
+    FVector StartPos = Character->GetMesh()->GetSocketLocation(TEXT("throwable_socket"));
 
-    MulticastThrowAction();
+    AAThrownProjectile* ThrownProj = GetWorld()->SpawnActor<AAThrownProjectile>(
+        AAThrownProjectile::StaticClass(),
+        StartPos,
+        FRotator::ZeroRotator
+	);
+    if (ThrownProj) {
+		ThrownProj->SetOwner(GetOwner());
+        ThrownProj->InitFromData(CurrentWeaponData.WeaponData);
+        ThrownProj->LaunchProjectile(LaunchVelocity, Character);
+	}
+
+
+    MulticastThrowAction(LaunchVelocity);
 }
 
-void UWeaponComponent::MulticastThrowAction_Implementation() {
+void UWeaponComponent::MulticastThrowAction_Implementation(FVector LaunchVelocity) {
+	UE_LOG(LogTemp, Warning, TEXT("MulticastThrowAction called"));
     if (TrajectoryPreviewRef) {
         TrajectoryPreviewRef->Destroy();
         TrajectoryPreviewRef = nullptr;
     }
 
-    FVector LaunchVelocity = GetVelocityGrenade();
     if (CurrentWeapon) {
-        AWeaponThrowable* ThrowableWeapon = Cast<AWeaponThrowable>(CurrentWeapon);
-        if (ThrowableWeapon) {
-            ThrowableWeapon->OnActivate(LaunchVelocity);
-        }
+		CurrentWeapon->Destroy();
+		CurrentWeapon = nullptr;
     }
     GetOwner()->GetWorldTimerManager().ClearTimer(ThrowProjectileTimer);
 }
@@ -570,7 +575,14 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 // Clients press 1, 2, 3 to equip weapon in that slot
 void UWeaponComponent::EquipSlot(int32 SlotIndex)
 {
-    int32 InventoryId = InventoryComp->GetInventoryIdBySlot(SlotIndex);
+    int32 InventoryId = FGameConstants::INVENTORY_ID_NONE;
+
+    if (SlotIndex == FGameConstants::SLOT_THROWABLE) {
+		InventoryId = InventoryComp->GetFirstInventoryIdByType(EWeaponTypes::Throwable);
+    }
+    else {
+        InventoryId = InventoryComp->GetInventoryIdBySlot(SlotIndex);
+    }
 	UE_LOG(LogTemp, Warning, TEXT("EquipSlot called for slot %d, found InventoryId %d"), SlotIndex, InventoryId);
 
     if (InventoryId != FGameConstants::INVENTORY_ID_NONE)
@@ -607,7 +619,7 @@ void UWeaponComponent::UpdateProjectileCurve()
     {
         return;
 	}
-    FVector StartPos = Character->GetMesh()->GetSocketLocation(TEXT("throwable_socket"));;
+    FVector StartPos = Character->GetMesh()->GetSocketLocation(TEXT("throwable_socket"));
     FVector LaunchVelocity = GetVelocityGrenade();
 
     FPredictProjectilePathParams Params;

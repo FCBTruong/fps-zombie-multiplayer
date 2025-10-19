@@ -13,7 +13,7 @@ ABulletBase::ABulletBase()
     CollisionComp->InitSphereRadius(2.f);
 	CollisionComp->SetHiddenInGame(false);
 	CollisionComp->SetGenerateOverlapEvents(false);
-    CollisionComp->SetCollisionProfileName(TEXT("Projectile"));
+    CollisionComp->SetCollisionProfileName(TEXT("Bullet"));
     //CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
    
 

@@ -61,7 +61,7 @@ protected:
 	void OnRep_CurrentInventoryId();
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastThrowAction();
+	void MulticastThrowAction(FVector LaunchVelocity);
 
 	UInventoryComponent* InventoryComp;
 
@@ -88,10 +88,6 @@ public:
 	void OnNewItemPickup(int32 NewInventoryId);
 	EWeaponTypes GetCurrentWeaponType();
 	void DropWeapon();
-	void RequestFireStart();
-
-	
-	void RequestFireStop();
 	UFUNCTION(Server, Reliable)
 	void ServerOnFire(FVector TargetPoint);
 
@@ -104,7 +100,7 @@ public:
 	bool CanShoot();
 	bool IsLocalControl();
 
-	UFUNCTION(Server, Reliable) void ServerThrow();
+	UFUNCTION(Server, Reliable) void ServerThrow(FVector LaunchVelocity);
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayFireRifle(FVector TargetPoint);

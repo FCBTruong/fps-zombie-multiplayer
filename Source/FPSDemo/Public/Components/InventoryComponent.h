@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "Items/ItemData.h"
 #include "Structs/InventoryItem.h"
+#include "Weapons/WeaponTypes.h"
 #include "Game/GameManager.h"
 #include "InventoryComponent.generated.h"
 
@@ -45,4 +46,5 @@ public:
 	int32 GetItemCount() const { return Items.Num(); }
 	void RemoveItemByInventoryId(int32 InventoryId);
 	int32 GetInventoryIdBySlot(int32 Slot);
+	int32 GetFirstInventoryIdByType(EWeaponTypes ItemType);
 };
