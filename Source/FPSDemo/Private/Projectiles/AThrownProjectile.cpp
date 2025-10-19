@@ -19,6 +19,7 @@ AAThrownProjectile::AAThrownProjectile()
 
     // visual mesh
     WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     WeaponMesh->SetupAttachment(Collision);
 
     // movement
@@ -73,16 +74,16 @@ void AAThrownProjectile::InitFromData(UWeaponData* InData)
 
 void AAThrownProjectile::MulticastInitData_Implementation(EItemId ItemId)
 {
-    if (HasAuthority())   
+    // Load Data from ItemId
+    UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+
+    if (!Data)   
     {
-        return;
+        Data = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
     }
     UE_LOG(LogTemp, Log, TEXT("AAThrownProjectile::MulticastInitData_Implementation - ItemId %d"), static_cast<int32>(ItemId));
+   
     
-	// Load Data from ItemId
-    UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-    
-	Data = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
     if (Data->StaticMesh) {
         WeaponMesh->SetStaticMesh(Data->StaticMesh);
     }

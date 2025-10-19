@@ -429,6 +429,8 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
     // Because on server, there's no current weapon, so we need to handle this
 	// gen object throwable
     FVector StartPos = Character->GetMesh()->GetSocketLocation(TEXT("throwable_socket"));
+    StartPos += Character->GetActorForwardVector() * 10.f; // avoid collision                       // raise a bit if needed
+
 
     AAThrownProjectile* ThrownProj = GetWorld()->SpawnActor<AAThrownProjectile>(
         AAThrownProjectile::StaticClass(),
