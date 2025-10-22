@@ -47,4 +47,10 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 		SpawnParams
 	);
 	Bullet->InitFromData(Data->BulletData, TargetPoint);
+
+	// Play sound
+	if (Data->Config.FireSFX)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Data->Config.FireSFX, GetActorLocation());
+	}
 }

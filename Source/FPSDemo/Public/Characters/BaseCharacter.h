@@ -226,4 +226,5 @@ public:
     ) override;
 
 	void PlayThrowNadeMontage();
+	bool IsCloseToWall() const { return bCloseToWall; }
 };

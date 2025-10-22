@@ -35,6 +35,13 @@ ABaseCharacter::ABaseCharacter()
         UE_LOG(LogTemp, Error, TEXT("WeaponComp is null in ABaseCharacter constructor"));
 	}
     UE_LOG(LogTemp, Warning, TEXT("Player WeaponComp: %s"), *GetNameSafe(WeaponComp));
+
+    if (this->IsLocallyControlled())
+    {
+		bIsFPS = true;
+		UpdateView();
+        UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
+	}
 }
 
 // Called when the game starts or when spawned
@@ -122,11 +129,11 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         }
         if (IA_SELECT_FIRST_RIFLE)
         {
-            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_RIFLE_GUN_1);
+            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_LONG_GUN_1);
 		}
         if (IA_SELECT_SECOND_RIFLE)
         {
-            EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_RIFLE_GUN_2);
+            //EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_LONG_GUN_2);
         }
         if (IA_SELECT_MELEE)
         {
@@ -293,8 +300,8 @@ void ABaseCharacter::Look(const FInputActionValue& Value)
 		LookInput = LookAxisVector;
         //Server_UpdateLookInput(LookAxisVector);
         // add yaw and pitch input to controller
-        AddControllerYawInput(LookInput.X * AimSensitivity);
-        AddControllerPitchInput(LookInput.Y * -1 * AimSensitivity);
+        AddControllerYawInput(LookInput.X * AimSensitivity * 0.3);
+        AddControllerPitchInput(LookInput.Y * -1 * AimSensitivity * 0.3);
     }
 }
 

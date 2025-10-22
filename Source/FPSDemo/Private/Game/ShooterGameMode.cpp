@@ -24,8 +24,8 @@ void AShooterGameMode::StartPlay()
     }
 
     FVector Origin(0.f, 0.f, 100.f);
-    float RangeX = 5000.f;
-    float RangeY = 5000.f;
+    float RangeX = 1000.f;
+    float RangeY = 1000.f;
     TArray<FPickupData> ItemArray;
     for (int32 i = 0; i < 50; i++)
     {

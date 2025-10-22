@@ -34,4 +34,7 @@ struct FWeaponConfig
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 	int32 Damage = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
+	FVector EquippedOffset;
 };

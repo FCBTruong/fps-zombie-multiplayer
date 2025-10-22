@@ -19,7 +19,7 @@ class FPSDEMO_API UWeaponData : public UItemData
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	FWeaponConfig Config;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
@@ -28,7 +28,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	EWeaponSubTypes WeaponSubType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	UBulletData* BulletData;
 
 

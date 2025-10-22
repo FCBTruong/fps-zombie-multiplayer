@@ -210,9 +210,9 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
     FString SocketName = "ik_hand_gun";
     bool bIsFPS = Character->IsFpsViewMode();
     if (WeaType == EWeaponTypes::Firearm) {
+		offset = WeaponData->Config.EquippedOffset;
         if (bIsFPS) {
             SocketName = "ik_hand_gun";
-            offset = FVector(0.f, 0.f, -6.f);
         }
         else {
             SocketName = "weapon_socket";
@@ -317,6 +317,7 @@ void UWeaponComponent::HandleDropWeapon() {
 	OnUpdateCurrentWeaponData();
 
 	MulticastDropWeapon(Data.Id, DropPoint);
+    EquipSlot(FGameConstants::SLOT_MELEE);
 }
 
 void UWeaponComponent::MulticastDropWeapon_Implementation(int32 OnMapId, FVector DropPoint) {
@@ -379,6 +380,9 @@ bool UWeaponComponent::CanShoot() {
     if (CurrentInventoryId == FGameConstants::INVENTORY_ID_NONE) {
         return false;
     }
+    if (Character->IsCloseToWall()) {
+        return false;
+	}
     return true;
 }
 
@@ -563,6 +567,19 @@ bool UWeaponComponent::IsLocalControl() {
 
 bool UWeaponComponent::IsScopeEquipped()
 {
+    if (CurrentInventoryId != FGameConstants::INVENTORY_ID_NONE)
+    {
+        FInventoryItem* Item = InventoryComp->GetItemByInventoryId(CurrentInventoryId);
+        if (Item)
+        {
+            UWeaponData* WeaponData = Cast<UWeaponData>(GMR->GetItemDataById(Item->ItemId));
+            if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm && WeaponData->WeaponSubType == EWeaponSubTypes::Sniper)
+            {
+                bIsScopeEquipped = true;
+                return bIsScopeEquipped;
+            }
+        }
+	}
     return bIsScopeEquipped;
 }
 
@@ -580,10 +597,16 @@ void UWeaponComponent::EquipSlot(int32 SlotIndex)
     int32 InventoryId = FGameConstants::INVENTORY_ID_NONE;
 
     if (SlotIndex == FGameConstants::SLOT_THROWABLE) {
-		InventoryId = InventoryComp->GetFirstInventoryIdByType(EWeaponTypes::Throwable);
+        InventoryId = InventoryComp->GetFirstInventoryIdByType(EWeaponTypes::Throwable);
     }
-    else {
-        InventoryId = InventoryComp->GetInventoryIdBySlot(SlotIndex);
+    else if (SlotIndex == FGameConstants::SLOT_LONG_GUN_1) {
+        InventoryId = GetLongGunInvenId();
+    }
+    else if (SlotIndex == FGameConstants::SLOT_MELEE) {
+        InventoryId = GetMeleeInvenId();
+    }
+    else if (SlotIndex == FGameConstants::SLOT_PISTOL) {
+        InventoryId = GetSideArmInvenId();
     }
 	UE_LOG(LogTemp, Warning, TEXT("EquipSlot called for slot %d, found InventoryId %d"), SlotIndex, InventoryId);
 
@@ -684,4 +707,62 @@ void UWeaponComponent::ServerSetIsPriming_Implementation(bool bNewIsPriming)
 {
     bIsPriming = bNewIsPriming;
     OnRep_IsPriming();
+}
+
+int UWeaponComponent::GetLongGunInvenId() {
+    if (LongGunInventoryId == FGameConstants::INVENTORY_ID_NONE) {
+        // try find weapon firearm, and long gun
+
+        for (const FInventoryItem& Item : InventoryComp->GetItems()) {
+            if (GMR) {
+                const UItemData* ItemData = GMR->GetItemDataById(Item.ItemId);
+                UE_LOG(LogTemp, Warning, TEXT("Checking item InventoryId %d for main"), Item.InventoryId);
+                if (ItemData && ItemData->IsA(UWeaponData::StaticClass())) {
+                    // log debug
+                    UE_LOG(LogTemp, Warning, TEXT("ItemData found for InventoryId %d, checking weapon type."), Item.InventoryId);
+                    const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
+                    if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm &&
+                        WeaponData->WeaponSubType == EWeaponSubTypes::Rifle) {
+                        UE_LOG(LogTemp, Warning, TEXT("Assigning rifle weapon InventoryId %d to longun slot."), Item.InventoryId);
+                        LongGunInventoryId = Item.InventoryId;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    else {
+        if (!InventoryComp->CheckExistItem(LongGunInventoryId)) {
+            LongGunInventoryId = FGameConstants::INVENTORY_ID_NONE;
+        }
+    }
+    return LongGunInventoryId;
+}
+
+int UWeaponComponent::GetSideArmInvenId() {
+    return 0;
+}
+
+int UWeaponComponent::GetMeleeInvenId() {
+    if (MeleeInventoryId == FGameConstants::INVENTORY_ID_NONE) {
+        // try find weapon firearm, and long gun
+
+        for (const FInventoryItem& Item : InventoryComp->GetItems()) {
+            if (GMR) {
+                const UItemData* ItemData = GMR->GetItemDataById(Item.ItemId);
+                UE_LOG(LogTemp, Warning, TEXT("Checking item InventoryId %d for main"), Item.InventoryId);
+                if (ItemData && ItemData->IsA(UWeaponData::StaticClass())) {
+                    // log debug
+                    UE_LOG(LogTemp, Warning, TEXT("ItemData found for InventoryId %d, checking weapon type."), Item.InventoryId);
+                    const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
+                    if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Melee) {
+                        UE_LOG(LogTemp, Warning, TEXT("Assigning rifle weapon InventoryId %d to longun slot."), Item.InventoryId);
+                        MeleeInventoryId = Item.InventoryId;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return MeleeInventoryId;
 }

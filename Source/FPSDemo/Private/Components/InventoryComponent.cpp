@@ -130,63 +130,6 @@ void UInventoryComponent::OnRep_Items()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Inventory updated, new count: %d"), Items.Num());
 	// Refresh UI or rebuild slot map here
-
-	if (SlotMap.Contains(FGameConstants::SLOT_MELEE)) {
-		int32 OldMeleeId = SlotMap[FGameConstants::SLOT_MELEE];
-		if (GetItemByInventoryId(OldMeleeId) == nullptr) {
-			SlotMap.Remove(FGameConstants::SLOT_MELEE);
-		}
-	}
-	
-	if (!SlotMap.Contains(FGameConstants::SLOT_MELEE)) {
-		// Assign first melee weapon found to melee slot
-		for (const FInventoryItem& Item : Items) {
-			if (GMR) {
-				const UItemData* ItemData = GMR->GetItemDataById(Item.ItemId);
-				UE_LOG(LogTemp, Warning, TEXT("Checking item InventoryId %d for melee assignment. %d"), Item.InventoryId, Item.ItemId);
-	
-				if (ItemData && ItemData->IsA(UWeaponData::StaticClass())) {
-					// log debug
-					UE_LOG(LogTemp, Warning, TEXT("ItemData found for InventoryId %d, checking weapon type."), Item.InventoryId);
-					const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
-					if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Melee) {
-						UE_LOG(LogTemp, Warning, TEXT("Assigning melee weapon InventoryId %d to melee slot."), Item.InventoryId);
-						SlotMap.Add(FGameConstants::SLOT_MELEE, Item.InventoryId);
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	// Main gun
-	if (SlotMap.Contains(FGameConstants::SLOT_RIFLE_GUN_1)) {
-		int32 OldMainGunId = SlotMap[FGameConstants::SLOT_RIFLE_GUN_1];
-		if (GetItemByInventoryId(OldMainGunId) == nullptr) {
-			SlotMap.Remove(FGameConstants::SLOT_RIFLE_GUN_1);
-		}
-	}
-
-	if (!SlotMap.Contains(FGameConstants::SLOT_RIFLE_GUN_1)) {
-		// Assign first rifle weapon found to main gun slot
-		for (const FInventoryItem& Item : Items) {
-			if (GMR) {
-				const UItemData* ItemData = GMR->GetItemDataById(Item.ItemId);
-				UE_LOG(LogTemp, Warning, TEXT("Checking item InventoryId %d for main"), Item.InventoryId);
-				if (ItemData && ItemData->IsA(UWeaponData::StaticClass())) {
-					// log debug
-					UE_LOG(LogTemp, Warning, TEXT("ItemData found for InventoryId %d, checking weapon type."), Item.InventoryId);
-					const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
-					if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm &&
-						WeaponData->WeaponSubType == EWeaponSubTypes::Rifle) {
-						UE_LOG(LogTemp, Warning, TEXT("Assigning rifle weapon InventoryId %d to melee slot."), Item.InventoryId);
-						SlotMap.Add(FGameConstants::SLOT_RIFLE_GUN_1, Item.InventoryId);
-						break;
-					}
-				}
-			}
-		}
-	}
 }
 
 int32 UInventoryComponent::GetFirstInventoryIdByType(EWeaponTypes ItemType)
@@ -207,4 +150,18 @@ int32 UInventoryComponent::GetFirstInventoryIdByType(EWeaponTypes ItemType)
 		}
 	}
 	return FGameConstants::INVENTORY_ID_NONE; // Not found
+}
+
+TArray<FInventoryItem> UInventoryComponent::GetItems() const {
+	return Items;
+}
+
+bool UInventoryComponent::CheckExistItem(int InventoryId) {
+	for (const FInventoryItem& Item : Items)
+	{
+		if (Item.InventoryId == InventoryId) {
+			return true;
+		}
+	}
+	return false;
 }

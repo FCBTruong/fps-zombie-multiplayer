@@ -75,7 +75,11 @@ protected:
 	FTimerHandle ThrowProjectileTimer;
 	
 	float ThrowAngle = 30.f;
-	float GrenadeInitSpeed = 1200.f;
+	float GrenadeInitSpeed = 1600.f;
+
+	int32 LongGunInventoryId = FGameConstants::INVENTORY_ID_NONE;
+	int32 SideArmInventoryId = FGameConstants::INVENTORY_ID_NONE; // Pistol
+	int32 MeleeInventoryId = FGameConstants::INVENTORY_ID_NONE; // Knife
 
 	ABaseCharacter* Character;
 	void InitState();
@@ -128,4 +132,8 @@ public:
 
 	UFUNCTION()
 	FVector GetVelocityGrenade() const;
+
+	int GetLongGunInvenId();
+	int GetSideArmInvenId();
+	int GetMeleeInvenId();
 };

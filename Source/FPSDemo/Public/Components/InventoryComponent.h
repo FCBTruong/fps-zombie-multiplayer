@@ -47,4 +47,6 @@ public:
 	void RemoveItemByInventoryId(int32 InventoryId);
 	int32 GetInventoryIdBySlot(int32 Slot);
 	int32 GetFirstInventoryIdByType(EWeaponTypes ItemType);
+	TArray<FInventoryItem> GetItems() const;
+	bool CheckExistItem(int InventoryId);
 };
