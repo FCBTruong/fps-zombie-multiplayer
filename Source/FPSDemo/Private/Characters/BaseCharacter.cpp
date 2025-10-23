@@ -34,14 +34,6 @@ ABaseCharacter::ABaseCharacter()
     {
         UE_LOG(LogTemp, Error, TEXT("WeaponComp is null in ABaseCharacter constructor"));
 	}
-    UE_LOG(LogTemp, Warning, TEXT("Player WeaponComp: %s"), *GetNameSafe(WeaponComp));
-
-    if (this->IsLocallyControlled())
-    {
-		bIsFPS = true;
-		UpdateView();
-        UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
-	}
 }
 
 // Called when the game starts or when spawned
@@ -77,9 +69,15 @@ void ABaseCharacter::BeginPlay()
         CrouchTimeline.AddInterpFloat(CrouchCurve, ProgressFunction);
     }
 
-    UpdateView();
 
     GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+
+    if (this->IsLocallyControlled())
+    {
+        //bIsFPS = true;
+        UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
+    }
+    UpdateView();
 }
 
 // Called every frame
@@ -355,11 +353,7 @@ void ABaseCharacter::UpdateView()
             MeshFps->SetOwnerNoSee(true);
         }
     }
-    UpdateAttachLocationWeapon();
-}
-
-void ABaseCharacter::UpdateAttachLocationWeapon() {
-
+    WeaponComp->UpdateAttachLocationWeapon();
 }
 
 

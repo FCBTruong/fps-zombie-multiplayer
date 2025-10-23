@@ -49,4 +49,5 @@ public:
 	int32 GetFirstInventoryIdByType(EWeaponTypes ItemType);
 	TArray<FInventoryItem> GetItems() const;
 	bool CheckExistItem(int InventoryId);
+	int32 GetMeleeId();
 };

@@ -2,6 +2,7 @@
 
 
 #include "Characters/PlayerCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 APlayerCharacter::APlayerCharacter() {
 	
@@ -64,11 +65,14 @@ void APlayerCharacter::UpdateAimingState()
 
 			if (WeaponComp->IsScopeEquipped()) {
 				TargetFOV = 20.f;
-				FirstPersonCamera->SetRelativeLocation(FVector(0.f, 20.f, 0.f));
+				FirstPersonCamera->SetRelativeLocation(FVector(15.f, 20.f, 0.f));
 				AimSensitivity = 0.2f;
 				if (CurrentScopeWidget) {
 					CurrentScopeWidget->SetVisibility(ESlateVisibility::Visible);
 				}
+
+				// update speed
+				GetCharacterMovement()->MaxWalkSpeed = ABaseCharacter::AIM_WALK_SPEED;
 			}
 		}
 		else
@@ -80,6 +84,7 @@ void APlayerCharacter::UpdateAimingState()
 			if (CurrentScopeWidget) {
 				CurrentScopeWidget->SetVisibility(ESlateVisibility::Hidden);
 			}
+			HandleUpdateSpeedWalkCurrently();
 		}
 	}
 }

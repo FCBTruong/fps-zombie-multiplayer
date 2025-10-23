@@ -37,4 +37,7 @@ struct FWeaponConfig
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 	FVector EquippedOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
+	FVector EquippedOffsetFps;
 };

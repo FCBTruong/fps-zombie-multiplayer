@@ -165,3 +165,23 @@ bool UInventoryComponent::CheckExistItem(int InventoryId) {
 	}
 	return false;
 }
+
+
+int32 UInventoryComponent::GetMeleeId() {
+	for (const FInventoryItem& Item : Items)
+	{
+		if (GMR)
+		{
+			const UItemData* ItemData = GMR->GetItemDataById(Item.ItemId);
+			if (ItemData && ItemData->IsA(UWeaponData::StaticClass()))
+			{
+				const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
+				if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Melee)
+				{
+					return Item.InventoryId;
+				}
+			}
+		}
+	}
+	return FGameConstants::INVENTORY_ID_NONE; // Not found
+}

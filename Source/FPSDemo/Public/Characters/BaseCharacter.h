@@ -198,6 +198,7 @@ public:
     static constexpr float NORMAL_WALK_SPEED = 400.f;
     static constexpr float MELEE_WALK_SPEED = 500.f;
     static constexpr float CROUCH_WALK_SPEED = 200.f;
+	static constexpr float AIM_WALK_SPEED = 250.f;
     void AddWeapon(AWeaponBase* weapon);
     FORCEINLINE UPickupComponent* GetPickupComponent() const {
         return PickupComponent;

@@ -136,4 +136,5 @@ public:
 	int GetLongGunInvenId();
 	int GetSideArmInvenId();
 	int GetMeleeInvenId();
+	void UpdateAttachLocationWeapon();
 };

@@ -34,7 +34,6 @@ void UWeaponComponent::BeginPlay()
     Character = Cast<ABaseCharacter>(GetOwner());
 
 	bIsInitialized = true;
-    EquipSlot(FGameConstants::SLOT_MELEE);
 
     GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
         {
@@ -45,7 +44,7 @@ void UWeaponComponent::BeginPlay()
 void UWeaponComponent::InitState() {
     if (GetOwnerRole() == ROLE_Authority)
     {
-
+        CurrentInventoryId = InventoryComp->GetMeleeId();
     }
     else
     {
@@ -206,41 +205,11 @@ void UWeaponComponent::OnRep_CurrentInventoryId()
    
     EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
 
-    FVector offset = FVector(0.f, 0.f, 0.f);
-    FString SocketName = "ik_hand_gun";
-    bool bIsFPS = Character->IsFpsViewMode();
-    if (WeaType == EWeaponTypes::Firearm) {
-		offset = WeaponData->Config.EquippedOffset;
-        if (bIsFPS) {
-            SocketName = "ik_hand_gun";
-        }
-        else {
-            SocketName = "weapon_socket";
-        }
-    }
-    else if (WeaType == EWeaponTypes::Melee) {
-        SocketName = "melee_socket";
-    }
-    else if (WeaType == EWeaponTypes::Throwable) {
-		SocketName = "throwable_socket";
-    }
-
-    CurrentWeapon->AttachToComponent(Character->GetCurrentMesh(),
-        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-        FName(SocketName)
-    );
-
-    CurrentWeapon->SetActorRelativeLocation(offset);
+    UpdateAttachLocationWeapon();
 	
 	// Play holster animation
 	Character->PlayEquipWeaponAnimation(WeaType);
 
-    // debug log, print socket name, is hideen, current fps
-    UE_LOG(LogTemp, Warning, TEXT("Equipped weapon %s | Hidden: %d | FPS: %d | Socket: %s"),
-        *CurrentWeapon->GetName(),
-        CurrentWeapon->IsHidden(),
-        bIsFPS,
-        *SocketName);
     if (UWorld* World = GetWorld())
     {
         UE_LOG(LogTemp, Warning, TEXT("Worldxxx: %s | Scene: %s"),
@@ -575,12 +544,11 @@ bool UWeaponComponent::IsScopeEquipped()
             UWeaponData* WeaponData = Cast<UWeaponData>(GMR->GetItemDataById(Item->ItemId));
             if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm && WeaponData->WeaponSubType == EWeaponSubTypes::Sniper)
             {
-                bIsScopeEquipped = true;
-                return bIsScopeEquipped;
+                return true;
             }
         }
 	}
-    return bIsScopeEquipped;
+    return false;
 }
 
 void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -722,7 +690,9 @@ int UWeaponComponent::GetLongGunInvenId() {
                     UE_LOG(LogTemp, Warning, TEXT("ItemData found for InventoryId %d, checking weapon type."), Item.InventoryId);
                     const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
                     if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm &&
-                        WeaponData->WeaponSubType == EWeaponSubTypes::Rifle) {
+                        (WeaponData->WeaponSubType == EWeaponSubTypes::Rifle
+							|| WeaponData->WeaponSubType == EWeaponSubTypes::Sniper
+                            )) {
                         UE_LOG(LogTemp, Warning, TEXT("Assigning rifle weapon InventoryId %d to longun slot."), Item.InventoryId);
                         LongGunInventoryId = Item.InventoryId;
                         break;
@@ -765,4 +735,38 @@ int UWeaponComponent::GetMeleeInvenId() {
         }
     }
     return MeleeInventoryId;
+}
+
+void UWeaponComponent::UpdateAttachLocationWeapon() {
+    FVector offset = FVector(0.f, 0.f, 0.f);
+    FString SocketName = "ik_hand_gun";
+    bool bIsFPS = Character->IsFpsViewMode();
+    if (!CurrentWeaponData.WeaponData) {
+		UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: No weapon data found"));
+        return;
+    }
+    EWeaponTypes WeaType = CurrentWeaponData.WeaponData->WeaponType;
+    if (WeaType == EWeaponTypes::Firearm) {
+        if (bIsFPS) {
+            SocketName = "ik_hand_gun";
+            offset = CurrentWeaponData.WeaponData->Config.EquippedOffsetFps;
+        }
+        else {
+            SocketName = "weapon_socket";
+            offset = CurrentWeaponData.WeaponData->Config.EquippedOffset;
+        }
+    }
+    else if (WeaType == EWeaponTypes::Melee) {
+        SocketName = "melee_socket";
+    }
+    else if (WeaType == EWeaponTypes::Throwable) {
+        SocketName = "throwable_socket";
+    }
+
+    CurrentWeapon->AttachToComponent(Character->GetCurrentMesh(),
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        FName(SocketName)
+    );
+
+    CurrentWeapon->SetActorRelativeLocation(offset);
 }
