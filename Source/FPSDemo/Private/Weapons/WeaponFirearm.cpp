@@ -11,7 +11,7 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 	// Implement firing logic here
 	UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
 	UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAttached(
-		Data->Config.MuzzleFX,                 // particle system
+		Data->MuzzleFX,                 // particle system
 		WeaponMesh,                   // attach to this component
 		TEXT("Muzzle"),        // socket name
 		FVector::ZeroVector,         // location offset
@@ -49,8 +49,8 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 	Bullet->InitFromData(Data->BulletData, TargetPoint);
 
 	// Play sound
-	if (Data->Config.FireSFX)
+	if (Data->FireSFX)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, Data->Config.FireSFX, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, Data->FireSFX, GetActorLocation());
 	}
 }

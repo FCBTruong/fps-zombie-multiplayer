@@ -19,17 +19,38 @@ class FPSDEMO_API UWeaponData : public UItemData
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
-	FWeaponConfig Config;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	EWeaponTypes WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	EWeaponSubTypes WeaponSubType;
 
+	// Firearm specific config
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	UBulletData* BulletData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	USoundBase* FireSFX = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	UParticleSystem* MuzzleFX = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	FName MuzzleSocket;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	float ReloadTime = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	int32 Damage = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	FVector EquippedOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	FVector EquippedOffsetFps;
+
 
 
 

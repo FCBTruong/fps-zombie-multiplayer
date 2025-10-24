@@ -14,7 +14,6 @@ void APlayerCharacter::BeginPlay() {
 		CurrentScopeWidget = CreateWidget<UUserWidget>(GetWorld(), ScopeWidgetClass);
 		if (CurrentScopeWidget) {
 			CurrentScopeWidget->AddToViewport();
-			CurrentScopeWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 

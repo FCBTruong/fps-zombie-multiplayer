@@ -749,11 +749,11 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     if (WeaType == EWeaponTypes::Firearm) {
         if (bIsFPS) {
             SocketName = "ik_hand_gun";
-            offset = CurrentWeaponData.WeaponData->Config.EquippedOffsetFps;
+            offset = CurrentWeaponData.WeaponData->EquippedOffsetFps;
         }
         else {
             SocketName = "weapon_socket";
-            offset = CurrentWeaponData.WeaponData->Config.EquippedOffset;
+            offset = CurrentWeaponData.WeaponData->EquippedOffset;
         }
     }
     else if (WeaType == EWeaponTypes::Melee) {
