@@ -46,6 +46,8 @@ void ABaseCharacter::BeginPlay()
 	FirstPersonCamera = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraFps")));
 	ThirdPersonCamera = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraTps")));
 
+    ThrowableLocation = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("ThrowableLocation")));
+
     // Add mapping context at runtime
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
@@ -463,8 +465,49 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
 void ABaseCharacter::PlayThrowNadeMontage()
 {
-    if (ThrowNadeMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+    if (!ThrowNadeMontage)
     {
-        GetCurrentMesh()->GetAnimInstance()->Montage_Play(ThrowNadeMontage);
+        UE_LOG(LogTemp, Error, TEXT("ThrowNadeMontage is null"));
+        return;
     }
+
+    USkeletalMeshComponent* MeshComp = GetCurrentMesh();
+    if (!MeshComp)
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetCurrentMesh() returned null"));
+        return;
+    }
+
+    UAnimInstance* AnimInst = MeshComp->GetAnimInstance();
+    if (!AnimInst)
+    {
+        UE_LOG(LogTemp, Error, TEXT("AnimInstance is null"));
+        return;
+    }
+    
+    AnimInst->Montage_Play(ThrowNadeMontage);
+}
+
+void ABaseCharacter::PlayHoldNadeMontage()
+{
+    if (!HoldNadeMontage)
+    {
+        UE_LOG(LogTemp, Error, TEXT("HoldNadeMontage is null"));
+        return;
+    }
+    USkeletalMeshComponent* MeshComp = GetCurrentMesh();
+    if (!MeshComp)
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetCurrentMesh() returned null"));
+        return;
+    }
+    UAnimInstance* AnimInst = MeshComp->GetAnimInstance();
+    if (!AnimInst)
+    {
+        UE_LOG(LogTemp, Error, TEXT("AnimInstance is null"));
+        return;
+    }
+   
+	UE_LOG(LogTemp, Warning, TEXT("Playing HoldNadeMontage"));
+    AnimInst->Montage_Play(HoldNadeMontage);
 }

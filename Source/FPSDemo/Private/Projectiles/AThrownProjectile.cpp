@@ -50,6 +50,11 @@ void AAThrownProjectile::OnProjectileHit(
     UPrimitiveComponent* OtherComp, FVector NormalImpulse,
     const FHitResult& Hit)
 {
+    if (bIsExploded)
+    {
+        return;
+	}
+	bIsExploded = true;
 	UE_LOG(LogTemp, Log, TEXT("AAThrownProjectile::OnProjectileHit"));
   /*  if (!HasAuthority())
     {

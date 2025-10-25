@@ -4,7 +4,6 @@
 #include "UI/ScopeUI.h"
 
 
-
 void UScopeUI::ShowScope()
 {
 	if (ScopeImage)
@@ -13,6 +12,7 @@ void UScopeUI::ShowScope()
 	}
 	if (Crosshair)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Hiding Crosshair"));
 		Crosshair->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
@@ -25,6 +25,7 @@ void UScopeUI::HideScope()
 	}
 	if (Crosshair)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Showing Crosshair"));
 		Crosshair->SetVisibility(ESlateVisibility::Visible);
 	}
 }

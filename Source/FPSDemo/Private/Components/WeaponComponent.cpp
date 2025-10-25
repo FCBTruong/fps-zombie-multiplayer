@@ -63,7 +63,15 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UWeaponComponent::EquipWeapon(int32 InventoryId)
 {
-	ServerEquipWeapon(InventoryId);
+    if (GetOwner()->GetLocalRole() < ROLE_Authority) {
+        // Client
+        ServerEquipWeapon(InventoryId);
+        return;
+	}
+    else {
+        // Server
+        HandleEquipWeapon(InventoryId);
+	}
 
     if (GetWorld()->GetNetMode() == NM_ListenServer) {
         // Host / Listen server
@@ -76,6 +84,9 @@ void UWeaponComponent::EquipWeapon(int32 InventoryId)
 
 void UWeaponComponent::ServerEquipWeapon_Implementation(int32 InventoryId)
 {
+	HandleEquipWeapon(InventoryId);
+}
+void UWeaponComponent::HandleEquipWeapon(int32 InventoryId) {
     if (InventoryId == CurrentInventoryId) {
 		return; // already equipped
     }
@@ -380,8 +391,10 @@ void UWeaponComponent::OnLeftClickStart() {
         OnFire();
 	}
     else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Throwable) {
-		DrawProjectileCurve();
-        ServerSetIsPriming(true);
+        if (!bIsPriming) {
+            DrawProjectileCurve();
+            ServerSetIsPriming(true);
+        }
 	}
 }
 
@@ -393,16 +406,28 @@ void UWeaponComponent::OnLeftClickRelease() {
 
     if (CurrentWeaponData.WeaponData && CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Throwable) {
         // Throw the grenade
+        if (!bIsPriming) {
+            return; // not priming, ignore
+        }
+        
         ServerThrow(GetVelocityGrenade());
 	}
 }
 
 void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
+	if (!bIsPriming) {
+		return; // not priming, ignore
+	}
+
+    if (bIsThrowing) {
+		return; // already throwing
+    }
+	bIsThrowing = true;
     // Logic throw, move object, and explode
     // Because on server, there's no current weapon, so we need to handle this
 	// gen object throwable
-    FVector StartPos = Character->GetMesh()->GetSocketLocation(TEXT("throwable_socket"));
-    StartPos += Character->GetActorForwardVector() * 10.f; // avoid collision                       // raise a bit if needed
+    FVector StartPos = Character->GetThrowableLocation();
+    //StartPos += Character->GetActorForwardVector() * 10.f; // avoid collision                       // raise a bit if needed
 
 
     AAThrownProjectile* ThrownProj = GetWorld()->SpawnActor<AAThrownProjectile>(
@@ -416,8 +441,22 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
         ThrownProj->LaunchProjectile(LaunchVelocity, Character);
 	}
 
+    bIsPriming = false;
+    FTimerHandle TimerHandle_FinishThrow;
+    GetWorld()->GetTimerManager().SetTimer(
+        TimerHandle_FinishThrow,
+        this,
+        &UWeaponComponent::OnFinishedThrow,
+        0.5f,
+        false
+    );
 
     MulticastThrowAction(LaunchVelocity);
+}
+
+void UWeaponComponent::OnFinishedThrow() {
+	bIsThrowing = false;
+	EquipSlot(FGameConstants::SLOT_MELEE);
 }
 
 void UWeaponComponent::MulticastThrowAction_Implementation(FVector LaunchVelocity) {
@@ -431,6 +470,7 @@ void UWeaponComponent::MulticastThrowAction_Implementation(FVector LaunchVelocit
 		CurrentWeapon->Destroy();
 		CurrentWeapon = nullptr;
     }
+    Character->PlayThrowNadeMontage();
     GetOwner()->GetWorldTimerManager().ClearTimer(ThrowProjectileTimer);
 }
 
@@ -562,6 +602,9 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 // Clients press 1, 2, 3 to equip weapon in that slot
 void UWeaponComponent::EquipSlot(int32 SlotIndex)
 {
+    if (bIsPriming) {
+        return; // can not change weapon while priming
+    }
     int32 InventoryId = FGameConstants::INVENTORY_ID_NONE;
 
     if (SlotIndex == FGameConstants::SLOT_THROWABLE) {
@@ -612,7 +655,7 @@ void UWeaponComponent::UpdateProjectileCurve()
     {
         return;
 	}
-    FVector StartPos = Character->GetMesh()->GetSocketLocation(TEXT("throwable_socket"));
+	FVector StartPos = Character->GetThrowableLocation();
     FVector LaunchVelocity = GetVelocityGrenade();
 
     FPredictProjectilePathParams Params;
@@ -661,7 +704,7 @@ void UWeaponComponent::OnRep_IsPriming()
     {
         // Start priming effects
         UE_LOG(LogTemp, Warning, TEXT("OnRep_IsPriming: Started priming"));
-		Character->PlayThrowNadeMontage();
+		Character->PlayHoldNadeMontage();
     }
     else
     {
@@ -673,6 +716,10 @@ void UWeaponComponent::OnRep_IsPriming()
 
 void UWeaponComponent::ServerSetIsPriming_Implementation(bool bNewIsPriming)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ServerSetIsPriming called with %s"), bIsPriming ? TEXT("true") : TEXT("false"));
+    if (bIsPriming == bNewIsPriming) {
+        return; // no change
+	}
     bIsPriming = bNewIsPriming;
     OnRep_IsPriming();
 }
@@ -738,6 +785,10 @@ int UWeaponComponent::GetMeleeInvenId() {
 }
 
 void UWeaponComponent::UpdateAttachLocationWeapon() {
+    if (!CurrentWeapon || !Character) {
+        return;
+    }
+
     FVector offset = FVector(0.f, 0.f, 0.f);
     FString SocketName = "ik_hand_gun";
     bool bIsFPS = Character->IsFpsViewMode();
@@ -769,4 +820,14 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     );
 
     CurrentWeapon->SetActorRelativeLocation(offset);
+}
+
+bool UWeaponComponent::CanWeaponAim() {
+    if (CurrentWeaponData.WeaponData == nullptr) {
+        return false;
+    }
+    if (CurrentWeaponData.WeaponData->WeaponType != EWeaponTypes::Firearm) {
+        return false;
+    }
+    return true;
 }

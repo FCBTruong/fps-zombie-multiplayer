@@ -39,11 +39,12 @@ protected:
 	bool bIsFiring;
 	bool bIsScopeEquipped;
 
-	UPROPERTY(ReplicatedUsing = OnRep_IsPriming)
+	UPROPERTY(ReplicatedUsing = OnRep_IsPriming) 
 	bool bIsPriming;
 	UFUNCTION(Server, Unreliable) void ServerSetIsPriming(bool bNewIsPriming);
 
 	UFUNCTION() void OnRep_IsPriming();
+	bool bIsThrowing;
 
 	// For client only, server DOES NOT use this pointer
 	AWeaponBase* CurrentWeapon;
@@ -74,8 +75,8 @@ protected:
 	UPROPERTY()
 	FTimerHandle ThrowProjectileTimer;
 	
-	float ThrowAngle = 30.f;
-	float GrenadeInitSpeed = 1600.f;
+	float ThrowAngle = 10.f;
+	float GrenadeInitSpeed = 1400.f;
 
 	int32 LongGunInventoryId = FGameConstants::INVENTORY_ID_NONE;
 	int32 SideArmInventoryId = FGameConstants::INVENTORY_ID_NONE; // Pistol
@@ -137,4 +138,7 @@ public:
 	int GetSideArmInvenId();
 	int GetMeleeInvenId();
 	void UpdateAttachLocationWeapon();
+	bool CanWeaponAim();
+	void OnFinishedThrow();
+	void HandleEquipWeapon(int32 InventoryId);
 };

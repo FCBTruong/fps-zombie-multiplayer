@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
+#include "UI/ScopeUI.h"
 #include "PlayerCharacter.generated.h"
 
 /**
@@ -23,7 +24,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scope")
 	TSubclassOf<UUserWidget> ScopeWidgetClass;
 
-	UUserWidget* CurrentScopeWidget;
+	UScopeUI* CurrentScopeWidget;
 	float TargetFOV = 90.0f;
 
 public:

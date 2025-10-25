@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/CanvasPanel.h"
+#include "Components/Image.h"
 #include "ScopeUI.generated.h"
 
 /**
@@ -20,7 +21,7 @@ private:
 	UImage* ScopeImage;
 
 	UPROPERTY(meta = (BindWidget))
-	CanvasPanel* Crosshair;
+	UCanvasPanel* Crosshair;
 public:
 	void ShowScope();
 	void HideScope();

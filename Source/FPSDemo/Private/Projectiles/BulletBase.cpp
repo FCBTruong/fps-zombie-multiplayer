@@ -13,8 +13,7 @@ ABulletBase::ABulletBase()
     CollisionComp->InitSphereRadius(2.f);
 	CollisionComp->SetHiddenInGame(false);
 	CollisionComp->SetGenerateOverlapEvents(false);
-    CollisionComp->SetCollisionProfileName(TEXT("Bullet"));
-    //CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
    
 
     RootComponent = CollisionComp;
@@ -45,6 +44,7 @@ ABulletBase::ABulletBase()
 void ABulletBase::BeginPlay()
 {
     Super::BeginPlay();
+    CollisionComp->SetCollisionProfileName(TEXT("Bullet"));
     if (AActor* MyOwner = GetOwner())
     {        
         UE_LOG(LogTemp, Warning, TEXT("MyInstigatorOWner %s"), *MyOwner->GetName());

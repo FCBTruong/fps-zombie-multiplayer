@@ -25,10 +25,14 @@ void AWeaponBase::PreInitializeComponents()
 	Super::PreInitializeComponents();
 }
 
-// Called when the game starts or when spawned
+// Fix the Cast usage in BeginPlay
 void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	if (Character && Character->IsLocallyControlled()) {
+		WeaponMesh->SetCastShadow(false);
+	}
 }
 
 // Called every frame

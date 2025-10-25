@@ -10,10 +10,11 @@ APlayerCharacter::APlayerCharacter() {
 
 void APlayerCharacter::BeginPlay() {
 	Super::BeginPlay();
-	if (ScopeWidgetClass) {
-		CurrentScopeWidget = CreateWidget<UUserWidget>(GetWorld(), ScopeWidgetClass);
+	if (ScopeWidgetClass && IsLocallyControlled()) {
+		CurrentScopeWidget = CreateWidget<UScopeUI>(GetWorld(), ScopeWidgetClass);
 		if (CurrentScopeWidget) {
 			CurrentScopeWidget->AddToViewport();
+			CurrentScopeWidget->HideScope();
 		}
 	}
 
@@ -45,6 +46,9 @@ void APlayerCharacter::PlayFireRifleMontage(FVector TargetPoint)
 
 void APlayerCharacter::ClickAim()
 {
+	if (!WeaponComp->CanWeaponAim()) {
+		return;
+	}
 	if (bAiming) {
 		ServerSetAiming(false);
 	}
@@ -55,8 +59,8 @@ void APlayerCharacter::ClickAim()
 
 void APlayerCharacter::UpdateAimingState()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Updating Aiming State: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
 	if (IsLocallyControlled()) {
+		UE_LOG(LogTemp, Warning, TEXT("Updating Aiming State: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
 		if (bAiming)
 		{
 			// Smooth FOV zoom
@@ -67,7 +71,7 @@ void APlayerCharacter::UpdateAimingState()
 				FirstPersonCamera->SetRelativeLocation(FVector(15.f, 20.f, 0.f));
 				AimSensitivity = 0.2f;
 				if (CurrentScopeWidget) {
-					CurrentScopeWidget->SetVisibility(ESlateVisibility::Visible);
+					CurrentScopeWidget->ShowScope();
 				}
 
 				// update speed
@@ -81,7 +85,7 @@ void APlayerCharacter::UpdateAimingState()
 			FirstPersonCamera->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 			AimSensitivity = 1.0f;
 			if (CurrentScopeWidget) {
-				CurrentScopeWidget->SetVisibility(ESlateVisibility::Hidden);
+				CurrentScopeWidget->HideScope();
 			}
 			HandleUpdateSpeedWalkCurrently();
 		}

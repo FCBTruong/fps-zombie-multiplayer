@@ -26,6 +26,7 @@ protected:
 	UPROPERTY() UProjectileMovementComponent* Projectile;
 	UPROPERTY() UStaticMeshComponent* WeaponMesh;
 	UWeaponData* Data;
+	bool bIsExploded = false;
 
 	UFUNCTION()
 	void OnProjectileHit(

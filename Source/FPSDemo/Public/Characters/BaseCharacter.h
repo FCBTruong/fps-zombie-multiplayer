@@ -153,6 +153,11 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
     UAnimMontage* ThrowNadeMontage;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	UAnimMontage* HoldNadeMontage;
+
+    USceneComponent* ThrowableLocation;
+
     // Lifecycle
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -227,5 +232,9 @@ public:
     ) override;
 
 	void PlayThrowNadeMontage();
+	void PlayHoldNadeMontage();
 	bool IsCloseToWall() const { return bCloseToWall; }
+    FVector GetThrowableLocation() const {
+        return ThrowableLocation->GetComponentLocation();
+	}
 };
