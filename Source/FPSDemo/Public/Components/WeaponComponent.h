@@ -63,6 +63,8 @@ protected:
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastThrowAction(FVector LaunchVelocity);
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastDoMeleeAttack(int AttackIdx);
 
 	UInventoryComponent* InventoryComp;
 
@@ -95,6 +97,8 @@ public:
 	void DropWeapon();
 	UFUNCTION(Server, Reliable)
 	void ServerOnFire(FVector TargetPoint);
+	UFUNCTION(Server, Reliable)
+	void ServerDoMeleeAttack(int AttackIdx);
 
 	void OnLeftClickStart();
 	void OnLeftClickRelease();
@@ -141,4 +145,5 @@ public:
 	bool CanWeaponAim();
 	void OnFinishedThrow();
 	void HandleEquipWeapon(int32 InventoryId);
+	void PerformMeleeAttack(int AttackIdx);
 };

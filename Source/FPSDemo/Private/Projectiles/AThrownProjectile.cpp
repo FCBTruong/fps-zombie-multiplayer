@@ -27,8 +27,8 @@ AAThrownProjectile::AAThrownProjectile()
     Projectile->bAutoActivate = false;
     Projectile->bRotationFollowsVelocity = true;
     Projectile->bShouldBounce = true;
-    Projectile->Bounciness = 0.3f;
-    Projectile->Friction = 0.8f;
+    Projectile->Bounciness = 0.5f;
+    Projectile->Friction = 0.6f;
     Projectile->BounceVelocityStopSimulatingThreshold = 100.f;
     Projectile->ProjectileGravityScale = 1.0f;
     Projectile->bForceSubStepping = true;
@@ -50,19 +50,7 @@ void AAThrownProjectile::OnProjectileHit(
     UPrimitiveComponent* OtherComp, FVector NormalImpulse,
     const FHitResult& Hit)
 {
-    if (bIsExploded)
-    {
-        return;
-	}
-	bIsExploded = true;
 	UE_LOG(LogTemp, Log, TEXT("AAThrownProjectile::OnProjectileHit"));
-  /*  if (!HasAuthority())
-    {
-		UE_LOG(LogTemp, Warning, TEXT("AAThrownProjectile::OnProjectileHit - No Authority"));
-        return;
-    } */
-	MulticastExplode(Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
-    SetLifeSpan(2.1f);
 }
 
 void AAThrownProjectile::InitFromData(UWeaponData* InData)
@@ -98,8 +86,16 @@ void AAThrownProjectile::LaunchProjectile(FVector LaunchVelocity, AActor* Instig
 {
     if (Projectile)
     {
-        Projectile->Velocity = LaunchVelocity;
+        Projectile->SetVelocityInLocalSpace(LaunchVelocity);
         Projectile->Activate(true);
+
+        GetWorldTimerManager().SetTimer(
+            TimerHandle_Explode,
+            this,
+            &AAThrownProjectile::ExplodeNow,
+            5.0f,
+            false
+        );
     }
 }
 void AAThrownProjectile::MulticastExplode_Implementation(const FVector& ImpactPoint, const FRotator& Rotation)
@@ -137,4 +133,18 @@ void AAThrownProjectile::MulticastExplode_Implementation(const FVector& ImpactPo
 void AAThrownProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+}
+
+void AAThrownProjectile::ExplodeNow()
+{
+    if (bIsExploded)
+        return;
+
+    bIsExploded = true;
+    UE_LOG(LogTemp, Log, TEXT("AAThrownProjectile::ExplodeNow"));
+
+    FVector ImpactPoint = GetActorLocation();
+    FRotator Rotation = FRotator::ZeroRotator;
+    MulticastExplode(ImpactPoint, Rotation);
+    SetLifeSpan(0.1f);
 }

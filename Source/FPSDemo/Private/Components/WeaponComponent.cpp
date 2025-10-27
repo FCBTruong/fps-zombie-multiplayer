@@ -383,13 +383,8 @@ void UWeaponComponent::OnLeftClickStart() {
         }
     }
     else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Melee) {
-        // Handle melee attack
-        OnFire();
+        ServerDoMeleeAttack(0);
     }
-    else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Melee) {
-        // Handle throwable attack
-        OnFire();
-	}
     else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Throwable) {
         if (!bIsPriming) {
             DrawProjectileCurve();
@@ -505,6 +500,22 @@ void UWeaponComponent::OnFire() {
 
 void UWeaponComponent::ServerOnFire_Implementation(FVector TargetPoint) {
 	HandleOnFire(TargetPoint);
+}
+
+void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
+	// Check if can attack
+    if (!Character) {
+        return;
+    }
+    if (Character->IsCloseToWall()) {
+        return;
+    }
+	Character->PlayMeleeAttackAnimation(AttackIdx);
+	MulticastDoMeleeAttack(AttackIdx);
+}
+
+void UWeaponComponent::MulticastDoMeleeAttack_Implementation(int AttackIdx) {
+    Character->PlayMeleeAttackAnimation(AttackIdx);
 }
 
 
@@ -830,4 +841,24 @@ bool UWeaponComponent::CanWeaponAim() {
         return false;
     }
     return true;
+}
+
+void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
+{
+	UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack called"));
+    if (!Character) return;
+    FVector Start = Character->GetActorLocation();
+    FVector End = Start + Character->GetActorForwardVector() * 100;
+
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(Character);
+
+    if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, Params))
+    {
+        if (AActor* Target = Hit.GetActor())
+        {
+            UGameplayStatics::ApplyDamage(Target, 10, Character->GetController(), Character, UDamageType::StaticClass());
+        }
+    }
 }

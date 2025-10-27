@@ -80,6 +80,18 @@ void ABaseCharacter::BeginPlay()
         UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
     }
     UpdateView();
+
+
+    if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
+    {
+		UE_LOG(LogTemp, Warning, TEXT("FPSAnim is valid in ABaseCharacter"));
+        FPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+    }
+
+    if (UAnimInstance* TPSAnim = GetMesh()->GetAnimInstance())
+    {
+        TPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+    }
 }
 
 // Called every frame
@@ -471,21 +483,7 @@ void ABaseCharacter::PlayThrowNadeMontage()
         return;
     }
 
-    USkeletalMeshComponent* MeshComp = GetCurrentMesh();
-    if (!MeshComp)
-    {
-        UE_LOG(LogTemp, Error, TEXT("GetCurrentMesh() returned null"));
-        return;
-    }
-
-    UAnimInstance* AnimInst = MeshComp->GetAnimInstance();
-    if (!AnimInst)
-    {
-        UE_LOG(LogTemp, Error, TEXT("AnimInstance is null"));
-        return;
-    }
-    
-    AnimInst->Montage_Play(ThrowNadeMontage);
+	PlayMontage(ThrowNadeMontage);
 }
 
 void ABaseCharacter::PlayHoldNadeMontage()
@@ -495,6 +493,16 @@ void ABaseCharacter::PlayHoldNadeMontage()
         UE_LOG(LogTemp, Error, TEXT("HoldNadeMontage is null"));
         return;
     }
+	PlayMontage(HoldNadeMontage);
+}
+
+void ABaseCharacter::PlayMontage(UAnimMontage* MontageToPlay)
+{
+    if (!MontageToPlay)
+    {
+        UE_LOG(LogTemp, Error, TEXT("MontageToPlay is null"));
+        return;
+    }
     USkeletalMeshComponent* MeshComp = GetCurrentMesh();
     if (!MeshComp)
     {
@@ -507,7 +515,36 @@ void ABaseCharacter::PlayHoldNadeMontage()
         UE_LOG(LogTemp, Error, TEXT("AnimInstance is null"));
         return;
     }
-   
-	UE_LOG(LogTemp, Warning, TEXT("Playing HoldNadeMontage"));
-    AnimInst->Montage_Play(HoldNadeMontage);
+    AnimInst->Montage_Play(MontageToPlay);
+}
+
+void ABaseCharacter::PlayMeleeAttackAnimation(int32 AttackIndex) {
+	UE_LOG(LogTemp, Warning, TEXT("PlayMeleeAttackAnimation called with AttackIndex: %d"), AttackIndex);
+    if (AttackIndex == 0) {
+        if (KnifeAttack1Montage) {
+			PlayMontage(KnifeAttack1Montage);
+        }
+    }
+    else if (AttackIndex == 1) {
+        if (KnifeAttack2Montage) {
+            PlayMontage(KnifeAttack2Montage);
+        }
+    }
+}
+void ABaseCharacter::OnMeleeNotify()
+{
+    if (WeaponComp)
+    {
+        WeaponComp->PerformMeleeAttack(0);
+    }
+}
+
+
+void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload)
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnNotifyBegin called with NotifyName: %s"), *NotifyName.ToString());
+    if (NotifyName == "MeleeAttack")
+    {
+        OnMeleeNotify();
+    }
 }

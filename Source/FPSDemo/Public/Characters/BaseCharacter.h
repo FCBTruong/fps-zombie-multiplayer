@@ -155,6 +155,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
 	UAnimMontage* HoldNadeMontage;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    UAnimMontage* KnifeAttack1Montage;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    UAnimMontage* KnifeAttack2Montage;
 
     USceneComponent* ThrowableLocation;
 
@@ -196,7 +200,8 @@ protected:
     void OnRep_IsAiming();
 
 	virtual void UpdateAimingState();
-    
+	void OnMeleeNotify();
+	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 public:
     virtual void Tick(float DeltaTime) override;
     static constexpr float MAX_WALK_SPEED = 600.f;
@@ -233,8 +238,10 @@ public:
 
 	void PlayThrowNadeMontage();
 	void PlayHoldNadeMontage();
+	void PlayMontage(UAnimMontage* MontageToPlay);
 	bool IsCloseToWall() const { return bCloseToWall; }
     FVector GetThrowableLocation() const {
         return ThrowableLocation->GetComponentLocation();
 	}
+	void PlayMeleeAttackAnimation(int32 AttackIndex);
 };

@@ -33,6 +33,8 @@ protected:
 		UPrimitiveComponent* HitComp, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
 		const FHitResult& Hit);
+	FTimerHandle TimerHandle_Explode;
+	void ExplodeNow();
 public:	
 	void InitFromData(UWeaponData* InData);
 	void LaunchProjectile(FVector LaunchVelocity, AActor* InstigatorActor);
