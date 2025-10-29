@@ -383,7 +383,7 @@ void UWeaponComponent::OnLeftClickStart() {
         }
     }
     else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Melee) {
-        ServerDoMeleeAttack(0);
+         ServerDoMeleeAttack(0);
     }
     else if (CurrentWeaponData.WeaponData->WeaponType == EWeaponTypes::Throwable) {
         if (!bIsPriming) {
@@ -503,13 +503,17 @@ void UWeaponComponent::ServerOnFire_Implementation(FVector TargetPoint) {
 }
 
 void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
+    if (bIsMeleeAttacking) {
+        return; // already attacking
+	}
 	// Check if can attack
     if (!Character) {
         return;
     }
-    if (Character->IsCloseToWall()) {
+   /* if (Character->IsCloseToWall()) {
         return;
-    }
+    }*/
+	bIsMeleeAttacking = true;
 	Character->PlayMeleeAttackAnimation(AttackIdx);
 	MulticastDoMeleeAttack(AttackIdx);
 }
@@ -541,10 +545,11 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
         if (bHit && Damage > 0.f)
         {
 			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applying damage to %s"), *Hit.GetActor()->GetName());
-            UGameplayStatics::ApplyDamage(
+            float ActualDamage = UGameplayStatics::ApplyDamage(
                 Hit.GetActor(), Damage, Character->GetController(),
                 Character, UDamageType::StaticClass()
             );
+			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applied damage: %f"), ActualDamage);
         }
 
         UE_LOG(LogTemp, Warning, TEXT("OnFire: Server calling MulticastPlayFireRifle"));
@@ -847,17 +852,36 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
 {
 	UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack called"));
     if (!Character) return;
-    FVector Start = Character->GetActorLocation();
-    FVector End = Start + Character->GetActorForwardVector() * 100;
-
+    FVector Start = Character->GetActorLocation() + FVector(0, 0, 50);
+    FVector End = Start + Character->GetActorForwardVector() * 150;
     FHitResult Hit;
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(Character);
+
+	if (Character->HasAuthority()) {
+		bIsMeleeAttacking = false;
+	}
 
     if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, Params))
     {
         if (AActor* Target = Hit.GetActor())
         {
+			UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack: Hit actor %s"), *Target->GetName());
+            if (Character->MeleeHitDecal) {
+				UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack: Spawning decal at hit location"));
+                FVector SpawnLoc = Hit.ImpactPoint + Hit.ImpactNormal * 2.0f;
+                FRotator DecalRot = Hit.ImpactNormal.Rotation();
+                UGameplayStatics::SpawnDecalAtLocation(
+                    GetWorld(),
+                    Character->MeleeHitDecal,
+                    FVector(10.f, 10.f, 10.f), // XYZ = size, not just X
+                    SpawnLoc,
+                    DecalRot,
+                    10.0f
+                );
+
+            }
+
             UGameplayStatics::ApplyDamage(Target, 10, Character->GetController(), Character, UDamageType::StaticClass());
         }
     }

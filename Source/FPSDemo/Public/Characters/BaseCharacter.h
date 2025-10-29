@@ -201,7 +201,11 @@ protected:
 
 	virtual void UpdateAimingState();
 	void OnMeleeNotify();
+
+	UFUNCTION()
 	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+    UFUNCTION()
+	void UpdateHealthUI();
 public:
     virtual void Tick(float DeltaTime) override;
     static constexpr float MAX_WALK_SPEED = 600.f;
@@ -244,4 +248,7 @@ public:
         return ThrowableLocation->GetComponentLocation();
 	}
 	void PlayMeleeAttackAnimation(int32 AttackIndex);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Decal")
+    UMaterialInterface* MeleeHitDecal;
 };

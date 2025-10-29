@@ -3,6 +3,14 @@
 
 #include "UI/PlayerUI.h"
 
+void UPlayerUI::NativeConstruct()
+{
+    Super::NativeConstruct();
+    if (HpBar)
+    {
+        HpBar->SetPercent(1.0f);
+    }
+}
 void UPlayerUI::ShowPickupMessage(FString Message)
 {
     if (UTextBlock* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("PickupLabel"))))
@@ -17,5 +25,13 @@ void UPlayerUI::HidePickupMessage()
     if (UTextBlock* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("PickupLabel"))))
     {
         Label->SetVisibility(ESlateVisibility::Hidden);
+    }
+}
+
+void UPlayerUI::UpdateHealth(float CurrentHealth, float MaxHealth)
+{
+    if (HpBar && MaxHealth > 0.0f)
+    {
+        HpBar->SetPercent(CurrentHealth / MaxHealth);
     }
 }

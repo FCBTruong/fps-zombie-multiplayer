@@ -3,7 +3,6 @@
 
 #include "UI/ScopeUI.h"
 
-
 void UScopeUI::ShowScope()
 {
 	if (ScopeImage)

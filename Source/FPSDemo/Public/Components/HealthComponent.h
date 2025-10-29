@@ -13,8 +13,12 @@ class FPSDEMO_API UHealthComponent : public UActorComponent
 	GENERATED_BODY()
 
 private:
+	UPROPERTY(ReplicatedUsing = OnRep_Health)
 	float Health;
 	float MaxHealth;
+
+	UFUNCTION()
+	void OnRep_Health();
 public:	
 	// Sets default values for this component's properties
 	UHealthComponent();
@@ -28,5 +32,15 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void ApplyDamage(float DamageAmount);
-		
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(BlueprintCallable)
+	float GetHealthPercent() const { return Health / MaxHealth; }
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealthUpdated);
+	UPROPERTY()
+	FOnHealthUpdated OnHealthUpdated;
+
+	float GetHealth() const { return Health; }
+	float GetMaxHealth() const { return MaxHealth; }
 };

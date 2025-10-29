@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -14,7 +15,13 @@ UCLASS()
 class FPSDEMO_API UPlayerUI : public UUserWidget
 {
 	GENERATED_BODY()
+
+private:
+	UPROPERTY(meta = (BindWidget))
+	UProgressBar* HpBar;
 public:
+	void NativeConstruct() override;
 	void ShowPickupMessage(FString Message);
 	void HidePickupMessage();
+	void UpdateHealth(float CurrentHealth, float MaxHealth);
 };

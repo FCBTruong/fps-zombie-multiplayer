@@ -38,6 +38,7 @@ protected:
 	UPROPERTY(Replicated)
 	bool bIsFiring;
 	bool bIsScopeEquipped;
+	bool bIsMeleeAttacking;
 
 	UPROPERTY(ReplicatedUsing = OnRep_IsPriming) 
 	bool bIsPriming;

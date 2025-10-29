@@ -34,6 +34,8 @@ ABaseCharacter::ABaseCharacter()
     {
         UE_LOG(LogTemp, Error, TEXT("WeaponComp is null in ABaseCharacter constructor"));
 	}
+
+    UE_LOG(LogTemp, Warning, TEXT("Binding OnTakeAnyDamage in ABaseCharacter"));
 }
 
 // Called when the game starts or when spawned
@@ -91,6 +93,12 @@ void ABaseCharacter::BeginPlay()
     if (UAnimInstance* TPSAnim = GetMesh()->GetAnimInstance())
     {
         TPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+    }
+
+
+    if (HealthComp)
+    {
+        HealthComp->OnHealthUpdated.AddDynamic(this, &ABaseCharacter::UpdateHealthUI);
     }
 }
 
@@ -471,6 +479,7 @@ void ABaseCharacter::OnRepSpeedWalkCurrently()
 float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
     AController* EventInstigator, AActor* DamageCauser)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     HealthComp->ApplyDamage(DamageAmount);
     return DamageAmount;
 }
@@ -548,3 +557,13 @@ void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotify
         OnMeleeNotify();
     }
 }
+
+
+void ABaseCharacter::UpdateHealthUI()
+{
+    // Implement UI update logic here
+    UE_LOG(LogTemp, Warning, TEXT("Health updated:"));
+	PlayerUI->UpdateHealth(HealthComp->GetHealth(), HealthComp->GetMaxHealth());
+}
+
+
