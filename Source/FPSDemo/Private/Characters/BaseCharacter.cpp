@@ -99,6 +99,7 @@ void ABaseCharacter::BeginPlay()
     if (HealthComp)
     {
         HealthComp->OnHealthUpdated.AddDynamic(this, &ABaseCharacter::UpdateHealthUI);
+        HealthComp->OnDeath.AddUObject(this, &ABaseCharacter::HandleDeath);
     }
 }
 
@@ -567,3 +568,12 @@ void ABaseCharacter::UpdateHealthUI()
 }
 
 
+
+void ABaseCharacter::HandleDeath()
+{
+    // Play animation, ragdoll, notify game mode, etc.
+	UE_LOG(LogTemp, Warning, TEXT("Character has died."));
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    GetMesh()->SetSimulatePhysics(true);
+    GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+}

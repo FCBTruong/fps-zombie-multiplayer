@@ -251,4 +251,6 @@ public:
 
     UPROPERTY(EditDefaultsOnly, Category = "Decal")
     UMaterialInterface* MeleeHitDecal;
+
+	void HandleDeath();
 };

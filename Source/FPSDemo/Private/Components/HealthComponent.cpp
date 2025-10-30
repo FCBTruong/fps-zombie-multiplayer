@@ -3,6 +3,7 @@
 
 #include "Components/HealthComponent.h"
 #include "Net/UnrealNetwork.h"
+#include <Characters/BaseCharacter.h>
 
 // Sets default values for this component's properties
 UHealthComponent::UHealthComponent()
@@ -41,6 +42,10 @@ void UHealthComponent::ApplyDamage(float DamageAmount)
 	{
 		Health = 0.0f;
 	}
+	if (Health == 0.0f)
+	{
+		HealthDeath();
+	}
 }
 
 
@@ -56,4 +61,15 @@ void UHealthComponent::OnRep_Health()
 {
 	UE_LOG(LogTemp, Log, TEXT("Health replicated: %f"), Health);
 	OnHealthUpdated.Broadcast();
+}
+
+void UHealthComponent::HealthDeath()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Health has reached zero!"));
+	// Implement death logic here (e.g., notify the owning actor, play death animation, etc.)
+	ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
+	if (!OwnerCharacter) return;
+	
+	// Optional: broadcast death event
+	OnDeath.Broadcast();
 }

@@ -7,7 +7,10 @@
 #include "HealthComponent.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+DECLARE_MULTICAST_DELEGATE(FOnDeath);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealthUpdated);
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
+
 class FPSDEMO_API UHealthComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -37,10 +40,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetHealthPercent() const { return Health / MaxHealth; }
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealthUpdated);
 	UPROPERTY()
 	FOnHealthUpdated OnHealthUpdated;
 
 	float GetHealth() const { return Health; }
 	float GetMaxHealth() const { return MaxHealth; }
+	void HealthDeath();
+	FOnDeath OnDeath;
 };
