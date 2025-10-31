@@ -15,7 +15,6 @@
 #include "Camera/CameraComponent.h"
 #include "Components/TimelineComponent.h"
 #include "Components/InteractComponent.h"
-#include "UI/PlayerUI.h"
 #include "Components/HealthComponent.h"
 #include "BaseCharacter.generated.h"
 
@@ -68,12 +67,6 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
     UAnimMontage* FireMeleeMontage;
-
-    UPROPERTY(EditAnywhere, Category = "Weapon")
-    TSubclassOf<AWeaponKnifeBasic> KnifeClass;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Input")
-    UPlayerUI* PlayerUI;
 
     USplineComponent* ThrowSpline;
 protected:
@@ -204,8 +197,6 @@ protected:
 
 	UFUNCTION()
 	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
-    UFUNCTION()
-	void UpdateHealthUI();
 public:
     virtual void Tick(float DeltaTime) override;
     static constexpr float MAX_WALK_SPEED = 600.f;
@@ -253,4 +244,10 @@ public:
     UMaterialInterface* MeleeHitDecal;
 
 	void HandleDeath();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_HandleDeath();
+
+    UFUNCTION(Server, Reliable) void ServerRevive();
+    UFUNCTION(NetMulticast, Reliable) void Multicast_ReviveFX();
 };

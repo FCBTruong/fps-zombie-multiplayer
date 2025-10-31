@@ -8,7 +8,8 @@
 
 
 DECLARE_MULTICAST_DELEGATE(FOnDeath);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealthUpdated);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHealthUpdated, float, float);
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 
 class FPSDEMO_API UHealthComponent : public UActorComponent
@@ -40,11 +41,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetHealthPercent() const { return Health / MaxHealth; }
 
-	UPROPERTY()
 	FOnHealthUpdated OnHealthUpdated;
 
 	float GetHealth() const { return Health; }
 	float GetMaxHealth() const { return MaxHealth; }
 	void HealthDeath();
 	FOnDeath OnDeath;
+	void SetHealth(float NewHealth);
 };

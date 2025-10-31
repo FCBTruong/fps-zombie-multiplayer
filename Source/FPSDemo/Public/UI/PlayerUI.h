@@ -19,9 +19,13 @@ class FPSDEMO_API UPlayerUI : public UUserWidget
 private:
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* HpBar;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* TotalAmmo;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* CurrentAmmo;
 public:
 	void NativeConstruct() override;
-	void ShowPickupMessage(FString Message);
+	void ShowPickupMessage(const FString& Message);
 	void HidePickupMessage();
 	void UpdateHealth(float CurrentHealth, float MaxHealth);
 };

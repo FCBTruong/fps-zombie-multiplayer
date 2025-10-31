@@ -11,7 +11,7 @@ void UPlayerUI::NativeConstruct()
         HpBar->SetPercent(1.0f);
     }
 }
-void UPlayerUI::ShowPickupMessage(FString Message)
+void UPlayerUI::ShowPickupMessage(const FString& Message)
 {
     if (UTextBlock* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("PickupLabel"))))
     {

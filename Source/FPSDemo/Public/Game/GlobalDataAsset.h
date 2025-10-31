@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "GlobalDataAsset.generated.h"
-
+class UPlayerUI;
 /**
  * 
  */
@@ -20,4 +20,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterialInterface* TrajectoryMaterial;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UPlayerUI> PlayerUIClass;
 };

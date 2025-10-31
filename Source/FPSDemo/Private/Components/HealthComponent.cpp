@@ -60,7 +60,7 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UHealthComponent::OnRep_Health()
 {
 	UE_LOG(LogTemp, Log, TEXT("Health replicated: %f"), Health);
-	OnHealthUpdated.Broadcast();
+	OnHealthUpdated.Broadcast(Health, MaxHealth);
 }
 
 void UHealthComponent::HealthDeath()
@@ -72,4 +72,14 @@ void UHealthComponent::HealthDeath()
 	
 	// Optional: broadcast death event
 	OnDeath.Broadcast();
+}
+
+void UHealthComponent::SetHealth(float NewHealth)
+{
+	Health = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
+	if (Health == 0.0f)
+	{
+		HealthDeath();
+	}
+	OnHealthUpdated.Broadcast(Health, MaxHealth);
 }

@@ -98,7 +98,6 @@ void ABaseCharacter::BeginPlay()
 
     if (HealthComp)
     {
-        HealthComp->OnHealthUpdated.AddDynamic(this, &ABaseCharacter::UpdateHealthUI);
         HealthComp->OnDeath.AddUObject(this, &ABaseCharacter::HandleDeath);
     }
 }
@@ -559,21 +558,43 @@ void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotify
     }
 }
 
-
-void ABaseCharacter::UpdateHealthUI()
-{
-    // Implement UI update logic here
-    UE_LOG(LogTemp, Warning, TEXT("Health updated:"));
-	PlayerUI->UpdateHealth(HealthComp->GetHealth(), HealthComp->GetMaxHealth());
-}
-
-
-
 void ABaseCharacter::HandleDeath()
 {
     // Play animation, ragdoll, notify game mode, etc.
 	UE_LOG(LogTemp, Warning, TEXT("Character has died."));
+    if (HasAuthority())
+    {
+        GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        GetMesh()->SetSimulatePhysics(true);
+        GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+
+        Multicast_HandleDeath();
+    }
+}
+
+void ABaseCharacter::Multicast_HandleDeath_Implementation()
+{
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     GetMesh()->SetSimulatePhysics(true);
     GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+}
+
+void ABaseCharacter::ServerRevive_Implementation()
+{
+    // Authoritative state changes
+    if (UHealthComponent* HC = FindComponentByClass<UHealthComponent>())
+        HC->SetHealth(HC->GetMaxHealth());
+
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    GetMesh()->SetSimulatePhysics(false);
+    GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
+
+    Multicast_ReviveFX(); // optional visuals for all
+}
+
+void ABaseCharacter::Multicast_ReviveFX_Implementation()
+{
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    GetMesh()->SetSimulatePhysics(false);
+    GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
 }

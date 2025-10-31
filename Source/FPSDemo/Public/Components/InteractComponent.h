@@ -7,6 +7,8 @@
 #include "Components/ActorComponent.h"
 #include "InteractComponent.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FShowPickupMessage, const FString&)
+DECLARE_MULTICAST_DELEGATE(FHidePickupMessage)
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UInteractComponent : public UActorComponent
@@ -28,4 +30,6 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void TraceForPickup();
 	void TryPickup();	
+	FShowPickupMessage ShowPickupMessage;
+	FHidePickupMessage HidePickupMessage;
 };
