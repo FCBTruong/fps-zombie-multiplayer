@@ -18,6 +18,8 @@ AWeaponBase::AWeaponBase()
 
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	bReplicates = true;
+	SetReplicateMovement(false);
 }
 
 void AWeaponBase::PreInitializeComponents()
@@ -51,21 +53,39 @@ EWeaponTypes AWeaponBase::GetWeaponType()
 }
 
 
+// This function will be called on server
 void AWeaponBase::InitFromData(UWeaponData* InData)
 {
 	Data = InData;
-	if (Data && Data->Mesh)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("WeaponBase InitFromData: Setting Mesh"));
-		WeaponMesh->SetSkeletalMesh(Data->Mesh);
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("WeaponBase InitFromData: Invalid Data or Mesh"));
-	}
+	ApplyWeaponData();
 }
 
 void AWeaponBase::OnFire(FVector TargetPoint)
 {
 	// Implement firing logic here
 	UE_LOG(LogTemp, Warning, TEXT("WeaponBase OnFire called"));
+}
+
+void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AWeaponBase, Data);
+}
+
+void AWeaponBase::OnRep_WeaponData()
+{
+	UE_LOG(LogTemp, Warning, TEXT("WeaponBase OnRep_WeaponData called"));
+	ApplyWeaponData();
+}
+
+void AWeaponBase::ApplyWeaponData()
+{
+	if (Data && Data->Mesh)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: Setting Mesh"));
+		WeaponMesh->SetSkeletalMesh(Data->Mesh);
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: Invalid Data or Mesh"));
+	}
 }

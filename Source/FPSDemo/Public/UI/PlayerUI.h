@@ -28,4 +28,5 @@ public:
 	void ShowPickupMessage(const FString& Message);
 	void HidePickupMessage();
 	void UpdateHealth(float CurrentHealth, float MaxHealth);
+	void UpdateAmmo(int CurrentAmmoValue, int TotalAmmoValue);
 };

@@ -47,8 +47,10 @@ protected:
 	UFUNCTION() void OnRep_IsPriming();
 	bool bIsThrowing;
 
-	// For client only, server DOES NOT use this pointer
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
 	AWeaponBase* CurrentWeapon;
+	UFUNCTION()
+	void OnRep_CurrentWeapon();
 
 	FTimerHandle FireTimerHandle;
 
@@ -56,20 +58,12 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	UPROPERTY(ReplicatedUsing=OnRep_CurrentInventoryId)
-	int32 CurrentInventoryId;
-
-	UFUNCTION()
-	void OnRep_CurrentInventoryId();
-
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastThrowAction(FVector LaunchVelocity);
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastDoMeleeAttack(int AttackIdx);
 
 	UInventoryComponent* InventoryComp;
-
-	FWeaponRuntimeData CurrentWeaponData;
 
 	bool bIsInitialized = false;
 

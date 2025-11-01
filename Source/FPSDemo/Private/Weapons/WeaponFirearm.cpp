@@ -5,6 +5,9 @@
 #include "Projectiles/BulletBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Controllers/MyPlayerController.h"
+#include "Net/UnrealNetwork.h"
+
 
 void AWeaponFirearm::OnFire(FVector TargetPoint)
 {
@@ -52,5 +55,48 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 	if (Data->FireSFX)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, Data->FireSFX, GetActorLocation());
+	}
+}
+
+
+void AWeaponFirearm::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	// current ammo, max ammo replication
+	DOREPLIFETIME(AWeaponFirearm, CurrentAmmo);
+	DOREPLIFETIME(AWeaponFirearm, MaxAmmo);
+}
+
+void AWeaponFirearm::OnRep_CurrentAmmo()
+{
+	// Handle client-side logic when CurrentAmmo is updated
+	UE_LOG(LogTemp, Warning, TEXT("CurrentAmmo replicated: %d"), CurrentAmmo);
+
+	if (auto* Pawn = Cast<APawn>(GetOwner()))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Owner Pawn found: %s"), *Pawn->GetName());
+		if (auto* PC = Cast<AMyPlayerController>(Pawn->GetController()))
+		{
+			if (PC->PlayerUI)
+			{
+				PC->PlayerUI->UpdateAmmo(CurrentAmmo, MaxAmmo);
+			}
+		}
+	}
+}
+
+void AWeaponFirearm::OnRep_MaxAmmo()
+{
+	// Handle client-side logic when MaxAmmo is updated
+	UE_LOG(LogTemp, Warning, TEXT("MaxAmmo replicated: %d"), MaxAmmo);
+}
+
+void AWeaponFirearm::ConsumeAmmo(int Amount)
+{
+	if (GetOwner()->HasAuthority()) // only server modifies ammo
+	{
+		CurrentAmmo = FMath::Max(0, CurrentAmmo - Amount);
+		UE_LOG(LogTemp, Warning, TEXT("Ammo consumed. CurrentAmmo: %d"), CurrentAmmo);
 	}
 }
