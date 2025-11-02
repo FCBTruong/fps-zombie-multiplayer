@@ -35,10 +35,11 @@ protected:
 		const FHitResult& Hit);
 	FTimerHandle TimerHandle_Explode;
 	void ExplodeNow();
+	
 public:	
 	void InitFromData(UWeaponData* InData);
 	void LaunchProjectile(FVector LaunchVelocity, AActor* InstigatorActor);
-	UFUNCTION(NetMulticast, Unreliable) void MulticastExplode(const FVector& Location, const FRotator& Rotation);
+	UFUNCTION(NetMulticast, Unreliable) void MulticastExplode(const FVector& Location);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION(NetMulticast, Unreliable) void MulticastInitData(EItemId ItemId);
 };

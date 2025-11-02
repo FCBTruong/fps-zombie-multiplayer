@@ -250,4 +250,6 @@ public:
 
     UFUNCTION(Server, Reliable) void ServerRevive();
     UFUNCTION(NetMulticast, Reliable) void Multicast_ReviveFX();
+
+    virtual void PlayReloadMontage() {};
 };

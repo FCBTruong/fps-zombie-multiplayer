@@ -100,3 +100,18 @@ void AWeaponFirearm::ConsumeAmmo(int Amount)
 		UE_LOG(LogTemp, Warning, TEXT("Ammo consumed. CurrentAmmo: %d"), CurrentAmmo);
 	}
 }
+
+void AWeaponFirearm::SetCurrentAmmo(int NewCurrentAmmo)
+{
+	CurrentAmmo = FMath::Clamp(NewCurrentAmmo, 0, MaxAmmo);
+	UE_LOG(LogTemp, Warning, TEXT("CurrentAmmo set to: %d"), CurrentAmmo);
+}
+
+bool AWeaponFirearm::HasAmmoInClip() const
+{
+	if (CurrentAmmo > 0)
+	{
+		return true;
+	}
+	return true;
+}

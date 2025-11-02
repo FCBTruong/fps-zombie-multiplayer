@@ -230,53 +230,49 @@ void UWeaponComponent::HandleDropWeapon() {
 
 	OnUpdateCurrentWeaponData();
 
-	MulticastDropWeapon(Data.Id, DropPoint);
+	MulticastDropWeapon(Data);
+
+	CurrentWeapon->Destroy();
+	CurrentWeapon = nullptr;
     EquipSlot(FGameConstants::SLOT_MELEE);
 }
 
-void UWeaponComponent::MulticastDropWeapon_Implementation(int32 OnMapId, FVector DropPoint) {
-    if (CurrentWeapon) {
-        CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+void UWeaponComponent::MulticastDropWeapon_Implementation(FPickupData Data) {
+    // Throw it forward
+    FVector ForwardVector = Character->GetActorForwardVector();
+    FVector LaunchVelocity = ForwardVector * 300.f + FVector(0.f, 0.f, 100.f);
+    //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
 
-        // Throw it forward
-        FVector ForwardVector = Character->GetActorForwardVector();
-        FVector LaunchVelocity = ForwardVector * 300.f + FVector(0.f, 0.f, 100.f);
-        //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
+    // Spawn Pickup item
+    APickupItem* Pickup = GetWorld()->SpawnActor<APickupItem>(
+        APickupItem::StaticClass(),
+        GetOwner()->GetActorLocation(),
+        FRotator::ZeroRotator
+    );
 
-        // Spawn Pickup item
-        APickupItem* Pickup = GetWorld()->SpawnActor<APickupItem>(
-            APickupItem::StaticClass(),
-            CurrentWeapon->GetActorLocation(),
-            FRotator::ZeroRotator
-        );
+    if (Pickup) {
+        Pickup->SetData(Data);
+        Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
+        Pickup->GetItemMesh()->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+        Pickup->GetItemMesh()->SetEnableGravity(true);
+        Pickup->GetItemMesh()->SetLinearDamping(0.8f);
+        Pickup->GetItemMesh()->SetAngularDamping(0.8f);
+        Pickup->GetItemMesh()->SetPhysicsMaxAngularVelocityInDegrees(720.f);
 
-        if (Pickup) {
-            FPickupData Data;
-            Data.ItemId = CurrentWeapon->GetWeaponData()->Id;
-            Data.Amount = 1;
-            Data.Location = CurrentWeapon->GetActorLocation();
-			Data.Id = OnMapId;
-
-            Pickup->SetData(Data);
-            Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
-            Pickup->GetItemMesh()->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
-            Pickup->GetItemMesh()->SetEnableGravity(true);
-            Pickup->GetItemMesh()->SetLinearDamping(0.8f);
-            Pickup->GetItemMesh()->SetAngularDamping(0.8f);
-            Pickup->GetItemMesh()->SetPhysicsMaxAngularVelocityInDegrees(720.f);
-
-			// add pickup data to game state due to server will not update for clients
-			GMR->OnNewItemDataSpawned({ Data });
-			GMR->OnNewItemNodeSpawned(Pickup, OnMapId);
-        }
-        CurrentWeapon->Destroy();
-        CurrentWeapon = nullptr;
+		// add pickup data to game state due to server will not update for clients
+		GMR->OnNewItemDataSpawned({ Data });
+		GMR->OnNewItemNodeSpawned(Pickup, Data.Id);
     }
 }
 
 void UWeaponComponent::StartReload() {
     if (!bIsReloading) {
-        
+        if (GetOwner()->GetLocalRole() < ROLE_Authority) {
+            ServerReload();
+        }
+        else {
+            HandleReload();
+		}
     }
 }
 
@@ -284,6 +280,7 @@ void UWeaponComponent::StartAiming() {
     bIsAiming = true;
 }
 
+// This function only apply for firearms
 bool UWeaponComponent::CanShoot() {
     if (Character->IsRunning()) {
 		return false;
@@ -297,6 +294,10 @@ bool UWeaponComponent::CanShoot() {
     if (Character->IsCloseToWall()) {
         return false;
 	}
+    // check has ammo left
+    if (!CurrentWeapon->HasAmmoInClip()) {
+        return false;
+    }
     return true;
 }
 
@@ -525,6 +526,11 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
 }
 
 void UWeaponComponent::MulticastPlayFireRifle_Implementation(FVector TargetPoint) {
+    if (GetOwner()->HasAuthority()) 
+    {
+		UE_LOG(LogTemp, Warning, TEXT("MulticastPlayFireRifle: Called on server, ignoring"));
+        return;
+    }
     PlayEffectFire(TargetPoint);
 }
 
@@ -840,4 +846,45 @@ void UWeaponComponent::OnRep_CurrentWeapon()
     // Handle changes when CurrentWeapon is replicated
     UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon called"));
     UpdateAttachLocationWeapon();
+}
+
+void UWeaponComponent::ServerReload_Implementation()
+{
+	HandleReload();
+}
+
+void UWeaponComponent::HandleReload()
+{
+    UE_LOG(LogTemp, Warning, TEXT("OnEquipWeaponFinished called"));
+    if (bIsReloading) {
+        return; // already reloading
+    }
+    bIsReloading = true;
+    
+	MulticastReload();
+    FTimerHandle TimerHandle_FinishReload;
+    GetWorld()->GetTimerManager().SetTimer(
+        TimerHandle_FinishReload,
+        this,
+        &UWeaponComponent::OnFinishedReload,
+        2.0f,
+        false
+    );
+}
+
+void UWeaponComponent::MulticastReload_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("MulticastReload called"));
+    if (Character) {
+        Character->PlayReloadMontage();
+    }
+}
+
+void UWeaponComponent::OnFinishedReload()
+{
+    bIsReloading = false;
+    if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+    {
+        Firearm->SetCurrentAmmo(50);
+    }
 }

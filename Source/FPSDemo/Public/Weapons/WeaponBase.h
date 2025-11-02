@@ -36,4 +36,5 @@ public:
 	EWeaponTypes GetWeaponType();
 	void InitFromData(class UWeaponData* InData);
 	UWeaponData* GetWeaponData() { return Data; };
+	virtual bool HasAmmoInClip() const { return false; }
 };

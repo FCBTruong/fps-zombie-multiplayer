@@ -30,6 +30,7 @@ ABulletBase::ABulletBase()
     ProjectileMovement->MaxSpeed = 50000.f;
     ProjectileMovement->bRotationFollowsVelocity = true;
     ProjectileMovement->bShouldBounce = false;
+    ProjectileMovement->bAutoActivate = false;
 
     InitialLifeSpan = 10.0f;
 
@@ -58,6 +59,8 @@ void ABulletBase::BeginPlay()
 
         CollisionComp->IgnoreActorWhenMoving(MyInstigator, true);
     }
+
+	ProjectileMovement->Activate(true);
 }
 
 // Called every frame

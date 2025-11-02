@@ -180,6 +180,10 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         {
             EIC->BindAction(IA_AIM, ETriggerEvent::Started, this, &ABaseCharacter::ClickAim);
         }
+        if (IA_RELOAD)
+        {
+            EIC->BindAction(IA_RELOAD, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::StartReload);
+		}
     }
 }
 

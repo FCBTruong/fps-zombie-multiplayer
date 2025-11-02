@@ -103,3 +103,11 @@ void APlayerCharacter::Tick(float DeltaTime)
 		FirstPersonCamera->SetFieldOfView(NewFOV);
 	}
 }
+
+void APlayerCharacter::PlayReloadMontage()
+{
+	if (ReloadMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+	{
+		GetCurrentMesh()->GetAnimInstance()->Montage_Play(ReloadMontage);
+	}
+}

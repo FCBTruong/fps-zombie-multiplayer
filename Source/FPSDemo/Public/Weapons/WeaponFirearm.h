@@ -30,4 +30,7 @@ public:
 	};
 	void OnFire(FVector TargetPoint) override;
 	void ConsumeAmmo(int Amount);
+	void SetCurrentAmmo(int NewCurrentAmmo);
+	bool HasAmmoInClip() const override;
+
 };

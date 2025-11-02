@@ -81,6 +81,7 @@ protected:
 
 	ABaseCharacter* Character;
 	void InitState();
+	void OnFinishedReload();
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -110,7 +111,7 @@ public:
 	void MulticastPlayFireRifle(FVector TargetPoint);
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastDropWeapon(int32 OnMapId, FVector DropPoint);
+	void MulticastDropWeapon(FPickupData Data);
 
 	bool IsScopeEquipped();
 
@@ -118,6 +119,10 @@ public:
 	void ServerDropWeapon();
 
 	void HandleDropWeapon();
+
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+	void HandleReload();
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(int32 InventoryId);
@@ -141,4 +146,7 @@ public:
 	void OnFinishedThrow();
 	void HandleEquipWeapon(int32 InventoryId);
 	void PerformMeleeAttack(int AttackIdx);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastReload();
 };

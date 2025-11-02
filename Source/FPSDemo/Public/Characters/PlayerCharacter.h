@@ -21,6 +21,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* FireRifleMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimMontage* ReloadMontage;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scope")
 	TSubclassOf<UUserWidget> ScopeWidgetClass;
 
@@ -34,4 +37,5 @@ public:
 	void StopAiming();
 	void UpdateAimingState() override;
 	virtual void Tick(float DeltaTime) override;
+	void PlayReloadMontage() override;
 };
