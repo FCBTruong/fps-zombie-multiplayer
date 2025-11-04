@@ -113,5 +113,21 @@ bool AWeaponFirearm::HasAmmoInClip() const
 	{
 		return true;
 	}
-	return true;
+	return false;
+}
+
+void AWeaponFirearm::PlayOutOfAmmoSound()
+{
+	if (Data->OutOfAmmoSFX)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Data->OutOfAmmoSFX, GetActorLocation());
+	}
+}
+
+void AWeaponFirearm::PlayReloadSound()
+{
+	if (Data->ReloadSFX)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Data->ReloadSFX, GetActorLocation());
+	}
 }

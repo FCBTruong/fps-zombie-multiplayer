@@ -89,13 +89,15 @@ void AAThrownProjectile::LaunchProjectile(FVector LaunchVelocity, AActor* Instig
         Projectile->SetVelocityInLocalSpace(LaunchVelocity);
         Projectile->Activate(true);
 
-        GetWorldTimerManager().SetTimer(
-            TimerHandle_Explode,
-            this,
-            &AAThrownProjectile::ExplodeNow,
-            5.0f,
-            false
-        );
+        if (HasAuthority()) {
+            GetWorldTimerManager().SetTimer(
+                TimerHandle_Explode,
+                this,
+                &AAThrownProjectile::ExplodeNow,
+                5.0f,
+                false
+            );
+        }
     }
 }
 void AAThrownProjectile::MulticastExplode_Implementation(const FVector& ImpactPoint)
@@ -146,6 +148,7 @@ void AAThrownProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 }
 
+// Server function to handle explosion
 void AAThrownProjectile::ExplodeNow()
 {
     if (bIsExploded)
@@ -156,33 +159,32 @@ void AAThrownProjectile::ExplodeNow()
 
     FVector ImpactPoint = GetActorLocation();
 
-    if (HasAuthority())
-    {
-        float BaseDamage = 80.f;
-        TSubclassOf<UDamageType> DamageType = UDamageType::StaticClass();
-        AController* InstigatorController = GetInstigatorController();
-        float InnerRadius = 10.f;
-        float OuterRadius = 300.f;
-        // visualize
-        DrawDebugSphere(GetWorld(), ImpactPoint, InnerRadius, 16, FColor::Red, false, 2.0f);
-        DrawDebugSphere(GetWorld(), ImpactPoint, OuterRadius, 16, FColor::Yellow, false, 2.0f);
 
-        UGameplayStatics::ApplyRadialDamageWithFalloff(
-            GetWorld(),
-            BaseDamage,             // full damage at inner radius
-            10.f,                   // minimum damage at outer radius
-            ImpactPoint,            // origin
-            InnerRadius,                  // inner radius (100 cm = 1 m)
-            OuterRadius,                  // outer radius (max reach)
-            30.0f,                   // falloff exponent
-            DamageType,
-            TArray<AActor*>(),
-            this,
-            InstigatorController,
-            ECC_Visibility
-        );
+    float BaseDamage = 80.f;
+    TSubclassOf<UDamageType> DamageType = UDamageType::StaticClass();
+    AController* InstigatorController = GetInstigatorController();
+    float InnerRadius = 200.f;
+    float OuterRadius = 400.f;
+    // visualize
+    DrawDebugSphere(GetWorld(), ImpactPoint, InnerRadius, 16, FColor::Red, false, 2.0f);
+    DrawDebugSphere(GetWorld(), ImpactPoint, OuterRadius, 16, FColor::Yellow, false, 2.0f);
 
-    }
+    UGameplayStatics::ApplyRadialDamageWithFalloff(
+        GetWorld(),
+        BaseDamage,             // full damage at inner radius
+        10.f,                   // minimum damage at outer radius
+        ImpactPoint,            // origin
+        InnerRadius,                  // inner radius (100 cm = 1 m)
+        OuterRadius,                  // outer radius (max reach)
+        1.0f,                   // falloff exponent
+        DamageType,
+        TArray<AActor*>(),
+        this,
+        InstigatorController,
+        ECC_Visibility
+    );
+
+    UE_LOG(LogTemp, Log, TEXT("AAThrownProjectile::ExplodeNow - Applied radial damage"));
 
     MulticastExplode(ImpactPoint);
     SetLifeSpan(0.1f);

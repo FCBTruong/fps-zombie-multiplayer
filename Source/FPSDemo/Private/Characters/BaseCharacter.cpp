@@ -483,9 +483,10 @@ void ABaseCharacter::OnRepSpeedWalkCurrently()
 float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
     AController* EventInstigator, AActor* DamageCauser)
 {
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
-    HealthComp->ApplyDamage(DamageAmount);
-    return DamageAmount;
+    HealthComp->ApplyDamage(ActualDamage);
+    return ActualDamage;
 }
 
 void ABaseCharacter::PlayThrowNadeMontage()

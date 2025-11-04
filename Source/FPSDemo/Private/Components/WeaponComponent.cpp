@@ -316,6 +316,15 @@ void UWeaponComponent::OnLeftClickStart() {
             OnFire();
             GetOwner()->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UWeaponComponent::OnFire, timeBetweenShots, true);
         }
+        if (CurrentWeapon) {
+            if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+            {
+                if (!Firearm->HasAmmoInClip())
+                {
+					Firearm->PlayOutOfAmmoSound();
+                }
+			}
+        }
     }
     else if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Melee) {
          ServerDoMeleeAttack(0);
@@ -471,9 +480,9 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
 			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server no current weapon"));
             return;
         }
-		if (CurrentWeapon->GetWeaponType() != EWeaponTypes::Firearm) {
-            UE_LOG(LogTemp, Warning, TEXT("OnFire: Server current weapon is not firearm"));
-			return;
+		if (!CanShoot()) {
+            UE_LOG(LogTemp, Warning, TEXT("OnFire: Server can not shoot now"));
+            return;
 		}
 		// decrease ammo
         if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
@@ -878,6 +887,13 @@ void UWeaponComponent::MulticastReload_Implementation()
     if (Character) {
         Character->PlayReloadMontage();
     }
+
+    if (CurrentWeapon) {
+        if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+        {
+            Firearm->PlayReloadSound();
+		}
+	}
 }
 
 void UWeaponComponent::OnFinishedReload()

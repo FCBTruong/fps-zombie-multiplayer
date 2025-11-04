@@ -32,5 +32,6 @@ public:
 	void ConsumeAmmo(int Amount);
 	void SetCurrentAmmo(int NewCurrentAmmo);
 	bool HasAmmoInClip() const override;
-
+	void PlayOutOfAmmoSound();
+	void PlayReloadSound();
 };

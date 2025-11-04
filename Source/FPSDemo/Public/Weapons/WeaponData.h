@@ -51,6 +51,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	FVector EquippedOffsetFps;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	USoundBase* OutOfAmmoSFX = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	USoundBase* ReloadSFX = nullptr;
+
 
 
 
