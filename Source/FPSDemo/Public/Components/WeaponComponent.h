@@ -149,4 +149,6 @@ public:
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastReload();
+	void OnNotifyGrabMag();
+	void OnNotifyInsertMag();
 };

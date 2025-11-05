@@ -561,6 +561,20 @@ void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotify
     {
         OnMeleeNotify();
     }
+    else if (NotifyName == "Notify_GrabMag")
+    {
+        if (WeaponComp)
+        {
+            WeaponComp->OnNotifyGrabMag();
+        }
+	}
+    else if (NotifyName == "Notify_InsertMag")
+    {
+        if (WeaponComp)
+        {
+            WeaponComp->OnNotifyInsertMag();
+        }
+	}
 }
 
 void ABaseCharacter::HandleDeath()

@@ -768,6 +768,7 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     }
 
     FVector offset = FVector(0.f, 0.f, 0.f);
+	FVector offsetRot = FVector(0.f, 0.f, 0.f);
     FString SocketName = "ik_hand_gun";
     bool bIsFPS = Character->IsFpsViewMode();
     if (!CurrentWeapon->GetWeaponData()) {
@@ -779,10 +780,12 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
         if (bIsFPS) {
             SocketName = "ik_hand_gun";
             offset = CurrentWeapon->GetWeaponData()->EquippedOffsetFps;
+            offsetRot = CurrentWeapon->GetWeaponData()->EquippedOffsetRotationFps;
         }
         else {
             SocketName = "weapon_socket";
             offset = CurrentWeapon->GetWeaponData()->EquippedOffset;
+            offsetRot = CurrentWeapon->GetWeaponData()->EquippedOffsetRotation;
         }
     }
     else if (WeaType == EWeaponTypes::Melee) {
@@ -796,8 +799,9 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
         FName(SocketName)
     );
+    USceneComponent* Root = CurrentWeapon->GetRootComponent();
 
-    CurrentWeapon->SetActorRelativeLocation(offset);
+	Root->SetRelativeLocationAndRotation(offset, FRotator::MakeFromEuler(offsetRot));
 }
 
 bool UWeaponComponent::CanWeaponAim() {
@@ -902,5 +906,38 @@ void UWeaponComponent::OnFinishedReload()
     if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
     {
         Firearm->SetCurrentAmmo(50);
+    }
+}
+
+void UWeaponComponent::OnNotifyGrabMag() {
+	UE_LOG(LogTemp, Warning, TEXT("OnNotifyGrabMag called"));
+    if (CurrentWeapon) {
+        if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+        {
+           /* Firearm->PlayGrabMagSound();*/
+			UE_LOG(LogTemp, Warning, TEXT("OnNotifyGrabMag: Attaching mag to hand_r"));
+            Firearm->MagMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+            Firearm->MagMesh->AttachToComponent(
+                Character->GetCurrentMesh(),
+                FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+                FName("hand_l")
+			);
+        }
+	}
+}
+
+void UWeaponComponent::OnNotifyInsertMag() {
+	UE_LOG(LogTemp, Warning, TEXT("OnNotifyInsertMag called"));
+    if (CurrentWeapon) {
+        if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+        {
+            Firearm->MagMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+            Firearm->AttachMagToDefault();
+           /* Firearm->MagMesh->AttachToComponent(
+                Character->GetCurrentMesh(),
+                FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+                FName("hand_r")
+            );*/
+        }
     }
 }

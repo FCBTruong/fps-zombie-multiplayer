@@ -24,7 +24,9 @@ protected:
 	void OnRep_CurrentAmmo();
 	UFUNCTION()
 	void OnRep_MaxAmmo();
+	void ApplyWeaponData() override;
 public:
+	AWeaponFirearm();
 	virtual bool CanFire() {
 		return true;
 	};
@@ -34,4 +36,6 @@ public:
 	bool HasAmmoInClip() const override;
 	void PlayOutOfAmmoSound();
 	void PlayReloadSound();
+	UStaticMeshComponent* MagMesh;
+	void AttachMagToDefault();
 };

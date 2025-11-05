@@ -27,14 +27,14 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void PreInitializeComponents() override;
-	void ApplyWeaponData();
+	virtual void ApplyWeaponData();
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	virtual void OnFire(FVector TargetPoint);
 	EWeaponTypes GetWeaponType();
-	void InitFromData(class UWeaponData* InData);
+	virtual void InitFromData(class UWeaponData* InData);
 	UWeaponData* GetWeaponData() { return Data; };
 	virtual bool HasAmmoInClip() const { return false; }
 };

@@ -31,6 +31,9 @@ public:
 	UBulletData* BulletData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	UStaticMesh* MagMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	USoundBase* FireSFX = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
@@ -50,6 +53,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	FVector EquippedOffsetFps;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	FVector EquippedOffsetRotationFps;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	FVector EquippedOffsetRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	USoundBase* OutOfAmmoSFX = nullptr;

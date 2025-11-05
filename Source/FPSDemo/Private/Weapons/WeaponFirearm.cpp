@@ -8,6 +8,11 @@
 #include "Controllers/MyPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
+AWeaponFirearm::AWeaponFirearm()
+{
+	MagMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MagMesh"));
+	AttachMagToDefault();
+}
 
 void AWeaponFirearm::OnFire(FVector TargetPoint)
 {
@@ -129,5 +134,28 @@ void AWeaponFirearm::PlayReloadSound()
 	if (Data->ReloadSFX)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, Data->ReloadSFX, GetActorLocation());
+	}
+}
+
+void AWeaponFirearm::ApplyWeaponData()
+{
+	Super::ApplyWeaponData();
+	
+	// Get Mag Mesh
+	if (MagMesh && Data && Data->MagMesh)
+	{
+		MagMesh->SetStaticMesh(Data->MagMesh);
+	}
+}
+
+void AWeaponFirearm::AttachMagToDefault()
+{
+	if (MagMesh)
+	{
+		MagMesh->AttachToComponent(
+			WeaponMesh,
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+			TEXT("MagSocket")
+		);
 	}
 }
