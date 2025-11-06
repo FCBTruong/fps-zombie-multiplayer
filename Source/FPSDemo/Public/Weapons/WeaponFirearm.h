@@ -17,13 +17,9 @@ class FPSDEMO_API AWeaponFirearm : public AWeaponBase
 protected:
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentAmmo)
 	int CurrentAmmo = 30;
-	UPROPERTY(ReplicatedUsing = OnRep_MaxAmmo)
-	int MaxAmmo = 50;
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION()
 	void OnRep_CurrentAmmo();
-	UFUNCTION()
-	void OnRep_MaxAmmo();
 	void ApplyWeaponData() override;
 public:
 	AWeaponFirearm();
@@ -38,4 +34,5 @@ public:
 	void PlayReloadSound();
 	UStaticMeshComponent* MagMesh;
 	void AttachMagToDefault();
+	int32 GetMaxAmmo() const;
 };

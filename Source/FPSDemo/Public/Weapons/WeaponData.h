@@ -66,6 +66,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	USoundBase* ReloadSFX = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	int32 MaxAmmoInClip = 30;
+
 
 
 

@@ -70,7 +70,6 @@ void AWeaponFirearm::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	
 	// current ammo, max ammo replication
 	DOREPLIFETIME(AWeaponFirearm, CurrentAmmo);
-	DOREPLIFETIME(AWeaponFirearm, MaxAmmo);
 }
 
 void AWeaponFirearm::OnRep_CurrentAmmo()
@@ -85,17 +84,12 @@ void AWeaponFirearm::OnRep_CurrentAmmo()
 		{
 			if (PC->PlayerUI)
 			{
-				PC->PlayerUI->UpdateAmmo(CurrentAmmo, MaxAmmo);
+				PC->PlayerUI->UpdateAmmo(CurrentAmmo, GetMaxAmmo());
 			}
 		}
 	}
 }
 
-void AWeaponFirearm::OnRep_MaxAmmo()
-{
-	// Handle client-side logic when MaxAmmo is updated
-	UE_LOG(LogTemp, Warning, TEXT("MaxAmmo replicated: %d"), MaxAmmo);
-}
 
 void AWeaponFirearm::ConsumeAmmo(int Amount)
 {
@@ -108,7 +102,7 @@ void AWeaponFirearm::ConsumeAmmo(int Amount)
 
 void AWeaponFirearm::SetCurrentAmmo(int NewCurrentAmmo)
 {
-	CurrentAmmo = FMath::Clamp(NewCurrentAmmo, 0, MaxAmmo);
+	CurrentAmmo = FMath::Clamp(NewCurrentAmmo, 0, GetMaxAmmo());
 	UE_LOG(LogTemp, Warning, TEXT("CurrentAmmo set to: %d"), CurrentAmmo);
 }
 
@@ -140,12 +134,15 @@ void AWeaponFirearm::PlayReloadSound()
 void AWeaponFirearm::ApplyWeaponData()
 {
 	Super::ApplyWeaponData();
-	
+	if (WeaponMesh) {
+		WeaponMesh->HideBoneByName(FName("b_gun_mag"), EPhysBodyOp::PBO_None);
+	}
 	// Get Mag Mesh
 	if (MagMesh && Data && Data->MagMesh)
 	{
 		MagMesh->SetStaticMesh(Data->MagMesh);
 	}
+	CurrentAmmo = Data->MaxAmmoInClip;
 }
 
 void AWeaponFirearm::AttachMagToDefault()
@@ -158,4 +155,9 @@ void AWeaponFirearm::AttachMagToDefault()
 			TEXT("MagSocket")
 		);
 	}
+}
+
+int32 AWeaponFirearm::GetMaxAmmo() const
+{
+	return Data->MaxAmmoInClip;
 }
