@@ -72,3 +72,11 @@ void UPlayerUI::OnUpdateScore()
 		UpdateTeamScores(MyTeamPoints, OpponentTeamPoints);
     }
 }
+
+void UPlayerUI::OnHit()
+{
+    if (GetHitAnim)
+    {
+        PlayAnimation(GetHitAnim);
+    }
+}

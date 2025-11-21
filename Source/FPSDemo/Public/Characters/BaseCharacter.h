@@ -15,8 +15,12 @@
 #include "Camera/CameraComponent.h"
 #include "Components/TimelineComponent.h"
 #include "Components/InteractComponent.h"
-#include "Components/HealthComponent.h"
+#include "Components/HealthComponent.h"     
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "BaseCharacter.generated.h"
+
+DECLARE_MULTICAST_DELEGATE(FOnHit);
 
 UCLASS()
 class FPSDEMO_API ABaseCharacter : public ACharacter
@@ -164,6 +168,12 @@ protected:
 
 	UFUNCTION()
 	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX")
+    UNiagaraSystem* BloodFx;
+
+    UPROPERTY(EditDefaultsOnly)
+    TSubclassOf<AActor> DeathCameraProxyClass; // BP with physics root + camera
 public:
     ABaseCharacter();
 
@@ -255,4 +265,11 @@ public:
     UFUNCTION(NetMulticast, Reliable) void Multicast_ReviveFX();
 
     virtual void PlayReloadMontage() {};
+
+    UFUNCTION(Client, UnReliable)
+    void ClientPlayHitEffect();
+
+	FOnHit OnHit;
+
+    void PlayBloodFx(const FVector& HitLocation);
 };

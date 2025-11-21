@@ -83,11 +83,14 @@ void AMyPlayerController::BindingUI()
         if (auto* HC = Char->FindComponentByClass<UHealthComponent>())
         {
             HC->OnHealthUpdated.AddUObject(PlayerUI, &UPlayerUI::UpdateHealth);
+            PlayerUI->UpdateHealth(HC->GetHealth(), HC->GetMaxHealth());
         }
         if (auto* IC = Char->FindComponentByClass<UInteractComponent>())
         {
             IC->ShowPickupMessage.AddUObject(PlayerUI, &UPlayerUI::ShowPickupMessage);
         }
+
+        Char->OnHit.AddUObject(PlayerUI, &UPlayerUI::OnHit);
     }
 
 	// get game state and bind to score updates

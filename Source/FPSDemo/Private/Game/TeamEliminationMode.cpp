@@ -8,7 +8,7 @@
 
 ATeamEliminationMode::ATeamEliminationMode()
 {
-
+    bRoundInProgress = true;
 }
 
 void ATeamEliminationMode::AddPlayer(APlayerController* NewPlayer)
@@ -56,9 +56,13 @@ AActor* ATeamEliminationMode::ChoosePlayerStart_Implementation(AController* Play
     TArray<AActor*> FoundStarts;
     UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), FoundStarts);
 
-    for (AActor* Start : FoundStarts)
+    for (AActor* Actor : FoundStarts)
     {
-        if (Start->ActorHasTag(TeamId))
+        APlayerStart* Start = Cast<APlayerStart>(Actor);
+        if (!Start)
+            continue;
+
+        if (Start->PlayerStartTag == TeamId)
         {
             return Start;
         }
@@ -69,6 +73,7 @@ AActor* ATeamEliminationMode::ChoosePlayerStart_Implementation(AController* Play
 
 void ATeamEliminationMode::StartRound()
 {
+	bRoundInProgress = true;
     ResetPlayers();
 }
 
@@ -130,15 +135,18 @@ void ATeamEliminationMode::EndGame(FName WinningTeam)
 void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class AActor* DamageCauser)
 {
     Super::NotifyPlayerKilled(Killer, Victim, DamageCauser);
+	UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in TeamEliminationMode"));
     AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
     AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
-    if (!KillerPS || !VictimPS) return;
-    FName KillerTeam = KillerPS->GetTeamID();
-    FName VictimTeam = VictimPS->GetTeamID();
+    if (!VictimPS) {
+		UE_LOG(LogTemp, Warning, TEXT("VictimPS is null in NotifyPlayerKilled"));
+        return;
+    }
 	VictimPS->SetIsAlive(false);
     
-
-    CheckRoundEnd();
+    if (bRoundInProgress) {
+        CheckRoundEnd();
+    }
 }
 
 void ATeamEliminationMode::CheckRoundEnd()
@@ -186,6 +194,7 @@ void ATeamEliminationMode::EndRound(FName WinningTeam)
     if (!GS) {
         return;
 	}
+	bRoundInProgress = false;
 	UE_LOG(LogTemp, Warning, TEXT("Round Over! Team %s wins the round!"), *WinningTeam.ToString());
     if (WinningTeam == "A")
     {

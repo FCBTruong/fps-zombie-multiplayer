@@ -25,6 +25,7 @@ private:
 	TArray<APlayerController*> TeamB;
 
 	FTimerHandle RoundStartTimer;
+	bool bRoundInProgress = false;
 public:
 	ATeamEliminationMode();
 

@@ -163,6 +163,10 @@ void AAThrownProjectile::ExplodeNow()
     float BaseDamage = 300.f;
     TSubclassOf<UDamageType> DamageType = UDamageType::StaticClass();
     AController* InstigatorController = GetInstigatorController();
+
+    if (!InstigatorController) {
+		UE_LOG(LogTemp, Warning, TEXT("AAThrownProjectile::ExplodeNow - No InstigatorController"));
+    }
     float InnerRadius = 200.f;
     float OuterRadius = 400.f;
     // visualize

@@ -380,6 +380,7 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
 	);
     if (ThrownProj) {
 		ThrownProj->SetOwner(GetOwner());
+		ThrownProj->SetInstigator(Cast<APawn>(GetOwner()));
         ThrownProj->InitFromData(CurrentWeapon->GetWeaponData());
         ThrownProj->LaunchProjectile(LaunchVelocity, Character);
 	}

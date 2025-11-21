@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
+#include "Components/Image.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -27,6 +28,10 @@ private:
 	UTextBlock* MyTeamScore;
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* OpponentTeamScore;
+	UPROPERTY(meta = (BindWidget))
+	UImage* BloodScreen;
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* GetHitAnim;
 
 public:
 	void NativeConstruct() override;
@@ -36,4 +41,5 @@ public:
 	void UpdateAmmo(int CurrentAmmoValue, int TotalAmmoValue);
 	void UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints);
 	void OnUpdateScore();
+	void OnHit();
 };

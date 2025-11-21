@@ -486,9 +486,9 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
+    LastHitByController = EventInstigator;
     HealthComp->ApplyDamage(ActualDamage);
-
-	LastHitByController = EventInstigator;
+    ClientPlayHitEffect();
     return ActualDamage;
 }
 
@@ -586,18 +586,13 @@ void ABaseCharacter::HandleDeath()
 	UE_LOG(LogTemp, Warning, TEXT("Character has died."));
     if (HasAuthority())
     {
+        // get game mode and notify
+        if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
+        {
+            GM->NotifyPlayerKilled(LastHitByController, GetController());
+        }
         if (LastHitByController)
         {
-            // Notify the last hit controller about the kill
-            // This could involve updating score, stats, etc.
-			UE_LOG(LogTemp, Warning, TEXT("Notifying controller of the kill."));
-
-			// get game mode and notify
-            if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
-            {
-                GM->NotifyPlayerKilled(LastHitByController, GetController());
-			}
-
 			LastHitByController = nullptr; // reset after use
 		}
 
@@ -617,6 +612,44 @@ void ABaseCharacter::HandleDeath()
 
 void ABaseCharacter::Multicast_HandleDeath_Implementation()
 {
+	// if local player, show death UI, etc.
+    // change to tps mmode
+    if (IsLocallyControlled()) {
+        APlayerController* PC = Cast<APlayerController>(GetController());
+        if (!PC) {
+            return;
+        }
+        PC->DisableInput(PC);
+        
+        if (bIsFPS) {
+            ChangeView(); // switch to tps view
+        }
+        if (!DeathCameraProxyClass) return;
+
+        // Use current camera position as start
+        const FVector CamLoc = ThirdPersonCamera->GetComponentLocation();
+        const FRotator CamRot = ThirdPersonCamera->GetComponentRotation();
+
+        // Spawn proxy actor that has physics + camera
+        AActor* Proxy = GetWorld()->SpawnActor<AActor>(DeathCameraProxyClass, CamLoc, CamRot);
+        if (!Proxy) {
+            return;
+        }
+
+        // Add impulse so camera feels like it gets knocked down
+        if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(Proxy->GetRootComponent()))
+        {
+            Root->AddImpulse(FVector(
+                FMath::RandRange(-80.f, 80.f),
+                FMath::RandRange(-80.f, 80.f),
+                -250.f
+            ) * 20.f);
+        }
+
+        // Blend view to death camera
+        PC->SetViewTargetWithBlend(Proxy, 0.15f, VTBlend_EaseOut);
+		UE_LOG(LogTemp, Warning, TEXT("Switched to death camera proxy."));
+    }
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     GetMesh()->SetSimulatePhysics(true);
     GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
@@ -640,4 +673,25 @@ void ABaseCharacter::Multicast_ReviveFX_Implementation()
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     GetMesh()->SetSimulatePhysics(false);
     GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
+}
+
+void ABaseCharacter::ClientPlayHitEffect_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ClientPlayHitEffect called"));
+
+	OnHit.Broadcast();
+}
+
+void ABaseCharacter::PlayBloodFx(const FVector& HitLocation)
+{
+    if (IsFpsViewMode()) {
+		return; // no blood fx in fps mode
+    }
+    if (BloodFx) {
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            GetWorld(),
+            BloodFx,
+            HitLocation
+        );
+    }
 }

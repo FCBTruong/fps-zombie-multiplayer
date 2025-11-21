@@ -2,6 +2,7 @@
 #include "Components/SphereComponent.h" // Add this include
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Characters/BaseCharacter.h"
 
 // Sets default values
 ABulletBase::ABulletBase()
@@ -93,6 +94,13 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
         UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal,
             FVector(5.f), Hit.ImpactPoint,
             Hit.ImpactNormal.Rotation(), 10.0f);
+    }
+
+    // blood fx
+    ABaseCharacter* Enemy = Cast<ABaseCharacter>(OtherActor);
+    if (Enemy)
+    {
+        Enemy->PlayBloodFx(Hit.ImpactPoint);
     }
 
     Destroy();
