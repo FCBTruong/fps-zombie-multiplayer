@@ -2,6 +2,7 @@
 
 
 #include "UI/PlayerUI.h"
+#include "Game/TeamEliminationState.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -45,5 +46,29 @@ void UPlayerUI::UpdateAmmo(int CurrentAmmoValue, int TotalAmmoValue)
     if (TotalAmmo)
     {
         TotalAmmo->SetText(FText::AsNumber(TotalAmmoValue));
+    }
+}
+
+void UPlayerUI::UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints)
+{
+    if (MyTeamScore)
+    {
+        MyTeamScore->SetText(FText::AsNumber(MyTeamPoints));
+    }
+    if (OpponentTeamScore)
+    {
+        OpponentTeamScore->SetText(FText::AsNumber(OpponentTeamPoints));
+    }
+}
+
+void UPlayerUI::OnUpdateScore()
+{
+    // Get game state and update scores
+    ATeamEliminationState* GST = GetWorld()->GetGameState<ATeamEliminationState>();
+    if (GST) {
+        // Assuming we have a way to determine which team is "my team"
+        int MyTeamPoints = GST->TeamAScore; // Replace with actual team logic
+        int OpponentTeamPoints = GST->TeamBScore; // Replace with actual team logic
+		UpdateTeamScores(MyTeamPoints, OpponentTeamPoints);
     }
 }

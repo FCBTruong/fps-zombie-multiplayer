@@ -33,43 +33,10 @@ protected:
     UWeaponComponent* WeaponComp;
 
 	UHealthComponent* HealthComp;
-public:
-    ABaseCharacter();
-
-    UPROPERTY(BlueprintReadWrite, Category = "State")
-    bool bCloseToWall = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bReloading = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bEquipped = false;
-
-    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Crouching, Category = "State")
-    bool bCrouching = false;
-
-    UPROPERTY(BlueprintReadWrite, Category = "State")
-    bool bIsFPS = false;
-
-    UPROPERTY(ReplicatedUsing = OnRep_IsAiming, BlueprintReadOnly, Category = "State")
-    bool bAiming = false;
 
     UPROPERTY()
-	bool bHoldingShift = false;
+	AController* LastHitByController = nullptr;
 
-
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
-    FVector2D moveInput;
-    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Data")
-	FVector2D LookInput;
-    UPROPERTY(BlueprintReadWrite, Category = "State")
-	float AimSensitivity = 1.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-    UAnimMontage* FireMeleeMontage;
-
-    USplineComponent* ThrowSpline;
-protected:
     UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRepSpeedWalkCurrently, Category = "Data")
 	float SpeedWalkCurrently = NORMAL_WALK_SPEED;
     UFUNCTION()
@@ -198,6 +165,42 @@ protected:
 	UFUNCTION()
 	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 public:
+    ABaseCharacter();
+
+    UPROPERTY(BlueprintReadWrite, Category = "State")
+    bool bCloseToWall = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bReloading = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bEquipped = false;
+
+    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Crouching, Category = "State")
+    bool bCrouching = false;
+
+    UPROPERTY(BlueprintReadWrite, Category = "State")
+    bool bIsFPS = false;
+
+    UPROPERTY(ReplicatedUsing = OnRep_IsAiming, BlueprintReadOnly, Category = "State")
+    bool bAiming = false;
+
+    UPROPERTY()
+    bool bHoldingShift = false;
+
+
+    UPROPERTY(BlueprintReadOnly, Category = "Data")
+    FVector2D moveInput;
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Data")
+    FVector2D LookInput;
+    UPROPERTY(BlueprintReadWrite, Category = "State")
+    float AimSensitivity = 1.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UAnimMontage* FireMeleeMontage;
+
+    USplineComponent* ThrowSpline;
+
     virtual void Tick(float DeltaTime) override;
     static constexpr float MAX_WALK_SPEED = 600.f;
     static constexpr float NORMAL_WALK_SPEED = 400.f;

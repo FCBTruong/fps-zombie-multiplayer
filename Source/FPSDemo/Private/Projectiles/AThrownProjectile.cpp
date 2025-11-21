@@ -160,7 +160,7 @@ void AAThrownProjectile::ExplodeNow()
     FVector ImpactPoint = GetActorLocation();
 
 
-    float BaseDamage = 80.f;
+    float BaseDamage = 300.f;
     TSubclassOf<UDamageType> DamageType = UDamageType::StaticClass();
     AController* InstigatorController = GetInstigatorController();
     float InnerRadius = 200.f;

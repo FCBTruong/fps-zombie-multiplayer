@@ -1,9 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Controllers/MyPlayerState.h"
+#include "Team/Team.h"
 
+Team::Team()
+{
+}
 
-AMyPlayerState::AMyPlayerState()
+Team::~Team()
 {
 }

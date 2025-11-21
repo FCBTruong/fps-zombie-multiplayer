@@ -822,8 +822,14 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
 {
 	UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack called"));
     if (!Character) return;
-    FVector Start = Character->GetActorLocation() + FVector(0, 0, 50);
-    FVector End = Start + Character->GetActorForwardVector() * 150;
+    //Character->LookInput;
+    FVector Start = Character->GetActorLocation() + FVector(0, 0, 70);
+    FRotator CamRot = Character->GetControlRotation();
+    CamRot.Yaw += Character->LookInput.X;
+    CamRot.Pitch += Character->LookInput.Y;
+
+    FVector LookDir = CamRot.Vector();
+    FVector End = Start + LookDir * 150;
     FHitResult Hit;
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(Character);

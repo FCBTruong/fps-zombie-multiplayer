@@ -89,3 +89,9 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
         }
     }
 }
+
+
+void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class AActor* DamageCauser)
+{
+    
+}

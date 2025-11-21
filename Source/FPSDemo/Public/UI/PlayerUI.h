@@ -23,10 +23,17 @@ private:
 	UTextBlock* TotalAmmo;
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* CurrentAmmo;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* MyTeamScore;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* OpponentTeamScore;
+
 public:
 	void NativeConstruct() override;
 	void ShowPickupMessage(const FString& Message);
 	void HidePickupMessage();
 	void UpdateHealth(float CurrentHealth, float MaxHealth);
 	void UpdateAmmo(int CurrentAmmoValue, int TotalAmmoValue);
+	void UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints);
+	void OnUpdateScore();
 };

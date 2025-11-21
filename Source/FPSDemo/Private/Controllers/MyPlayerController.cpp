@@ -8,6 +8,7 @@
 #include "Game/MyCheatManager.h"
 #include "Blueprint/UserWidget.h"
 #include "Characters/BaseCharacter.h"
+#include "Game/TeamEliminationState.h"
 
 
 AMyPlayerController::AMyPlayerController() { 
@@ -52,18 +53,24 @@ void AMyPlayerController::BeginPlay()
 void AMyPlayerController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
-
-
-    // Only bind for our owned pawn
 	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: OnPossess called"));
+}
+
+void AMyPlayerController::OnRep_Pawn()
+{
+    Super::OnRep_Pawn();
+
+    UE_LOG(LogTemp, Warning, TEXT("OnRep_Pawn: Pawn replicated and possessed"));
+
     if (IsLocalController())
     {
-		BindingUI();
+        BindingUI();
     }
 }
 
 void AMyPlayerController::BindingUI()
 {
+	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: BindingUI called"));
     if (!PlayerUI)
     {
         UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: PlayerUI is null, cannot bind"));
@@ -82,4 +89,11 @@ void AMyPlayerController::BindingUI()
             IC->ShowPickupMessage.AddUObject(PlayerUI, &UPlayerUI::ShowPickupMessage);
         }
     }
+
+	// get game state and bind to score updates
+    ATeamEliminationState* GST = GetWorld()->GetGameState<ATeamEliminationState>();
+    if (GST)
+    {
+        GST->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::OnUpdateScore);
+	}
 }

@@ -25,4 +25,5 @@ public:
 	UPlayerUI* PlayerUI;
 	void OnPossess(APawn* InPawn) override;
 	void BindingUI();
+	virtual void OnRep_Pawn() override;
 };

@@ -9,6 +9,7 @@
 #include "Weapons/WeaponKnifeBasic.h"
 #include "Kismet/GameplayStatics.h"
 #include "Structs/InventoryItem.h"
+#include "Game/ShooterGameMode.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -486,6 +487,8 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     HealthComp->ApplyDamage(ActualDamage);
+
+	LastHitByController = EventInstigator;
     return ActualDamage;
 }
 
@@ -583,9 +586,30 @@ void ABaseCharacter::HandleDeath()
 	UE_LOG(LogTemp, Warning, TEXT("Character has died."));
     if (HasAuthority())
     {
+        if (LastHitByController)
+        {
+            // Notify the last hit controller about the kill
+            // This could involve updating score, stats, etc.
+			UE_LOG(LogTemp, Warning, TEXT("Notifying controller of the kill."));
+
+			// get game mode and notify
+            if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
+            {
+                GM->NotifyPlayerKilled(LastHitByController, GetController());
+			}
+
+			LastHitByController = nullptr; // reset after use
+		}
+
         GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         GetMesh()->SetSimulatePhysics(true);
         GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+
+        APlayerController* PC = Cast<APlayerController>(GetController());
+        if (PC)
+        {
+            // use PC
+        }
 
         Multicast_HandleDeath();
     }
