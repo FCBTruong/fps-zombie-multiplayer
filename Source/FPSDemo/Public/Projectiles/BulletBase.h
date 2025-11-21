@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Projectiles/BulletData.h"
-
 #include "BulletBase.generated.h"
 
 UCLASS()
@@ -24,7 +23,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 	float Damage = 10.f;
-
 public:	
 	// Sets default values for this actor's properties
 	ABulletBase();

@@ -27,8 +27,8 @@ ABulletBase::ABulletBase()
 
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
     ProjectileMovement->UpdatedComponent = CollisionComp;
-    ProjectileMovement->InitialSpeed = 40000.f;
-    ProjectileMovement->MaxSpeed = 50000.f;
+    ProjectileMovement->InitialSpeed = 10000.f;
+    ProjectileMovement->MaxSpeed = 10000.f;
     ProjectileMovement->bRotationFollowsVelocity = true;
     ProjectileMovement->bShouldBounce = false;
     ProjectileMovement->bAutoActivate = false;
@@ -133,4 +133,18 @@ void ABulletBase::FireTowards(const FVector& Target)
 	SetActorRelativeRotation(Dir.Rotation());
     ProjectileMovement->SetVelocityInLocalSpace(FVector::ForwardVector * ProjectileMovement->InitialSpeed);
     ProjectileMovement->Activate(true);
+    UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+    UNiagaraSystem* BulletTrailNS = GMR->GlobalData->BulletTrailNS;
+    if (BulletTrailNS)
+    {
+        UNiagaraComponent* Trail = UNiagaraFunctionLibrary::SpawnSystemAttached(
+            BulletTrailNS,
+            CollisionComp,
+            NAME_None,
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            EAttachLocation::SnapToTarget,
+            true
+        );
+    }
 }

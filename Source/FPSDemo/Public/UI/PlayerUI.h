@@ -7,6 +7,7 @@
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
 #include "Components/Image.h"
+#include "Components/StackBox.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -17,7 +18,7 @@ class FPSDEMO_API UPlayerUI : public UUserWidget
 {
 	GENERATED_BODY()
 
-private:
+protected:
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* HpBar;
 	UPROPERTY(meta = (BindWidget))
@@ -32,7 +33,11 @@ private:
 	UImage* BloodScreen;
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* GetHitAnim;
+	UPROPERTY(meta = (BindWidget))
+	UStackBox* KillNotifyStack;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUserWidget> KillNotifyWidgetClass;
 public:
 	void NativeConstruct() override;
 	void ShowPickupMessage(const FString& Message);
@@ -42,4 +47,5 @@ public:
 	void UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints);
 	void OnUpdateScore();
 	void OnHit();
+	void OnEnter();
 };

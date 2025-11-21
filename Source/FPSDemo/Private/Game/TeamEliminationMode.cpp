@@ -60,7 +60,9 @@ AActor* ATeamEliminationMode::ChoosePlayerStart_Implementation(AController* Play
     {
         APlayerStart* Start = Cast<APlayerStart>(Actor);
         if (!Start)
+        {
             continue;
+        }
 
         if (Start->PlayerStartTag == TeamId)
         {

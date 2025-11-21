@@ -80,3 +80,24 @@ void UPlayerUI::OnHit()
         PlayAnimation(GetHitAnim);
     }
 }
+
+void UPlayerUI::OnEnter()
+{
+    // This function can be used to initialize or reset UI elements when the player enters the game
+    ShowPickupMessage(TEXT(""));
+
+    KillNotifyStack->ClearChildren();
+    
+    // test
+    if (KillNotifyWidgetClass)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            UUserWidget* KillNotifyWidget = CreateWidget<UUserWidget>(GetWorld(), KillNotifyWidgetClass);
+            if (KillNotifyWidget)
+            {
+                KillNotifyStack->AddChild(KillNotifyWidget);
+            }
+        }
+	}
+}

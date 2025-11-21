@@ -76,6 +76,7 @@ void AMyPlayerController::BindingUI()
         UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: PlayerUI is null, cannot bind"));
         return;
 	}
+    PlayerUI->OnEnter();
     UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Local controller possessing pawn"));
     if (auto* Char = Cast<ABaseCharacter>(GetPawn()))
     {
