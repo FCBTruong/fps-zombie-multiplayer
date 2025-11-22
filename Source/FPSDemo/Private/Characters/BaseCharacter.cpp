@@ -487,6 +487,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     LastHitByController = EventInstigator;
+    LastDamageCauser = DamageCauser;
     HealthComp->ApplyDamage(ActualDamage);
     ClientPlayHitEffect();
     return ActualDamage;
@@ -580,6 +581,7 @@ void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotify
 	}
 }
 
+// This function called on server when health reaches zero
 void ABaseCharacter::HandleDeath()
 {
     // Play animation, ragdoll, notify game mode, etc.
@@ -589,11 +591,15 @@ void ABaseCharacter::HandleDeath()
         // get game mode and notify
         if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
         {
-            GM->NotifyPlayerKilled(LastHitByController, GetController());
+            GM->NotifyPlayerKilled(LastHitByController, GetController(), LastDamageCauser);
         }
         if (LastHitByController)
         {
 			LastHitByController = nullptr; // reset after use
+		}
+        if (LastDamageCauser)
+		{
+			LastDamageCauser = nullptr; // reset after use
 		}
 
         GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);

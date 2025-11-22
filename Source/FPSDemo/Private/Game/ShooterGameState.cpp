@@ -4,6 +4,7 @@
 #include "Game/ShooterGameState.h"
 #include <Net/UnrealNetwork.h>
 #include "Pickup/PickupItem.h"
+#include "Controllers/MyPlayerController.h"
 
 AShooterGameState::AShooterGameState()
 {
@@ -24,3 +25,28 @@ TArray<FPickupData> AShooterGameState::GetItemsOnMap() const
     return OutItems;
 }
 
+
+void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser)
+{
+    const FString KillerName = Killer ? Killer->GetPlayerName() : TEXT("Unknown");
+    const FString VictimName = Victim ? Victim->GetPlayerName() : TEXT("Unknown");
+
+    if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+    {
+        AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC);
+        if (!MyPC) {
+            return;
+        }
+        if (!MyPC->PlayerUI) {
+            return;
+		}
+
+        UTexture2D* WeaponTex = nullptr;
+        if (DamageCauser)
+        {
+			WeaponTex = DamageCauser->Icon;
+        }
+
+		MyPC->PlayerUI->NotifyKill(KillerName, VictimName, WeaponTex, false);
+    }
+}

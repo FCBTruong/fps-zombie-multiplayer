@@ -6,7 +6,7 @@
 #include "Game/ShooterGameState.h"
 #include "TeamEliminationState.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(OnUpdateScore)
+DECLARE_MULTICAST_DELEGATE(FOnUpdateScore)
 /**
  * 
  */
@@ -22,7 +22,7 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_Score)
 	int TeamBScore = 0;
 
-	OnUpdateScore OnUpdateScore;
+	FOnUpdateScore OnUpdateScore;
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

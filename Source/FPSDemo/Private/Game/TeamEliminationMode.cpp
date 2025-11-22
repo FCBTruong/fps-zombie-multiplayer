@@ -5,6 +5,7 @@
 #include <Kismet/GameplayStatics.h>
 #include <GameFramework/PlayerStart.h>
 #include "Game/TeamEliminationState.h"
+#include "Weapons/WeaponData.h"
 
 ATeamEliminationMode::ATeamEliminationMode()
 {
@@ -138,6 +139,9 @@ void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class A
 {
     Super::NotifyPlayerKilled(Killer, Victim, DamageCauser);
 	UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in TeamEliminationMode"));
+
+	// log damage causer is null or not
+	UE_LOG(LogTemp, Warning, TEXT("DamageCauser is %snull"), DamageCauser ? TEXT("not ") : TEXT(""));
     AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
     AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
     if (!VictimPS) {
@@ -148,6 +152,19 @@ void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class A
     
     if (bRoundInProgress) {
         CheckRoundEnd();
+    }
+
+    ATeamEliminationState* GS = GetGameState<ATeamEliminationState>();
+    if (GS)
+    {
+		AWeaponBase* DamageCauserWeapon = Cast<AWeaponBase>(DamageCauser);
+		UWeaponData* WeaponData = DamageCauserWeapon ? DamageCauserWeapon->GetWeaponData() : nullptr;
+
+        UE_LOG(LogTemp, Warning, TEXT("Notifying kill: Killer=%s, Victim=%s, Weapon=%s"),
+            KillerPS ? *KillerPS->GetPlayerName() : TEXT("NULL"),
+            VictimPS ? *VictimPS->GetPlayerName() : TEXT("NULL"),
+			WeaponData ? *WeaponData->GetName() : TEXT("NULL"));
+        GS->MulticastKillNotify(KillerPS, VictimPS, WeaponData);
     }
 }
 

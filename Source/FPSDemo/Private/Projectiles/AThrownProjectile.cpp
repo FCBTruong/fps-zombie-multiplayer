@@ -170,8 +170,8 @@ void AAThrownProjectile::ExplodeNow()
     float InnerRadius = 200.f;
     float OuterRadius = 400.f;
     // visualize
-    DrawDebugSphere(GetWorld(), ImpactPoint, InnerRadius, 16, FColor::Red, false, 2.0f);
-    DrawDebugSphere(GetWorld(), ImpactPoint, OuterRadius, 16, FColor::Yellow, false, 2.0f);
+   /* DrawDebugSphere(GetWorld(), ImpactPoint, InnerRadius, 16, FColor::Red, false, 2.0f);
+    DrawDebugSphere(GetWorld(), ImpactPoint, OuterRadius, 16, FColor::Yellow, false, 2.0f);*/
 
     UGameplayStatics::ApplyRadialDamageWithFalloff(
         GetWorld(),

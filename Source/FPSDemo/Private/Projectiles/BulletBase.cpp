@@ -12,7 +12,7 @@ ABulletBase::ABulletBase()
 
     CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
     CollisionComp->InitSphereRadius(2.f);
-	CollisionComp->SetHiddenInGame(false);
+	CollisionComp->SetHiddenInGame(true);
 	CollisionComp->SetGenerateOverlapEvents(false);
     CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
    
@@ -32,6 +32,7 @@ ABulletBase::ABulletBase()
     ProjectileMovement->bRotationFollowsVelocity = true;
     ProjectileMovement->bShouldBounce = false;
     ProjectileMovement->bAutoActivate = false;
+    ProjectileMovement->ProjectileGravityScale = 0.0f;
 
     InitialLifeSpan = 10.0f;
 

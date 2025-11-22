@@ -87,17 +87,32 @@ void UPlayerUI::OnEnter()
     ShowPickupMessage(TEXT(""));
 
     KillNotifyStack->ClearChildren();
-    
-    // test
-    if (KillNotifyWidgetClass)
+
+}
+
+void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponTex, bool bIsHeadShot)
+{
+    if (KillNotifyWidgetClass && KillNotifyStack)
     {
-        for (int i = 0; i < 3; ++i)
+        UKillNotifySlot* KillNotifyWidget = CreateWidget<UKillNotifySlot>(GetWorld(), KillNotifyWidgetClass);
+        if (KillNotifyWidget)
         {
-            UUserWidget* KillNotifyWidget = CreateWidget<UUserWidget>(GetWorld(), KillNotifyWidgetClass);
-            if (KillNotifyWidget)
-            {
-                KillNotifyStack->AddChild(KillNotifyWidget);
-            }
+            KillNotifyWidget->SetInfo(KillerName, VictimName, WeaponTex, bIsHeadShot);
+            KillNotifyStack->AddChild(KillNotifyWidget);
+            FTimerHandle TimerHandle;
+            TWeakObjectPtr<UKillNotifySlot> WeakKillNotifyWidget = KillNotifyWidget;
+            GetWorld()->GetTimerManager().SetTimer(
+                TimerHandle,
+                FTimerDelegate::CreateLambda([WeakKillNotifyWidget]()
+                    {
+                        if (WeakKillNotifyWidget.IsValid())
+                        {
+                            WeakKillNotifyWidget->RemoveFromParent();
+                        }
+                    }),
+                5.0f,
+                false
+            );
         }
-	}
+    }
 }

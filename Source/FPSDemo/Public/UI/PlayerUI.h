@@ -8,6 +8,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/Image.h"
 #include "Components/StackBox.h"
+#include "UI/KillNotifySlot.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -37,7 +38,7 @@ protected:
 	UStackBox* KillNotifyStack;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UUserWidget> KillNotifyWidgetClass;
+	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
 public:
 	void NativeConstruct() override;
 	void ShowPickupMessage(const FString& Message);
@@ -48,4 +49,5 @@ public:
 	void OnUpdateScore();
 	void OnHit();
 	void OnEnter();
+	void NotifyKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponTex, bool bIsHeadShot);
 };

@@ -99,5 +99,5 @@ void AMyPlayerController::BindingUI()
     if (GST)
     {
         GST->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::OnUpdateScore);
-	}
+    }
 }

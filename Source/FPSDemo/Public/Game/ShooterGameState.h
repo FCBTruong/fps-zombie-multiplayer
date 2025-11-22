@@ -2,6 +2,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
 #include "Pickup/PickupData.h"
+#include "Controllers/MyPlayerState.h"
+#include "Weapons/WeaponData.h"
 #include "ShooterGameState.generated.h"
 
 UCLASS()
@@ -15,4 +17,7 @@ public:
 
     TMap<int32, FPickupData> ItemsOnMap;
 	TArray<FPickupData> GetItemsOnMap() const;
+    
+    UFUNCTION(NetMulticast, UnReliable)
+    void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser);
 };

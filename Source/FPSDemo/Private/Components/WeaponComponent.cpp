@@ -513,7 +513,7 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
 			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applying damage to %s"), *Hit.GetActor()->GetName());
             float ActualDamage = UGameplayStatics::ApplyDamage(
                 Hit.GetActor(), Damage, Character->GetController(),
-                Character, UDamageType::StaticClass()
+                CurrentWeapon, UDamageType::StaticClass()
             );
 			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applied damage: %f"), ActualDamage);
         }
@@ -859,7 +859,7 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
 
             }
 
-            UGameplayStatics::ApplyDamage(Target, 10, Character->GetController(), Character, UDamageType::StaticClass());
+            UGameplayStatics::ApplyDamage(Target, 10, Character->GetController(), CurrentWeapon, UDamageType::StaticClass());
         }
     }
 }
