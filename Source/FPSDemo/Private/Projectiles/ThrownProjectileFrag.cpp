@@ -84,5 +84,5 @@ void AThrownProjectileFrag::MulticastExplode_Implementation(const FVector& Impac
         Projectile->Deactivate();
     }
 
-    WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }

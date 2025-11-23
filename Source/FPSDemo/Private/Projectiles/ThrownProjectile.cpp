@@ -116,7 +116,7 @@ void AThrownProjectile::ExplodeNow()
     }
 
     bIsExploded = true;
-    WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	OnExplode();
 }
 

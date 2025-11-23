@@ -10,7 +10,7 @@ void AThrownProjectileSmoke::OnExplode ()
 	UE_LOG(LogTemp, Log, TEXT("AThrownProjectileSmoke::ExplodeNow"));
 	FVector ImpactPoint = GetActorLocation();
 	MulticastExplode(ImpactPoint);
-	SetLifeSpan(5.0f);
+	SetLifeSpan(0.1f);
 }
 
 void AThrownProjectileSmoke::MulticastExplode_Implementation(const FVector& ImpactPoint)
@@ -32,8 +32,7 @@ void AThrownProjectileSmoke::MulticastExplode_Implementation(const FVector& Impa
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(
             GetWorld(),
             Data->SmokeFX,
-            ImpactPoint,
-            Rotation
+            ImpactPoint
         );
     }
 
@@ -56,5 +55,5 @@ void AThrownProjectileSmoke::MulticastExplode_Implementation(const FVector& Impa
         Projectile->Deactivate();
     }
 
-    WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Collision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
