@@ -101,3 +101,11 @@ void AMyPlayerController::BindingUI()
         GST->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::OnUpdateScore);
     }
 }
+
+void AMyPlayerController::ApplyFlash(const float& Strength)
+{
+    if (PlayerUI)
+    {
+        PlayerUI->ApplyFlashEffect(Strength);
+    }
+}

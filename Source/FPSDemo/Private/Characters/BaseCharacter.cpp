@@ -11,6 +11,8 @@
 #include "Structs/InventoryItem.h"
 #include "Game/ShooterGameMode.h"
 #include "Projectiles/ThrownProjectile.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
+
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -102,6 +104,21 @@ void ABaseCharacter::BeginPlay()
     {
         HealthComp->OnDeath.AddUObject(this, &ABaseCharacter::HandleDeath);
     }
+
+    if (StunCurve)
+    {
+        // Bind update function
+        FOnTimelineFloat UpdateFunction;
+        UpdateFunction.BindUFunction(this, FName("OnStunTimelineUpdate"));
+        StunTimeline.AddInterpFloat(StunCurve, UpdateFunction);
+
+        // Bind finished function (optional)
+        FOnTimelineEvent FinishedFunction;
+        FinishedFunction.BindUFunction(this, FName("OnStunTimelineFinished"));
+        StunTimeline.SetTimelineFinishedFunc(FinishedFunction);
+
+        StunTimeline.SetLooping(false);
+    }
 }
 
 // Called every frame
@@ -109,6 +126,7 @@ void ABaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     CrouchTimeline.TickTimeline(DeltaTime);
+    StunTimeline.TickTimeline(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -718,5 +736,48 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation)
             BloodFx,
             HitLocation
         );
+    }
+}
+
+void ABaseCharacter::PlayStunEffect(const float& Strength) 
+{
+    if (StunCurve && FlashCollection)
+    {
+        // Restart the timeline from the beginning
+        StunTimeline.PlayFromStart();
+    }
+}
+
+void ABaseCharacter::OnStunTimelineUpdate(float Value)
+{
+    // Value comes from StunCurve (e.g. 1 -> 0 over time)
+    if (FlashCollection)
+    {
+        UWorld* World = GetWorld();
+        if (!World) {
+            return;
+        }
+
+        UMaterialParameterCollectionInstance* MPCInstance = World->GetParameterCollectionInstance(FlashCollection);
+        if (MPCInstance)
+        {
+            // Multiply by StunStrength if you want stronger/weaker stun
+            const float Intensity = Value * 1;
+
+            // Set scalar parameter in the post-process MPC
+            MPCInstance->SetScalarParameterValue(FName("Intensity"), Intensity);
+        }
+    }
+}
+
+void ABaseCharacter::OnStunTimelineFinished()
+{
+    // Ensure intensity is fully reset to 0 at the end
+    if (FlashCollection)
+    {
+        if (UMaterialParameterCollectionInstance* MPCInstance = GetWorld()->GetParameterCollectionInstance(FlashCollection))
+        {
+            MPCInstance->SetScalarParameterValue(FName("Intensity"), 0.0f);
+        }
     }
 }

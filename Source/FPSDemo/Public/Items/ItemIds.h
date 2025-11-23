@@ -17,5 +17,6 @@ enum class EItemId : uint8
 	MELEE_KNIFE_BASIC,
     GRENADE_FRAG_BASIC,
     GRENADE_SMOKE,
+	GRENADE_STUN,
     SNIPER_BOLT_R
 };

@@ -12,6 +12,7 @@
 #include "Projectiles/ThrownProjectile.h"
 #include "Projectiles/ThrownProjectileFrag.h"
 #include "Projectiles/ThrownProjectileSmoke.h"
+#include "Projectiles/ThrownProjectileStun.h"
 
 
 // Sets default values for this component's properties
@@ -381,6 +382,12 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
             StartPos,
             FRotator::ZeroRotator);
     }
+    else if (CurrentWeapon->GetWeaponData()->WeaponSubType == EWeaponSubTypes::Stun) {
+        ThrownProj = GetWorld()->SpawnActor<AThrownProjectileStun>(
+            AThrownProjectileStun::StaticClass(),
+            StartPos,
+            FRotator::ZeroRotator);
+	}
     else {
         ThrownProj = GetWorld()->SpawnActor<AThrownProjectile>(
             AThrownProjectileFrag::StaticClass(),

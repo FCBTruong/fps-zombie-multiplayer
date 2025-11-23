@@ -36,6 +36,10 @@ protected:
 	UWidgetAnimation* GetHitAnim;
 	UPROPERTY(meta = (BindWidget))
 	UStackBox* KillNotifyStack;
+	UPROPERTY(meta = (BindWidget))
+	UImage* FlashScreen;
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* FlashScreenAnim;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
@@ -50,4 +54,6 @@ public:
 	void OnHit();
 	void OnEnter();
 	void NotifyKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponTex, bool bIsHeadShot);
+	void ApplyFlashEffect(const float& Strength);
+	void FadeOutFlashEffect();
 };

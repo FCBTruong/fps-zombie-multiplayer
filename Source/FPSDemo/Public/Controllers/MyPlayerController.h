@@ -26,4 +26,5 @@ public:
 	void OnPossess(APawn* InPawn) override;
 	void BindingUI();
 	virtual void OnRep_Pawn() override;
+	void ApplyFlash(const float& Strength);
 };

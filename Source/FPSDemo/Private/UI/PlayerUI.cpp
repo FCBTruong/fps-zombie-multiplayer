@@ -87,7 +87,7 @@ void UPlayerUI::OnEnter()
     ShowPickupMessage(TEXT(""));
 
     KillNotifyStack->ClearChildren();
-
+	FlashScreen->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponTex, bool bIsHeadShot)
@@ -115,4 +115,31 @@ void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName,
             );
         }
     }
+}
+
+void UPlayerUI::ApplyFlashEffect(const float& Strength)
+{
+    FlashScreen->SetVisibility(ESlateVisibility::Visible);
+    FLinearColor CurrentColor = FlashScreen->GetColorAndOpacity();
+    CurrentColor.A = 1.0f;
+    FlashScreen->SetColorAndOpacity(CurrentColor);
+    UE_LOG(LogTemp, Warning, TEXT("Applying flash effect with strength: %f"), Strength);
+
+    // Wait 3 seconds, then run FadeOutFlashEffect()
+    FTimerHandle TimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(
+        TimerHandle,
+        this,
+        &UPlayerUI::FadeOutFlashEffect,
+        3.0f,
+        false
+    );
+}
+
+void UPlayerUI::FadeOutFlashEffect()
+{
+    if (FlashScreenAnim)
+    {
+        PlayAnimation(FlashScreenAnim);
+	}
 }

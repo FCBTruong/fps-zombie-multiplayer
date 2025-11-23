@@ -18,6 +18,7 @@
 #include "Components/HealthComponent.h"     
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
+#include "Components/PostProcessComponent.h"
 #include "BaseCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -214,6 +215,23 @@ public:
 
     USplineComponent* ThrowSpline;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PostProcess")
+    UMaterialParameterCollection* FlashCollection;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PostProcess")
+    UCurveFloat* StunCurve;
+
+    FTimeline StunTimeline;
+
+    // Timeline callback
+    UFUNCTION()
+    void OnStunTimelineUpdate(float Value);
+
+    // Optional: called when timeline finishes
+    UFUNCTION()
+    void OnStunTimelineFinished();
+
+
     virtual void Tick(float DeltaTime) override;
     static constexpr float MAX_WALK_SPEED = 600.f;
     static constexpr float NORMAL_WALK_SPEED = 400.f;
@@ -275,4 +293,5 @@ public:
 	FOnHit OnHit;
 
     void PlayBloodFx(const FVector& HitLocation);
+	void PlayStunEffect(const float& Strength);
 };
