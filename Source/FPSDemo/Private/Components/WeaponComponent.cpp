@@ -9,7 +9,9 @@
 #include "Weapons/WeaponMelee.h"
 #include "Weapons/WeaponThrowable.h"
 #include "Kismet/GameplayStatics.h"
-#include "Projectiles/AThrownProjectile.h"
+#include "Projectiles/ThrownProjectile.h"
+#include "Projectiles/ThrownProjectileFrag.h"
+#include "Projectiles/ThrownProjectileSmoke.h"
 
 
 // Sets default values for this component's properties
@@ -191,7 +193,7 @@ EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
 
 void UWeaponComponent::DropWeapon() {
 	UE_LOG(LogTemp, Warning, TEXT("DropWeapon called"));
-    if (CurrentWeapon) {
+    if (CurrentWeapon && CurrentWeapon->CanDrop()) {
         if (!GetOwner()->HasAuthority()) {
             ServerDropWeapon();
         }
@@ -212,11 +214,10 @@ void UWeaponComponent::HandleDropWeapon() {
         UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: No weapon to drop"));
         return;
 	}
-    // Can not drop meleee
-    if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Melee) {
-        UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: Can not drop melee weapon"));
+    if (CurrentWeapon->CanDrop() == false) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: Current weapon can not be dropped"));
         return;
-	}
+    }
 
 	// Remove from inventory
     if (InventoryComp) {
@@ -371,13 +372,21 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
 	// gen object throwable
     FVector StartPos = Character->GetThrowableLocation();
     //StartPos += Character->GetActorForwardVector() * 10.f; // avoid collision                       // raise a bit if needed
+    
 
-
-    AAThrownProjectile* ThrownProj = GetWorld()->SpawnActor<AAThrownProjectile>(
-        AAThrownProjectile::StaticClass(),
-        StartPos,
-        FRotator::ZeroRotator
-	);
+    AThrownProjectile* ThrownProj = nullptr;
+    if (CurrentWeapon->GetWeaponData()->WeaponSubType == EWeaponSubTypes::Smoke) {
+        ThrownProj = GetWorld()->SpawnActor<AThrownProjectileSmoke>(
+            AThrownProjectileSmoke::StaticClass(),
+            StartPos,
+            FRotator::ZeroRotator);
+    }
+    else {
+        ThrownProj = GetWorld()->SpawnActor<AThrownProjectile>(
+            AThrownProjectileFrag::StaticClass(),
+            StartPos,
+            FRotator::ZeroRotator);
+    }
     if (ThrownProj) {
 		ThrownProj->SetOwner(GetOwner());
 		ThrownProj->SetInstigator(Cast<APawn>(GetOwner()));

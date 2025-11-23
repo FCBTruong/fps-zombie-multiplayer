@@ -13,7 +13,10 @@ AWeaponBase::AWeaponBase()
 	PrimaryActorTick.bCanEverTick = false;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
-
+	WeaponStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponStaticMesh"));
+	WeaponStaticMesh->SetHiddenInGame(true);
+	WeaponStaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponStaticMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 	RootComponent = WeaponMesh;
 
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -84,6 +87,19 @@ void AWeaponBase::ApplyWeaponData()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: Setting Mesh"));
 		WeaponMesh->SetSkeletalMesh(Data->Mesh);
+
+		RootComponent = WeaponMesh;
+		WeaponMesh->SetHiddenInGame(false);
+		WeaponStaticMesh->SetHiddenInGame(true);
+	}
+	else if (Data && Data->StaticMesh)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: Setting Static Mesh"));
+		WeaponStaticMesh->SetStaticMesh(Data->StaticMesh);
+		WeaponStaticMesh->SetHiddenInGame(false);
+		WeaponMesh->SetHiddenInGame(true);
+
+		RootComponent = WeaponStaticMesh;
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: Invalid Data or Mesh"));

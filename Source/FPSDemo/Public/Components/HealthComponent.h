@@ -48,4 +48,6 @@ public:
 	void HealthDeath();
 	FOnDeath OnDeath;
 	void SetHealth(float NewHealth);
+	bool IsAlive() const { return Health > 0.f; }
+	bool IsDead() const { return Health <= 0.f; }
 };

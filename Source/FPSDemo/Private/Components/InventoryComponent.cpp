@@ -39,7 +39,7 @@ void UInventoryComponent::BeginPlay()
 		Items.Add(MeleeItem);
 
 		FInventoryItem Item2;
-		Item2.ItemId = EItemId::GRENADE_FRAG_BASIC;
+		Item2.ItemId = EItemId::GRENADE_SMOKE;
 		Item2.Count = 1;
 		Item2.InventoryId = IdCounter++;
 		Item2.AmmoInMag = 0;

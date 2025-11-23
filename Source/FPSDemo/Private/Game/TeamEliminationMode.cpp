@@ -14,10 +14,18 @@ ATeamEliminationMode::ATeamEliminationMode()
 
 void ATeamEliminationMode::AddPlayer(APlayerController* NewPlayer)
 {
-    if (!NewPlayer) return;
+	UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in TeamEliminationMode"));
+    if (!NewPlayer)
+    {
+        return;
+    }
 
     AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>();
-    if (!PS) return;
+    if (!PS) {
+		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in AddPlayer"));
+        return;
+    }
+	UE_LOG(LogTemp, Warning, TEXT("Adding player to team..."));
 
     FName AssignedTeam;
 
@@ -37,9 +45,8 @@ void ATeamEliminationMode::AddPlayer(APlayerController* NewPlayer)
 
 void ATeamEliminationMode::PostLogin(APlayerController* NewPlayer)
 {
-	// decide team for the new player
-
-    AddPlayer(NewPlayer);
+    UE_LOG(LogTemp, Warning, TEXT("DEBUGXXX-01"));
+	AddPlayer(NewPlayer);
 	Super::PostLogin(NewPlayer);
 
 	// log number of players in each team
@@ -49,6 +56,7 @@ void ATeamEliminationMode::PostLogin(APlayerController* NewPlayer)
 
 AActor* ATeamEliminationMode::ChoosePlayerStart_Implementation(AController* Player)
 {
+    UE_LOG(LogTemp, Warning, TEXT("DEBUGXXX-02"));
     AMyPlayerState* PS = Player->GetPlayerState<AMyPlayerState>();
 
 
@@ -64,6 +72,8 @@ AActor* ATeamEliminationMode::ChoosePlayerStart_Implementation(AController* Play
         {
             continue;
         }
+		UE_LOG(LogTemp, Warning, TEXT("Found PlayerStart with tag: %s"), *Start->PlayerStartTag.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Players TeamId: %s"), *TeamId.ToString());
 
         if (Start->PlayerStartTag == TeamId)
         {
@@ -135,7 +145,7 @@ void ATeamEliminationMode::EndGame(FName WinningTeam)
     // Implement additional end game logic here (e.g., display UI, reset game, etc.)
 }
 
-void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class AActor* DamageCauser)
+void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser)
 {
     Super::NotifyPlayerKilled(Killer, Victim, DamageCauser);
 	UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in TeamEliminationMode"));
@@ -157,14 +167,7 @@ void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class A
     ATeamEliminationState* GS = GetGameState<ATeamEliminationState>();
     if (GS)
     {
-		AWeaponBase* DamageCauserWeapon = Cast<AWeaponBase>(DamageCauser);
-		UWeaponData* WeaponData = DamageCauserWeapon ? DamageCauserWeapon->GetWeaponData() : nullptr;
-
-        UE_LOG(LogTemp, Warning, TEXT("Notifying kill: Killer=%s, Victim=%s, Weapon=%s"),
-            KillerPS ? *KillerPS->GetPlayerName() : TEXT("NULL"),
-            VictimPS ? *VictimPS->GetPlayerName() : TEXT("NULL"),
-			WeaponData ? *WeaponData->GetName() : TEXT("NULL"));
-        GS->MulticastKillNotify(KillerPS, VictimPS, WeaponData);
+        GS->MulticastKillNotify(KillerPS, VictimPS, DamageCauser);
     }
 }
 

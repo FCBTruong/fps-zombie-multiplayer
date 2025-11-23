@@ -24,6 +24,7 @@ protected:
 	void OnRep_WeaponData();
 
 	USkeletalMeshComponent* WeaponMesh;
+	UStaticMeshComponent* WeaponStaticMesh;
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void PreInitializeComponents() override;
@@ -37,4 +38,5 @@ public:
 	virtual void InitFromData(class UWeaponData* InData);
 	UWeaponData* GetWeaponData() { return Data; };
 	virtual bool HasAmmoInClip() const { return false; }
+	bool CanDrop() const { return Data ? Data->CanDrop : false; }
 };

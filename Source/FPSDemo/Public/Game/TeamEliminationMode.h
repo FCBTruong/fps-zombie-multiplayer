@@ -31,13 +31,12 @@ public:
 
 	void AddPlayer(APlayerController* NewPlayer);
 	void PostLogin(APlayerController* NewPlayer) override;
-
     AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	void StartRound();
 	void ResetPlayers();
 	void StartNextRound();
 	void EndGame(FName WinningTeam);
-	void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class AActor* DamageCauser) override;
+	void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser) override;
 	void CheckRoundEnd();
 	void EndRound(FName WinningTeam);
 	void RestartPlayer(AController* NewPlayer) override;

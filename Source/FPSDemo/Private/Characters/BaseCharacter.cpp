@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Structs/InventoryItem.h"
 #include "Game/ShooterGameMode.h"
+#include "Projectiles/ThrownProjectile.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -484,10 +485,28 @@ void ABaseCharacter::OnRepSpeedWalkCurrently()
 float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
     AController* EventInstigator, AActor* DamageCauser)
 {
+    if (HealthComp && HealthComp->IsDead())
+    {
+        return 0.f; // already dead
+	}
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     LastHitByController = EventInstigator;
-    LastDamageCauser = DamageCauser;
+
+    AWeaponBase* DamageCauserWeapon = Cast<AWeaponBase>(DamageCauser);
+    UWeaponData* WeaponData = DamageCauserWeapon ? DamageCauserWeapon->GetWeaponData() : nullptr;
+
+    if (!WeaponData)
+    {
+		// Try get from thrown projectile
+        AThrownProjectile* DamageCauserProjectile = Cast<AThrownProjectile>(DamageCauser);
+        if (DamageCauserProjectile)
+        {
+            WeaponData = DamageCauserProjectile->GetWeaponData();
+        }
+	}
+    
+    LastDamageCauser = WeaponData;
     HealthComp->ApplyDamage(ActualDamage);
     ClientPlayHitEffect();
     return ActualDamage;

@@ -7,6 +7,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Controllers/MyPlayerController.h"
 #include "Net/UnrealNetwork.h"
+#include "GameFramework/Character.h"
 
 AWeaponFirearm::AWeaponFirearm()
 {
@@ -141,6 +142,11 @@ void AWeaponFirearm::ApplyWeaponData()
 	if (MagMesh && Data && Data->MagMesh)
 	{
 		MagMesh->SetStaticMesh(Data->MagMesh);
+
+		ACharacter* Character = Cast<ACharacter>(GetOwner());
+		if (Character && Character->IsLocallyControlled()) {
+			MagMesh->SetCastShadow(false);
+		}
 	}
 	CurrentAmmo = Data->MaxAmmoInClip;
 }

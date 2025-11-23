@@ -8,6 +8,7 @@
 #include "WeaponConfig.h"
 #include "Items/ItemData.h"
 #include "Projectiles/BulletData.h"
+#include "NiagaraSystem.h"
 #include "WeaponData.generated.h"
 
 /**
@@ -75,6 +76,9 @@ public:
     // Explosion particle effect
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Effects")
     UParticleSystem* ExplosionFX;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Effects")
+	UNiagaraSystem* SmokeFX;
 
     // Explosion sound
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Effects")

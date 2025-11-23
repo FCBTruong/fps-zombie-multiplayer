@@ -42,7 +42,7 @@ protected:
 	AController* LastHitByController = nullptr;
 
     UPROPERTY()
-    AActor* LastDamageCauser = nullptr;
+    UWeaponData* LastDamageCauser = nullptr;
 
     UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRepSpeedWalkCurrently, Category = "Data")
 	float SpeedWalkCurrently = NORMAL_WALK_SPEED;
