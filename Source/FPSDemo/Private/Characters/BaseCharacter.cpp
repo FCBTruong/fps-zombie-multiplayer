@@ -132,6 +132,28 @@ void ABaseCharacter::BeginPlay()
             }
         }
     }
+	ViewmodelCapture = Cast<USceneCaptureComponent2D>(GetDefaultSubobjectByName(TEXT("ViewmodelCap")));
+    if (this->IsLocallyControlled())
+    {
+        if (ViewmodelCapture)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("ViewmodelCapture is valid in ABaseCharacter"));
+            ViewmodelCapture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+
+            // Clear any previous list
+            ViewmodelCapture->ShowOnlyActors.Empty();
+            ViewmodelCapture->ShowOnlyComponents.Empty();
+
+            // Add FPS arms
+            ViewmodelCapture->ShowOnlyComponents.AddUnique(MeshFps);
+        }
+    }
+    else {
+        if (ViewmodelCapture)
+        {
+            ViewmodelCapture->DestroyComponent();
+		}
+    }
 }
 
 // Called every frame
@@ -389,7 +411,7 @@ void ABaseCharacter::UpdateView()
         }
         if (MeshFps)
         {
-            MeshFps->SetOwnerNoSee(false);
+            //MeshFps->SetOwnerNoSee(false);
         }
     }
     else
@@ -409,7 +431,7 @@ void ABaseCharacter::UpdateView()
         }
         if (MeshFps)
         {
-            MeshFps->SetOwnerNoSee(true);
+           /* MeshFps->SetOwnerNoSee(true);*/
         }
     }
     WeaponComp->UpdateAttachLocationWeapon();

@@ -19,6 +19,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
 #include "Components/PostProcessComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "BaseCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -223,6 +224,8 @@ public:
 
     FTimeline StunTimeline;
 	float BaseStunDuration = 0.f;
+
+    USceneCaptureComponent2D* ViewmodelCapture;
 
     // Timeline callback
     UFUNCTION()

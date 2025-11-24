@@ -789,11 +789,11 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     }
 
     FVector offset = FVector(0.f, 0.f, 0.f);
-	FVector offsetRot = FVector(0.f, 0.f, 0.f);
+    FVector offsetRot = FVector(0.f, 0.f, 0.f);
     FString SocketName = "ik_hand_gun";
     bool bIsFPS = Character->IsFpsViewMode();
     if (!CurrentWeapon->GetWeaponData()) {
-		UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: No weapon data found"));
+        UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: No weapon data found"));
         return;
     }
     EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
@@ -822,7 +822,11 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     );
     USceneComponent* Root = CurrentWeapon->GetRootComponent();
 
-	Root->SetRelativeLocationAndRotation(offset, FRotator::MakeFromEuler(offsetRot));
+    Root->SetRelativeLocationAndRotation(offset, FRotator::MakeFromEuler(offsetRot));
+
+    if (Character->ViewmodelCapture) {
+        Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
+    }
 }
 
 bool UWeaponComponent::CanWeaponAim() {
