@@ -17,6 +17,20 @@ void AThrownProjectileStun::OnExplode()
 
 void AThrownProjectileStun::MulticastExplode_Implementation(const FVector& ImpactPoint)
 {
+	// Play effect explosion FX
+    if (Data && Data->SmokeFX)
+    {
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            GetWorld(),
+            Data->SmokeFX,
+            ImpactPoint
+        );
+    }
+
+    if (Data && Data->ExplosionSFX)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, Data->ExplosionSFX, ImpactPoint);
+    }
     // Get the local player controller
     AMyPlayerController* PC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
     if (!PC) {
@@ -75,9 +89,9 @@ void AThrownProjectileStun::MulticastExplode_Implementation(const FVector& Impac
     float Strength = 1.f - (Dist / MaxFlashRange);
     Strength = FMath::Clamp(Strength, 0.f, 1.f);
 
-    if (Data && Data->ExplosionSFX)
+    if (Data && Data->StunSFX)
     {
-        UGameplayStatics::PlaySound2D(this, Data->ExplosionSFX);
+        UGameplayStatics::PlaySound2D(this, Data->StunSFX);
     }
 
 	// Get CharacterBase to apply flash effect

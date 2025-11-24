@@ -89,6 +89,7 @@ void AMyPlayerController::BindingUI()
         if (auto* IC = Char->FindComponentByClass<UInteractComponent>())
         {
             IC->ShowPickupMessage.AddUObject(PlayerUI, &UPlayerUI::ShowPickupMessage);
+			IC->HidePickupMessage.AddUObject(PlayerUI, &UPlayerUI::HidePickupMessage);
         }
 
         Char->OnHit.AddUObject(PlayerUI, &UPlayerUI::OnHit);

@@ -222,6 +222,7 @@ public:
     UCurveFloat* StunCurve;
 
     FTimeline StunTimeline;
+	float BaseStunDuration = 0.f;
 
     // Timeline callback
     UFUNCTION()

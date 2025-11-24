@@ -118,6 +118,19 @@ void ABaseCharacter::BeginPlay()
         StunTimeline.SetTimelineFinishedFunc(FinishedFunction);
 
         StunTimeline.SetLooping(false);
+        BaseStunDuration = StunTimeline.GetTimelineLength();
+    }
+
+    if (IsLocallyControlled())
+    {
+        if (FlashCollection)
+        {
+            if (UMaterialParameterCollectionInstance* MPC =
+                GetWorld()->GetParameterCollectionInstance(FlashCollection))
+            {
+                MPC->SetScalarParameterValue("Intensity", 0.0f);
+            }
+        }
     }
 }
 
@@ -743,7 +756,9 @@ void ABaseCharacter::PlayStunEffect(const float& Strength)
 {
     if (StunCurve && FlashCollection)
     {
+        float NewDuration = BaseStunDuration * Strength;
         // Restart the timeline from the beginning
+        StunTimeline.SetPlayRate(BaseStunDuration / FMath::Max(NewDuration, 0.01f));
         StunTimeline.PlayFromStart();
     }
 }

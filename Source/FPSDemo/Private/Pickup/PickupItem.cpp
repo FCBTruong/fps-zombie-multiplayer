@@ -76,3 +76,25 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	//	Player->GetPickupComponent()->PickupItem(this);
 	//}
 }
+
+FString APickupItem::GetItemName() const
+{
+	FString Name = TEXT("Unknown Item");
+
+	// Get Weapon Data
+	UGameInstance* GI = GetGameInstance();
+	if (GI)
+	{
+		UWeaponDataManager* WeaponDataMgr = GI->GetSubsystem<UWeaponDataManager>();
+		if (WeaponDataMgr)
+		{
+			UWeaponData* WeaponData = WeaponDataMgr->GetWeaponById(Data.ItemId);
+			if (WeaponData)
+			{
+				Name = WeaponData->DisplayName.ToString();
+			}
+		}
+	}
+
+	return Name;
+}

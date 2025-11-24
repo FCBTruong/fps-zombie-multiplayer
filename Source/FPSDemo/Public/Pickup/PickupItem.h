@@ -40,4 +40,5 @@ public:
 
 	FORCEINLINE FPickupData GetData() const { return Data; }
 	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
+	FString GetItemName() const;
 };

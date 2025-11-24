@@ -56,8 +56,8 @@ void UInteractComponent::TraceForPickup()
 		ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
 		if (FocusedPickup)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Focused on pickup: %s"), *FocusedPickup->GetName());
-			ShowPickupMessage.Broadcast(FocusedPickup->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("Focused on pickup: %s"), *FocusedPickup->GetItemName());
+			ShowPickupMessage.Broadcast(FocusedPickup->GetItemName());
 		}
 		else
 		{

@@ -84,6 +84,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Effects")
     USoundBase* ExplosionSFX;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Effects")
+	USoundBase* StunSFX;
+
     // Decal material for scorch mark, etc.
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Decal")
     UMaterialInterface* DecalMat;
