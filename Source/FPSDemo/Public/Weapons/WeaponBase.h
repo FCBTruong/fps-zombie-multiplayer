@@ -40,7 +40,6 @@ public:
 	virtual bool HasAmmoInClip() const { return false; }
 	bool CanDrop() const { return Data ? Data->CanDrop : false; }
 
-	USkeletalMeshComponent* GetWeaponMesh() {
-		return WeaponMesh;
-	}
+	UMeshComponent* GetWeaponMesh();
+	void SetOwnerNoSee(bool bNewOwnerNoSee);
 };

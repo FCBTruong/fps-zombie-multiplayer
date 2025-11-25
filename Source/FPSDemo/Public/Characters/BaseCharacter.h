@@ -272,7 +272,7 @@ public:
 	void PlayThrowNadeMontage();
 	void PlayHoldNadeMontage();
 	void PlayMontage(UAnimMontage* MontageToPlay);
-	bool IsCloseToWall() const { return bCloseToWall; }
+	bool IsCloseToWall() const { return false; }
     FVector GetThrowableLocation() const {
         return ThrowableLocation->GetComponentLocation();
 	}
@@ -298,4 +298,8 @@ public:
 
     void PlayBloodFx(const FVector& HitLocation);
 	void PlayStunEffect(const float& Strength);
+
+    void SetPosViewmodelCaptureForGun();
+    FVector3d ViewmodelCaptureDefaultPos;
+	FRotator ViewmodelCaptureDefaultRot;
 };

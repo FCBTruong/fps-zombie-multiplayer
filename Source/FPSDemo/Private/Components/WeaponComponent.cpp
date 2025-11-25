@@ -312,6 +312,7 @@ void UWeaponComponent::OnLeftClickStart() {
         UE_LOG(LogTemp, Warning, TEXT("HandleStartFire: No weapon equipped"));
         return;
 	}
+	UE_LOG(LogTemp, Warning, TEXT("OnLeftClickStart called"));
 
     // is fire arm
     if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
@@ -825,7 +826,30 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     Root->SetRelativeLocationAndRotation(offset, FRotator::MakeFromEuler(offsetRot));
 
     if (Character->ViewmodelCapture) {
+        if (bIsFPS) {
+            CurrentWeapon->SetOwnerNoSee(true);
+        }
+        else {
+            CurrentWeapon->SetOwnerNoSee(false);
+        }
         Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
+
+        if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
+            if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+            {
+                if (Firearm->MagMesh) {
+                    Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(Firearm->MagMesh);
+					Firearm->MagMesh->SetOwnerNoSee(bIsFPS);
+                }
+            }
+            Character->SetPosViewmodelCaptureForGun();
+		}
+        else {
+            Character->ViewmodelCapture->SetRelativeLocationAndRotation(
+                FVector3d::ZeroVector,
+                FRotator::ZeroRotator
+			);
+		}
     }
 }
 

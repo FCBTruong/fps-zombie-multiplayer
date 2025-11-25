@@ -51,7 +51,7 @@ void ABaseCharacter::BeginPlay()
 	MeshFps = Cast<USkeletalMeshComponent>(GetDefaultSubobjectByName(TEXT("MeshFps")));
 	FirstPersonCamera = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraFps")));
 	ThirdPersonCamera = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraTps")));
-
+    
     ThrowableLocation = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("ThrowableLocation")));
 
     // Add mapping context at runtime
@@ -82,7 +82,7 @@ void ABaseCharacter::BeginPlay()
 
     if (this->IsLocallyControlled())
     {
-        //bIsFPS = true;
+        bIsFPS = true;
         UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
     }
     UpdateView();
@@ -146,13 +146,19 @@ void ABaseCharacter::BeginPlay()
 
             // Add FPS arms
             ViewmodelCapture->ShowOnlyComponents.AddUnique(MeshFps);
+
+			ViewmodelCaptureDefaultPos = ViewmodelCapture->GetRelativeLocation();
+			ViewmodelCaptureDefaultRot = ViewmodelCapture->GetRelativeRotation();
         }
+        MeshFps->SetVisibility(true);
     }
     else {
         if (ViewmodelCapture)
         {
             ViewmodelCapture->DestroyComponent();
+			ViewmodelCapture = nullptr;
 		}
+        MeshFps->SetVisibility(false, true);
     }
 }
 
@@ -411,7 +417,7 @@ void ABaseCharacter::UpdateView()
         }
         if (MeshFps)
         {
-            //MeshFps->SetOwnerNoSee(false);
+            MeshFps->SetVisibility(true);
         }
     }
     else
@@ -431,7 +437,7 @@ void ABaseCharacter::UpdateView()
         }
         if (MeshFps)
         {
-           /* MeshFps->SetOwnerNoSee(true);*/
+            MeshFps->SetVisibility(false, true);
         }
     }
     WeaponComp->UpdateAttachLocationWeapon();
@@ -817,4 +823,11 @@ void ABaseCharacter::OnStunTimelineFinished()
             MPCInstance->SetScalarParameterValue(FName("Intensity"), 0.0f);
         }
     }
+}
+
+void ABaseCharacter::SetPosViewmodelCaptureForGun() {
+    if (ViewmodelCapture) {
+		ViewmodelCapture->SetRelativeLocation(ViewmodelCaptureDefaultPos);
+		ViewmodelCapture->SetRelativeRotation(ViewmodelCaptureDefaultRot);
+	}
 }

@@ -104,4 +104,28 @@ void AWeaponBase::ApplyWeaponData()
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: Invalid Data or Mesh"));
 	}
+	RootComponent->SetWorldScale3D(FVector(1.0f));
+}
+
+UMeshComponent* AWeaponBase::GetWeaponMesh()
+{
+	if (WeaponMesh && !WeaponMesh->bHiddenInGame) {
+		return WeaponMesh;
+	}
+	else if (WeaponStaticMesh && !WeaponStaticMesh->bHiddenInGame) {
+		return WeaponStaticMesh;
+	}
+	return nullptr;
+}
+
+void AWeaponBase::SetOwnerNoSee(bool bNewOwnerNoSee)
+{
+	if (WeaponMesh)
+	{
+		WeaponMesh->SetOwnerNoSee(bNewOwnerNoSee);
+	}
+	if (WeaponStaticMesh)
+	{
+		WeaponStaticMesh->SetOwnerNoSee(bNewOwnerNoSee);
+	}
 }
