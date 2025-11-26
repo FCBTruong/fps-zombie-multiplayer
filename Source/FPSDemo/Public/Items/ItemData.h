@@ -33,4 +33,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	bool CanDrop = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Shop")
+	int32 Price = 0;
 };

@@ -41,6 +41,9 @@ public:
 	UParticleSystem* MuzzleFX = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	UNiagaraSystem* MuzzleFlashFX = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	FName MuzzleSocket;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")

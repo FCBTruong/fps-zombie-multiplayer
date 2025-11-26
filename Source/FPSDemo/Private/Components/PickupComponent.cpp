@@ -79,7 +79,7 @@ void UPickupComponent::HandlePickupItem(int32 ItemOnMapId) {
 	
 	// Get the item data from your items manager
 	UItemData* ItemData = GMR->GetItemDataById(PickupData.ItemId);
-	int32 NewInventoryId = Inventory->AddItem(*ItemData);
+	int32 NewInventoryId = Inventory->AddItem(ItemData);
 
 	UWeaponComponent* WeaponComp = GetOwner()->FindComponentByClass<UWeaponComponent>();
 	WeaponComp->OnNewItemPickup(NewInventoryId);

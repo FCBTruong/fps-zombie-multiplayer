@@ -9,6 +9,8 @@
 #include "Blueprint/UserWidget.h"
 #include "Characters/BaseCharacter.h"
 #include "Game/TeamEliminationState.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 
 
 AMyPlayerController::AMyPlayerController() { 
@@ -44,7 +46,9 @@ void AMyPlayerController::BeginPlay()
     {
         UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Creating PlayerUI widget"));
         PlayerUI = CreateWidget<UPlayerUI>(this, GMR->GlobalData->PlayerUIClass);
-        PlayerUI->AddToViewport();
+        PlayerUI->AddToViewport(5);
+		PlayerUI->CloseShop();
+		bIsShopOpen = false;
     }
 	BindingUI();
 }
@@ -109,4 +113,52 @@ void AMyPlayerController::ApplyFlash(const float& Strength)
     {
         PlayerUI->ApplyFlashEffect(Strength);
     }
+}
+
+void AMyPlayerController::ToggleShop()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Toggling shop UI"));
+    if (!PlayerUI)
+    {
+        return;
+    }
+    
+	bIsShopOpen = !bIsShopOpen;
+    if (bIsShopOpen)
+    {
+        PlayerUI->OpenShop();
+    }
+    else
+    {
+        PlayerUI->CloseShop();
+	}
+}
+
+void AMyPlayerController::SetupInputComponent()
+{
+    Super::SetupInputComponent();
+
+    if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent))
+    {
+        if (IA_SHOP)
+        {
+            EnhancedInput->BindAction(
+                IA_SHOP,
+                ETriggerEvent::Started,
+                this,
+                &AMyPlayerController::ToggleShop
+            );
+        }
+    }
+}
+
+
+void AMyPlayerController::ServerBuyItem_Implementation(const UItemData* Item)
+{
+    AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
+    if (!PS) {
+        return;
+    }
+
+    PS->ProcessBuy(Item);
 }

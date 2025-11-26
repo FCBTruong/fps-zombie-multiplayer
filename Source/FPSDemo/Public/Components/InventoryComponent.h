@@ -39,7 +39,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	int32 AddItem(const UItemData& ItemData);
+	int32 AddItem(const UItemData* ItemData);
 	FInventoryItem* GetItemByInventoryId(int32 InventoryId);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

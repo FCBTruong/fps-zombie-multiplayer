@@ -12,6 +12,7 @@
 #include "Game/ShooterGameMode.h"
 #include "Projectiles/ThrownProjectile.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
+#include "Controllers/MyPlayerController.h"
 
 
 // Sets default values

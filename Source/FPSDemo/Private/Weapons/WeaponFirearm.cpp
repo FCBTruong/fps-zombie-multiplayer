@@ -8,6 +8,7 @@
 #include "Controllers/MyPlayerController.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
+#include "NiagaraFunctionLibrary.h"
 
 AWeaponFirearm::AWeaponFirearm()
 {
@@ -33,7 +34,7 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 	{
 		// ... rest of your code remains unchanged ...
 		UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));
-		PSC->SetWorldScale3D(FVector(0.05f));
+		PSC->SetWorldScale3D(FVector(0.5f));
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("Failed to spawn Muzzle Flash"));
@@ -61,6 +62,19 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 	if (Data->FireSFX)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, Data->FireSFX, GetActorLocation());
+	}
+
+	if (Data->MuzzleFlashFX) {
+		UNiagaraComponent* Niagara = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			Data->MuzzleFlashFX,
+			WeaponMesh,
+			TEXT("Muzzle"),
+			FVector::ZeroVector,
+			FRotator::ZeroRotator,
+			EAttachLocation::SnapToTarget,
+			true,  // auto activate
+			true   // auto destroy
+		);
 	}
 }
 

@@ -16,6 +16,8 @@ class FPSDEMO_API AMyPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+private:
+	bool bIsShopOpen = false;
 public:
 	AMyPlayerController();
 
@@ -27,4 +29,13 @@ public:
 	void BindingUI();
 	virtual void OnRep_Pawn() override;
 	void ApplyFlash(const float& Strength);
+	void ToggleShop();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	class UInputAction* IA_SHOP;
+
+	virtual void SetupInputComponent() override;
+
+	UFUNCTION(Server, Reliable)
+	void ServerBuyItem(const UItemData* Item);
 };

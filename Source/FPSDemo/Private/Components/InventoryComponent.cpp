@@ -76,14 +76,14 @@ void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 }
 
 // This function only called on server side
-int32 UInventoryComponent::AddItem(const UItemData& ItemData)
+int32 UInventoryComponent::AddItem(const UItemData* ItemData)
 {
 	// Implement your logic to add the item to the inventory
-	FString ItemName = ItemData.DisplayName.ToString();
+	FString ItemName = ItemData->DisplayName.ToString();
 	UE_LOG(LogTemp, Log, TEXT("Item added to inventory: %s"), *ItemName);
 
 	FInventoryItem NewItem;
-	NewItem.ItemId = ItemData.Id;
+	NewItem.ItemId = ItemData->Id;
 	NewItem.Count = 1; // Default count
 	NewItem.InventoryId = IdCounter++;
 	NewItem.AmmoInMag = 0; // Default ammo in mag

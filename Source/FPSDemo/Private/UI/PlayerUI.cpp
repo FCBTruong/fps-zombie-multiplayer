@@ -143,3 +143,54 @@ void UPlayerUI::FadeOutFlashEffect()
         PlayAnimation(FlashScreenAnim);
 	}
 }
+
+void UPlayerUI::OpenShop()
+{
+    if (!WBP_Shop) {
+		UE_LOG(LogTemp, Warning, TEXT("OpenShop: WBP_Shop is null"));
+        return;
+    }
+
+    WBP_Shop->SetVisibility(ESlateVisibility::Visible);
+	WBP_Shop->OnActive();
+
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC) {
+		UE_LOG(LogTemp, Warning, TEXT("OpenShop: PlayerController is null"));
+        return;
+    }
+
+    PC->bShowMouseCursor = true;
+
+    APawn* Pawn = PC->GetPawn();
+    if (Pawn)
+    {
+        Pawn->DisableInput(PC);
+    }
+}
+
+void UPlayerUI::CloseShop()
+{
+	UE_LOG(LogTemp, Warning, TEXT("CloseShop: Closing shop UI"));
+    if (!WBP_Shop) {
+		UE_LOG(LogTemp, Warning, TEXT("CloseShop: WBP_Shop is null"));
+        return;
+    }
+
+    WBP_Shop->SetVisibility(ESlateVisibility::Hidden);
+
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC) {
+		UE_LOG(LogTemp, Warning, TEXT("CloseShop: PlayerController is null"));
+        return;
+    }
+	UE_LOG(LogTemp, Warning, TEXT("CloseShop: Hiding mouse cursor"));
+
+    PC->bShowMouseCursor = false;
+
+    APawn* Pawn = PC->GetPawn();
+    if (Pawn)
+    {
+        Pawn->EnableInput(PC);
+    }
+}

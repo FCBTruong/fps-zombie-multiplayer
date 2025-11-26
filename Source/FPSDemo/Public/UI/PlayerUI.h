@@ -9,6 +9,7 @@
 #include "Components/Image.h"
 #include "Components/StackBox.h"
 #include "UI/KillNotifySlot.h"
+#include "UI/ShopUI.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -43,6 +44,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
+
+	UPROPERTY(meta = (BindWidget), Transient)
+	UShopUI* WBP_Shop;
+
 public:
 	void NativeConstruct() override;
 	void ShowPickupMessage(const FString& Message);
@@ -56,4 +61,6 @@ public:
 	void NotifyKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponTex, bool bIsHeadShot);
 	void ApplyFlashEffect(const float& Strength);
 	void FadeOutFlashEffect();
+	void OpenShop();
+	void CloseShop();
 };

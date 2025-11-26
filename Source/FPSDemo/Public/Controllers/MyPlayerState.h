@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
+#include "Items/ItemData.h"
 #include "MyPlayerState.generated.h"
 
 /**
@@ -18,6 +19,9 @@ private:
 	FName TeamID = "";
 	int PlayerID = -1;
 	bool bIsAlive = true;
+	int Money = 1000;
+
+
 public:
 	AMyPlayerState();
 
@@ -27,4 +31,5 @@ public:
 	void SetTeamID(FName NewTeamID) { TeamID = NewTeamID; }
 	void SetPlayerID(int NewPlayerID) { PlayerID = NewPlayerID; }
 	void SetIsAlive(bool bNewIsAlive) { bIsAlive = bNewIsAlive; }
+	void ProcessBuy(const UItemData* Item);
 };
