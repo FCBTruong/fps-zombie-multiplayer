@@ -7,6 +7,8 @@
 #include "Items/ItemData.h"
 #include "MyPlayerState.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnUpdateMoney)
+DECLARE_MULTICAST_DELEGATE(FOnUpdateBoughtItems)
 /**
  * 
  */
@@ -15,13 +17,24 @@ class FPSDEMO_API AMyPlayerState : public APlayerState
 {
 	GENERATED_BODY()
 
-private:
+protected:
 	FName TeamID = "";
 	int PlayerID = -1;
 	bool bIsAlive = true;
-	int Money = 1000;
 
+	UPROPERTY(ReplicatedUsing = OnRep_Money)
+	int Money = 10000;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION()
+	void OnRep_Money();
+
+	UPROPERTY(ReplicatedUsing = OnRep_BoughtItems)
+	TArray<EItemId> BoughtItems;
+
+	UFUNCTION()
+	void OnRep_BoughtItems();
 public:
 	AMyPlayerState();
 
@@ -32,4 +45,11 @@ public:
 	void SetPlayerID(int NewPlayerID) { PlayerID = NewPlayerID; }
 	void SetIsAlive(bool bNewIsAlive) { bIsAlive = bNewIsAlive; }
 	void ProcessBuy(const UItemData* Item);
+	int GetMoney() const { return Money; }
+	void ResetBoughtItems() { BoughtItems.Empty(); }
+
+	FOnUpdateMoney OnUpdateMoney;
+	FOnUpdateBoughtItems OnUpdateBoughtItems;
+
+	bool CanBuyThisItem(const UItemData* Item) const;
 };

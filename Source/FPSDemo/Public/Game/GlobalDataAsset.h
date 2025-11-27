@@ -28,4 +28,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UNiagaraSystem* BulletTrailNS;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
+	USoundBase* TouchSound;
 };

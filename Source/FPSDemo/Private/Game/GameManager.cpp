@@ -12,6 +12,8 @@ void UGameManager::Initialize(FSubsystemCollectionBase& Collection)
     GlobalData = TSoftObjectPtr<UGlobalDataAsset>(
         FSoftObjectPath(TEXT("/Game/Main/Data/GlobalData.GlobalData"))
     ).LoadSynchronous();
+
+	WeaponDataManager = GetWeaponDataManager();
 }
 
 void UGameManager::GenItemNodesOnMap(const TArray<FPickupData>& Items)
@@ -65,13 +67,29 @@ void UGameManager::FindAndDestroyItem(int32 ItemOnMapId) {
 }
 
 UItemData * UGameManager::GetItemDataById(EItemId ItemId) {
-    UWorld* World = GetWorld();
-    if (!World) return nullptr;
-    UGameInstance* GI = World->GetGameInstance();
-    if (!GI) return nullptr;
-    UWeaponDataManager* WeaponDataMgr = GI->GetSubsystem<UWeaponDataManager>();
-    if (!WeaponDataMgr) return nullptr;
+	UWeaponDataManager* WeaponDataMgr = GetWeaponDataManager();
+	if (!WeaponDataMgr) {
+		UE_LOG(LogTemp, Warning, TEXT("GetItemDataById: WeaponData Manager is null"));
+		return nullptr;
+	}
     return WeaponDataMgr->GetWeaponById(ItemId);
+}
+
+UWeaponDataManager* UGameManager::GetWeaponDataManager() {
+    if (WeaponDataManager) {
+		UE_LOG(LogTemp, Warning, TEXT("GetWeaponDataManager: Returning cached WeaponDataManager"));
+        return WeaponDataManager;
+	}
+    UWorld* World = GetWorld();
+    if (!World) {
+        return nullptr;
+    }
+    UGameInstance* GI = World->GetGameInstance();
+    if (!GI) {
+        return nullptr;
+    }
+    WeaponDataManager = GI->GetSubsystem<UWeaponDataManager>();
+    return WeaponDataManager;
 }
 
 void UGameManager::OnReceivedItemsFromServer(const TArray<FPickupData>& Items)

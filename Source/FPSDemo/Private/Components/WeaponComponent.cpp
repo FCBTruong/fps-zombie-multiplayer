@@ -44,14 +44,8 @@ void UWeaponComponent::BeginPlay()
 }
 
 void UWeaponComponent::InitState() {
-    /*if (GetOwnerRole() == ROLE_Authority)
-    {
-        CurrentInventoryId = InventoryComp->GetMeleeId();
-    }
-    else
-    {
-        OnRep_CurrentInventoryId();
-    }*/
+    Melee = Cast<AWeaponMelee>(this->SpawnWeaponByItemId(EItemId::MELEE_KNIFE_BASIC));
+	EquipWeapon(EItemId::MELEE_KNIFE_BASIC);
 }
 
 
@@ -63,77 +57,74 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
-void UWeaponComponent::EquipWeapon(int32 InventoryId)
+void UWeaponComponent::EquipWeapon(EItemId ItemId)
 {
     if (GetOwner()->GetLocalRole() < ROLE_Authority) {
         // Client
-        ServerEquipWeapon(InventoryId);
+        ServerEquipWeapon(ItemId);
         return;
 	}
     else {
         // Server
-        HandleEquipWeapon(InventoryId);
+        HandleEquipWeapon(ItemId);
 	}
-
 }
 
 
-void UWeaponComponent::ServerEquipWeapon_Implementation(int32 InventoryId)
+void UWeaponComponent::ServerEquipWeapon_Implementation(EItemId ItemId)
 {
-	HandleEquipWeapon(InventoryId);
+	HandleEquipWeapon(ItemId);
 }
 
 // Server function
-void UWeaponComponent::HandleEquipWeapon(int32 InventoryId) {
-	// check if user has this item in inventory
-    if (!InventoryComp) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerEquipWeapon_Implementation: Inventory component not found"));
-        return;
-	}
-	FInventoryItem* Item = InventoryComp->GetItemByInventoryId(InventoryId);
-    if (!Item) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerEquipWeapon_Implementation: Item with InventoryId %d not found in inventory"), InventoryId);
+void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
+	if (CurrentWeapon && CurrentWeapon->GetWeaponData()->Id == ItemId) {
+		UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Weapon %d is "), (int32)ItemId);
+        // already equipped
         return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("ServerEquipWeapon_Implementation called withaaaa InventoryId: %d"), InventoryId);
+	// check if player own this weapon
+    // TODO
     
-    UWeaponData* WeaponData = Cast<UWeaponData>(GMR->GetItemDataById(Item->ItemId));
+    UWeaponData* WeaponConf = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
     FActorSpawnParameters Params;
     Params.Owner = GetOwner();
     Params.Instigator = Cast<APawn>(GetOwner());
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     
     if (CurrentWeapon) {
-        CurrentWeapon->Destroy();
-        CurrentWeapon = nullptr;
+        CurrentWeapon->OnUnequipped();
     }
-    if (WeaponData->WeaponType == EWeaponTypes::Firearm) {
-        CurrentWeapon = GetWorld()->SpawnActor<AWeaponFirearm>(
-            AWeaponFirearm::StaticClass(),
-            FVector::ZeroVector,
-            FRotator::ZeroRotator,
-            Params
-        );
-    }
-    else if (WeaponData->WeaponType == EWeaponTypes::Melee) {
-        // Handle Melee weapon spawning
-        CurrentWeapon = GetWorld()->SpawnActor<AWeaponMelee>(
-            FVector::ZeroVector,
-            FRotator::ZeroRotator,
-            Params
-        );
-    }
-    else if (WeaponData->WeaponType == EWeaponTypes::Throwable) {
+ 
+    if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
+		// special case for throwable
         CurrentWeapon = GetWorld()->SpawnActor<AWeaponThrowable>(
             FVector::ZeroVector,
             FRotator::ZeroRotator,
             Params
         );
     }
+    else {
+        if (Rifle && Rifle->GetItemId() == ItemId) {
+            CurrentWeapon = Rifle;
+        }
+        else if (Pistol && Pistol->GetItemId() == ItemId) {
+            CurrentWeapon = Pistol;
+        }
+        else if (Melee && Melee->GetItemId() == ItemId) {
+			CurrentWeapon = Melee;
+        }
 
-    EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
-	CurrentWeapon->InitFromData(WeaponData);
+        if (!CurrentWeapon) {
+            UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Failed to spawn weapon actor for %d"), (int32)ItemId);
+            return;
+		}
+    }
+
+    EWeaponTypes WeaType = WeaponConf->WeaponType;
+	CurrentWeapon->InitFromData(WeaponConf);
+	CurrentWeapon->OnEquipped();
 
     UpdateAttachLocationWeapon();
 
@@ -180,9 +171,9 @@ void UWeaponComponent::OnUpdateCurrentWeaponData() {
 void UWeaponComponent::OnNewItemPickup(int32 NewInventoryId) {
     bool ShouldEquipNow = true;
 
-    if (ShouldEquipNow) {
+    /*if (ShouldEquipNow) {
 		EquipWeapon(NewInventoryId);
-    }
+    }*/
 }
 
 EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
@@ -220,11 +211,6 @@ void UWeaponComponent::HandleDropWeapon() {
         return;
     }
 
-	// Remove from inventory
-    if (InventoryComp) {
-        //InventoryComp->RemoveItemByInventoryId(CurrentInventoryId);
-    }
-
 	// spawn new pickup item on map
 	FVector DropPoint = GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 300.f + FVector(0.f, 0.f, 100.f);
     FPickupData Data;
@@ -240,7 +226,13 @@ void UWeaponComponent::HandleDropWeapon() {
 
 	CurrentWeapon->Destroy();
 	CurrentWeapon = nullptr;
-    EquipSlot(FGameConstants::SLOT_MELEE);
+    if (Rifle && Rifle->GetItemId() == Data.ItemId) {
+        Rifle = nullptr;
+	}
+    if (Pistol && Pistol->GetItemId() == Data.ItemId) {
+        Pistol = nullptr;
+	}
+	EquipWeapon(Melee->GetItemId());
 }
 
 void UWeaponComponent::MulticastDropWeapon_Implementation(FPickupData Data) {
@@ -584,7 +576,7 @@ bool UWeaponComponent::IsScopeEquipped()
     {
     
 		UWeaponData* WeaponData = CurrentWeapon->GetWeaponData();
-        if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm && WeaponData->WeaponSubType == EWeaponSubTypes::Sniper)
+        if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm)
         {
             return true;
         }
@@ -605,25 +597,24 @@ void UWeaponComponent::EquipSlot(int32 SlotIndex)
     if (bIsPriming) {
         return; // can not change weapon while priming
     }
-    int32 InventoryId = FGameConstants::INVENTORY_ID_NONE;
-
+  
     if (SlotIndex == FGameConstants::SLOT_THROWABLE) {
-        InventoryId = InventoryComp->GetFirstInventoryIdByType(EWeaponTypes::Throwable);
+		ServerEquipWeapon(EItemId::GRENADE_FRAG_BASIC);
     }
-    else if (SlotIndex == FGameConstants::SLOT_LONG_GUN_1) {
-        InventoryId = GetLongGunInvenId();
+    else if (SlotIndex == FGameConstants::SLOT_RIFLE) {
+        if (Rifle) {
+            ServerEquipWeapon(Rifle->GetItemId());
+		}
     }
     else if (SlotIndex == FGameConstants::SLOT_MELEE) {
-        InventoryId = GetMeleeInvenId();
+        if (Melee) {
+            ServerEquipWeapon(Melee->GetItemId());
+        }
     }
     else if (SlotIndex == FGameConstants::SLOT_PISTOL) {
-        InventoryId = GetSideArmInvenId();
-    }
-	UE_LOG(LogTemp, Warning, TEXT("EquipSlot called for slot %d, found InventoryId %d"), SlotIndex, InventoryId);
-
-    if (InventoryId != FGameConstants::INVENTORY_ID_NONE)
-    {
-        EquipWeapon(InventoryId);
+        if (Pistol) {
+            ServerEquipWeapon(Pistol->GetItemId());
+        }
     }
 }
 
@@ -722,66 +713,6 @@ void UWeaponComponent::ServerSetIsPriming_Implementation(bool bNewIsPriming)
 	}
     bIsPriming = bNewIsPriming;
     OnRep_IsPriming();
-}
-
-int UWeaponComponent::GetLongGunInvenId() {
-    if (LongGunInventoryId == FGameConstants::INVENTORY_ID_NONE) {
-        // try find weapon firearm, and long gun
-
-        for (const FInventoryItem& Item : InventoryComp->GetItems()) {
-            if (GMR) {
-                const UItemData* ItemData = GMR->GetItemDataById(Item.ItemId);
-                UE_LOG(LogTemp, Warning, TEXT("Checking item InventoryId %d for main"), Item.InventoryId);
-                if (ItemData && ItemData->IsA(UWeaponData::StaticClass())) {
-                    // log debug
-                    UE_LOG(LogTemp, Warning, TEXT("ItemData found for InventoryId %d, checking weapon type."), Item.InventoryId);
-                    const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
-                    if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm &&
-                        (WeaponData->WeaponSubType == EWeaponSubTypes::Rifle
-							|| WeaponData->WeaponSubType == EWeaponSubTypes::Sniper
-                            )) {
-                        UE_LOG(LogTemp, Warning, TEXT("Assigning rifle weapon InventoryId %d to longun slot."), Item.InventoryId);
-                        LongGunInventoryId = Item.InventoryId;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    else {
-        if (!InventoryComp->CheckExistItem(LongGunInventoryId)) {
-            LongGunInventoryId = FGameConstants::INVENTORY_ID_NONE;
-        }
-    }
-    return LongGunInventoryId;
-}
-
-int UWeaponComponent::GetSideArmInvenId() {
-    return 0;
-}
-
-int UWeaponComponent::GetMeleeInvenId() {
-    if (MeleeInventoryId == FGameConstants::INVENTORY_ID_NONE) {
-        // try find weapon firearm, and long gun
-
-        for (const FInventoryItem& Item : InventoryComp->GetItems()) {
-            if (GMR) {
-                const UItemData* ItemData = GMR->GetItemDataById(Item.ItemId);
-                UE_LOG(LogTemp, Warning, TEXT("Checking item InventoryId %d for main"), Item.InventoryId);
-                if (ItemData && ItemData->IsA(UWeaponData::StaticClass())) {
-                    // log debug
-                    UE_LOG(LogTemp, Warning, TEXT("ItemData found for InventoryId %d, checking weapon type."), Item.InventoryId);
-                    const UWeaponData* WeaponData = Cast<UWeaponData>(ItemData);
-                    if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Melee) {
-                        UE_LOG(LogTemp, Warning, TEXT("Assigning rifle weapon InventoryId %d to longun slot."), Item.InventoryId);
-                        MeleeInventoryId = Item.InventoryId;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    return MeleeInventoryId;
 }
 
 void UWeaponComponent::UpdateAttachLocationWeapon() {
@@ -1025,4 +956,79 @@ void UWeaponComponent::OnNotifyInsertMag() {
             Firearm->AttachMagToDefault();
         }
     }
+}
+
+void UWeaponComponent::OnNewItemAdded(int32 NewInventoryId)
+{
+    
+}
+
+AWeaponBase* UWeaponComponent::SpawnWeaponByItemId(EItemId ItemId)
+{
+    UWeaponData* WeaponConf = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
+    if (!WeaponConf) {
+        UE_LOG(LogTemp, Warning, TEXT("SpawnWeaponByItemId: No weapon data found for id %d"), (int32)ItemId);
+        return nullptr;
+    }
+    FActorSpawnParameters Params;
+    Params.Owner = GetOwner();
+    Params.Instigator = Cast<APawn>(GetOwner());
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AWeaponBase* NewWeapon = nullptr;
+    if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
+        NewWeapon = GetWorld()->SpawnActor<AWeaponFirearm>(
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            Params
+        );
+    }
+    else if (WeaponConf->WeaponType == EWeaponTypes::Melee) {
+        NewWeapon = GetWorld()->SpawnActor<AWeaponMelee>(
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            Params
+        );
+    }
+    else if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
+        NewWeapon = GetWorld()->SpawnActor<AWeaponThrowable>(
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            Params
+        );
+    }
+    if (NewWeapon) {
+        NewWeapon->InitFromData(WeaponConf);
+    }
+    return NewWeapon;
+}
+
+bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
+{
+    if (ItemId == EItemId::MELEE_KNIFE_BASIC) {
+        return false; // already have melee
+    }
+	UWeaponData* WeaponConf = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
+    if (!WeaponConf) {
+		return false;
+	}
+
+    if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
+        if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
+			if (Rifle) {
+				return false; // already have rifle
+            }
+            Rifle = Cast<AWeaponFirearm>(this->SpawnWeaponByItemId(ItemId));
+			EquipWeapon(ItemId);
+            return true;
+        }
+        else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
+			if (Pistol) {
+				return false; // already have pistol
+			}
+            Pistol = Cast<AWeaponFirearm>(this->SpawnWeaponByItemId(ItemId));
+			EquipWeapon(ItemId);
+            return true;
+        }
+    }
+    return false;
 }

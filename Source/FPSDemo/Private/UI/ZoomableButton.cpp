@@ -3,6 +3,8 @@
 #include "UI/ZoomableButton.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Game/GameManager.h"
 
 void UZoomableButton::SynchronizeProperties()
 {
@@ -19,6 +21,12 @@ void UZoomableButton::SynchronizeProperties()
 
 void UZoomableButton::HandlePressed()
 {
+    // play sound
+    UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+    if (GMR && GMR->GlobalData && GMR->GlobalData->TouchSound)
+    {
+        UGameplayStatics::PlaySound2D(this, GMR->GlobalData->TouchSound);
+	}
     PlayZoomTo(0.9f);
 }
 

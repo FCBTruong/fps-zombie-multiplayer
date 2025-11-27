@@ -11,11 +11,11 @@ class FPSDEMO_API UWeaponDataManager : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
-public:
-	UPROPERTY(EditAnywhere, Category = "Weapons")
+private:
 	TArray<UWeaponData*> WeaponList;
-
+public:
 	UWeaponData* GetWeaponById(EItemId Id) const;
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	const TArray<UWeaponData*>& GetAllWeapons() const { return WeaponList; }
 };

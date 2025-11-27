@@ -42,4 +42,8 @@ public:
 
 	UMeshComponent* GetWeaponMesh();
 	void SetOwnerNoSee(bool bNewOwnerNoSee);
+	void OnUnequipped();
+	void OnEquipped();
+
+	EItemId GetItemId() const { return Data ? Data->Id : EItemId::NONE; }
 };

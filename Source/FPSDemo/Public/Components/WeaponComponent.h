@@ -12,6 +12,8 @@
 #include "GameConstants.h"
 #include "Components/SplineComponent.h"
 #include "Projectiles/TrajectoryPreview.h"
+#include "Weapons/WeaponFirearm.h"
+#include "Weapons/WeaponMelee.h"
 #include "WeaponComponent.generated.h"
 
 class UInventoryComponent;
@@ -75,19 +77,23 @@ protected:
 	float ThrowAngle = 10.f;
 	float GrenadeInitSpeed = 1400.f;
 
-	int32 LongGunInventoryId = FGameConstants::INVENTORY_ID_NONE;
-	int32 SideArmInventoryId = FGameConstants::INVENTORY_ID_NONE; // Pistol
-	int32 MeleeInventoryId = FGameConstants::INVENTORY_ID_NONE; // Knife
 
 	ABaseCharacter* Character;
 	void InitState();
 	void OnFinishedReload();
+
+	UPROPERTY(Replicated)
+	AWeaponFirearm* Rifle = nullptr;
+	UPROPERTY(Replicated)
+	AWeaponFirearm* Pistol = nullptr;
+	UPROPERTY(Replicated)
+	AWeaponMelee* Melee = nullptr;
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	void EquipWeapon(int32 InventoryId);
+	void EquipWeapon(EItemId ItemId);
 	void OnNewItemPickup(int32 NewInventoryId);
 	EWeaponTypes GetCurrentWeaponType();
 	void DropWeapon();
@@ -125,7 +131,7 @@ public:
 	void HandleReload();
 
 	UFUNCTION(Server, Reliable)
-	void ServerEquipWeapon(int32 InventoryId);
+	void ServerEquipWeapon(EItemId ItemId);
 	void OnUpdateCurrentWeaponData();
 	void EquipSlot(int32 SlotIndex);
 
@@ -138,17 +144,17 @@ public:
 	UFUNCTION()
 	FVector GetVelocityGrenade() const;
 
-	int GetLongGunInvenId();
-	int GetSideArmInvenId();
-	int GetMeleeInvenId();
 	void UpdateAttachLocationWeapon();
 	bool CanWeaponAim();
 	void OnFinishedThrow();
-	void HandleEquipWeapon(int32 InventoryId);
+	void HandleEquipWeapon(EItemId ItemId);
 	void PerformMeleeAttack(int AttackIdx);
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastReload();
 	void OnNotifyGrabMag();
 	void OnNotifyInsertMag();
+	void OnNewItemAdded(int32 NewInventoryId);
+	AWeaponBase* SpawnWeaponByItemId(EItemId ItemId);
+	bool AddNewWeapon(EItemId ItemId);
 };

@@ -14,7 +14,7 @@ void AShooterGameMode::StartPlay()
         return;
 
     UWeaponDataManager* WeaponDataMgr = GetGameInstance()->GetSubsystem<UWeaponDataManager>();
-    if (!WeaponDataMgr || WeaponDataMgr->WeaponList.Num() == 0)
+    if (!WeaponDataMgr || WeaponDataMgr->GetAllWeapons().Num() == 0)
         return;
 
     UGameManager* GMR = GetGameInstance()->GetSubsystem<UGameManager>();
@@ -27,6 +27,23 @@ void AShooterGameMode::StartPlay()
     float RangeX = 1000.f;
     float RangeY = 1000.f;
     TArray<FPickupData> ItemArray;
+
+	TArray<UWeaponData*> SpawnableItems = TArray<UWeaponData*>();
+	TArray<UWeaponData*> AllWeapons = WeaponDataMgr->GetAllWeapons();
+    for (UWeaponData* Weapon : AllWeapons)
+    {
+        if (Weapon)
+        {
+            if (Weapon->WeaponType == EWeaponTypes::Firearm) {
+                SpawnableItems.Add(Weapon);
+            }
+        }
+	}
+    if (SpawnableItems.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No spawnable items found"));
+        return;
+	}
     for (int32 i = 0; i < 50; i++)
     {
         float RandX = FMath::FRandRange(-RangeX, RangeX);
@@ -35,9 +52,11 @@ void AShooterGameMode::StartPlay()
 
         FVector SpawnLocation(RandX, RandY, RandZ);
 
-        UWeaponData* PickupObj = WeaponDataMgr->WeaponList[FMath::RandRange(0, WeaponDataMgr->WeaponList.Num() - 1)];
+        UWeaponData* PickupObj = SpawnableItems[FMath::RandRange(0, SpawnableItems.Num() - 1)];
         if (!PickupObj)
+        {
             continue;
+        }
 
         FPickupData P;
 		P.Id = GMR->GetNextItemOnMapId();

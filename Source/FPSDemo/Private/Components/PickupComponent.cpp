@@ -79,13 +79,17 @@ void UPickupComponent::HandlePickupItem(int32 ItemOnMapId) {
 	
 	// Get the item data from your items manager
 	UItemData* ItemData = GMR->GetItemDataById(PickupData.ItemId);
-	int32 NewInventoryId = Inventory->AddItem(ItemData);
 
 	UWeaponComponent* WeaponComp = GetOwner()->FindComponentByClass<UWeaponComponent>();
-	WeaponComp->OnNewItemPickup(NewInventoryId);
-
-	MulticastPickupItem(ItemOnMapId);
-	GMR->FindAndDestroyItem(ItemOnMapId);
+	
+	if (!WeaponComp) {
+		return;
+	}
+	bool Added = WeaponComp->AddNewWeapon(ItemData->Id);
+	if (Added) {
+		MulticastPickupItem(ItemOnMapId);
+		GMR->FindAndDestroyItem(ItemOnMapId);
+	}
 }
 
 // This function runs on all clients

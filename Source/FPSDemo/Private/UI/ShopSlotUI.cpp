@@ -31,21 +31,33 @@ void UShopSlotUI::NativeConstruct()
 
 void UShopSlotUI::OnClicked()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Clicked on shop slot %d"), SlotIndex);	
+	UE_LOG(LogTemp, Warning, TEXT("Clicked on shop slot %d"), SlotIndex);
+
+	if (!bCanBuy)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Cannot buy item %s, not enough money or already owned."), *Data->GetName());
+		return;
+	}
 
 	AMyPlayerController* PC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PC)
 	{
-		PC->ServerBuyItem(Data);
+		double Time = FPlatformTime::Seconds();
+
+		UE_LOG(LogTemp, Warning, TEXT("DebugTime - CLICK: %.3f"), Time);
+
+		PC->ServerBuyItem(Data->Id);
 	}
 }
 
-void UShopSlotUI::SetCanBuy(bool bCanBuy)
+void UShopSlotUI::SetCanBuy(bool CanBuy)
 {
 	FLinearColor InactiveColor = FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("7F7F7FFF")));
 	FLinearColor ActiveColor = FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("EBBE57FF")));
 
-	if (bCanBuy)
+	this->bCanBuy = CanBuy;
+
+	if (CanBuy)
 	{
 		IconImg->SetColorAndOpacity(ActiveColor);
 		PriceLb->SetColorAndOpacity(ActiveColor);

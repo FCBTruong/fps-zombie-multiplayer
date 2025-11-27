@@ -162,8 +162,13 @@ void UPlayerUI::OpenShop()
 
     PC->bShowMouseCursor = true;
 
-    APawn* Pawn = PC->GetPawn();
-    if (Pawn)
+    //FInputModeUIOnly InputMode;
+    //InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+    //InputMode.SetWidgetToFocus(TakeWidget()); // focus this widget
+    //PC->SetInputMode(InputMode);
+
+    // Optionally disable pawn input
+    if (APawn* Pawn = PC->GetPawn())
     {
         Pawn->DisableInput(PC);
     }
@@ -186,10 +191,12 @@ void UPlayerUI::CloseShop()
     }
 	UE_LOG(LogTemp, Warning, TEXT("CloseShop: Hiding mouse cursor"));
 
+
+    FInputModeGameOnly GameInput;
+    PC->SetInputMode(GameInput);
     PC->bShowMouseCursor = false;
 
-    APawn* Pawn = PC->GetPawn();
-    if (Pawn)
+    if (APawn* Pawn = PC->GetPawn())
     {
         Pawn->EnableInput(PC);
     }

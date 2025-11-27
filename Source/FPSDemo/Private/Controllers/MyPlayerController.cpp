@@ -20,28 +20,26 @@ AMyPlayerController::AMyPlayerController() {
 void AMyPlayerController::Client_ReceiveItemsOnMap_Implementation(const TArray<FPickupData>& Items)
 {
     UE_LOG(LogTemp, Warning, TEXT("Client_ReceiveItemsOnMap received %d items"), Items.Num());
-    UGameManager* GMR = GetGameInstance()->GetSubsystem<UGameManager>();
-    if (!GMR)
-    {
-        return;
+    if (GMR) {
+        GMR->OnReceivedItemsFromServer(Items);
     }
-    GMR->OnReceivedItemsFromServer(Items);
 }
 
 void AMyPlayerController::BeginPlay()
 {
     Super::BeginPlay();
 
+    GMR = GetGameInstance()->GetSubsystem<UGameManager>();
+    if (!GMR)
+    {
+        return;
+    }
+
     if (!IsLocalController())
     {
         return;
     }
     
-    UGameManager* GMR = GetGameInstance()->GetSubsystem<UGameManager>();
-    if (!GMR)
-    {
-        return;
-    }
     if (GMR->GlobalData->PlayerUIClass)
     {
         UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Creating PlayerUI widget"));
@@ -149,16 +147,62 @@ void AMyPlayerController::SetupInputComponent()
                 &AMyPlayerController::ToggleShop
             );
         }
+
+        if (IA_ESCAPE)
+        {
+            EnhancedInput->BindAction(IA_ESCAPE, ETriggerEvent::Started, this, &AMyPlayerController::CloseShopIfOpen);
+        }
     }
 }
 
 
-void AMyPlayerController::ServerBuyItem_Implementation(const UItemData* Item)
+void AMyPlayerController::ServerBuyItem_Implementation(const EItemId Itemid)
 {
+    if (!GMR) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called but GMR is null"));
+        return;
+	}
+	const UItemData* Item = GMR->GetItemDataById(Itemid);
+    if (!Item) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called with null Item"));
+        return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called for item: %s"), *GetNameSafe(Item));
     AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
     if (!PS) {
         return;
     }
 
+	// check inventory component whether the player can buy this item
+	ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
+	if (!MyChar) {
+		UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem: Pawn is not ABaseCharacter"));
+		return;
+	}
+
     PS->ProcessBuy(Item);
+}
+
+void AMyPlayerController::OnRep_PlayerState()
+{
+    Super::OnRep_PlayerState();
+
+    AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
+    if (PS)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Binding money update for player state"));
+        PS->OnUpdateMoney.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateShopMoneyStatus);
+        PS->OnUpdateBoughtItems.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateBoughtItemsStatus);
+    }
+    else {
+        UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: PlayerState is null, cannot bind money update"));
+    }
+}
+
+void AMyPlayerController::CloseShopIfOpen()
+{
+    if (bIsShopOpen)
+    {
+        ToggleShop();
+    }
 }

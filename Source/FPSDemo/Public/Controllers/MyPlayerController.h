@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Pickup/PickupData.h"
 #include "UI/PlayerUI.h"
+#include "Items/ItemIds.h"
+#include "Game/GameManager.h"
 #include "MyPlayerController.generated.h"
 
 /**
@@ -18,6 +20,7 @@ class FPSDEMO_API AMyPlayerController : public APlayerController
 
 private:
 	bool bIsShopOpen = false;
+	UGameManager* GMR;
 public:
 	AMyPlayerController();
 
@@ -34,8 +37,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	class UInputAction* IA_SHOP;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	class UInputAction* IA_ESCAPE;
+
 	virtual void SetupInputComponent() override;
 
 	UFUNCTION(Server, Reliable)
-	void ServerBuyItem(const UItemData* Item);
+	void ServerBuyItem(const EItemId ItemId);
+	void OnRep_PlayerState() override;
+
+	void CloseShopIfOpen();
 };

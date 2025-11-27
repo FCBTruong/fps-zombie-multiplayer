@@ -17,6 +17,9 @@ class FPSDEMO_API UShopSlotUI : public UUserWidget
 {
 	GENERATED_BODY()
 
+private:
+	bool bCanBuy = true;
+
 public:
 	void NativeConstruct() override;
 

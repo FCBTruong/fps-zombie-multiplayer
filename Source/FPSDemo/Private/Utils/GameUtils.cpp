@@ -1,0 +1,38 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Utils/GameUtils.h"
+
+GameUtils::GameUtils()
+{
+}
+
+GameUtils::~GameUtils()
+{
+}
+
+
+FString GameUtils::PointNumber(int32 Number)
+{
+    FString NumStr = FString::FromInt(Number);
+    int32 Len = NumStr.Len();
+
+    FString Result;
+    Result.Reserve(Len + (Len / 3));
+
+    int32 Count = 0;
+
+    for (int32 i = Len - 1; i >= 0; i--)
+    {
+        Result.InsertAt(0, NumStr[i]);
+        Count++;
+
+        if (Count == 3 && i != 0)
+        {
+            Result.InsertAt(0, TEXT("."));
+            Count = 0;
+        }
+    }
+
+    return Result;
+}

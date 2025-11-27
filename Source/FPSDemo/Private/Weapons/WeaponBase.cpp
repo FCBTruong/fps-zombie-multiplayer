@@ -129,3 +129,19 @@ void AWeaponBase::SetOwnerNoSee(bool bNewOwnerNoSee)
 		WeaponStaticMesh->SetOwnerNoSee(bNewOwnerNoSee);
 	}
 }
+
+void AWeaponBase::OnUnequipped()
+{
+	// Default implementation does nothing
+	this->SetActorHiddenInGame(true);
+	this->SetActorEnableCollision(false);	
+	this->SetActorTickEnabled(false);
+}
+
+void AWeaponBase::OnEquipped()
+{
+	// Default implementation does nothing
+	this->SetActorHiddenInGame(false);
+	this->SetActorEnableCollision(true);
+	this->SetActorTickEnabled(true);
+}

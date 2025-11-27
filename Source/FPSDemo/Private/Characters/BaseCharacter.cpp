@@ -47,6 +47,7 @@ ABaseCharacter::ABaseCharacter()
 void ABaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
+   
     mesh = GetMesh();
 
 	MeshFps = Cast<USkeletalMeshComponent>(GetDefaultSubobjectByName(TEXT("MeshFps")));
@@ -211,7 +212,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
         }
         if (IA_SELECT_FIRST_RIFLE)
         {
-            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_LONG_GUN_1);
+            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_RIFLE);
 		}
         if (IA_SELECT_SECOND_RIFLE)
         {

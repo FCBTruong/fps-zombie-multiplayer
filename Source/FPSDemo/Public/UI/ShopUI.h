@@ -22,4 +22,6 @@ protected:
 public:
 	void OnActive();
 	void NativeConstruct() override;
+	void UpdateShopMoneyStatus();
+	void UpdateBoughtItemsStatus();
 };

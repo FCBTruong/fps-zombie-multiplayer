@@ -3,6 +3,8 @@
 
 #include "UI/ShopUI.h"
 #include "Blueprint/WidgetTree.h"
+#include "Controllers/MyPlayerState.h"
+#include "Utils/GameUtils.h"
 
 void UShopUI::NativeConstruct()
 {
@@ -37,14 +39,45 @@ void UShopUI::OnActive()
 	// log num slot
 	UE_LOG(LogTemp, Log, TEXT("Number of shop slots: %d"), Slots.Num());
 
-	int MyMoney = 1000; // This should be fetched from the player's data
+	UpdateShopMoneyStatus();
+}
 
-	for (UShopSlotUI* ShopSlot: Slots)
+void UShopUI::UpdateShopMoneyStatus()
+{
+	UE_LOG(LogTemp, Log, TEXT("Updating shop money status."));
+	AMyPlayerState* PS = GetWorld()->GetFirstPlayerController()->GetPlayerState<AMyPlayerState>();
+	if (!PS)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in ShopUI::UpdateShopMoneyStatus"));
+		return;
+	}
+	int MyMoney = PS->GetMoney();
+	MyMoneyLb->SetText(FText::FromString(TEXT("$") + GameUtils::PointNumber(MyMoney)));
+	for (UShopSlotUI* ShopSlot : Slots)
 	{
 		if (ShopSlot && ShopSlot->Data)
 		{
-			bool bCanAfford = MyMoney >= ShopSlot->Data->Price;
-			ShopSlot->SetCanBuy(bCanAfford);
+			bool bCanBuy = PS->CanBuyThisItem(ShopSlot->Data);
+			ShopSlot->SetCanBuy(bCanBuy);
+		}
+	}
+}
+
+void UShopUI::UpdateBoughtItemsStatus()
+{
+	UE_LOG(LogTemp, Log, TEXT("Updating bought items status in shop UI."));
+	AMyPlayerState* PS = GetWorld()->GetFirstPlayerController()->GetPlayerState<AMyPlayerState>();
+	if (!PS)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in ShopUI::UpdateBoughtItemsStatus"));
+		return;
+	}
+	for (UShopSlotUI* ShopSlot : Slots)
+	{
+		if (ShopSlot && ShopSlot->Data)
+		{
+			bool bCanBuy = PS->CanBuyThisItem(ShopSlot->Data);
+			ShopSlot->SetCanBuy(bCanBuy);
 		}
 	}
 }

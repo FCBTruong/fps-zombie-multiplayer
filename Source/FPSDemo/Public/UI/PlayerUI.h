@@ -45,10 +45,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
 
+
+public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
 
-public:
 	void NativeConstruct() override;
 	void ShowPickupMessage(const FString& Message);
 	void HidePickupMessage();
