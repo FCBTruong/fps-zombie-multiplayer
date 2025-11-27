@@ -14,6 +14,7 @@
 #include "Projectiles/TrajectoryPreview.h"
 #include "Weapons/WeaponFirearm.h"
 #include "Weapons/WeaponMelee.h"
+#include "Weapons/WeaponThrowable.h"
 #include "WeaponComponent.generated.h"
 
 class UInventoryComponent;
@@ -88,6 +89,21 @@ protected:
 	AWeaponFirearm* Pistol = nullptr;
 	UPROPERTY(Replicated)
 	AWeaponMelee* Melee = nullptr;
+
+	UPROPERTY(Replicated)
+	AWeaponThrowable* Throwable = nullptr;
+
+	UPROPERTY(Replicated)
+	int32 FragCount;
+
+	UPROPERTY(Replicated)
+	int32 SmokeCount;
+
+	UPROPERTY(Replicated)
+	int32 FlashCount;
+
+	UPROPERTY(Replicated)
+	int32 IncendiaryCount;
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -157,4 +173,6 @@ public:
 	void OnNewItemAdded(int32 NewInventoryId);
 	AWeaponBase* SpawnWeaponByItemId(EItemId ItemId);
 	bool AddNewWeapon(EItemId ItemId);
+	void ModifyThrowable(EItemId Id, int32 Delta);
+	int GetThrowableCount(EItemId Id) const;
 };

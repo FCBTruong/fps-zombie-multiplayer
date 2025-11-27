@@ -45,6 +45,29 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
 
+	UPROPERTY(meta = (BindWidget))
+	UImage* IconGrenadeFrag;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* IconGrenadeSmoke;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* IconGrenadeFlash;
+	
+	UPROPERTY(meta = (BindWidget))
+	UImage* IconGrenadeIncendiary;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* DotFrag;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* DotSmoke;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* DotFlash;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* DotIncen;
 
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
@@ -64,4 +87,5 @@ public:
 	void FadeOutFlashEffect();
 	void OpenShop();
 	void CloseShop();
+	void ShowIconGrenade(EItemId ItemId, bool bShow);
 };

@@ -78,16 +78,22 @@ void UWeaponComponent::ServerEquipWeapon_Implementation(EItemId ItemId)
 
 // Server function
 void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
+	if (ItemId == EItemId::NONE) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Invalid ItemId NONE"));
+        return;
+	}
+
 	if (CurrentWeapon && CurrentWeapon->GetWeaponData()->Id == ItemId) {
 		UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Weapon %d is "), (int32)ItemId);
         // already equipped
         return;
 	}
 
-	// check if player own this weapon
-    // TODO
-    
     UWeaponData* WeaponConf = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
+    if (!WeaponConf) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: No weapon data found for %d"), (int32)ItemId);
+        return;
+	}
     FActorSpawnParameters Params;
     Params.Owner = GetOwner();
     Params.Instigator = Cast<APawn>(GetOwner());
@@ -98,12 +104,21 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
     }
  
     if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
+		// check avaialability
+        if (GetThrowableCount(ItemId) <= 0) {
+            UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: No throwable left for %d"), (int32)ItemId);
+            return;
+		}
+     
 		// special case for throwable
-        CurrentWeapon = GetWorld()->SpawnActor<AWeaponThrowable>(
-            FVector::ZeroVector,
-            FRotator::ZeroRotator,
-            Params
-        );
+        if (!Throwable) {
+            Throwable = GetWorld()->SpawnActor<AWeaponThrowable>(
+                FVector::ZeroVector,
+                FRotator::ZeroRotator,
+                Params
+            );
+        }
+		CurrentWeapon = Throwable;
     }
     else {
         if (Rifle && Rifle->GetItemId() == ItemId) {
@@ -115,11 +130,11 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         else if (Melee && Melee->GetItemId() == ItemId) {
 			CurrentWeapon = Melee;
         }
+    }
 
-        if (!CurrentWeapon) {
-            UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Failed to spawn weapon actor for %d"), (int32)ItemId);
-            return;
-		}
+    if (!CurrentWeapon) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Failed to spawn weapon actor for %d"), (int32)ItemId);
+        return;
     }
 
     EWeaponTypes WeaType = WeaponConf->WeaponType;
@@ -360,6 +375,7 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
     if (bIsThrowing) {
 		return; // already throwing
     }
+	ModifyThrowable(CurrentWeapon->GetItemId(), -1);
 	bIsThrowing = true;
     // Logic throw, move object, and explode
     // Because on server, there's no current weapon, so we need to handle this
@@ -589,6 +605,10 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UWeaponComponent, bIsPriming);
+    DOREPLIFETIME(UWeaponComponent, FragCount);
+    DOREPLIFETIME(UWeaponComponent, SmokeCount);
+    DOREPLIFETIME(UWeaponComponent, FlashCount);
+    DOREPLIFETIME(UWeaponComponent, IncendiaryCount);
 }
 
 // Clients press 1, 2, 3 to equip weapon in that slot
@@ -599,7 +619,37 @@ void UWeaponComponent::EquipSlot(int32 SlotIndex)
     }
   
     if (SlotIndex == FGameConstants::SLOT_THROWABLE) {
-		ServerEquipWeapon(EItemId::GRENADE_FRAG_BASIC);
+		UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Equipping throwable"));
+		EItemId Id = EItemId::GRENADE_FRAG_BASIC;
+
+        TArray<EItemId> Available;
+        if (FragCount > 0) {
+			Available.Add(EItemId::GRENADE_FRAG_BASIC);
+		}
+		if (SmokeCount > 0) {
+			Available.Add(EItemId::GRENADE_SMOKE);
+		}
+		if (FlashCount > 0) {
+			Available.Add(EItemId::GRENADE_STUN);
+		}
+		if (IncendiaryCount > 0) {
+			Available.Add(EItemId::GRENADE_INCENDIARY);
+		}
+
+        if (!CurrentWeapon || CurrentWeapon->GetWeaponType() != EWeaponTypes::Throwable)
+        {
+			Id = Available[0];
+		}
+        else {
+            if (CurrentWeapon && CurrentWeapon->GetWeaponType() == EWeaponTypes::Throwable) {
+                // Cycle to next available throwable
+                int32 CurrentIndex = Available.IndexOfByKey(CurrentWeapon->GetItemId());
+                int32 NextIndex = (CurrentIndex + 1) % Available.Num();
+                Id = Available[NextIndex];
+			}
+        }
+
+		ServerEquipWeapon(Id);
     }
     else if (SlotIndex == FGameConstants::SLOT_RIFLE) {
         if (Rifle) {
@@ -1030,5 +1080,43 @@ bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
             return true;
         }
     }
-    return false;
+    else if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
+        UE_LOG(LogTemp, Warning, TEXT("AddNewWeapon: Throwable"));
+		ModifyThrowable(ItemId, 1);
+    }
+    return true;
+}
+
+void UWeaponComponent::ModifyThrowable(EItemId Id, int32 Delta)
+{
+    switch (Id)
+    {
+    case EItemId::GRENADE_FRAG_BASIC:
+        FragCount = FMath::Max(FragCount + Delta, 0);
+        break;
+
+    case EItemId::GRENADE_SMOKE:
+        SmokeCount = FMath::Max(SmokeCount + Delta, 0);
+        break;
+
+    case EItemId::GRENADE_STUN:
+        FlashCount = FMath::Max(FlashCount + Delta, 0);
+        break;
+
+    case EItemId::GRENADE_INCENDIARY:
+        IncendiaryCount = FMath::Max(IncendiaryCount + Delta, 0);
+        break;
+    }
+}
+
+int32 UWeaponComponent::GetThrowableCount(EItemId Id) const
+{
+    switch (Id)
+    {
+    case EItemId::GRENADE_FRAG_BASIC: return FragCount;
+    case EItemId::GRENADE_SMOKE: return SmokeCount;
+    case EItemId::GRENADE_STUN: return FlashCount;
+    case EItemId::GRENADE_INCENDIARY: return IncendiaryCount;
+    }
+    return 0;
 }

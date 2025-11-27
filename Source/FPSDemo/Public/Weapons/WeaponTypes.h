@@ -20,7 +20,8 @@ enum class EWeaponSubTypes : uint8
 	Pistol		UMETA(DisplayName = "Pistol"),
 	Frag   UMETA(DisplayName = "Frag"),
 	Smoke   UMETA(DisplayName = "Smoke"),
-	Stun   UMETA(DisplayName = "Stun")
+	Stun   UMETA(DisplayName = "Stun"),
+	Incendiary   UMETA(DisplayName = "Incendiary")
 };
 
 

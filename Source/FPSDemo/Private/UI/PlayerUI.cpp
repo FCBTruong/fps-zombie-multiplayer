@@ -88,6 +88,11 @@ void UPlayerUI::OnEnter()
 
     KillNotifyStack->ClearChildren();
 	FlashScreen->SetVisibility(ESlateVisibility::Hidden);
+
+	ShowIconGrenade(EItemId::GRENADE_FRAG_BASIC, true);
+	ShowIconGrenade(EItemId::GRENADE_SMOKE, false);
+	ShowIconGrenade(EItemId::GRENADE_STUN, false);
+	ShowIconGrenade(EItemId::GRENADE_INCENDIARY, false);
 }
 
 void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponTex, bool bIsHeadShot)
@@ -200,4 +205,52 @@ void UPlayerUI::CloseShop()
     {
         Pawn->EnableInput(PC);
     }
+}
+
+void UPlayerUI::ShowIconGrenade(EItemId ItemId, bool bShow)
+{
+    if (ItemId == EItemId::GRENADE_FRAG_BASIC)
+    {
+        if (IconGrenadeFrag)
+        {
+            IconGrenadeFrag->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+        }
+        if (DotFrag)
+        {
+            DotFrag->SetVisibility(!bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		}
+    }
+    else if (ItemId == EItemId::GRENADE_SMOKE)
+    {
+        if (IconGrenadeSmoke)
+        {
+            IconGrenadeSmoke->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+        }
+        if (DotSmoke)
+        {
+            DotSmoke->SetVisibility(!bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+        }
+    }
+    else if (ItemId == EItemId::GRENADE_STUN)
+    {
+        if (IconGrenadeFlash)
+        {
+            IconGrenadeFlash->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+        }
+        if (DotFlash)
+        {
+            DotFlash->SetVisibility(!bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		}
+    }
+    else if (ItemId == EItemId::GRENADE_INCENDIARY)
+    {
+        if (IconGrenadeIncendiary)
+        {
+            IconGrenadeIncendiary->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+        }
+        if (DotIncen)
+        {
+            DotIncen->SetVisibility(!bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+        }
+	}
 }
