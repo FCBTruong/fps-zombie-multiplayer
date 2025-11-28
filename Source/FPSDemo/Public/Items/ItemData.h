@@ -34,6 +34,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	bool CanDrop = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	FVector ScaleOnHand = FVector(1.f, 1.f, 1.f);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Shop")
 	int32 Price = 0;
 };

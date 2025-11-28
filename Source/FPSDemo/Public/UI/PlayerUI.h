@@ -73,6 +73,9 @@ public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
 
+	UPROPERTY(meta = (BindWidget))
+	UImage* ViewmodelOverlay;
+
 	void NativeConstruct() override;
 	void ShowPickupMessage(const FString& Message);
 	void HidePickupMessage();

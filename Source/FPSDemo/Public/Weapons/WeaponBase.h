@@ -41,7 +41,7 @@ public:
 	bool CanDrop() const { return Data ? Data->CanDrop : false; }
 
 	UMeshComponent* GetWeaponMesh();
-	void SetOwnerNoSee(bool bNewOwnerNoSee);
+	void SetViewFps(bool bIsFps);
 	void OnUnequipped();
 	void OnEquipped();
 

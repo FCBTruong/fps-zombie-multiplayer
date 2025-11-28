@@ -83,7 +83,9 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         return;
 	}
 
-	if (CurrentWeapon && CurrentWeapon->GetWeaponData()->Id == ItemId) {
+	if (CurrentWeapon && CurrentWeapon->GetWeaponData()
+        && CurrentWeapon->GetWeaponData()->Id == ItemId) 
+    {
 		UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Weapon %d is "), (int32)ItemId);
         // already equipped
         return;
@@ -94,31 +96,21 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: No weapon data found for %d"), (int32)ItemId);
         return;
 	}
-    FActorSpawnParameters Params;
-    Params.Owner = GetOwner();
-    Params.Instigator = Cast<APawn>(GetOwner());
-    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     
     if (CurrentWeapon) {
         CurrentWeapon->OnUnequipped();
+		MulticastOnUnequipped(CurrentWeapon);
+		CurrentWeapon = nullptr;
     }
  
     if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
-		// check avaialability
-        if (GetThrowableCount(ItemId) <= 0) {
-            UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: No throwable left for %d"), (int32)ItemId);
-            return;
+		for (AWeaponBase* Grenade : ThrowablesArray)
+		{   
+            if (Grenade->GetItemId() == ItemId) {
+                CurrentWeapon = Grenade;
+                break;
+            }
 		}
-     
-		// special case for throwable
-        if (!Throwable) {
-            Throwable = GetWorld()->SpawnActor<AWeaponThrowable>(
-                FVector::ZeroVector,
-                FRotator::ZeroRotator,
-                Params
-            );
-        }
-		CurrentWeapon = Throwable;
     }
     else {
         if (Rifle && Rifle->GetItemId() == ItemId) {
@@ -137,15 +129,6 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         return;
     }
 
-    EWeaponTypes WeaType = WeaponConf->WeaponType;
-	CurrentWeapon->InitFromData(WeaponConf);
-	CurrentWeapon->OnEquipped();
-
-    UpdateAttachLocationWeapon();
-
-    // Play holster animation
-    Character->PlayEquipWeaponAnimation(WeaType);
-
     if (UWorld* World = GetWorld())
     {
         UE_LOG(LogTemp, Warning, TEXT("Worldxxx: %s | Scene: %s"),
@@ -163,10 +146,10 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
 		// melee, rifle, pistol
         float NewSpeed = ABaseCharacter::NORMAL_WALK_SPEED;
 
-        if (WeaType == EWeaponTypes::Firearm) {
+        if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
             NewSpeed = ABaseCharacter::NORMAL_WALK_SPEED;
         }
-        else if (WeaType == EWeaponTypes::Melee) {
+        else if (WeaponConf->WeaponType == EWeaponTypes::Melee) {
             NewSpeed = ABaseCharacter::MELEE_WALK_SPEED;
         }
 		Character->SetSpeedWalkCurrently(NewSpeed);
@@ -239,14 +222,21 @@ void UWeaponComponent::HandleDropWeapon() {
 
 	MulticastDropWeapon(Data);
 
-	CurrentWeapon->Destroy();
-	CurrentWeapon = nullptr;
-    if (Rifle && Rifle->GetItemId() == Data.ItemId) {
-        Rifle = nullptr;
+	if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Throwable) {
+		// remove from throwables array
+		ThrowablesArray.Remove(CurrentWeapon);
 	}
-    if (Pistol && Pistol->GetItemId() == Data.ItemId) {
-        Pistol = nullptr;
-	}
+    else {
+        if (Rifle == CurrentWeapon) {
+            Rifle = nullptr;
+        }
+        else if (Pistol == CurrentWeapon) {
+            Pistol = nullptr;
+        }
+    }
+
+    CurrentWeapon->Destroy();
+    CurrentWeapon = nullptr;
 	EquipWeapon(Melee->GetItemId());
 }
 
@@ -375,7 +365,7 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
     if (bIsThrowing) {
 		return; // already throwing
     }
-	ModifyThrowable(CurrentWeapon->GetItemId(), -1);
+	ThrowablesArray.Remove(CurrentWeapon);
 	bIsThrowing = true;
     // Logic throw, move object, and explode
     // Because on server, there's no current weapon, so we need to handle this
@@ -420,6 +410,11 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
         false
     );
 
+	// destroy current weapon and also remove it from array
+	ThrowablesArray.Remove(CurrentWeapon);
+    CurrentWeapon->Destroy();
+	CurrentWeapon = nullptr;
+
     MulticastThrowAction(LaunchVelocity);
 }
 
@@ -435,10 +430,6 @@ void UWeaponComponent::MulticastThrowAction_Implementation(FVector LaunchVelocit
         TrajectoryPreviewRef = nullptr;
     }
 
-    if (CurrentWeapon) {
-		CurrentWeapon->Destroy();
-		CurrentWeapon = nullptr;
-    }
     Character->PlayThrowNadeMontage();
     GetOwner()->GetWorldTimerManager().ClearTimer(ThrowProjectileTimer);
 }
@@ -565,7 +556,7 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
 }
 
 void UWeaponComponent::MulticastPlayFireRifle_Implementation(FVector TargetPoint) {
-    if (GetOwner()->HasAuthority()) 
+    if (IsRunningDedicatedServer())
     {
 		UE_LOG(LogTemp, Warning, TEXT("MulticastPlayFireRifle: Called on server, ignoring"));
         return;
@@ -605,10 +596,7 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UWeaponComponent, bIsPriming);
-    DOREPLIFETIME(UWeaponComponent, FragCount);
-    DOREPLIFETIME(UWeaponComponent, SmokeCount);
-    DOREPLIFETIME(UWeaponComponent, FlashCount);
-    DOREPLIFETIME(UWeaponComponent, IncendiaryCount);
+    //DOREPLIFETIME(UWeaponComponent, ThrowablesArray);
 }
 
 // Clients press 1, 2, 3 to equip weapon in that slot
@@ -620,34 +608,30 @@ void UWeaponComponent::EquipSlot(int32 SlotIndex)
   
     if (SlotIndex == FGameConstants::SLOT_THROWABLE) {
 		UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Equipping throwable"));
-		EItemId Id = EItemId::GRENADE_FRAG_BASIC;
+		EItemId Id = EItemId::NONE;
 
-        TArray<EItemId> Available;
-        if (FragCount > 0) {
-			Available.Add(EItemId::GRENADE_FRAG_BASIC);
-		}
-		if (SmokeCount > 0) {
-			Available.Add(EItemId::GRENADE_SMOKE);
-		}
-		if (FlashCount > 0) {
-			Available.Add(EItemId::GRENADE_STUN);
-		}
-		if (IncendiaryCount > 0) {
-			Available.Add(EItemId::GRENADE_INCENDIARY);
+		if (ThrowablesArray.Num() == 0) {
+            UE_LOG(LogTemp, Warning, TEXT("EquipSlot: No throwables available"));
+			return; // no throwables available
 		}
 
         if (!CurrentWeapon || CurrentWeapon->GetWeaponType() != EWeaponTypes::Throwable)
         {
-			Id = Available[0];
+			Id = ThrowablesArray[0]->GetItemId();
 		}
         else {
             if (CurrentWeapon && CurrentWeapon->GetWeaponType() == EWeaponTypes::Throwable) {
                 // Cycle to next available throwable
-                int32 CurrentIndex = Available.IndexOfByKey(CurrentWeapon->GetItemId());
-                int32 NextIndex = (CurrentIndex + 1) % Available.Num();
-                Id = Available[NextIndex];
-			}
+                int32 CurrentIndex = ThrowablesArray.IndexOfByKey(CurrentWeapon);
+                int32 NextIndex = (CurrentIndex + 1) % ThrowablesArray.Num();
+                Id = ThrowablesArray[NextIndex]->GetItemId();
+            }
         }
+
+        if (Id == EItemId::NONE) {
+            UE_LOG(LogTemp, Warning, TEXT("EquipSlot: No valid throwable Id found"));
+			return;
+		}
 
 		ServerEquipWeapon(Id);
     }
@@ -806,31 +790,30 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
 
     Root->SetRelativeLocationAndRotation(offset, FRotator::MakeFromEuler(offsetRot));
 
-    if (Character->ViewmodelCapture) {
+    UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Update"));
+    if (Character->ViewmodelCapture) {    
+		CurrentWeapon->SetViewFps(bIsFPS);
+        
         if (bIsFPS) {
-            CurrentWeapon->SetOwnerNoSee(true);
-        }
-        else {
-            CurrentWeapon->SetOwnerNoSee(false);
-        }
-        Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
+            Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
 
-        if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
-            if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
-            {
-                if (Firearm->MagMesh) {
-                    Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(Firearm->MagMesh);
-					Firearm->MagMesh->SetOwnerNoSee(bIsFPS);
+            if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
+                if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+                {
+                    if (Firearm->MagMesh) {
+                        Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(Firearm->MagMesh);
+                        Firearm->MagMesh->SetOwnerNoSee(bIsFPS);
+                    }
                 }
+                Character->SetPosViewmodelCaptureForGun();
             }
-            Character->SetPosViewmodelCaptureForGun();
-		}
-        else {
-            Character->ViewmodelCapture->SetRelativeLocationAndRotation(
-                FVector3d::ZeroVector,
-                FRotator::ZeroRotator
-			);
-		}
+            else {
+                Character->ViewmodelCapture->SetRelativeLocationAndRotation(
+                    FVector3d::ZeroVector,
+                    FRotator::ZeroRotator
+                );
+            }
+        }
     }
 }
 
@@ -894,10 +877,15 @@ void UWeaponComponent::OnRep_CurrentWeapon()
 {
     // Handle changes when CurrentWeapon is replicated
     UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon called"));
+    if (CurrentWeapon == nullptr) {
+        return;
+    }
+    
+	CurrentWeapon->OnEquipped();
     UpdateAttachLocationWeapon();
 
 	// Play equip animation
-    if (Character && CurrentWeapon) {
+    if (Character) {
         EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
         Character->PlayEquipWeaponAnimation(WeaType);
 	}
@@ -1067,7 +1055,7 @@ bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
 			if (Rifle) {
 				return false; // already have rifle
             }
-            Rifle = Cast<AWeaponFirearm>(this->SpawnWeaponByItemId(ItemId));
+			Rifle = Cast<AWeaponFirearm>(this->SpawnWeaponByItemId(ItemId));
 			EquipWeapon(ItemId);
             return true;
         }
@@ -1082,41 +1070,18 @@ bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
     }
     else if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
         UE_LOG(LogTemp, Warning, TEXT("AddNewWeapon: Throwable"));
-		ModifyThrowable(ItemId, 1);
+		AWeaponThrowable* NewThrowable = Cast<AWeaponThrowable>(this->SpawnWeaponByItemId(ItemId));
+        if (NewThrowable) {
+			ThrowablesArray.Add(NewThrowable);
+		}
     }
     return true;
 }
 
-void UWeaponComponent::ModifyThrowable(EItemId Id, int32 Delta)
+void UWeaponComponent::MulticastOnUnequipped_Implementation(AWeaponBase* OldWeapon)
 {
-    switch (Id)
+    if (OldWeapon)
     {
-    case EItemId::GRENADE_FRAG_BASIC:
-        FragCount = FMath::Max(FragCount + Delta, 0);
-        break;
-
-    case EItemId::GRENADE_SMOKE:
-        SmokeCount = FMath::Max(SmokeCount + Delta, 0);
-        break;
-
-    case EItemId::GRENADE_STUN:
-        FlashCount = FMath::Max(FlashCount + Delta, 0);
-        break;
-
-    case EItemId::GRENADE_INCENDIARY:
-        IncendiaryCount = FMath::Max(IncendiaryCount + Delta, 0);
-        break;
+        OldWeapon->OnUnequipped();
     }
-}
-
-int32 UWeaponComponent::GetThrowableCount(EItemId Id) const
-{
-    switch (Id)
-    {
-    case EItemId::GRENADE_FRAG_BASIC: return FragCount;
-    case EItemId::GRENADE_SMOKE: return SmokeCount;
-    case EItemId::GRENADE_STUN: return FlashCount;
-    case EItemId::GRENADE_INCENDIARY: return IncendiaryCount;
-    }
-    return 0;
 }

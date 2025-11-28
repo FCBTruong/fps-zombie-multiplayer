@@ -20,6 +20,8 @@
 #include "NiagaraSystem.h"
 #include "Components/PostProcessComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/Material.h"
 #include "BaseCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -128,6 +130,10 @@ protected:
     UAnimMontage* KnifeAttack1Montage;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
     UAnimMontage* KnifeAttack2Montage;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel")
+    UMaterial* MaterialOverlayBase;
+    UMaterialInstanceDynamic* MaterialOverlayMID;
 
     USceneComponent* ThrowableLocation;
 

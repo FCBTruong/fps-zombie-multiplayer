@@ -13,6 +13,7 @@
 #include "Projectiles/ThrownProjectile.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
 #include "Controllers/MyPlayerController.h"
+#include "Engine/TextureRenderTarget2D.h"
 
 
 // Sets default values
@@ -82,13 +83,6 @@ void ABaseCharacter::BeginPlay()
 
     GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
-    if (this->IsLocallyControlled())
-    {
-        bIsFPS = true;
-        UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
-    }
-    UpdateView();
-
 
     if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
     {
@@ -140,19 +134,24 @@ void ABaseCharacter::BeginPlay()
         if (ViewmodelCapture)
         {
             UE_LOG(LogTemp, Warning, TEXT("ViewmodelCapture is valid in ABaseCharacter"));
-            ViewmodelCapture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
-
-            // Clear any previous list
-            ViewmodelCapture->ShowOnlyActors.Empty();
-            ViewmodelCapture->ShowOnlyComponents.Empty();
-
-            // Add FPS arms
-            ViewmodelCapture->ShowOnlyComponents.AddUnique(MeshFps);
-
 			ViewmodelCaptureDefaultPos = ViewmodelCapture->GetRelativeLocation();
 			ViewmodelCaptureDefaultRot = ViewmodelCapture->GetRelativeRotation();
+
+            UTextureRenderTarget2D* Texture = NewObject<UTextureRenderTarget2D>(this);
+            Texture->InitAutoFormat(1920, 1080);
+            Texture->ClearColor = FLinearColor::Transparent;
+            ViewmodelCapture->TextureTarget = Texture;
+            if (MaterialOverlayBase)
+            {
+                MaterialOverlayMID = UMaterialInstanceDynamic::Create(MaterialOverlayBase, this);
+                MaterialOverlayMID->SetTextureParameterValue("ViewmodelTexture", Texture);
+
+                if (AMyPlayerController* PC = Cast<AMyPlayerController>(GetController()))
+                {
+                    PC->SetViewmodelOverlay(MaterialOverlayMID);
+				}
+            }
         }
-        MeshFps->SetVisibility(true);
     }
     else {
         if (ViewmodelCapture)
@@ -160,8 +159,14 @@ void ABaseCharacter::BeginPlay()
             ViewmodelCapture->DestroyComponent();
 			ViewmodelCapture = nullptr;
 		}
-        MeshFps->SetVisibility(false, true);
     }
+
+    if (this->IsLocallyControlled())
+    {
+        bIsFPS = true;
+        UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
+    }
+    UpdateView();
 }
 
 // Called every frame
@@ -419,8 +424,14 @@ void ABaseCharacter::UpdateView()
         }
         if (MeshFps)
         {
-            MeshFps->SetVisibility(true);
-        }
+            MeshFps->SetOwnerNoSee(false);
+		}
+        if (ViewmodelCapture)
+        {
+            ViewmodelCapture->ShowOnlyComponents.Empty();
+            ViewmodelCapture->ShowOnlyComponents.AddUnique(MeshFps);
+			ViewmodelCapture->Activate();
+		}
     }
     else
     {
@@ -439,7 +450,12 @@ void ABaseCharacter::UpdateView()
         }
         if (MeshFps)
         {
-            MeshFps->SetVisibility(false, true);
+			MeshFps->SetOwnerNoSee(true);
+		}
+
+        if (ViewmodelCapture)
+        {
+			ViewmodelCapture->ShowOnlyComponents.Empty();
         }
     }
     WeaponComp->UpdateAttachLocationWeapon();

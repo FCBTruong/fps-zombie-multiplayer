@@ -206,3 +206,11 @@ void AMyPlayerController::CloseShopIfOpen()
         ToggleShop();
     }
 }
+
+void AMyPlayerController::SetViewmodelOverlay(UMaterialInstanceDynamic* MID)
+{
+    if (PlayerUI)
+    {
+		PlayerUI->ViewmodelOverlay->SetBrushFromMaterial(MID);
+    }
+}

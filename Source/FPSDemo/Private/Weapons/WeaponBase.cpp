@@ -13,6 +13,7 @@ AWeaponBase::AWeaponBase()
 	PrimaryActorTick.bCanEverTick = false;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	WeaponMesh->SetHiddenInGame(true);
 	WeaponStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponStaticMesh"));
 	WeaponStaticMesh->SetHiddenInGame(true);
 	WeaponStaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -83,7 +84,11 @@ void AWeaponBase::OnRep_WeaponData()
 
 void AWeaponBase::ApplyWeaponData()
 {
-	if (Data && Data->Mesh)
+	if (!Data) {
+		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: No Data"));
+		return;
+	}
+	if (Data->Mesh)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: Setting Mesh"));
 		WeaponMesh->SetSkeletalMesh(Data->Mesh);
@@ -92,7 +97,7 @@ void AWeaponBase::ApplyWeaponData()
 		WeaponMesh->SetHiddenInGame(false);
 		WeaponStaticMesh->SetHiddenInGame(true);
 	}
-	else if (Data && Data->StaticMesh)
+	else if (Data->StaticMesh)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: Setting Static Mesh"));
 		WeaponStaticMesh->SetStaticMesh(Data->StaticMesh);
@@ -104,7 +109,7 @@ void AWeaponBase::ApplyWeaponData()
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("WeaponBase ApplyWeaponData: Invalid Data or Mesh"));
 	}
-	RootComponent->SetWorldScale3D(FVector(1.0f));
+	RootComponent->SetWorldScale3D(Data->ScaleOnHand);
 }
 
 UMeshComponent* AWeaponBase::GetWeaponMesh()
@@ -118,15 +123,19 @@ UMeshComponent* AWeaponBase::GetWeaponMesh()
 	return nullptr;
 }
 
-void AWeaponBase::SetOwnerNoSee(bool bNewOwnerNoSee)
+void AWeaponBase::SetViewFps(bool bIsFps)
 {
+	// log display name of data
+	UE_LOG(LogTemp, Warning, TEXT("WeaponBase SetOwnerNoSee called with %s for weapon %s"), bIsFps ? TEXT("true") : TEXT("false"), *GetName());
 	if (WeaponMesh)
 	{
-		WeaponMesh->SetOwnerNoSee(bNewOwnerNoSee);
+		WeaponMesh->bVisibleInSceneCaptureOnly = bIsFps;
+		WeaponMesh->MarkRenderStateDirty();
 	}
 	if (WeaponStaticMesh)
 	{
-		WeaponStaticMesh->SetOwnerNoSee(bNewOwnerNoSee);
+		WeaponStaticMesh->bVisibleInSceneCaptureOnly = bIsFps;
+		WeaponStaticMesh->MarkRenderStateDirty();
 	}
 }
 
@@ -134,7 +143,6 @@ void AWeaponBase::OnUnequipped()
 {
 	// Default implementation does nothing
 	this->SetActorHiddenInGame(true);
-	this->SetActorEnableCollision(false);	
 	this->SetActorTickEnabled(false);
 }
 
@@ -142,6 +150,7 @@ void AWeaponBase::OnEquipped()
 {
 	// Default implementation does nothing
 	this->SetActorHiddenInGame(false);
-	this->SetActorEnableCollision(true);
 	this->SetActorTickEnabled(true);
+
+	this->ApplyWeaponData();
 }

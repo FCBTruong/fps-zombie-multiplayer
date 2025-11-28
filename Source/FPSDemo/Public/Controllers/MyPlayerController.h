@@ -47,4 +47,5 @@ public:
 	void OnRep_PlayerState() override;
 
 	void CloseShopIfOpen();
+	void SetViewmodelOverlay(UMaterialInstanceDynamic* MID);
 };
