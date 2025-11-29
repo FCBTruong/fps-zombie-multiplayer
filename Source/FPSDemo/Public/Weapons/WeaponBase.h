@@ -18,10 +18,7 @@ public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_WeaponData)
 	UWeaponData* Data;
-	UFUNCTION()
-	void OnRep_WeaponData();
 
 	USkeletalMeshComponent* WeaponMesh;
 	UStaticMeshComponent* WeaponStaticMesh;
@@ -29,7 +26,6 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void PreInitializeComponents() override;
 	virtual void ApplyWeaponData();
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

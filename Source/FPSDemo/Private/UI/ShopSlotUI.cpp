@@ -9,10 +9,13 @@ void UShopSlotUI::NativeConstruct()
 	Super::NativeConstruct();
 	if (Data)
 	{
-		if (PriceLb) {
-			PriceLb->SetText(
-				FText::Format(FText::FromString(TEXT("{0}$")), FText::AsNumber(Data->Price))
-			);
+		if (PriceLb)
+		{
+			// Convert number to string without thousands separator
+			FString PriceStr = FString::FromInt(Data->Price);
+
+			// Format: $12345
+			PriceLb->SetText(FText::FromString(FString::Printf(TEXT("$%s"), *PriceStr)));
 		}
 
 		if (IconImg) {

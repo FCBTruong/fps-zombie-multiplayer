@@ -15,11 +15,6 @@ class FPSDEMO_API AWeaponFirearm : public AWeaponBase
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentAmmo)
-	int CurrentAmmo = 30;
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	UFUNCTION()
-	void OnRep_CurrentAmmo();
 	void ApplyWeaponData() override;
 public:
 	AWeaponFirearm();
@@ -27,9 +22,6 @@ public:
 		return true;
 	};
 	void OnFire(FVector TargetPoint) override;
-	void ConsumeAmmo(int Amount);
-	void SetCurrentAmmo(int NewCurrentAmmo);
-	bool HasAmmoInClip() const override;
 	void PlayOutOfAmmoSound();
 	void PlayReloadSound();
 	UStaticMeshComponent* MagMesh;

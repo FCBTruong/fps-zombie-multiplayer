@@ -13,6 +13,7 @@ class FPSDEMO_API UWeaponDataManager : public UGameInstanceSubsystem
 
 private:
 	TArray<UWeaponData*> WeaponList;
+	TMap<EItemId, UWeaponData*> WeaponDataMap;
 public:
 	UWeaponData* GetWeaponById(EItemId Id) const;
 

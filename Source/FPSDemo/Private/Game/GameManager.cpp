@@ -75,6 +75,15 @@ UItemData * UGameManager::GetItemDataById(EItemId ItemId) {
     return WeaponDataMgr->GetWeaponById(ItemId);
 }
 
+UWeaponData* UGameManager::GetWeaponDataById(EItemId ItemId) {
+    UWeaponDataManager* WeaponDataMgr = GetWeaponDataManager();
+    if (!WeaponDataMgr) {
+        UE_LOG(LogTemp, Warning, TEXT("GetWeaponDataById: WeaponData Manager is null"));
+        return nullptr;
+    }
+    return WeaponDataMgr->GetWeaponById(ItemId);
+}
+
 UWeaponDataManager* UGameManager::GetWeaponDataManager() {
     if (WeaponDataManager) {
 		UE_LOG(LogTemp, Warning, TEXT("GetWeaponDataManager: Returning cached WeaponDataManager"));

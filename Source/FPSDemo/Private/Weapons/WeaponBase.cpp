@@ -22,8 +22,8 @@ AWeaponBase::AWeaponBase()
 
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
-	bReplicates = true;
-	SetReplicateMovement(false);
+	/*bReplicates = true;
+	SetReplicateMovement(false);*/
 }
 
 void AWeaponBase::PreInitializeComponents()
@@ -68,18 +68,6 @@ void AWeaponBase::OnFire(FVector TargetPoint)
 {
 	// Implement firing logic here
 	UE_LOG(LogTemp, Warning, TEXT("WeaponBase OnFire called"));
-}
-
-void AWeaponBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AWeaponBase, Data);
-}
-
-void AWeaponBase::OnRep_WeaponData()
-{
-	UE_LOG(LogTemp, Warning, TEXT("WeaponBase OnRep_WeaponData called"));
-	ApplyWeaponData();
 }
 
 void AWeaponBase::ApplyWeaponData()
@@ -151,6 +139,4 @@ void AWeaponBase::OnEquipped()
 	// Default implementation does nothing
 	this->SetActorHiddenInGame(false);
 	this->SetActorTickEnabled(true);
-
-	this->ApplyWeaponData();
 }

@@ -15,10 +15,15 @@
 #include "Weapons/WeaponFirearm.h"
 #include "Weapons/WeaponMelee.h"
 #include "Weapons/WeaponThrowable.h"
+#include "Weapons/WeaponState.h"
 #include "WeaponComponent.generated.h"
 
 class UInventoryComponent;
 class ABaseCharacter;
+
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateAmmoState, int, int);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGrenades, const TArray<EItemId>&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateCurrentWeapon, const EItemId&);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponComponent : public UActorComponent
@@ -50,10 +55,6 @@ protected:
 	UFUNCTION() void OnRep_IsPriming();
 	bool bIsThrowing;
 
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
-	AWeaponBase* CurrentWeapon;
-	UFUNCTION()
-	void OnRep_CurrentWeapon();
 
 	FTimerHandle FireTimerHandle;
 
@@ -83,18 +84,26 @@ protected:
 	void InitState();
 	void OnFinishedReload();
 
-	UPROPERTY(Replicated)
-	AWeaponFirearm* Rifle = nullptr;
-	UPROPERTY(Replicated)
-	AWeaponFirearm* Pistol = nullptr;
-	UPROPERTY(Replicated)
-	AWeaponMelee* Melee = nullptr;
+	UPROPERTY(ReplicatedUsing = OnRep_GunState)
+	FWeaponState RifleState;
+	UPROPERTY(ReplicatedUsing = OnRep_GunState)
+	FWeaponState PistolState;
+	UPROPERTY(ReplicatedUsing = OnRep_GunState)
+	FWeaponState MeleeState;
+	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
+	TArray<EItemId> ThrowablesArray;
 
-	UPROPERTY(Replicated)
-	AWeaponThrowable* Throwable = nullptr;
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
+	EItemId CurrentWeaponId;
 
-	UPROPERTY(Replicated)
-	TArray<AWeaponBase*> ThrowablesArray;
+	// This variable is use for client side only
+	AWeaponBase* CurrentWeapon;
+	UFUNCTION()
+	void OnRep_CurrentWeapon();
+	UFUNCTION()
+	void OnRep_GunState();
+	UFUNCTION()
+	void OnRep_Grenades();
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -139,7 +148,6 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(EItemId ItemId);
-	void OnUpdateCurrentWeaponData();
 	void EquipSlot(int32 SlotIndex);
 
 	UFUNCTION()
@@ -165,6 +173,10 @@ public:
 	AWeaponBase* SpawnWeaponByItemId(EItemId ItemId);
 	bool AddNewWeapon(EItemId ItemId);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastOnUnequipped(AWeaponBase* OldWeapon);
+	bool CanDropWeapon(EItemId ItemId);
+	FWeaponState* GetWeaponStateByItemId(EItemId ItemId);
+	FOnUpdateAmmoState OnUpdateAmmoState;
+	FOnUpdateGrenades OnUpdateGrenades;
+	FOnUpdateCurrentWeapon OnUpdateCurrentWeapon;
+	TArray<EItemId> GetGrenades() const { return ThrowablesArray; } 
 };

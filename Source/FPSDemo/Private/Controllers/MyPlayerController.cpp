@@ -93,6 +93,13 @@ void AMyPlayerController::BindingUI()
             IC->ShowPickupMessage.AddUObject(PlayerUI, &UPlayerUI::ShowPickupMessage);
 			IC->HidePickupMessage.AddUObject(PlayerUI, &UPlayerUI::HidePickupMessage);
         }
+        if (auto* WC = Char->FindComponentByClass<UWeaponComponent>())
+        {
+            WC->OnUpdateAmmoState.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
+            WC->OnUpdateGrenades.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
+            PlayerUI->UpdateGrenades(WC->GetGrenades());
+            WC->OnUpdateCurrentWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdateCurrentWeapon);
+		}
 
         Char->OnHit.AddUObject(PlayerUI, &UPlayerUI::OnHit);
     }

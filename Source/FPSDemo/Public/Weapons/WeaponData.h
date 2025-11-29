@@ -73,6 +73,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	int32 MaxAmmoInClip = 30;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	int32 AmmoBonusShop = 90;
+
 
 
 

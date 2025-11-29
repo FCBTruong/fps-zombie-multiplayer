@@ -78,58 +78,6 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 	}
 }
 
-
-void AWeaponFirearm::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	
-	// current ammo, max ammo replication
-	DOREPLIFETIME(AWeaponFirearm, CurrentAmmo);
-}
-
-void AWeaponFirearm::OnRep_CurrentAmmo()
-{
-	// Handle client-side logic when CurrentAmmo is updated
-	UE_LOG(LogTemp, Warning, TEXT("CurrentAmmo replicated: %d"), CurrentAmmo);
-
-	if (auto* Pawn = Cast<APawn>(GetOwner()))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Owner Pawn found: %s"), *Pawn->GetName());
-		if (auto* PC = Cast<AMyPlayerController>(Pawn->GetController()))
-		{
-			if (PC->PlayerUI)
-			{
-				PC->PlayerUI->UpdateAmmo(CurrentAmmo, GetMaxAmmo());
-			}
-		}
-	}
-}
-
-
-void AWeaponFirearm::ConsumeAmmo(int Amount)
-{
-	if (GetOwner()->HasAuthority()) // only server modifies ammo
-	{
-		CurrentAmmo = FMath::Max(0, CurrentAmmo - Amount);
-		UE_LOG(LogTemp, Warning, TEXT("Ammo consumed. CurrentAmmo: %d"), CurrentAmmo);
-	}
-}
-
-void AWeaponFirearm::SetCurrentAmmo(int NewCurrentAmmo)
-{
-	CurrentAmmo = FMath::Clamp(NewCurrentAmmo, 0, GetMaxAmmo());
-	UE_LOG(LogTemp, Warning, TEXT("CurrentAmmo set to: %d"), CurrentAmmo);
-}
-
-bool AWeaponFirearm::HasAmmoInClip() const
-{
-	if (CurrentAmmo > 0)
-	{
-		return true;
-	}
-	return false;
-}
-
 void AWeaponFirearm::PlayOutOfAmmoSound()
 {
 	if (Data->OutOfAmmoSFX)
@@ -162,7 +110,6 @@ void AWeaponFirearm::ApplyWeaponData()
 			MagMesh->SetCastShadow(false);
 		}
 	}
-	CurrentAmmo = Data->MaxAmmoInClip;
 }
 
 void AWeaponFirearm::AttachMagToDefault()

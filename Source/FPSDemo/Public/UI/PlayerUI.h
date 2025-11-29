@@ -10,6 +10,7 @@
 #include "Components/StackBox.h"
 #include "UI/KillNotifySlot.h"
 #include "UI/ShopUI.h"
+#include "UI/GrenadeNodeUI.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -42,32 +43,24 @@ protected:
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* FlashScreenAnim;
 
+	UPROPERTY(meta = (BindWidget))
+	UStackBox* GrenadesStack;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* GrenadeTitle;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* RifleIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* PistolIcon;
+
+	TArray<UGrenadeNodeUI*> Grenades;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenades")
+	TSubclassOf<UGrenadeNodeUI> GrenadeNodeClass;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* IconGrenadeFrag;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* IconGrenadeSmoke;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* IconGrenadeFlash;
-	
-	UPROPERTY(meta = (BindWidget))
-	UImage* IconGrenadeIncendiary;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* DotFrag;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* DotSmoke;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* DotFlash;
-
-	UPROPERTY(meta = (BindWidget))
-	UImage* DotIncen;
 
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
@@ -91,4 +84,7 @@ public:
 	void OpenShop();
 	void CloseShop();
 	void ShowIconGrenade(EItemId ItemId, bool bShow);
+	void CreateGrenadeNodes();
+	void UpdateGrenades(const TArray<EItemId>& GrenadeIds);
+	void UpdateCurrentWeapon(const EItemId& CurrentWeaponId);
 };

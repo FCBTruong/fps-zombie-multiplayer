@@ -52,7 +52,8 @@ void UShopUI::UpdateShopMoneyStatus()
 		return;
 	}
 	int MyMoney = PS->GetMoney();
-	MyMoneyLb->SetText(FText::FromString(TEXT("$") + GameUtils::PointNumber(MyMoney)));
+	FString MoneyStr = FString::FromInt(MyMoney);   // no commas
+	MyMoneyLb->SetText(FText::FromString(TEXT("$") + MoneyStr));
 	for (UShopSlotUI* ShopSlot : Slots)
 	{
 		if (ShopSlot && ShopSlot->Data)

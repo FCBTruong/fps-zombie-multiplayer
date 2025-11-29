@@ -3,6 +3,7 @@
 
 #include "UI/PlayerUI.h"
 #include "Game/TeamEliminationState.h"
+#include "Game/GameManager.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -11,6 +12,7 @@ void UPlayerUI::NativeConstruct()
     {
         HpBar->SetPercent(1.0f);
     }
+	CreateGrenadeNodes();
 }
 void UPlayerUI::ShowPickupMessage(const FString& Message)
 {
@@ -209,48 +211,100 @@ void UPlayerUI::CloseShop()
 
 void UPlayerUI::ShowIconGrenade(EItemId ItemId, bool bShow)
 {
-    if (ItemId == EItemId::GRENADE_FRAG_BASIC)
+   
+}
+
+
+void UPlayerUI::CreateGrenadeNodes()
+{
+    if (!GrenadeNodeClass || !GrenadesStack)
+        return;
+
+    Grenades.Empty();
+    GrenadesStack->ClearChildren();
+
+    for (int i = 0; i < 4; i++)
     {
-        if (IconGrenadeFrag)
+        UGrenadeNodeUI* Node = CreateWidget<UGrenadeNodeUI>(GetWorld(), GrenadeNodeClass);
+        if (!Node)
         {
-            IconGrenadeFrag->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+            continue;
         }
-        if (DotFrag)
-        {
-            DotFrag->SetVisibility(!bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-		}
+
+        GrenadesStack->AddChild(Node);
+        Grenades.Add(Node);
     }
-    else if (ItemId == EItemId::GRENADE_SMOKE)
+}
+
+void UPlayerUI::UpdateGrenades(const TArray<EItemId>& GrenadeIds)
+{
+    // 1. Reset all nodes
+    for (UGrenadeNodeUI* Grenade : Grenades)
     {
-        if (IconGrenadeSmoke)
+        if (Grenade)
         {
-            IconGrenadeSmoke->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-        }
-        if (DotSmoke)
-        {
-            DotSmoke->SetVisibility(!bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+            Grenade->UpdateIcon(EItemId::NONE);
         }
     }
-    else if (ItemId == EItemId::GRENADE_STUN)
+
+    // 2. Update existing ones
+    const int32 Count = FMath::Min(GrenadeIds.Num(), Grenades.Num());
+
+    for (int32 i = 0; i < Count; i++)
     {
-        if (IconGrenadeFlash)
+        if (Grenades[i])
         {
-            IconGrenadeFlash->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+            Grenades[i]->UpdateIcon(GrenadeIds[i]);
         }
-        if (DotFlash)
-        {
-            DotFlash->SetVisibility(!bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-		}
     }
-    else if (ItemId == EItemId::GRENADE_INCENDIARY)
+}
+
+void UPlayerUI::UpdateCurrentWeapon(const EItemId& CurrentWeaponId) {
+    GrenadeTitle->SetText(FText::GetEmpty());
+
+
+    for (UGrenadeNodeUI* Grenade : Grenades)
     {
-        if (IconGrenadeIncendiary)
+        if (Grenade)
         {
-            IconGrenadeIncendiary->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-        }
-        if (DotIncen)
-        {
-            DotIncen->SetVisibility(!bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+            Grenade->SetSelected(false);
         }
 	}
+    if (CurrentWeaponId == EItemId::NONE) {
+
+    }
+    else {
+        UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+        UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+        if (WeaponConf == nullptr) {
+            return;
+        }
+        if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
+            GrenadeTitle->SetText(WeaponConf->DisplayName);
+            for (UGrenadeNodeUI* Grenade : Grenades)
+            {
+                if (Grenade && Grenade->CurItemId == CurrentWeaponId)
+                {
+                    Grenade->SetSelected(true);
+                    break;
+                }
+			}
+        }
+        else if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
+            if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
+                //Rifle
+                if (RifleIcon) {
+                    // set texture
+                    RifleIcon->SetBrushFromTexture(WeaponConf->Icon);
+				}
+            }
+        }
+        else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
+            //Pistol
+            if (PistolIcon) {
+                // set texture
+                PistolIcon->SetBrushFromTexture(WeaponConf->Icon);
+            }
+        }
+    }
 }

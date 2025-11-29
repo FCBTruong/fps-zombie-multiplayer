@@ -3,11 +3,9 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 UWeaponData* UWeaponDataManager::GetWeaponById(EItemId Id) const
 {
-	for (UWeaponData* Data : WeaponList)
-	{
-		if (Data && Data->Id == Id)
-			return Data;
-	}
+    if (WeaponDataMap.Contains(Id)) {
+        return WeaponDataMap[Id];
+    }
 	return nullptr;
 }
 
@@ -29,6 +27,7 @@ void UWeaponDataManager::Initialize(FSubsystemCollectionBase& Collection)
             if (UWeaponData* Data = Cast<UWeaponData>(Asset.GetAsset()))
             {
                 WeaponList.Add(Data);
+				WeaponDataMap.Add(Data->Id, Data);
             }
         }
     }

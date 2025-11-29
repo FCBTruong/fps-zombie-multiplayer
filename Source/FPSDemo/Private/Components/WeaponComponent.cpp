@@ -13,6 +13,7 @@
 #include "Projectiles/ThrownProjectileFrag.h"
 #include "Projectiles/ThrownProjectileSmoke.h"
 #include "Projectiles/ThrownProjectileStun.h"
+#include "Damage/MyDamageType.h"
 
 
 // Sets default values for this component's properties
@@ -25,15 +26,23 @@ UWeaponComponent::UWeaponComponent()
 	SetIsReplicated(true);
 }
 
-
 // Called when the game starts
 void UWeaponComponent::BeginPlay()
 {
+    UE_LOG(LogTemp, Warning, TEXT("WeaponComponent: BeginPlay"));
 	Super::BeginPlay();
 
     GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-	InventoryComp = GetOwner()->FindComponentByClass<UInventoryComponent>();
+    if (!GMR) {
+        UE_LOG(LogTemp, Warning, TEXT("WeaponComponent: Failed to get GameManager subsystem"));
+        return;
+    }
+    else {
+        UE_LOG(LogTemp, Warning, TEXT("WeaponComponent: Successfully got GameManager subsystem"));
+    }
     Character = Cast<ABaseCharacter>(GetOwner());
+
+	InventoryComp = GetOwner()->FindComponentByClass<UInventoryComponent>();
 
 	bIsInitialized = true;
 
@@ -44,8 +53,20 @@ void UWeaponComponent::BeginPlay()
 }
 
 void UWeaponComponent::InitState() {
-    Melee = Cast<AWeaponMelee>(this->SpawnWeaponByItemId(EItemId::MELEE_KNIFE_BASIC));
-	EquipWeapon(EItemId::MELEE_KNIFE_BASIC);
+    if (GetOwner()->HasAuthority())
+    {
+        FTimerHandle Timer;
+        GetWorld()->GetTimerManager().SetTimer(
+            Timer,
+            [this]()
+            {
+                MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
+                EquipWeapon(EItemId::MELEE_KNIFE_BASIC);
+            },
+            1.0f,
+            false
+        );
+    }
 }
 
 
@@ -83,66 +104,54 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         return;
 	}
 
-	if (CurrentWeapon && CurrentWeapon->GetWeaponData()
-        && CurrentWeapon->GetWeaponData()->Id == ItemId) 
+	if (CurrentWeaponId == ItemId) 
     {
 		UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Weapon %d is "), (int32)ItemId);
         // already equipped
         return;
 	}
+    if(!GMR) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: GameManager is null"));
+		return; 
+	}
 
-    UWeaponData* WeaponConf = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
+    UWeaponData* WeaponConf = GMR->GetWeaponDataById(ItemId);
     if (!WeaponConf) {
         UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: No weapon data found for %d"), (int32)ItemId);
         return;
 	}
     
-    if (CurrentWeapon) {
-        CurrentWeapon->OnUnequipped();
-		MulticastOnUnequipped(CurrentWeapon);
-		CurrentWeapon = nullptr;
-    }
+	EItemId NewWeaponId = EItemId::NONE;
  
     if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
-		for (AWeaponBase* Grenade : ThrowablesArray)
+		for (EItemId Grenade : ThrowablesArray)
 		{   
-            if (Grenade->GetItemId() == ItemId) {
-                CurrentWeapon = Grenade;
+            if (Grenade == ItemId) {
+                NewWeaponId = ItemId;
                 break;
             }
 		}
     }
     else {
-        if (Rifle && Rifle->GetItemId() == ItemId) {
-            CurrentWeapon = Rifle;
+        if (RifleState.ItemId == ItemId) {
+            NewWeaponId = RifleState.ItemId;
         }
-        else if (Pistol && Pistol->GetItemId() == ItemId) {
-            CurrentWeapon = Pistol;
+        else if (PistolState.ItemId == ItemId) {
+            NewWeaponId = PistolState.ItemId; // corrected to use ItemId directly
         }
-        else if (Melee && Melee->GetItemId() == ItemId) {
-			CurrentWeapon = Melee;
-        }
+        else if (MeleeState.ItemId == ItemId) {
+            NewWeaponId = MeleeState.ItemId;
+		}
     }
 
-    if (!CurrentWeapon) {
+    if (NewWeaponId == EItemId::NONE) {
         UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Failed to spawn weapon actor for %d"), (int32)ItemId);
         return;
     }
-
-    if (UWorld* World = GetWorld())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Worldxxx: %s | Scene: %s"),
-            *World->GetName(),
-            *World->GetMapName());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No valid world for %s"), *GetName());
-    }
-
+	CurrentWeaponId = NewWeaponId;
 
 	// update speed based on weapon
-    if (Character && CurrentWeapon) {
+    if (Character) {
 		// melee, rifle, pistol
         float NewSpeed = ABaseCharacter::NORMAL_WALK_SPEED;
 
@@ -162,10 +171,6 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
 
 
 
-void UWeaponComponent::OnUpdateCurrentWeaponData() {
-    
-}
-
 void UWeaponComponent::OnNewItemPickup(int32 NewInventoryId) {
     bool ShouldEquipNow = true;
 
@@ -175,15 +180,18 @@ void UWeaponComponent::OnNewItemPickup(int32 NewInventoryId) {
 }
 
 EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
-    if (CurrentWeapon) {
-        return CurrentWeapon->GetWeaponType();
-	}
+    if (GMR) {
+        UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+        if (WeaponConf) {
+            return WeaponConf->WeaponType;
+        }
+    }
 	return EWeaponTypes::Unarmed;
 }
 
 void UWeaponComponent::DropWeapon() {
 	UE_LOG(LogTemp, Warning, TEXT("DropWeapon called"));
-    if (CurrentWeapon && CurrentWeapon->CanDrop()) {
+    if (CanDropWeapon(CurrentWeaponId)) {
         if (!GetOwner()->HasAuthority()) {
             ServerDropWeapon();
         }
@@ -200,11 +208,18 @@ void UWeaponComponent::ServerDropWeapon_Implementation() {
 
 // Server function
 void UWeaponComponent::HandleDropWeapon() {
-	if (!CurrentWeapon) {
+	if (CurrentWeaponId == EItemId::NONE) {
         UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: No weapon to drop"));
         return;
 	}
-    if (CurrentWeapon->CanDrop() == false) {
+	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+
+    if (!WeaponConf) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: No weapon data found for %d"), (int32)CurrentWeaponId);
+        return;
+    }
+
+    if (!CanDropWeapon(CurrentWeaponId)) {
         UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: Current weapon can not be dropped"));
         return;
     }
@@ -214,30 +229,27 @@ void UWeaponComponent::HandleDropWeapon() {
     FPickupData Data;
 	Data.Location = DropPoint;
 	Data.Amount = 1;
-	Data.ItemId = CurrentWeapon->GetWeaponData()->Id;
+	Data.ItemId = CurrentWeaponId;
 	Data.Id = GMR->GetNextItemOnMapId();
     GMR->OnNewItemDataSpawned({ Data });
 
-	OnUpdateCurrentWeaponData();
-
 	MulticastDropWeapon(Data);
 
-	if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Throwable) {
+	if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
 		// remove from throwables array
-		ThrowablesArray.Remove(CurrentWeapon);
+		ThrowablesArray.Remove(CurrentWeaponId);
 	}
     else {
-        if (Rifle == CurrentWeapon) {
-            Rifle = nullptr;
+        if (RifleState.ItemId == CurrentWeaponId) { // corrected to use ItemId
+            RifleState.ItemId = EItemId::NONE; // update the RifleState
         }
-        else if (Pistol == CurrentWeapon) {
-            Pistol = nullptr;
+        else if (PistolState.ItemId == CurrentWeaponId) { // corrected to use ItemId
+            PistolState.ItemId = EItemId::NONE; // update the PistolState
         }
     }
 
-    CurrentWeapon->Destroy();
-    CurrentWeapon = nullptr;
-	EquipWeapon(Melee->GetItemId());
+ 
+	EquipWeapon(MeleeState.ItemId);
 }
 
 void UWeaponComponent::MulticastDropWeapon_Implementation(FPickupData Data) {
@@ -291,28 +303,41 @@ bool UWeaponComponent::CanShoot() {
     if (bIsReloading) {
         return false;
     }
-    if (!CurrentWeapon) {
+    if (CurrentWeaponId == EItemId::NONE) {
         return false;
     }
-    if (Character->IsCloseToWall()) {
-        return false;
-	}
+  
     // check has ammo left
-    if (!CurrentWeapon->HasAmmoInClip()) {
-        return false;
+    if (RifleState.ItemId == CurrentWeaponId) {
+        if (RifleState.AmmoInClip <= 0) {
+            return false;
+        }
     }
+    else if (PistolState.ItemId == CurrentWeaponId) {
+        if (PistolState.AmmoInClip <= 0) {
+            return false;
+        }
+	}
+    
     return true;
 }
 
 void UWeaponComponent::OnLeftClickStart() {
-    if (CurrentWeapon == nullptr) {
+    if (CurrentWeaponId == EItemId::NONE) {
         UE_LOG(LogTemp, Warning, TEXT("HandleStartFire: No weapon equipped"));
         return;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("OnLeftClickStart called"));
 
     // is fire arm
-    if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
+	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+
+    if (!WeaponConf) {
+        UE_LOG(LogTemp, Warning, TEXT("OnLeftClickStart: No weapon data found for %d"), (int32)CurrentWeaponId);
+        return;
+	}
+
+    if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
         if (CanShoot()) {
             bIsFiring = true;
             float timeBetweenShots = 0.2f; // Example value, adjust as needed
@@ -320,20 +345,19 @@ void UWeaponComponent::OnLeftClickStart() {
             OnFire();
             GetOwner()->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UWeaponComponent::OnFire, timeBetweenShots, true);
         }
-        if (CurrentWeapon) {
-            if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
-            {
-                if (!Firearm->HasAmmoInClip())
-                {
-					Firearm->PlayOutOfAmmoSound();
-                }
-			}
+
+		FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
+
+        if (WeaponState && WeaponState->AmmoInClip <= 0) {
+            if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon)) {
+                Firearm->PlayOutOfAmmoSound();
+            }
         }
     }
-    else if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Melee) {
+    else if (WeaponConf->WeaponType == EWeaponTypes::Melee) {
          ServerDoMeleeAttack(0);
     }
-    else if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Throwable) {
+    else if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
         if (!bIsPriming) {
             DrawProjectileCurve();
             ServerSetIsPriming(true);
@@ -347,7 +371,11 @@ void UWeaponComponent::OnLeftClickRelease() {
         bIsFiring = false;
 	}
 
-    if (CurrentWeapon && CurrentWeapon->GetWeaponType() == EWeaponTypes::Throwable) {
+    UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+    if (!WeaponConf) {
+        return;
+    }
+    if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
         // Throw the grenade
         if (!bIsPriming) {
             return; // not priming, ignore
@@ -365,7 +393,7 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
     if (bIsThrowing) {
 		return; // already throwing
     }
-	ThrowablesArray.Remove(CurrentWeapon);
+	ThrowablesArray.Remove(CurrentWeaponId);
 	bIsThrowing = true;
     // Logic throw, move object, and explode
     // Because on server, there's no current weapon, so we need to handle this
@@ -375,13 +403,15 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
     
 
     AThrownProjectile* ThrownProj = nullptr;
-    if (CurrentWeapon->GetWeaponData()->WeaponSubType == EWeaponSubTypes::Smoke) {
+    
+	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+    if (WeaponConf->WeaponSubType == EWeaponSubTypes::Smoke) {
         ThrownProj = GetWorld()->SpawnActor<AThrownProjectileSmoke>(
             AThrownProjectileSmoke::StaticClass(),
             StartPos,
             FRotator::ZeroRotator);
     }
-    else if (CurrentWeapon->GetWeaponData()->WeaponSubType == EWeaponSubTypes::Stun) {
+    else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Stun) {
         ThrownProj = GetWorld()->SpawnActor<AThrownProjectileStun>(
             AThrownProjectileStun::StaticClass(),
             StartPos,
@@ -396,7 +426,7 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
     if (ThrownProj) {
 		ThrownProj->SetOwner(GetOwner());
 		ThrownProj->SetInstigator(Cast<APawn>(GetOwner()));
-        ThrownProj->InitFromData(CurrentWeapon->GetWeaponData());
+        ThrownProj->InitFromData(WeaponConf);
         ThrownProj->LaunchProjectile(LaunchVelocity, Character);
 	}
 
@@ -411,9 +441,7 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
     );
 
 	// destroy current weapon and also remove it from array
-	ThrowablesArray.Remove(CurrentWeapon);
-    CurrentWeapon->Destroy();
-	CurrentWeapon = nullptr;
+	ThrowablesArray.Remove(CurrentWeaponId);
 
     MulticastThrowAction(LaunchVelocity);
 }
@@ -497,7 +525,7 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
         }
 
         // check current weapon
-        if (!CurrentWeapon) {
+        if (CurrentWeaponId == EItemId::NONE) {
 			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server no current weapon"));
             return;
         }
@@ -506,10 +534,13 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
             return;
 		}
 		// decrease ammo
-        if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
-        {
-            Firearm->ConsumeAmmo(1);
-        }
+        if (CurrentWeaponId == RifleState.ItemId) {
+			RifleState.AmmoInClip = FMath::Max(0, RifleState.AmmoInClip - 1);
+            }
+		else if (CurrentWeaponId == PistolState.ItemId) {
+            PistolState.AmmoInClip = FMath::Max(0, PistolState.AmmoInClip - 1);
+		}
+
 
         // start from head or eyes
         FVector Start = Character->GetPawnViewLocation();
@@ -524,12 +555,15 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
         );
 
 		float Damage = 25.f; // Example damage value
+
+        UMyDamageType* DT = NewObject<UMyDamageType>();
+        DT->WeaponId = CurrentWeaponId;
         if (bHit && Damage > 0.f)
         {
 			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applying damage to %s"), *Hit.GetActor()->GetName());
             float ActualDamage = UGameplayStatics::ApplyDamage(
                 Hit.GetActor(), Damage, Character->GetController(),
-                CurrentWeapon, UDamageType::StaticClass()
+				nullptr, DT->GetClass()
             );
 			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applied damage: %f"), ActualDamage);
         }
@@ -596,6 +630,11 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UWeaponComponent, bIsPriming);
+	DOREPLIFETIME(UWeaponComponent, CurrentWeaponId);
+	DOREPLIFETIME(UWeaponComponent, RifleState);
+	DOREPLIFETIME(UWeaponComponent, PistolState);
+	DOREPLIFETIME(UWeaponComponent, MeleeState);
+	DOREPLIFETIME(UWeaponComponent, ThrowablesArray);
     //DOREPLIFETIME(UWeaponComponent, ThrowablesArray);
 }
 
@@ -615,19 +654,27 @@ void UWeaponComponent::EquipSlot(int32 SlotIndex)
 			return; // no throwables available
 		}
 
-        if (!CurrentWeapon || CurrentWeapon->GetWeaponType() != EWeaponTypes::Throwable)
-        {
-			Id = ThrowablesArray[0]->GetItemId();
-		}
+        if (CurrentWeaponId == EItemId::NONE) {
+            UE_LOG(LogTemp, Warning, TEXT("EquipSlot: No current weapon, equipping first throwable"));
+            Id = ThrowablesArray[0];
+        }
         else {
-            if (CurrentWeapon && CurrentWeapon->GetWeaponType() == EWeaponTypes::Throwable) {
+            UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+            if (WeaponConf->WeaponType != EWeaponTypes::Throwable)
+            {
+                Id = ThrowablesArray[0];
+            }
+            else if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
                 // Cycle to next available throwable
-                int32 CurrentIndex = ThrowablesArray.IndexOfByKey(CurrentWeapon);
-                int32 NextIndex = (CurrentIndex + 1) % ThrowablesArray.Num();
-                Id = ThrowablesArray[NextIndex]->GetItemId();
+                int32 CurrentIndex = ThrowablesArray.IndexOfByKey(CurrentWeaponId);
+                if (CurrentIndex == INDEX_NONE) {
+                    Id = ThrowablesArray[0];
+                } else {
+                    int32 NextIndex = (CurrentIndex + 1) % ThrowablesArray.Num();
+                    Id = ThrowablesArray[NextIndex];
+                }
             }
         }
-
         if (Id == EItemId::NONE) {
             UE_LOG(LogTemp, Warning, TEXT("EquipSlot: No valid throwable Id found"));
 			return;
@@ -636,18 +683,19 @@ void UWeaponComponent::EquipSlot(int32 SlotIndex)
 		ServerEquipWeapon(Id);
     }
     else if (SlotIndex == FGameConstants::SLOT_RIFLE) {
-        if (Rifle) {
-            ServerEquipWeapon(Rifle->GetItemId());
+        if (RifleState.ItemId != EItemId::NONE) {
+			UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Equipping rifle"));
+            ServerEquipWeapon(RifleState.ItemId);
 		}
     }
     else if (SlotIndex == FGameConstants::SLOT_MELEE) {
-        if (Melee) {
-            ServerEquipWeapon(Melee->GetItemId());
+        if (MeleeState.ItemId != EItemId::NONE) {
+            ServerEquipWeapon(MeleeState.ItemId);
         }
     }
     else if (SlotIndex == FGameConstants::SLOT_PISTOL) {
-        if (Pistol) {
-            ServerEquipWeapon(Pistol->GetItemId());
+        if (PistolState.ItemId != EItemId::NONE) {
+            ServerEquipWeapon(PistolState.ItemId);
         }
     }
 }
@@ -866,8 +914,9 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
                 );
 
             }
-
-            UGameplayStatics::ApplyDamage(Target, 10, Character->GetController(), CurrentWeapon, UDamageType::StaticClass());
+			UMyDamageType* DT = NewObject<UMyDamageType>();
+			DT->WeaponId = CurrentWeaponId;
+            UGameplayStatics::ApplyDamage(Target, 10, Character->GetController(), nullptr, DT->GetClass());
         }
     }
 }
@@ -875,13 +924,36 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
 
 void UWeaponComponent::OnRep_CurrentWeapon()
 {
-    // Handle changes when CurrentWeapon is replicated
-    UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon called"));
-    if (CurrentWeapon == nullptr) {
+    if (!GMR) {
         return;
     }
-    
-	CurrentWeapon->OnEquipped();
+    if (CurrentWeaponId == EItemId::NONE) {
+        return;
+    }
+
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon called for weapon id %d"), (int32)CurrentWeaponId);
+
+	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+    if (!WeaponConf) {
+        UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon: No weapon data found for id %d"), (int32)CurrentWeaponId);
+		return;
+	}
+
+	// destroy old weapon
+    if (CurrentWeapon) {
+        CurrentWeapon->Destroy();
+		CurrentWeapon = nullptr;
+	}
+   
+    CurrentWeapon = SpawnWeaponByItemId(CurrentWeaponId);
+    if (!CurrentWeapon) {
+        UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon: Failed to spawn weapon for id %d"), (int32)CurrentWeaponId);
+        return;
+    }
+   
+	CurrentWeapon->SetOwner(GetOwner());
+	CurrentWeapon->SetInstigator(Cast<APawn>(GetOwner()));
+	CurrentWeapon->InitFromData(WeaponConf);
     UpdateAttachLocationWeapon();
 
 	// Play equip animation
@@ -889,6 +961,8 @@ void UWeaponComponent::OnRep_CurrentWeapon()
         EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
         Character->PlayEquipWeaponAnimation(WeaType);
 	}
+
+    OnUpdateCurrentWeapon.Broadcast(CurrentWeaponId);
 }
 
 void UWeaponComponent::ServerReload_Implementation()
@@ -903,10 +977,12 @@ void UWeaponComponent::HandleReload()
         return; // already reloading
     }
     // check can reload
-    if (!CurrentWeapon) {
-        return;
+	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+    if (!WeaponConf) {
+		return;
 	}
-    if (CurrentWeapon->GetWeaponType() != EWeaponTypes::Firearm) {
+
+    if (WeaponConf->WeaponType != EWeaponTypes::Firearm) {
 		return; // only firearm can reload
 	}
 
@@ -940,11 +1016,26 @@ void UWeaponComponent::MulticastReload_Implementation()
 
 void UWeaponComponent::OnFinishedReload()
 {
-    bIsReloading = false;
-    if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+    if (GetOwner()->HasAuthority()) // only server makes changes
     {
-        Firearm->SetCurrentAmmo(50);
-    }
+        bIsReloading = false;
+		UE_LOG(LogTemp, Warning, TEXT("OnFinishedReload called"));
+		UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+		FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
+
+		if (!WeaponConf || !WeaponState) {
+			return;
+		}
+
+		int AmmoNeeded = WeaponConf->MaxAmmoInClip - WeaponState->AmmoInClip;
+		if (AmmoNeeded <= 0) {
+			return; // clip is full
+		}
+
+		int AmmoToReload = FMath::Min(AmmoNeeded, WeaponState->AmmoReserve);
+		WeaponState->AmmoReserve = FMath::Max(0, WeaponState->AmmoReserve - AmmoToReload);
+		WeaponState->AmmoInClip += AmmoToReload;
+	}
 }
 
 void UWeaponComponent::OnNotifyGrabMag() {
@@ -1042,46 +1133,79 @@ AWeaponBase* UWeaponComponent::SpawnWeaponByItemId(EItemId ItemId)
 
 bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
 {
-    if (ItemId == EItemId::MELEE_KNIFE_BASIC) {
-        return false; // already have melee
-    }
-	UWeaponData* WeaponConf = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
+	UWeaponData* WeaponConf = GMR->GetWeaponDataById(ItemId);
     if (!WeaponConf) {
 		return false;
 	}
 
     if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
         if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
-			if (Rifle) {
-				return false; // already have rifle
+            if (RifleState.ItemId != EItemId::NONE) {
+                return false; // already have rifle
             }
-			Rifle = Cast<AWeaponFirearm>(this->SpawnWeaponByItemId(ItemId));
+			RifleState.ItemId = ItemId;
+            int TotalAmmo = WeaponConf->AmmoBonusShop;
+			RifleState.AmmoInClip = FMath::Min(TotalAmmo, WeaponConf->MaxAmmoInClip);
+			RifleState.AmmoReserve = TotalAmmo - RifleState.AmmoInClip;
 			EquipWeapon(ItemId);
             return true;
         }
         else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
-			if (Pistol) {
+			if (PistolState.ItemId != EItemId::NONE) {
 				return false; // already have pistol
 			}
-            Pistol = Cast<AWeaponFirearm>(this->SpawnWeaponByItemId(ItemId));
+			PistolState.ItemId = ItemId;
+			int TotalAmmo = WeaponConf->AmmoBonusShop;
+			PistolState.AmmoInClip = FMath::Min(TotalAmmo, WeaponConf->MaxAmmoInClip);
+			PistolState.AmmoReserve = TotalAmmo - PistolState.AmmoInClip;
 			EquipWeapon(ItemId);
             return true;
+        }
+        else {
+            return false; // unknown firearm subtype
         }
     }
     else if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
         UE_LOG(LogTemp, Warning, TEXT("AddNewWeapon: Throwable"));
-		AWeaponThrowable* NewThrowable = Cast<AWeaponThrowable>(this->SpawnWeaponByItemId(ItemId));
-        if (NewThrowable) {
-			ThrowablesArray.Add(NewThrowable);
-		}
+		ThrowablesArray.Add(ItemId);
+        ThrowablesArray.Sort([](const EItemId& A, const EItemId& B) {
+            return static_cast<int32>(A) < static_cast<int32>(B);
+            });
     }
     return true;
 }
 
-void UWeaponComponent::MulticastOnUnequipped_Implementation(AWeaponBase* OldWeapon)
+bool UWeaponComponent::CanDropWeapon(EItemId Id)
 {
-    if (OldWeapon)
-    {
-        OldWeapon->OnUnequipped();
+    UWeaponData* WeaponConf = GMR->GetWeaponDataById(Id);
+    if (!WeaponConf) {
+        return false;
     }
+	return WeaponConf->CanDrop;
+}
+
+FWeaponState* UWeaponComponent::GetWeaponStateByItemId(EItemId ItemId)
+{
+    if (RifleState.ItemId == ItemId) {
+        return &RifleState;
+    }
+    else if (PistolState.ItemId == ItemId) {
+        return &PistolState;
+    }
+    else if (MeleeState.ItemId == ItemId) {
+        return &MeleeState;
+    }
+	return nullptr;
+}
+
+void UWeaponComponent::OnRep_GunState()
+{
+	FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
+    if (WeaponState) {
+		OnUpdateAmmoState.Broadcast(WeaponState->AmmoInClip, WeaponState->AmmoReserve);
+    }
+}
+
+void UWeaponComponent::OnRep_Grenades() {
+    OnUpdateGrenades.Broadcast(ThrowablesArray);
 }

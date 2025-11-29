@@ -35,4 +35,5 @@ public:
 	UWeaponDataManager* GetWeaponDataManager();
 
 	UGlobalDataAsset* GlobalData;
+	UWeaponData* GetWeaponDataById(EItemId ItemId);
 };
