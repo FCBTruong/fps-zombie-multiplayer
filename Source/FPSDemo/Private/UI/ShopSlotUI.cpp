@@ -30,6 +30,8 @@ void UShopSlotUI::NativeConstruct()
 	if (SttLb) {
 		SttLb->SetText(FText::AsNumber(SlotIndex));
 	}
+
+	IconImg->SetRenderScale(FVector2D(ScaleIcon, ScaleIcon));
 }
 
 void UShopSlotUI::OnClicked()

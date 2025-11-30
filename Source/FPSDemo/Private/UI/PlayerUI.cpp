@@ -4,6 +4,7 @@
 #include "UI/PlayerUI.h"
 #include "Game/TeamEliminationState.h"
 #include "Game/GameManager.h"
+#include "FCTween/FCTween.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -13,6 +14,20 @@ void UPlayerUI::NativeConstruct()
         HpBar->SetPercent(1.0f);
     }
 	CreateGrenadeNodes();
+
+    for (int32 i = 1; i <= 4; i++)
+    {
+        const FName WidgetName(*FString::Printf(TEXT("NumberWeapon%d"), i));
+        if (UWidget* Widget = GetWidgetFromName(WidgetName))
+        {
+            WeaponTextNumbers.Add(Widget);
+        }
+    }
+    for (UWidget* Widget : WeaponTextNumbers)
+    {
+        // Fade-in
+        Widget->SetRenderOpacity(0.f);
+    }
 }
 void UPlayerUI::ShowPickupMessage(const FString& Message)
 {
@@ -97,14 +112,14 @@ void UPlayerUI::OnEnter()
 	ShowIconGrenade(EItemId::GRENADE_INCENDIARY, false);
 }
 
-void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponTex, bool bIsHeadShot)
+void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponConf, bool bIsHeadShot)
 {
     if (KillNotifyWidgetClass && KillNotifyStack)
     {
         UKillNotifySlot* KillNotifyWidget = CreateWidget<UKillNotifySlot>(GetWorld(), KillNotifyWidgetClass);
         if (KillNotifyWidget)
         {
-            KillNotifyWidget->SetInfo(KillerName, VictimName, WeaponTex, bIsHeadShot);
+            KillNotifyWidget->SetInfo(KillerName, VictimName, WeaponConf, bIsHeadShot);
             KillNotifyStack->AddChild(KillNotifyWidget);
             FTimerHandle TimerHandle;
             TWeakObjectPtr<UKillNotifySlot> WeakKillNotifyWidget = KillNotifyWidget;
@@ -306,5 +321,41 @@ void UPlayerUI::UpdateCurrentWeapon(const EItemId& CurrentWeaponId) {
                 PistolIcon->SetBrushFromTexture(WeaponConf->Icon);
             }
         }
+    }
+	ShowWeaponGuide();
+}
+
+void UPlayerUI::ShowWeaponGuide()
+{
+    for (UWidget* Widget : WeaponTextNumbers)
+    {
+        // Fade-in
+        Widget->SetRenderOpacity(0.f);
+
+        FCTween::Play(
+            GetActorLocation(),
+            GetActorLocation() + FVector(0, 0, 50),
+            [&](FVector t) { SetActorLocation(t); },
+            2.0f,
+            EFCEase::OutCubic
+        );
+
+        // Lambda needs a captured pointer
+        FTimerHandle FadeOutTimer;
+
+        // Fade-in instantly or smoothly (instant for simplicity)
+        Widget->SetRenderOpacity(1.f);
+
+        // Delay 2 seconds
+        GetWorld()->GetTimerManager().SetTimer(
+            FadeOutTimer,
+            FTimerDelegate::CreateWeakLambda(this, [Widget]()
+                {
+                    // fade-out instantly or over time
+                    Widget->SetRenderOpacity(0.f);
+                }),
+            2.0f,
+            false
+        );
     }
 }

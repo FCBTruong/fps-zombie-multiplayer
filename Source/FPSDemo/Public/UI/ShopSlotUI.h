@@ -48,4 +48,7 @@ public:
 	void OnClicked();
 
 	void SetCanBuy(bool bCanBuy);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom")
+	float ScaleIcon = 1.0f;
 };

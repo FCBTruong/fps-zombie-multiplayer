@@ -4,8 +4,20 @@
 #include "UI/KillNotifySlot.h"
 
 
-void UKillNotifySlot::SetInfo(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponTex, bool bIsHeadShot)
+void UKillNotifySlot::SetInfo(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponConf, bool bIsHeadShot)
 {
+	UTexture2D* WeaponTex = nullptr;
+	if (WeaponConf)
+	{
+		WeaponTex = WeaponConf->Icon;
+
+		if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
+			if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
+				WeaponIcon->SetDesiredSizeOverride(FVector2D(120.f, 120.f));
+			}
+		}
+	}
+
 	if (KillerLb)
 	{
 		KillerLb->SetText(FText::FromString(KillerName));

@@ -16,6 +16,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Damage/MyDamageType.h"
 #include "Engine/DamageEvents.h"
+#include "Damage/MyPointDamageEvent.h"
 
 
 // Sets default values
@@ -572,27 +573,22 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     LastHitByController = EventInstigator;
 
-    const UDamageType* DamageTypeCDO = nullptr;
-    if (DamageEvent.DamageTypeClass)
+    if (DamageEvent.IsOfType(FMyPointDamageEvent::ClassID))
     {
-        DamageTypeCDO = DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType>();
+        const FMyPointDamageEvent* MyEvent =
+            static_cast<const FMyPointDamageEvent*>(&DamageEvent);
+
+        EItemId WeaponId = static_cast<EItemId>(MyEvent->WeaponID);
+
+        UE_LOG(LogTemp, Warning, TEXT("Damage came from WeaponId: %d"), (int32)WeaponId);
+
+        UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+        LastDamageCauser = GMR->GetWeaponDataById(WeaponId);
     }
-
-    const UMyDamageType* MyDamageType = Cast<UMyDamageType>(DamageTypeCDO);
-
-    if (MyDamageType)
-    {
-        // This is your custom data
-        EItemId WeaponId = MyDamageType->WeaponId;
-        if (WeaponId == EItemId::NONE)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Damage came from WeaponId: None"));
-		}
-        else {
-            // Use WeaponId here as needed
-            UE_LOG(LogTemp, Warning, TEXT("Damage came from WeaponId: %d"), static_cast<int32>(WeaponId));
-            UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-            LastDamageCauser = GMR->GetWeaponDataById(WeaponId);
+    else if (DamageCauser) {
+		AThrownProjectile* Projectile = Cast<AThrownProjectile>(DamageCauser);
+        if (Projectile) {
+			LastDamageCauser = Projectile->GetWeaponData();
         }
     }
 

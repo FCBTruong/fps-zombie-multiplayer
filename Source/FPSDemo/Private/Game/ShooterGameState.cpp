@@ -41,12 +41,8 @@ void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Kille
             return;
 		}
 
-        UTexture2D* WeaponTex = nullptr;
-        if (DamageCauser)
-        {
-			WeaponTex = DamageCauser->Icon;
-        }
+       
 
-		MyPC->PlayerUI->NotifyKill(KillerName, VictimName, WeaponTex, false);
+		MyPC->PlayerUI->NotifyKill(KillerName, VictimName, DamageCauser, false);
     }
 }

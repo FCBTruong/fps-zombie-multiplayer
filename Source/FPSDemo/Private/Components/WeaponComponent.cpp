@@ -14,6 +14,9 @@
 #include "Projectiles/ThrownProjectileSmoke.h"
 #include "Projectiles/ThrownProjectileStun.h"
 #include "Damage/MyDamageType.h"
+#include "GameFramework/DamageType.h"
+#include "Engine/EngineTypes.h"
+#include "Damage/MyPointDamageEvent.h"
 
 
 // Sets default values for this component's properties
@@ -556,15 +559,14 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
 
 		float Damage = 25.f; // Example damage value
 
-        UMyDamageType* DT = NewObject<UMyDamageType>();
-        DT->WeaponId = CurrentWeaponId;
+       
         if (bHit && Damage > 0.f)
         {
-			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applying damage to %s"), *Hit.GetActor()->GetName());
-            float ActualDamage = UGameplayStatics::ApplyDamage(
-                Hit.GetActor(), Damage, Character->GetController(),
-				nullptr, DT->GetClass()
-            );
+            FMyPointDamageEvent DamageEvent;
+            DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
+            DamageEvent.WeaponID = CurrentWeaponId;
+ 
+            float ActualDamage = Hit.GetActor()->TakeDamage(Damage, DamageEvent, Character->GetController(), nullptr);
 			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applied damage: %f"), ActualDamage);
         }
 
@@ -575,7 +577,7 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
 
 void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
     // print log
-	UE_LOG(LogTemp, Warning, TEXT("PlayEffectFire ccdalled"));
+	UE_LOG(LogTemp, Warning, TEXT("PlayEffectFire called"));
 
     if (!CurrentWeapon) {
         return;
@@ -914,9 +916,14 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
                 );
 
             }
-			UMyDamageType* DT = NewObject<UMyDamageType>();
-			DT->WeaponId = CurrentWeaponId;
-            UGameplayStatics::ApplyDamage(Target, 10, Character->GetController(), nullptr, DT->GetClass());
+			
+            FMyPointDamageEvent DamageEvent;
+            DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
+            DamageEvent.WeaponID = CurrentWeaponId;
+
+			UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+
+            float ActualDamage = Hit.GetActor()->TakeDamage(WeaponConf->Damage, DamageEvent, Character->GetController(), nullptr);
         }
     }
 }

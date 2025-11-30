@@ -62,6 +62,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
 
+	TArray<UWidget*> WeaponTextNumbers;
+
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
@@ -78,7 +80,7 @@ public:
 	void OnUpdateScore();
 	void OnHit();
 	void OnEnter();
-	void NotifyKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponTex, bool bIsHeadShot);
+	void NotifyKill(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponTex, bool bIsHeadShot);
 	void ApplyFlashEffect(const float& Strength);
 	void FadeOutFlashEffect();
 	void OpenShop();
@@ -87,4 +89,5 @@ public:
 	void CreateGrenadeNodes();
 	void UpdateGrenades(const TArray<EItemId>& GrenadeIds);
 	void UpdateCurrentWeapon(const EItemId& CurrentWeaponId);
+	void ShowWeaponGuide();
 };
