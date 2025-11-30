@@ -11,6 +11,7 @@
 #include "UI/KillNotifySlot.h"
 #include "UI/ShopUI.h"
 #include "UI/GrenadeNodeUI.h"
+#include "FCTweenUObject.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -63,6 +64,7 @@ protected:
 	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
 
 	TArray<UWidget*> WeaponTextNumbers;
+	TArray<UFCTweenUObject*> TweenObjects;
 
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
@@ -90,4 +92,5 @@ public:
 	void UpdateGrenades(const TArray<EItemId>& GrenadeIds);
 	void UpdateCurrentWeapon(const EItemId& CurrentWeaponId);
 	void ShowWeaponGuide();
+
 };
