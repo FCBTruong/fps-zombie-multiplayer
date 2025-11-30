@@ -65,11 +65,19 @@ void UShopSlotUI::SetCanBuy(bool CanBuy)
 		IconImg->SetColorAndOpacity(ActiveColor);
 		PriceLb->SetColorAndOpacity(ActiveColor);
 		NameLb->SetColorAndOpacity(ActiveColor);
+		if (ImgGlow)
+		{
+			ImgGlow->SetVisibility(ESlateVisibility::Visible);
+		}
 	}
 	else
 	{
 		IconImg->SetColorAndOpacity(InactiveColor);
 		PriceLb->SetColorAndOpacity(InactiveColor);
 		NameLb->SetColorAndOpacity(InactiveColor);
+		if (ImgGlow)
+		{
+			ImgGlow->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 }

@@ -33,6 +33,9 @@ public:
 	UImage* IconImg;
 
 	UPROPERTY(meta = (BindWidget))
+	UImage* ImgGlow;
+
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* NameLb;
 
 	UPROPERTY(meta = (BindWidget))
