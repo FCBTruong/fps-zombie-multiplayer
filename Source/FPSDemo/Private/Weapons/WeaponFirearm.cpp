@@ -34,7 +34,7 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 	{
 		// ... rest of your code remains unchanged ...
 		UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));
-		PSC->SetWorldScale3D(FVector(0.5f));
+		PSC->SetWorldScale3D(FVector(0.15f));
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("Failed to spawn Muzzle Flash"));

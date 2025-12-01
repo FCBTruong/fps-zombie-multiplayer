@@ -473,29 +473,13 @@ void UWeaponComponent::OnFire() {
         FRotator CameraRotation;
         Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
         FVector ShotDirection = CameraRotation.Vector();
-
-        FVector TraceEnd = CameraLocation + (ShotDirection * 10000.f);
-
-        FHitResult Hit;
-        FCollisionQueryParams Params;
-        Params.AddIgnoredActor(Character);
-
-        bool bHit = GetWorld()->LineTraceSingleByChannel(
-            Hit,
-            CameraLocation,
-            TraceEnd,
-            ECC_Visibility,
-            Params
-        );
-
-        FVector TargetPoint = bHit ? Hit.ImpactPoint : TraceEnd;
            
-		ServerOnFire(TargetPoint);
+		ServerOnFire(CameraLocation, ShotDirection);
     }
 }
 
-void UWeaponComponent::ServerOnFire_Implementation(FVector TargetPoint) {
-	HandleOnFire(TargetPoint);
+void UWeaponComponent::ServerOnFire_Implementation(FVector StartPoint, FVector Direction) {
+	HandleOnFire(StartPoint, Direction);
 }
 
 void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
@@ -520,7 +504,7 @@ void UWeaponComponent::MulticastDoMeleeAttack_Implementation(int AttackIdx) {
 
 
 // Server function
-void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
+void UWeaponComponent::HandleOnFire(FVector StartPos, FVector Direction) {
     if (GetOwner()->HasAuthority()) // only server makes changes
     {
         if (!Character) {
@@ -544,10 +528,33 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
             PistolState.AmmoInClip = FMath::Max(0, PistolState.AmmoInClip - 1);
 		}
 
+		// validate, prevent cheating
+        FVector ServerEye = Character->GetPawnViewLocation();
+
+        // Distance check (client cannot send start behind a wall or very far)
+        float Dist = FVector::Dist(ServerEye, StartPos);
+
+        if (Dist > 60.f)   // about half a meter
+        {
+            UE_LOG(LogTemp, Warning, TEXT("OnFire: Client StartPos is invalid! (%f)"), Dist);
+            return;
+        }
+
+        FVector ServerForward = Character->GetBaseAimRotation().Vector().GetSafeNormal();
+        FVector ClientDirNorm = Direction.GetSafeNormal();
+
+        float Dot = FVector::DotProduct(ServerForward, ClientDirNorm);
+
+        if (Dot < 0.7f)   // limit 45 deviation
+        {
+            UE_LOG(LogTemp, Warning, TEXT("OnFire: Client aim direction invalid"));
+            return;
+        }
+
 
         // start from head or eyes
-        FVector Start = Character->GetPawnViewLocation();
-        FVector End = TargetPoint;
+        FVector Start = StartPos;
+        FVector End = StartPos + Direction * 100000.f;
 
         FHitResult Hit;
         FCollisionQueryParams Params;
@@ -559,14 +566,43 @@ void UWeaponComponent::HandleOnFire(FVector TargetPoint) {
 
 		float Damage = 25.f; // Example damage value
 
+        //DrawDebugLine(
+        //    GetWorld(),
+        //    Start,
+        //    End,
+        //    FColor::Red,
+        //    false,      // persistent lines?
+        //    1.0f,       // life time
+        //    0,          // depth priority
+        //    1.5f        // thickness
+        //);
+		FVector TargetPoint = bHit ? Hit.ImpactPoint : End;
        
         if (bHit && Damage > 0.f)
         {
             FMyPointDamageEvent DamageEvent;
             DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
             DamageEvent.WeaponID = CurrentWeaponId;
+
+            FName HitBone = Hit.BoneName;
+            float Multiplier = 1.f;
+            UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *Hit.GetComponent()->GetName());
+
+            FString BoneStr = HitBone.ToString();
+
+            if (BoneStr == "head")
+                Multiplier = 3.0f;
+            else if (BoneStr.StartsWith("neck") || BoneStr.Contains("spine") || BoneStr == "pelvis" || BoneStr.Contains("clavicle"))
+                Multiplier = 1.0f;
+            else if (BoneStr.Contains("arm") || BoneStr.Contains("hand"))
+                Multiplier = 0.75f;
+            else if (BoneStr.Contains("thigh") || BoneStr.Contains("calf") || BoneStr.Contains("foot"))
+                Multiplier = 0.75f;
+
+            float FinalDamage = Damage * Multiplier;
+			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server hit bone: %s"), *HitBone.ToString());
  
-            float ActualDamage = Hit.GetActor()->TakeDamage(Damage, DamageEvent, Character->GetController(), nullptr);
+            float ActualDamage = Hit.GetActor()->TakeDamage(FinalDamage, DamageEvent, Character->GetController(), nullptr);
 			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applied damage: %f"), ActualDamage);
         }
 
@@ -592,11 +628,6 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
 }
 
 void UWeaponComponent::MulticastPlayFireRifle_Implementation(FVector TargetPoint) {
-    if (IsRunningDedicatedServer())
-    {
-		UE_LOG(LogTemp, Warning, TEXT("MulticastPlayFireRifle: Called on server, ignoring"));
-        return;
-    }
     PlayEffectFire(TargetPoint);
 }
 

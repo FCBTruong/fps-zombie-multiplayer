@@ -84,9 +84,6 @@ void ABaseCharacter::BeginPlay()
     }
 
 
-    GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-
-
     if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
     {
 		UE_LOG(LogTemp, Warning, TEXT("FPSAnim is valid in ABaseCharacter"));
