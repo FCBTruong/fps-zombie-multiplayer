@@ -4,7 +4,6 @@
 #include "UI/PlayerUI.h"
 #include "Game/TeamEliminationState.h"
 #include "Game/GameManager.h"
-#include "FCTween.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -327,51 +326,44 @@ void UPlayerUI::UpdateCurrentWeapon(const EItemId& CurrentWeaponId) {
 
 void UPlayerUI::ShowWeaponGuide()
 {
-    for (UFCTweenUObject* T : TweenObjects)
-    {
-        if (IsValid(T))
-            T->Destroy();
-    }
-    TweenObjects.Empty();
+    //for (UWidget* Widget : WeaponTextNumbers)
+    //{
+    //    Widget->SetRenderOpacity(0.f);
 
-    for (UWidget* Widget : WeaponTextNumbers)
-    {
-        Widget->SetRenderOpacity(0.f);
-
-        // Fade in
-        FCTween::Play(
-            0.f,
-            1.f,
-            [Widget](float t)
-            {
-                Widget->SetRenderOpacity(t);
-            },
-            1.0f,
-            EFCEase::OutCubic
-        )
-            ->SetOnComplete([this, Widget]()
-                {
-                    // Delay 2 seconds using a WAIT tween
-                    FCTween::Play(
-                        0.f, 0.f,
-                        [](float) {},
-                        4.0f,
-                        EFCEase::Linear
-                    )
-                        ->SetOnComplete([Widget]()
-                            {
-                                // Fade out
-                                FCTween::Play(
-                                    1.f,
-                                    0.f,
-                                    [Widget](float t)
-                                    {
-                                        Widget->SetRenderOpacity(t);
-                                    },
-                                    1.0f,
-                                    EFCEase::OutCubic
-                                );
-                            });
-                });
-    }
+    //    // Fade in
+    //    FCTween::Play(
+    //        0.f,
+    //        1.f,
+    //        [Widget](float t)
+    //        {
+    //            Widget->SetRenderOpacity(t);
+    //        },
+    //        1.0f,
+    //        EFCEase::OutCubic
+    //    )
+    //        ->SetOnComplete([this, Widget]()
+    //            {
+    //                // Delay 2 seconds using a WAIT tween
+    //                FCTween::Play(
+    //                    0.f, 0.f,
+    //                    [](float) {},
+    //                    4.0f,
+    //                    EFCEase::Linear
+    //                )
+    //                    ->SetOnComplete([Widget]()
+    //                        {
+    //                            // Fade out
+    //                            FCTween::Play(
+    //                                1.f,
+    //                                0.f,
+    //                                [Widget](float t)
+    //                                {
+    //                                    Widget->SetRenderOpacity(t);
+    //                                },
+    //                                1.0f,
+    //                                EFCEase::OutCubic
+    //                            );
+    //                        });
+    //            });
+    //}
 }

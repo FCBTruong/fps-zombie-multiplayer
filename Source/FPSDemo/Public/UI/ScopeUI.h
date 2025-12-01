@@ -19,9 +19,6 @@ class FPSDEMO_API UScopeUI : public UUserWidget
 private:
 	UPROPERTY(meta = (BindWidget))
 	UImage* ScopeImage;
-
-	UPROPERTY(meta = (BindWidget))
-	UCanvasPanel* Crosshair;
 public:
 	void ShowScope();
 	void HideScope();

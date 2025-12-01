@@ -9,11 +9,6 @@ void UScopeUI::ShowScope()
 	{
 		ScopeImage->SetVisibility(ESlateVisibility::Visible);
 	}
-	if (Crosshair)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Hiding Crosshair"));
-		Crosshair->SetVisibility(ESlateVisibility::Hidden);
-	}
 }
 
 void UScopeUI::HideScope()
@@ -21,10 +16,5 @@ void UScopeUI::HideScope()
 	if (ScopeImage)
 	{
 		ScopeImage->SetVisibility(ESlateVisibility::Hidden);
-	}
-	if (Crosshair)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Showing Crosshair"));
-		Crosshair->SetVisibility(ESlateVisibility::Visible);
 	}
 }

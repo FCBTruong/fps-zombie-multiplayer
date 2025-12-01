@@ -8,8 +8,8 @@ public class FPSDemoEditorTarget : TargetRules
 	public FPSDemoEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
-		DefaultBuildSettings = BuildSettingsVersion.V5;
-
-		ExtraModuleNames.AddRange( new string[] { "FPSDemo" } );
+		DefaultBuildSettings = BuildSettingsVersion.Latest;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6;
+        ExtraModuleNames.AddRange( new string[] { "FPSDemo" } );
 	}
 }
