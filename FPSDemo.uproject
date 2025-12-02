@@ -19,8 +19,5 @@
 			"Name": "NiagaraFluids",
 			"Enabled": true
 		}
-	],
-	"AdditionalPluginDirectories": [
-		"Plugins"
 	]
 }

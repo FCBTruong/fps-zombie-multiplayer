@@ -285,6 +285,29 @@ void UWeaponComponent::MulticastDropWeapon_Implementation(FPickupData Data) {
 
 void UWeaponComponent::StartReload() {
     if (!bIsReloading) {
+        if (CurrentWeaponId == EItemId::NONE) {
+            UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon equipped"));
+            return;
+		}
+
+		FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
+        if (!WeaponState) {
+            UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon state found for %d"), (int32)CurrentWeaponId);
+			return;
+		}
+
+		// if full clip, no need to reload
+		UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+        if (!WeaponConf) {
+            UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon data found for %d"), (int32)CurrentWeaponId);
+			return;
+		}
+
+        if (WeaponState->AmmoInClip >= WeaponConf->MaxAmmoInClip) {
+            UE_LOG(LogTemp, Warning, TEXT("StartReload: Clip is already full for %d"), (int32)CurrentWeaponId);
+			return;
+		}
+
         if (GetOwner()->GetLocalRole() < ROLE_Authority) {
             ServerReload();
         }
@@ -473,13 +496,32 @@ void UWeaponComponent::OnFire() {
         FRotator CameraRotation;
         Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
         FVector ShotDirection = CameraRotation.Vector();
-           
-		ServerOnFire(CameraLocation, ShotDirection);
+		FString HitBoneName = TEXT("");
+        
+		// Trace to find hit point and bone name
+		FVector Start = CameraLocation;
+		FVector End = Start + ShotDirection * 100000.f;
+		FHitResult Hit;
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(Character);
+
+        bool bHit = GetWorld()->LineTraceSingleByChannel(
+            Hit, Start, End, ECC_Visibility, Params
+        );
+
+		if (bHit) {
+            HitBoneName = Hit.BoneName.ToString();
+		}
+        else {
+            HitBoneName = TEXT("None");
+		}
+
+		ServerOnFire(CameraLocation, ShotDirection, HitBoneName);
     }
 }
 
-void UWeaponComponent::ServerOnFire_Implementation(FVector StartPoint, FVector Direction) {
-	HandleOnFire(StartPoint, Direction);
+void UWeaponComponent::ServerOnFire_Implementation(const FVector& StartPoint, const FVector& Direction, const FString& HitBoneName) {
+	HandleOnFire(StartPoint, Direction, HitBoneName);
 }
 
 void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
@@ -504,7 +546,7 @@ void UWeaponComponent::MulticastDoMeleeAttack_Implementation(int AttackIdx) {
 
 
 // Server function
-void UWeaponComponent::HandleOnFire(FVector StartPos, FVector Direction) {
+void UWeaponComponent::HandleOnFire(FVector StartPos, FVector Direction, FString HitBoneName) {
     if (GetOwner()->HasAuthority()) // only server makes changes
     {
         if (!Character) {
@@ -520,6 +562,8 @@ void UWeaponComponent::HandleOnFire(FVector StartPos, FVector Direction) {
             UE_LOG(LogTemp, Warning, TEXT("OnFire: Server can not shoot now"));
             return;
 		}
+        UE_LOG(LogTemp, Warning, TEXT("OnFire: Server hit bone: %s"), *HitBoneName);
+
 		// decrease ammo
         if (CurrentWeaponId == RifleState.ItemId) {
 			RifleState.AmmoInClip = FMath::Max(0, RifleState.AmmoInClip - 1);
@@ -560,50 +604,58 @@ void UWeaponComponent::HandleOnFire(FVector StartPos, FVector Direction) {
         FCollisionQueryParams Params;
         Params.AddIgnoredActor(Character);
 
-        bool bHit = GetWorld()->LineTraceSingleByChannel(
-            Hit, Start, End, ECC_Visibility, Params
-        );
+        bool bHit = false;
+        if (HitBoneName != "None")
+        {
+            // use precise trace if we have bone name
+            bHit = GetWorld()->LineTraceSingleByChannel(
+                Hit, Start, End, ECC_Pawn, Params
+            );
+        }
 
 		float Damage = 25.f; // Example damage value
+
+      
+		FVector TargetPoint = bHit ? Hit.ImpactPoint : End;
 
         //DrawDebugLine(
         //    GetWorld(),
         //    Start,
-        //    End,
+        //    TargetPoint,
         //    FColor::Red,
         //    false,      // persistent lines?
-        //    1.0f,       // life time
+        //    3.0f,       // life time
         //    0,          // depth priority
         //    1.5f        // thickness
         //);
-		FVector TargetPoint = bHit ? Hit.ImpactPoint : End;
-       
-        if (bHit && Damage > 0.f)
-        {
-            FMyPointDamageEvent DamageEvent;
-            DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
-            DamageEvent.WeaponID = CurrentWeaponId;
+        
+        if (bHit) {
+            AActor* HitActor = Hit.GetActor();
+            if (HitActor)
+            {
+                FMyPointDamageEvent DamageEvent;
+                DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
+                DamageEvent.WeaponID = CurrentWeaponId;
+                float Multiplier = 1.f;
+                UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *Hit.GetComponent()->GetName());
 
-            FName HitBone = Hit.BoneName;
-            float Multiplier = 1.f;
-            UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *Hit.GetComponent()->GetName());
+                if (HitBoneName == "head")
+                {
+                    Multiplier = 3.0f;
+					DamageEvent.bIsHeadshot = true;
+                }
+                else if (HitBoneName.StartsWith("neck") || HitBoneName.Contains("spine") || HitBoneName == "pelvis" || HitBoneName.Contains("clavicle"))
+                    Multiplier = 1.0f;
+                else if (HitBoneName.Contains("arm") || HitBoneName.Contains("hand"))
+                    Multiplier = 0.75f;
+                else if (HitBoneName.Contains("thigh") || HitBoneName.Contains("calf") || HitBoneName.Contains("foot"))
+                    Multiplier = 0.75f;
 
-            FString BoneStr = HitBone.ToString();
+                float FinalDamage = Damage * Multiplier;
 
-            if (BoneStr == "head")
-                Multiplier = 3.0f;
-            else if (BoneStr.StartsWith("neck") || BoneStr.Contains("spine") || BoneStr == "pelvis" || BoneStr.Contains("clavicle"))
-                Multiplier = 1.0f;
-            else if (BoneStr.Contains("arm") || BoneStr.Contains("hand"))
-                Multiplier = 0.75f;
-            else if (BoneStr.Contains("thigh") || BoneStr.Contains("calf") || BoneStr.Contains("foot"))
-                Multiplier = 0.75f;
-
-            float FinalDamage = Damage * Multiplier;
-			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server hit bone: %s"), *HitBone.ToString());
- 
-            float ActualDamage = Hit.GetActor()->TakeDamage(FinalDamage, DamageEvent, Character->GetController(), nullptr);
-			UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applied damage: %f"), ActualDamage);
+                float ActualDamage = HitActor->TakeDamage(FinalDamage, DamageEvent, Character->GetController(), nullptr);
+                UE_LOG(LogTemp, Warning, TEXT("OnFire: Server applied damage: %f"), ActualDamage);
+            }
         }
 
         UE_LOG(LogTemp, Warning, TEXT("OnFire: Server calling MulticastPlayFireRifle"));

@@ -163,6 +163,10 @@ void ABaseCharacter::BeginPlay()
 
     if (this->IsLocallyControlled())
     {
+        if (HasAuthority())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled and has authority"));
+		}
         bIsFPS = true;
         UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
     }
@@ -569,6 +573,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     LastHitByController = EventInstigator;
+	bLastHitWasHeadshot = false;
 
     if (DamageEvent.IsOfType(FMyPointDamageEvent::ClassID))
     {
@@ -581,6 +586,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
         UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
         LastDamageCauser = GMR->GetWeaponDataById(WeaponId);
+		bLastHitWasHeadshot = MyEvent->bIsHeadshot;
     }
     else if (DamageCauser) {
 		AThrownProjectile* Projectile = Cast<AThrownProjectile>(DamageCauser);
@@ -692,7 +698,7 @@ void ABaseCharacter::HandleDeath()
         // get game mode and notify
         if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
         {
-            GM->NotifyPlayerKilled(LastHitByController, GetController(), LastDamageCauser);
+            GM->NotifyPlayerKilled(LastHitByController, GetController(), LastDamageCauser, bLastHitWasHeadshot);
         }
         if (LastHitByController)
         {

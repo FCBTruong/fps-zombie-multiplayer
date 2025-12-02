@@ -43,10 +43,22 @@ void ATeamEliminationMode::AddPlayer(APlayerController* NewPlayer)
     PS->SetTeamID(AssignedTeam);
 }
 
+FString ATeamEliminationMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) {
+
+    UE_LOG(LogTemp, Warning, TEXT("InitNewPlayer called in TeamEliminationMode"));
+    UE_LOG(LogTemp, Warning, TEXT("DEBUGXXX-01"));
+    AddPlayer(NewPlayerController);
+	return Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);    
+}
+
+void ATeamEliminationMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) {
+    UE_LOG(LogTemp, Warning, TEXT("HandleStartingNewPlayer_Implementation called in TeamEliminationMode"));
+    UE_LOG(LogTemp, Warning, TEXT("DEBUGXXX-03"));
+	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
+}
+
 void ATeamEliminationMode::PostLogin(APlayerController* NewPlayer)
 {
-    UE_LOG(LogTemp, Warning, TEXT("DEBUGXXX-01"));
-	AddPlayer(NewPlayer);
 	Super::PostLogin(NewPlayer);
 
 	// log number of players in each team
@@ -145,7 +157,7 @@ void ATeamEliminationMode::EndGame(FName WinningTeam)
     // Implement additional end game logic here (e.g., display UI, reset game, etc.)
 }
 
-void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser)
+void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeadShot)
 {
     Super::NotifyPlayerKilled(Killer, Victim, DamageCauser);
 	UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in TeamEliminationMode"));
@@ -167,7 +179,7 @@ void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class A
     ATeamEliminationState* GS = GetGameState<ATeamEliminationState>();
     if (GS)
     {
-        GS->MulticastKillNotify(KillerPS, VictimPS, DamageCauser);
+        GS->MulticastKillNotify(KillerPS, VictimPS, DamageCauser, bWasHeadShot);
     }
 }
 

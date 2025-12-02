@@ -19,5 +19,5 @@ public:
 	TArray<FPickupData> GetItemsOnMap() const;
     
     UFUNCTION(NetMulticast, UnReliable)
-    void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser);
+    void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser, bool bWasHeadShot);
 };

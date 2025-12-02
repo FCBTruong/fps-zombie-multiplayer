@@ -12,6 +12,9 @@ struct FMyPointDamageEvent : public FPointDamageEvent
 
     UPROPERTY()
     EItemId WeaponID = EItemId::NONE;
+    
+    UPROPERTY()
+	bool bIsHeadshot = false;
 
     FMyPointDamageEvent() {}
 

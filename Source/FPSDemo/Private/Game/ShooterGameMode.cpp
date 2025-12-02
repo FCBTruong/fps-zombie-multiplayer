@@ -110,7 +110,7 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 }
 
 
-void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser)
+void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeatShot)
 {
     
 }

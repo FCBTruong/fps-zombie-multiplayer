@@ -44,6 +44,7 @@ protected:
 
     UPROPERTY()
 	AController* LastHitByController = nullptr;
+	bool bLastHitWasHeadshot = false;
 
     UPROPERTY()
     UWeaponData* LastDamageCauser = nullptr;

@@ -26,7 +26,7 @@ TArray<FPickupData> AShooterGameState::GetItemsOnMap() const
 }
 
 
-void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser)
+void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser, bool bWasHeadShot)
 {
     const FString KillerName = Killer ? Killer->GetPlayerName() : TEXT("Unknown");
     const FString VictimName = Victim ? Victim->GetPlayerName() : TEXT("Unknown");
@@ -43,6 +43,6 @@ void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Kille
 
        
 
-		MyPC->PlayerUI->NotifyKill(KillerName, VictimName, DamageCauser, false);
+		MyPC->PlayerUI->NotifyKill(KillerName, VictimName, DamageCauser, bWasHeadShot);
     }
 }
