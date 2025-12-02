@@ -109,6 +109,7 @@ void UPlayerUI::OnEnter()
 	ShowIconGrenade(EItemId::GRENADE_SMOKE, false);
 	ShowIconGrenade(EItemId::GRENADE_STUN, false);
 	ShowIconGrenade(EItemId::GRENADE_INCENDIARY, false);
+	ScopeUI->HideScope();
 }
 
 void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponConf, bool bIsHeadShot)
@@ -366,4 +367,18 @@ void UPlayerUI::ShowWeaponGuide()
     //                        });
     //            });
     //}
+}
+
+
+void UPlayerUI::ShowScope()
+{
+	WBP_Crosshair->SetVisibility(ESlateVisibility::Hidden);
+    ScopeUI->ShowScope();
+}
+
+void UPlayerUI::HideScope()
+{
+	WBP_Crosshair->SetVisibility(ESlateVisibility::Visible);
+    ScopeUI->HideScope();
+
 }

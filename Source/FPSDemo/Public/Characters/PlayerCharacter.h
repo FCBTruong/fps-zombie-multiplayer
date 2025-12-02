@@ -24,10 +24,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* ReloadMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scope")
-	TSubclassOf<UUserWidget> ScopeWidgetClass;
-
-	UScopeUI* CurrentScopeWidget;
 	float TargetFOV = 90.0f;
 
 public:

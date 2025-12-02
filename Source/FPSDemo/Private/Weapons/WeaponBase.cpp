@@ -64,7 +64,7 @@ void AWeaponBase::InitFromData(UWeaponData* InData)
 	ApplyWeaponData();
 }
 
-void AWeaponBase::OnFire(FVector TargetPoint)
+void AWeaponBase::OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint)
 {
 	// Implement firing logic here
 	UE_LOG(LogTemp, Warning, TEXT("WeaponBase OnFire called"));

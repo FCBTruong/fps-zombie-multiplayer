@@ -16,7 +16,7 @@ AWeaponFirearm::AWeaponFirearm()
 	AttachMagToDefault();
 }
 
-void AWeaponFirearm::OnFire(FVector TargetPoint)
+void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint)
 {
 	// Implement firing logic here
 	UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
@@ -50,9 +50,14 @@ void AWeaponFirearm::OnFire(FVector TargetPoint)
 
 	UE_LOG(LogTemp, Warning, TEXT("Shooter: %s"), *Shooter->GetName());
 
+	FVector StartPointBullet = MuzzleLocation;
+	if (bCustomStart) {
+		StartPointBullet = StartPoint;
+	}
+
 	ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
 		ABulletBase::StaticClass(),
-		MuzzleLocation,
+		StartPointBullet,
 		FRotator::ZeroRotator,
 		SpawnParams
 	);

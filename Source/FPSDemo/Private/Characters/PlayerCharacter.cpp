@@ -2,6 +2,7 @@
 
 
 #include "Characters/PlayerCharacter.h"
+#include "Controllers/MyPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 APlayerCharacter::APlayerCharacter() {
@@ -10,13 +11,6 @@ APlayerCharacter::APlayerCharacter() {
 
 void APlayerCharacter::BeginPlay() {
 	Super::BeginPlay();
-	if (ScopeWidgetClass && IsLocallyControlled()) {
-		CurrentScopeWidget = CreateWidget<UScopeUI>(GetWorld(), ScopeWidgetClass);
-		if (CurrentScopeWidget) {
-			CurrentScopeWidget->AddToViewport();
-			CurrentScopeWidget->HideScope();
-		}
-	}
 
 	if (WeaponComp) {
 		UE_LOG(LogTemp, Warning, TEXT("WeaponComp NOT null"));
@@ -61,6 +55,13 @@ void APlayerCharacter::UpdateAimingState()
 {
 	if (IsLocallyControlled()) {
 		UE_LOG(LogTemp, Warning, TEXT("Updating Aiming State: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
+		// Get Player controller and show scope widget
+		AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
+
+		if (!PC) {
+			UE_LOG(LogTemp, Warning, TEXT("PlayerController is null in UpdateAimingState"));
+			return;
+		}
 		if (bAiming)
 		{
 			// Smooth FOV zoom
@@ -69,10 +70,10 @@ void APlayerCharacter::UpdateAimingState()
 			if (WeaponComp->IsScopeEquipped()) {
 				TargetFOV = 20.f;
 				FirstPersonCamera->SetRelativeLocation(FVector(15.f, 20.f, 0.f));
-				AimSensitivity = 0.2f;
-				if (CurrentScopeWidget) {
-					CurrentScopeWidget->ShowScope();
-				}
+				AimSensitivity = 0.2f;			
+				
+				PC->ShowScope();
+
 
 				// update speed
 				GetCharacterMovement()->MaxWalkSpeed = ABaseCharacter::AIM_WALK_SPEED;
@@ -84,9 +85,7 @@ void APlayerCharacter::UpdateAimingState()
 
 			FirstPersonCamera->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
 			AimSensitivity = 1.0f;
-			if (CurrentScopeWidget) {
-				CurrentScopeWidget->HideScope();
-			}
+			PC->HideScope();
 			HandleUpdateSpeedWalkCurrently();
 		}
 	}

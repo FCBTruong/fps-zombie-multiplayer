@@ -48,4 +48,6 @@ public:
 
 	void CloseShopIfOpen();
 	void SetViewmodelOverlay(UMaterialInstanceDynamic* MID);
+	void ShowScope();
+	void HideScope();
 };

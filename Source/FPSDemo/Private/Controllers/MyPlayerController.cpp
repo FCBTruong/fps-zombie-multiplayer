@@ -221,3 +221,19 @@ void AMyPlayerController::SetViewmodelOverlay(UMaterialInstanceDynamic* MID)
 		PlayerUI->ViewmodelOverlay->SetBrushFromMaterial(MID);
     }
 }
+
+void AMyPlayerController::ShowScope()
+{
+    if (PlayerUI)
+    {
+		PlayerUI->ShowScope();
+	}
+}
+
+void AMyPlayerController::HideScope()
+{
+    if (PlayerUI)
+    {
+        PlayerUI->HideScope();
+	}
+}

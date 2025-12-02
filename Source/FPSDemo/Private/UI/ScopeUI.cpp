@@ -5,16 +5,10 @@
 
 void UScopeUI::ShowScope()
 {
-	if (ScopeImage)
-	{
-		ScopeImage->SetVisibility(ESlateVisibility::Visible);
-	}
+	this->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UScopeUI::HideScope()
 {
-	if (ScopeImage)
-	{
-		ScopeImage->SetVisibility(ESlateVisibility::Hidden);
-	}
+	this->SetVisibility(ESlateVisibility::Hidden);
 }

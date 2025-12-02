@@ -75,6 +75,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	int32 AmmoBonusShop = 90;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	bool HasScopeEquiped = false;
 
 
 

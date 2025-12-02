@@ -114,14 +114,14 @@ public:
 	EWeaponTypes GetCurrentWeaponType();
 	void DropWeapon();
 	UFUNCTION(Server, Reliable)
-	void ServerOnFire(const FVector& StartPoint, const FVector& Direction, const FString& HitBoneName);
+	void ServerOnFire(const FVector& StartPoint, const FVector& TargetPoint, const FString& HitBoneName);
 	UFUNCTION(Server, Reliable)
 	void ServerDoMeleeAttack(int AttackIdx);
 
 	void OnLeftClickStart();
 	void OnLeftClickRelease();
 	void OnFire();
-	void HandleOnFire(FVector StartPos, FVector Direction, FString HitBoneName);
+	void HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, const FString& HitBoneName);
 	void StartAiming();
 	void StartReload();
 	bool CanShoot();

@@ -17,8 +17,7 @@ class FPSDEMO_API UScopeUI : public UUserWidget
 	GENERATED_BODY()
 
 private:
-	UPROPERTY(meta = (BindWidget))
-	UImage* ScopeImage;
+	
 public:
 	void ShowScope();
 	void HideScope();

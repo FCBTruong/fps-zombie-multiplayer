@@ -29,7 +29,7 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	virtual void OnFire(FVector TargetPoint);
+	virtual void OnFire(const FVector& TargetPoint, bool bCustomStart = false, const FVector& StartPoint = FVector::ZeroVector); // start point for case if bullet comes out from camera
 	EWeaponTypes GetWeaponType();
 	virtual void InitFromData(class UWeaponData* InData);
 	UWeaponData* GetWeaponData() { return Data; };

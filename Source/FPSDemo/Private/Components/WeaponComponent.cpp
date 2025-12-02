@@ -516,12 +516,15 @@ void UWeaponComponent::OnFire() {
             HitBoneName = TEXT("None");
 		}
 
-		ServerOnFire(CameraLocation, ShotDirection, HitBoneName);
+        FVector TargetPoint = bHit ? Hit.ImpactPoint : End;
+		ServerOnFire(CameraLocation, TargetPoint, HitBoneName);
+		// effect fire, no need to wait server
+		PlayEffectFire(TargetPoint);
     }
 }
 
-void UWeaponComponent::ServerOnFire_Implementation(const FVector& StartPoint, const FVector& Direction, const FString& HitBoneName) {
-	HandleOnFire(StartPoint, Direction, HitBoneName);
+void UWeaponComponent::ServerOnFire_Implementation(const FVector& StartPoint, const FVector& TargetPoint, const FString& HitBoneName) {
+	HandleOnFire(StartPoint, TargetPoint, HitBoneName);
 }
 
 void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
@@ -546,7 +549,7 @@ void UWeaponComponent::MulticastDoMeleeAttack_Implementation(int AttackIdx) {
 
 
 // Server function
-void UWeaponComponent::HandleOnFire(FVector StartPos, FVector Direction, FString HitBoneName) {
+void UWeaponComponent::HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, const FString& HitBoneName) {
     if (GetOwner()->HasAuthority()) // only server makes changes
     {
         if (!Character) {
@@ -585,7 +588,7 @@ void UWeaponComponent::HandleOnFire(FVector StartPos, FVector Direction, FString
         }
 
         FVector ServerForward = Character->GetBaseAimRotation().Vector().GetSafeNormal();
-        FVector ClientDirNorm = Direction.GetSafeNormal();
+		FVector ClientDirNorm = (TargetPoint - StartPos).GetSafeNormal();
 
         float Dot = FVector::DotProduct(ServerForward, ClientDirNorm);
 
@@ -598,7 +601,7 @@ void UWeaponComponent::HandleOnFire(FVector StartPos, FVector Direction, FString
 
         // start from head or eyes
         FVector Start = StartPos;
-        FVector End = StartPos + Direction * 100000.f;
+        FVector End = StartPos + ClientDirNorm * 100000.f;
 
         FHitResult Hit;
         FCollisionQueryParams Params;
@@ -614,9 +617,6 @@ void UWeaponComponent::HandleOnFire(FVector StartPos, FVector Direction, FString
         }
 
 		float Damage = 25.f; // Example damage value
-
-      
-		FVector TargetPoint = bHit ? Hit.ImpactPoint : End;
 
         //DrawDebugLine(
         //    GetWorld(),
@@ -675,11 +675,24 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
         APlayerCharacter* Player = Cast<APlayerCharacter>(GetOwner());
         Player->PlayFireRifleMontage(TargetPoint);
 
-        CurrentWeapon->OnFire(TargetPoint);
+        if (IsLocalControl()) {
+            // Get view point
+            FVector CameraLocation;
+            FRotator CameraRotation;
+            Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
+
+            CurrentWeapon->OnFire(TargetPoint, true, CameraLocation);
+		}
+        else {
+            CurrentWeapon->OnFire(TargetPoint);
+        }
     }
 }
 
 void UWeaponComponent::MulticastPlayFireRifle_Implementation(FVector TargetPoint) {
+	if (IsLocalControl()) {
+        return; // skip local player
+	}
     PlayEffectFire(TargetPoint);
 }
 
@@ -702,7 +715,7 @@ bool UWeaponComponent::IsScopeEquipped()
     {
     
 		UWeaponData* WeaponData = CurrentWeapon->GetWeaponData();
-        if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm)
+        if (WeaponData && WeaponData->WeaponType == EWeaponTypes::Firearm && WeaponData->HasScopeEquiped)
         {
             return true;
         }

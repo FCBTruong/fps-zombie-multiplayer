@@ -21,7 +21,7 @@ public:
 	virtual bool CanFire() {
 		return true;
 	};
-	void OnFire(FVector TargetPoint) override;
+	virtual void OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint) override;
 	void PlayOutOfAmmoSound();
 	void PlayReloadSound();
 	UStaticMeshComponent* MagMesh;

@@ -11,6 +11,8 @@
 #include "UI/KillNotifySlot.h"
 #include "UI/ShopUI.h"
 #include "UI/GrenadeNodeUI.h"
+#include "UI/ScopeUI.h"
+#include "UI/Crosshair.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -64,12 +66,17 @@ protected:
 
 	TArray<UWidget*> WeaponTextNumbers;
 
+	UPROPERTY(meta = (BindWidget))
+	UCrosshair* WBP_Crosshair;
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* ViewmodelOverlay;
+
+	UPROPERTY(meta = (BindWidget))
+	UScopeUI* ScopeUI;
 
 	void NativeConstruct() override;
 	void ShowPickupMessage(const FString& Message);
@@ -90,5 +97,6 @@ public:
 	void UpdateGrenades(const TArray<EItemId>& GrenadeIds);
 	void UpdateCurrentWeapon(const EItemId& CurrentWeaponId);
 	void ShowWeaponGuide();
-
+	void ShowScope();
+	void HideScope();
 };
