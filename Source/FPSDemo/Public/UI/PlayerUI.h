@@ -51,6 +51,9 @@ protected:
 	UTextBlock* GrenadeTitle;
 
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* HpValueLb;
+
+	UPROPERTY(meta = (BindWidget))
 	UImage* RifleIcon;
 
 	UPROPERTY(meta = (BindWidget))

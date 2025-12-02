@@ -51,6 +51,7 @@ void UPlayerUI::UpdateHealth(float CurrentHealth, float MaxHealth)
     {
         HpBar->SetPercent(CurrentHealth / MaxHealth);
     }
+	HpValueLb->SetText(FText::AsNumber(FMath::RoundToInt(CurrentHealth)));
 }
 
 void UPlayerUI::UpdateAmmo(int CurrentAmmoValue, int TotalAmmoValue)
