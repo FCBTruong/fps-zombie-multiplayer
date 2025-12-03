@@ -12,6 +12,7 @@
 #include "UI/ShopUI.h"
 #include "UI/GrenadeNodeUI.h"
 #include "UI/ScopeUI.h"
+#include "Components/VerticalBox.h"
 #include "UI/Crosshair.h"
 #include "PlayerUI.generated.h"
 
@@ -82,6 +83,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* Rifle;
+
+	UPROPERTY(meta = (BindWidget))
+	UVerticalBox* WeaponsBox;
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;

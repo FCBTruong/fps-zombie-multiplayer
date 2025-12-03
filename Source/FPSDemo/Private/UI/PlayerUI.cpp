@@ -272,7 +272,7 @@ void UPlayerUI::UpdateGrenades(const TArray<EItemId>& GrenadeIds)
 
 void UPlayerUI::UpdatePistol(const EItemId& ItemId) {
     if (ItemId == EItemId::NONE) {
-        Pistol->SetVisibility(ESlateVisibility::Hidden);
+        Pistol->SetVisibility(ESlateVisibility::Collapsed);
     } else {
         Pistol->SetVisibility(ESlateVisibility::Visible);
         UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
@@ -286,7 +286,7 @@ void UPlayerUI::UpdatePistol(const EItemId& ItemId) {
 
 void UPlayerUI::UpdateRifle(const EItemId& ItemId) {
     if (ItemId == EItemId::NONE) {
-        Rifle->SetVisibility(ESlateVisibility::Hidden);
+        Rifle->SetVisibility(ESlateVisibility::Collapsed);
     }
     else {
         Rifle->SetVisibility(ESlateVisibility::Visible);

@@ -13,6 +13,7 @@
 #include "Projectiles/ThrownProjectileFrag.h"
 #include "Projectiles/ThrownProjectileSmoke.h"
 #include "Projectiles/ThrownProjectileStun.h"
+#include "Projectiles/ThrownProjectileIncendiary.h"
 #include "Damage/MyDamageType.h"
 #include "GameFramework/DamageType.h"
 #include "Engine/EngineTypes.h"
@@ -443,6 +444,12 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
             StartPos,
             FRotator::ZeroRotator);
 	}
+    else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Incendiary) {
+        ThrownProj = GetWorld()->SpawnActor<AThrownProjectileIncendiary>(
+            AThrownProjectileIncendiary::StaticClass(),
+            StartPos,
+            FRotator::ZeroRotator);
+	}
     else {
         ThrownProj = GetWorld()->SpawnActor<AThrownProjectile>(
             AThrownProjectileFrag::StaticClass(),
@@ -616,7 +623,12 @@ void UWeaponComponent::HandleOnFire(const FVector& StartPos, const FVector& Targ
             );
         }
 
-		float Damage = 25.f; // Example damage value
+		UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+        if (!WeaponConf) {
+            UE_LOG(LogTemp, Warning, TEXT("OnFire: Server no weapon data for %d"), (int32)CurrentWeaponId);
+            return;
+		}
+        float Damage = WeaponConf->Damage;
 
         //DrawDebugLine(
         //    GetWorld(),
