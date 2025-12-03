@@ -44,6 +44,11 @@ protected:
 	UImage* FlashScreen;
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* FlashScreenAnim;
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* ShowWeaponNumbers;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* ShowWeaponIcons;
 
 	UPROPERTY(meta = (BindWidget))
 	UStackBox* GrenadesStack;
@@ -71,6 +76,12 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UCrosshair* WBP_Crosshair;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* Pistol;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* Rifle;
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
@@ -102,4 +113,6 @@ public:
 	void ShowWeaponGuide();
 	void ShowScope();
 	void HideScope();
+	void UpdatePistol(const EItemId& ItemId);
+	void UpdateRifle(const EItemId& ItemId);
 };

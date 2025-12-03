@@ -22,11 +22,6 @@ void UPlayerUI::NativeConstruct()
             WeaponTextNumbers.Add(Widget);
         }
     }
-    for (UWidget* Widget : WeaponTextNumbers)
-    {
-        // Fade-in
-        Widget->SetRenderOpacity(0.f);
-    }
 }
 void UPlayerUI::ShowPickupMessage(const FString& Message)
 {
@@ -275,9 +270,38 @@ void UPlayerUI::UpdateGrenades(const TArray<EItemId>& GrenadeIds)
     }
 }
 
+void UPlayerUI::UpdatePistol(const EItemId& ItemId) {
+    if (ItemId == EItemId::NONE) {
+        Pistol->SetVisibility(ESlateVisibility::Hidden);
+    } else {
+        Pistol->SetVisibility(ESlateVisibility::Visible);
+        UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+        UWeaponData* WeaponConf = GMR->GetWeaponDataById(ItemId);
+        if (WeaponConf == nullptr) {
+            return;
+        }
+        PistolIcon->SetBrushFromTexture(WeaponConf->Icon);
+    }
+}
+
+void UPlayerUI::UpdateRifle(const EItemId& ItemId) {
+    if (ItemId == EItemId::NONE) {
+        Rifle->SetVisibility(ESlateVisibility::Hidden);
+    }
+    else {
+        Rifle->SetVisibility(ESlateVisibility::Visible);
+        UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+        UWeaponData* WeaponConf = GMR->GetWeaponDataById(ItemId);
+        if (WeaponConf == nullptr) {
+            return;
+        }
+        RifleIcon->SetBrushFromTexture(WeaponConf->Icon);
+    }
+}
+
 void UPlayerUI::UpdateCurrentWeapon(const EItemId& CurrentWeaponId) {
     GrenadeTitle->SetText(FText::GetEmpty());
-
+    WBP_Crosshair->SetVisibility(ESlateVisibility::Visible);
 
     for (UGrenadeNodeUI* Grenade : Grenades)
     {
@@ -314,6 +338,9 @@ void UPlayerUI::UpdateCurrentWeapon(const EItemId& CurrentWeaponId) {
                     RifleIcon->SetBrushFromTexture(WeaponConf->Icon);
 				}
             }
+            if (WeaponConf->HasScopeEquiped) {
+                WBP_Crosshair->SetVisibility(ESlateVisibility::Hidden);
+			}
         }
         else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
             //Pistol
@@ -328,58 +355,17 @@ void UPlayerUI::UpdateCurrentWeapon(const EItemId& CurrentWeaponId) {
 
 void UPlayerUI::ShowWeaponGuide()
 {
-    //for (UWidget* Widget : WeaponTextNumbers)
-    //{
-    //    Widget->SetRenderOpacity(0.f);
-
-    //    // Fade in
-    //    FCTween::Play(
-    //        0.f,
-    //        1.f,
-    //        [Widget](float t)
-    //        {
-    //            Widget->SetRenderOpacity(t);
-    //        },
-    //        1.0f,
-    //        EFCEase::OutCubic
-    //    )
-    //        ->SetOnComplete([this, Widget]()
-    //            {
-    //                // Delay 2 seconds using a WAIT tween
-    //                FCTween::Play(
-    //                    0.f, 0.f,
-    //                    [](float) {},
-    //                    4.0f,
-    //                    EFCEase::Linear
-    //                )
-    //                    ->SetOnComplete([Widget]()
-    //                        {
-    //                            // Fade out
-    //                            FCTween::Play(
-    //                                1.f,
-    //                                0.f,
-    //                                [Widget](float t)
-    //                                {
-    //                                    Widget->SetRenderOpacity(t);
-    //                                },
-    //                                1.0f,
-    //                                EFCEase::OutCubic
-    //                            );
-    //                        });
-    //            });
-    //}
+	PlayAnimation(ShowWeaponNumbers);
+	PlayAnimation(ShowWeaponIcons);
 }
 
 
 void UPlayerUI::ShowScope()
 {
-	WBP_Crosshair->SetVisibility(ESlateVisibility::Hidden);
     ScopeUI->ShowScope();
 }
 
 void UPlayerUI::HideScope()
 {
-	WBP_Crosshair->SetVisibility(ESlateVisibility::Visible);
     ScopeUI->HideScope();
-
 }

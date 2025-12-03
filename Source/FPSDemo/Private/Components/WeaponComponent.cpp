@@ -1301,7 +1301,25 @@ FWeaponState* UWeaponComponent::GetWeaponStateByItemId(EItemId ItemId)
 	return nullptr;
 }
 
-void UWeaponComponent::OnRep_GunState()
+void UWeaponComponent::OnRep_RifleState() {
+    if (CurrentWeaponId == RifleState.ItemId) {
+        UpdateStateCurrentWeapon();
+	}
+	OnUpdateRifleWeapon.Broadcast(RifleState.ItemId);
+}
+
+void UWeaponComponent::OnRep_PistolState() {
+    if (CurrentWeaponId == PistolState.ItemId) {
+        UpdateStateCurrentWeapon();
+    }
+	OnUpdatePistolWeapon.Broadcast(PistolState.ItemId);
+}
+
+void UWeaponComponent::OnRep_MeleeState() {
+
+}
+
+void UWeaponComponent::UpdateStateCurrentWeapon()
 {
 	FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
     if (WeaponState) {
@@ -1311,4 +1329,11 @@ void UWeaponComponent::OnRep_GunState()
 
 void UWeaponComponent::OnRep_Grenades() {
     OnUpdateGrenades.Broadcast(ThrowablesArray);
+}
+
+void UWeaponComponent::TriggerUpdateUI() {
+	OnRep_CurrentWeapon();
+	OnRep_Grenades();
+	OnRep_RifleState();
+	OnRep_PistolState();
 }

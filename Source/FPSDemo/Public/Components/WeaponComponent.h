@@ -24,6 +24,9 @@ class ABaseCharacter;
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateAmmoState, int, int);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGrenades, const TArray<EItemId>&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateCurrentWeapon, const EItemId&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRifleWeapon, const EItemId&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePistolWeapon, const EItemId&);
+
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponComponent : public UActorComponent
@@ -84,11 +87,11 @@ protected:
 	void InitState();
 	void OnFinishedReload();
 
-	UPROPERTY(ReplicatedUsing = OnRep_GunState)
+	UPROPERTY(ReplicatedUsing = OnRep_RifleState)
 	FWeaponState RifleState;
-	UPROPERTY(ReplicatedUsing = OnRep_GunState)
+	UPROPERTY(ReplicatedUsing = OnRep_PistolState)
 	FWeaponState PistolState;
-	UPROPERTY(ReplicatedUsing = OnRep_GunState)
+	UPROPERTY(ReplicatedUsing = OnRep_MeleeState)
 	FWeaponState MeleeState;
 	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
 	TArray<EItemId> ThrowablesArray;
@@ -101,7 +104,12 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentWeapon();
 	UFUNCTION()
-	void OnRep_GunState();
+	void OnRep_RifleState();
+	UFUNCTION()
+	void OnRep_PistolState();
+	UFUNCTION()
+	void OnRep_MeleeState();
+	void UpdateStateCurrentWeapon();
 	UFUNCTION()
 	void OnRep_Grenades();
 public:	
@@ -179,4 +187,8 @@ public:
 	FOnUpdateGrenades OnUpdateGrenades;
 	FOnUpdateCurrentWeapon OnUpdateCurrentWeapon;
 	TArray<EItemId> GetGrenades() const { return ThrowablesArray; } 
+	FOnUpdateRifleWeapon OnUpdateRifleWeapon;
+	FOnUpdatePistolWeapon OnUpdatePistolWeapon;
+
+	void TriggerUpdateUI();
 };

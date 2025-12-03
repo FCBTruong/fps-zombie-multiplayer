@@ -97,8 +97,11 @@ void AMyPlayerController::BindingUI()
         {
             WC->OnUpdateAmmoState.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
             WC->OnUpdateGrenades.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
-            PlayerUI->UpdateGrenades(WC->GetGrenades());
             WC->OnUpdateCurrentWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdateCurrentWeapon);
+            WC->OnUpdateRifleWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdateRifle);
+            WC->OnUpdatePistolWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdatePistol);
+
+            WC->TriggerUpdateUI();
 		}
 
         Char->OnHit.AddUObject(PlayerUI, &UPlayerUI::OnHit);
@@ -197,6 +200,11 @@ void AMyPlayerController::OnRep_PlayerState()
     AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
     if (PS)
     {
+        if (!PlayerUI)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: PlayerUI is null, cannot bind money update"));
+            return;
+		}
         UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Binding money update for player state"));
         PS->OnUpdateMoney.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateShopMoneyStatus);
         PS->OnUpdateBoughtItems.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateBoughtItemsStatus);
