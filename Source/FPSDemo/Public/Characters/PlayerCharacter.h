@@ -22,16 +22,23 @@ protected:
 	UAnimMontage* FireRifleMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimMontage* FirePistolMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* ReloadMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimMontage* ReloadPistolMontage;
 
 	float TargetFOV = 90.0f;
 
 public:
 	void PlayFireRifleMontage(FVector TargetPoint);
+	void PlayFirePistolMontage(FVector TargetPoint);
 	void ClickAim() override;
 	void StartAiming();
 	void StopAiming();
 	void UpdateAimingState() override;
 	virtual void Tick(float DeltaTime) override;
-	void PlayReloadMontage() override;
+	void PlayReloadMontage(UWeaponData* WeaponConf) override;
 };

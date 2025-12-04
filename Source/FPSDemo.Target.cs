@@ -9,7 +9,7 @@ public class FPSDemoTarget : TargetRules
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
-
-		ExtraModuleNames.AddRange( new string[] { "FPSDemo"} );
+        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6;
+        ExtraModuleNames.AddRange( new string[] { "FPSDemo"} );
 	}
 }

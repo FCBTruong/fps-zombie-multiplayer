@@ -22,15 +22,15 @@ void AThrownProjectileIncendiary::OnExplode()
         true
     );
 
-    DrawDebugSphere(
-        GetWorld(),
-        GetActorLocation(),
-        Data->ExplosionRadius,
-        16,                 // segments
-        FColor::Red,
-        false,              // bPersistentLines
-        5.0f                // life time
-    );
+    //DrawDebugSphere(
+    //    GetWorld(),
+    //    GetActorLocation(),
+    //    Data->ExplosionRadius,
+    //    16,                 // segments
+    //    FColor::Red,
+    //    false,              // bPersistentLines
+    //    5.0f                // life time
+    //);
 }
 
 void AThrownProjectileIncendiary::MulticastExplode_Implementation(const FVector& ImpactPoint)

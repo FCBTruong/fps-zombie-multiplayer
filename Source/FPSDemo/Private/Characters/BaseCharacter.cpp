@@ -508,6 +508,14 @@ EWeaponTypes ABaseCharacter::GetWeaponType()
 	return EWeaponTypes::Unarmed;
 }
 
+EWeaponSubTypes ABaseCharacter::GetWeaponSubType()
+{
+    if (WeaponComp) {
+        return WeaponComp->GetCurrentWeaponSubType();
+    }
+    return EWeaponSubTypes::None;
+}
+
 
 void ABaseCharacter::ClickAim()
 {

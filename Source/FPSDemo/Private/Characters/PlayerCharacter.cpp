@@ -38,6 +38,16 @@ void APlayerCharacter::PlayFireRifleMontage(FVector TargetPoint)
 	}
 }
 
+void APlayerCharacter::PlayFirePistolMontage(FVector TargetPoint)
+{
+	// Implement firing animation logic here
+	UE_LOG(LogTemp, Warning, TEXT("Playing Fire Pistol Montage"));
+	if (FirePistolMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+	{
+		GetCurrentMesh()->GetAnimInstance()->Montage_Play(FirePistolMontage);
+	}
+}
+
 void APlayerCharacter::ClickAim()
 {
 	if (!WeaponComp->CanWeaponAim()) {
@@ -103,10 +113,20 @@ void APlayerCharacter::Tick(float DeltaTime)
 	}
 }
 
-void APlayerCharacter::PlayReloadMontage()
+void APlayerCharacter::PlayReloadMontage(UWeaponData* WeaponConf)
 {
-	if (ReloadMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
-	{
-		GetCurrentMesh()->GetAnimInstance()->Montage_Play(ReloadMontage);
+	if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
+		if (ReloadMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+		{
+			GetCurrentMesh()->GetAnimInstance()->Montage_Play(ReloadMontage);
+		}
+		UE_LOG(LogTemp, Warning, TEXT("Playing Reload Rifle Montage"));
+	}
+	else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
+		UE_LOG(LogTemp, Warning, TEXT("Playing Reload Pistol Montage"));
+		if (ReloadPistolMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+		{
+			GetCurrentMesh()->GetAnimInstance()->Montage_Play(ReloadPistolMontage);
+		}
 	}
 }

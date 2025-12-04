@@ -157,6 +157,8 @@ protected:
 	void UpdateView();
     UFUNCTION(BlueprintPure)
     EWeaponTypes GetWeaponType();
+    UFUNCTION(BlueprintPure)
+	EWeaponSubTypes GetWeaponSubType();
   
     UFUNCTION(Server, Reliable)
     void Server_UpdateLookInput(FVector2D NewLookInput);
@@ -296,7 +298,7 @@ public:
     UFUNCTION(Server, Reliable) void ServerRevive();
     UFUNCTION(NetMulticast, Reliable) void Multicast_ReviveFX();
 
-    virtual void PlayReloadMontage() {};
+    virtual void PlayReloadMontage(UWeaponData* WeaponConf) {};
 
     UFUNCTION(Client, UnReliable)
     void ClientPlayHitEffect();

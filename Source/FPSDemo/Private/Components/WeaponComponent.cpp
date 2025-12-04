@@ -193,6 +193,16 @@ EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
 	return EWeaponTypes::Unarmed;
 }
 
+EWeaponSubTypes UWeaponComponent::GetCurrentWeaponSubType() {
+    if (GMR) {
+        UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+        if (WeaponConf) {
+            return WeaponConf->WeaponSubType;
+        }
+    }
+    return EWeaponSubTypes::None;
+}
+
 void UWeaponComponent::DropWeapon() {
 	UE_LOG(LogTemp, Warning, TEXT("DropWeapon called"));
     if (CanDropWeapon(CurrentWeaponId)) {
@@ -682,10 +692,17 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
     if (!CurrentWeapon) {
         return;
     }
+	UWeaponData* WeaponConf = CurrentWeapon->GetWeaponData();
     
-    if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
+    if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
         APlayerCharacter* Player = Cast<APlayerCharacter>(GetOwner());
-        Player->PlayFireRifleMontage(TargetPoint);
+
+        if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
+            Player->PlayFireRifleMontage(TargetPoint);
+        }
+        else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
+            Player->PlayFirePistolMontage(TargetPoint);
+		}
 
         if (IsLocalControl()) {
             // Get view point
@@ -916,7 +933,8 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     FVector offsetRot = FVector(0.f, 0.f, 0.f);
     FString SocketName = "ik_hand_gun";
     bool bIsFPS = Character->IsFpsViewMode();
-    if (!CurrentWeapon->GetWeaponData()) {
+	UWeaponData* WeaponConf = CurrentWeapon->GetWeaponData();
+    if (!WeaponConf) {
         UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: No weapon data found"));
         return;
     }
@@ -924,6 +942,9 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     if (WeaType == EWeaponTypes::Firearm) {
         if (bIsFPS) {
             SocketName = "ik_hand_gun";
+            if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
+				SocketName = "ik_fps_pistol";
+            }
             offset = CurrentWeapon->GetWeaponData()->EquippedOffsetFps;
             offsetRot = CurrentWeapon->GetWeaponData()->EquippedOffsetRotationFps;
         }
@@ -1117,11 +1138,11 @@ void UWeaponComponent::HandleReload()
 void UWeaponComponent::MulticastReload_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("MulticastReload called"));
-    if (Character) {
-        Character->PlayReloadMontage();
-    }
-
     if (CurrentWeapon) {
+        if (Character) {
+            Character->PlayReloadMontage(CurrentWeapon->GetWeaponData());
+        }
+
         if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
         {
             Firearm->PlayReloadSound();

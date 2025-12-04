@@ -120,6 +120,7 @@ public:
 	void EquipWeapon(EItemId ItemId);
 	void OnNewItemPickup(int32 NewInventoryId);
 	EWeaponTypes GetCurrentWeaponType();
+	EWeaponSubTypes GetCurrentWeaponSubType();
 	void DropWeapon();
 	UFUNCTION(Server, Reliable)
 	void ServerOnFire(const FVector& StartPoint, const FVector& TargetPoint, const FString& HitBoneName);
