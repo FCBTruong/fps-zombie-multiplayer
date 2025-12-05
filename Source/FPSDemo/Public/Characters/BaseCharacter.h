@@ -23,6 +23,8 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/Material.h"
 #include "BehaviorTree/BehaviorTree.h"
+#include "Perception/AISense_Sight.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "BaseCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -152,6 +154,9 @@ protected:
     UAnimMontage* ReloadPistolMontage;
 
     float TargetFOV = 90.0f;
+
+    UPROPERTY()
+    UAIPerceptionStimuliSourceComponent* StimuliSource;
 public:
     ABaseCharacter();
 

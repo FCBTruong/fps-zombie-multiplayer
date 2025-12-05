@@ -107,13 +107,8 @@ void ATeamEliminationMode::BeginPlay()
 
     UE_LOG(LogTemp, Warning, TEXT("GameMode StartRound in 2 seconds"));
 
-    GetWorld()->GetTimerManager().SetTimer(
-        RoundStartTimer,
-        this,
-        &ATeamEliminationMode::StartRound,
-        2.0f,
-        false
-    );
+   
+    ATeamEliminationMode::StartRound();
 }
 
 void ATeamEliminationMode::StartRound()
@@ -127,7 +122,7 @@ void ATeamEliminationMode::StartRound()
     ResetPlayers();
 
     // test create bot AI 
-	SpawnBot("A");
+	SpawnBot("B");
 }
 
 void ATeamEliminationMode::ResetPlayers()
@@ -293,11 +288,12 @@ ABotAIController* ATeamEliminationMode::SpawnBot(FName TeamID)
     if (!Bot) return nullptr;
 
     // 2) Set team in PlayerState
-    if (AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>())
-    {
-        PS->SetTeamID(TeamID);
-        PS->SetIsAlive(true);
-    }
+    AMyPlayerState* NewPS = GetWorld()->SpawnActor<AMyPlayerState>(PlayerStateClass);
+    NewPS->SetOwner(Bot);
+    Bot->PlayerState = NewPS;
+   
+    NewPS->SetTeamID(TeamID);
+    NewPS->SetIsAlive(true);
 
     // 3) Restart to spawn Pawn
     RestartPlayer(Bot);

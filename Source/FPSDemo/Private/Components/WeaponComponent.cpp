@@ -1373,3 +1373,11 @@ void UWeaponComponent::TriggerUpdateUI() {
 	OnRep_RifleState();
 	OnRep_PistolState();
 }
+
+int UWeaponComponent::GetCurrentAmmoInClip() {
+    FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
+    if (WeaponState) {
+        return WeaponState->AmmoInClip;
+    }
+    return 0;
+}

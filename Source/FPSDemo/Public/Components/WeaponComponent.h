@@ -190,6 +190,8 @@ public:
 	TArray<EItemId> GetGrenades() const { return ThrowablesArray; } 
 	FOnUpdateRifleWeapon OnUpdateRifleWeapon;
 	FOnUpdatePistolWeapon OnUpdatePistolWeapon;
+	int GetCurrentAmmoInClip();
 
 	void TriggerUpdateUI();
+	bool IsReloading() const { return bIsReloading; }
 };

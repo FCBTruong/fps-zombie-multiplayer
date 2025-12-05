@@ -45,6 +45,10 @@ ABaseCharacter::ABaseCharacter()
 	}
 
     UE_LOG(LogTemp, Warning, TEXT("Binding OnTakeAnyDamage in ABaseCharacter"));
+
+    StimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSource"));
+    StimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
+    StimuliSource->RegisterWithPerceptionSystem();
 }
 
 // Called when the game starts or when spawned
