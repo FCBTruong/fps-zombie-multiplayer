@@ -135,10 +135,21 @@ void AMyPlayerController::ToggleShop()
     if (bIsShopOpen)
     {
         PlayerUI->OpenShop();
+
+        this->bShowMouseCursor = true;
+        SetIgnoreLookInput(true);
+        SetIgnoreMoveInput(true);
     }
     else
     {
         PlayerUI->CloseShop();
+        this->bShowMouseCursor = false;
+        FInputModeGameOnly GameInput;
+        this->SetInputMode(GameInput);
+        this->bShowMouseCursor = false;
+
+        SetIgnoreLookInput(false);
+        SetIgnoreMoveInput(false);
 	}
 }
 
@@ -161,6 +172,79 @@ void AMyPlayerController::SetupInputComponent()
         if (IA_ESCAPE)
         {
             EnhancedInput->BindAction(IA_ESCAPE, ETriggerEvent::Started, this, &AMyPlayerController::CloseShopIfOpen);
+        }
+
+        if (IMC_FPS)
+        {
+            if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+            {
+                Subsystem->AddMappingContext(IMC_FPS, 0);
+            }
+		}
+
+        if (IA_MOVEMENT)
+        {
+            EnhancedInput->BindAction(IA_MOVEMENT, ETriggerEvent::Triggered, this, &AMyPlayerController::Move);
+		}
+
+        if (IA_SHOOT)
+        {
+            EnhancedInput->BindAction(IA_SHOOT, ETriggerEvent::Started, this, &AMyPlayerController::OnLeftClickStart);
+            EnhancedInput->BindAction(IA_SHOOT, ETriggerEvent::Completed, this, &AMyPlayerController::OnLeftClickRelease);
+        }
+
+        if (IA_JUMP)
+        {
+            EnhancedInput->BindAction(IA_JUMP, ETriggerEvent::Started, this, &AMyPlayerController::Jump);
+        }
+
+        if (IA_CROUCH)
+        {
+            EnhancedInput->BindAction(IA_CROUCH, ETriggerEvent::Started, this, &AMyPlayerController::ClickCrouch);
+        }
+
+        if (IA_CAMERA)
+        {
+            EnhancedInput->BindAction(IA_CAMERA, ETriggerEvent::Triggered, this, &AMyPlayerController::Look);
+        }
+
+        if (IA_AIM)
+        {
+            EnhancedInput->BindAction(IA_AIM, ETriggerEvent::Started, this, &AMyPlayerController::ClickAim);
+        }
+        if (IA_RELOAD)
+        {
+            EnhancedInput->BindAction(IA_RELOAD, ETriggerEvent::Started, this, &AMyPlayerController::StartReload);
+        }
+        if (IA_PICKUP)
+        {
+            // With this line, using Enhanced Input system:
+            EnhancedInput->BindAction(IA_PICKUP, ETriggerEvent::Started, this, &AMyPlayerController::Pickup);
+        }
+        if (IA_CHANGE_VIEW)
+        {
+            EnhancedInput->BindAction(IA_CHANGE_VIEW, ETriggerEvent::Started, this, &AMyPlayerController::ChangeView);
+        }
+        if (IA_SELECT_FIRST_RIFLE)
+        {
+            EnhancedInput->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, this, &AMyPlayerController::EquipSlot, FGameConstants::SLOT_RIFLE);
+        }
+
+        if (IA_SELECT_MELEE)
+        {
+            EnhancedInput->BindAction(IA_SELECT_MELEE, ETriggerEvent::Started, this, &AMyPlayerController::EquipSlot, FGameConstants::SLOT_MELEE);
+        }
+        if (IA_SELECT_PISTOL)
+        {
+            EnhancedInput->BindAction(IA_SELECT_PISTOL, ETriggerEvent::Started, this, &AMyPlayerController::EquipSlot, FGameConstants::SLOT_PISTOL);
+        }
+        if (IA_SELECT_THROWABLE)
+        {
+            EnhancedInput->BindAction(IA_SELECT_THROWABLE, ETriggerEvent::Started, this, &AMyPlayerController::EquipSlot, FGameConstants::SLOT_THROWABLE);
+        }
+        if (IA_DROP_WEAPON)
+        {
+            EnhancedInput->BindAction(IA_DROP_WEAPON, ETriggerEvent::Started, this, &AMyPlayerController::DropWeapon);
         }
     }
 }
@@ -244,4 +328,145 @@ void AMyPlayerController::HideScope()
     {
         PlayerUI->HideScope();
 	}
+}
+
+void AMyPlayerController::Move(const FInputActionValue& Value)
+{
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    FVector2D MoveInput = Value.Get<FVector2D>();
+
+    const FRotator ControlRot = this->GetControlRotation();
+    const FRotator YawRot(0, ControlRot.Yaw, 0);
+
+    const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+    const FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+
+    MyPawn->AddMovementInput(Forward, MoveInput.Y);
+    MyPawn->AddMovementInput(Right, MoveInput.X);
+}
+
+void AMyPlayerController::OnLeftClickStart()
+{
+    if (bIsShopOpen) return;
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        {
+            WC->StartAttack();
+        }
+    }
+}
+
+void AMyPlayerController::OnLeftClickRelease()
+{
+    if (bIsShopOpen) return;
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        {
+            WC->StopAttack();
+        }
+    }
+}
+
+void AMyPlayerController::Jump() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        MyChar->Jump();
+    }
+}
+
+void AMyPlayerController::ClickCrouch() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        MyChar->ClickCrouch();
+    }
+}
+
+void AMyPlayerController::Look(const FInputActionValue& Value) {
+    FVector2D Axis = Value.Get<FVector2D>();
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn);
+	if (!MyChar) return;
+
+	float AimSensitivity = MyChar->GetAimSensitivity() * 0.3;
+
+    AddYawInput(Axis.X * AimSensitivity);
+    AddPitchInput(-Axis.Y * AimSensitivity);
+}
+
+void AMyPlayerController::ClickAim() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        MyChar->ClickAim();
+    }
+}
+
+void AMyPlayerController::StartReload() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        {
+            WC->StartReload();
+        }
+    }
+}
+
+void AMyPlayerController::Pickup() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UInteractComponent* IC = MyChar->FindComponentByClass<UInteractComponent>())
+        {
+            IC->TryPickup();
+        }
+    }
+}
+
+void AMyPlayerController::EquipSlot(const int32 SlotIndex) {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        {
+            WC->EquipSlot(SlotIndex);
+        }
+    }
+}
+
+void AMyPlayerController::DropWeapon() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        {
+            WC->DropWeapon();
+        }
+    }
+}
+
+void AMyPlayerController::ChangeView() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        MyChar->ChangeView();
+    }
 }

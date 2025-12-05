@@ -22,6 +22,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/Material.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "BaseCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -53,53 +54,6 @@ protected:
 	float SpeedWalkCurrently = NORMAL_WALK_SPEED;
     UFUNCTION()
 	void OnRepSpeedWalkCurrently();
-
-    // Enhanced Input assets to assign in Editor
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_Movement;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_Shoot;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputMappingContext* IMC_FPS;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_JUMP;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_AIM;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_RELOAD;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_RUN;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_CROUCH;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_CAMERA;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_SELECT_FIRST_RIFLE;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_SELECT_SECOND_RIFLE;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_SELECT_MELEE;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_SELECT_PISTOL;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_SELECT_THROWABLE;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_DROP_WEAPON;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_PICKUP;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_CHANGE_VIEW;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
     UCameraComponent* CurrentCamera;
@@ -147,12 +101,8 @@ protected:
 	void Look(const FInputActionValue& Value);
     void StartRunning();
     void StopRunning();
-    virtual void Jump() override;
-    virtual void StopJumping() override;
     void CustomCrouch();
     void CustomUnCrouch();
-    void ClickCrouch();
-	void ChangeView();
     UFUNCTION(BlueprintCallable)
 	void UpdateView();
     UFUNCTION(BlueprintPure)
@@ -188,6 +138,20 @@ protected:
 
     UPROPERTY(EditDefaultsOnly)
     TSubclassOf<AActor> DeathCameraProxyClass; // BP with physics root + camera
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UAnimMontage* FireRifleMontage;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UAnimMontage* FirePistolMontage;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UAnimMontage* ReloadMontage;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UAnimMontage* ReloadPistolMontage;
+
+    float TargetFOV = 90.0f;
 public:
     ABaseCharacter();
 
@@ -298,7 +262,7 @@ public:
     UFUNCTION(Server, Reliable) void ServerRevive();
     UFUNCTION(NetMulticast, Reliable) void Multicast_ReviveFX();
 
-    virtual void PlayReloadMontage(UWeaponData* WeaponConf) {};
+    virtual void PlayReloadMontage(UWeaponData* WeaponConf);
 
     UFUNCTION(Client, UnReliable)
     void ClientPlayHitEffect();
@@ -311,4 +275,17 @@ public:
     void SetPosViewmodelCaptureForGun();
     FVector3d ViewmodelCaptureDefaultPos;
 	FRotator ViewmodelCaptureDefaultRot;
+
+    void PlayFireRifleMontage(FVector TargetPoint);
+    void PlayFirePistolMontage(FVector TargetPoint);
+    void StartAiming();
+    void StopAiming();
+    virtual void Jump() override;
+    virtual void StopJumping() override;
+    void ClickCrouch();
+    void ChangeView();
+    float GetAimSensitivity();
+
+    UPROPERTY(EditAnywhere, Category = "AI")
+    UBehaviorTree* BehaviorTree;
 };

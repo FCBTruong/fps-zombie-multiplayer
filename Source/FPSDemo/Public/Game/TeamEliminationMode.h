@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Game/ShooterGameMode.h"
 #include "Controllers/MyPlayerState.h"
+#include "Controllers/BotAIController.h"
 #include "TeamEliminationMode.generated.h"
 
 
@@ -28,6 +29,7 @@ private:
 	bool bRoundInProgress = false;
 public:
 	ATeamEliminationMode();
+	virtual void BeginPlay() override;
 
 	void AddPlayer(APlayerController* NewPlayer);
 	void PostLogin(APlayerController* NewPlayer) override;
@@ -44,4 +46,5 @@ public:
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 
 	static constexpr int MaxRoundsToWin = 5;
+	ABotAIController* SpawnBot(FName TeamID);
 };

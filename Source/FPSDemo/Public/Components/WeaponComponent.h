@@ -127,8 +127,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerDoMeleeAttack(int AttackIdx);
 
-	void OnLeftClickStart();
-	void OnLeftClickRelease();
+	void StartAttack();
+	void StopAttack();
 	void OnFire();
 	void HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, const FString& HitBoneName);
 	void StartAiming();

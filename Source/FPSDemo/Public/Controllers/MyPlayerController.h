@@ -8,6 +8,7 @@
 #include "UI/PlayerUI.h"
 #include "Items/ItemIds.h"
 #include "Game/GameManager.h"
+#include "InputActionValue.h"
 #include "MyPlayerController.generated.h"
 
 /**
@@ -40,6 +41,52 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	class UInputAction* IA_ESCAPE;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_MOVEMENT;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SHOOT;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputMappingContext* IMC_FPS;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_JUMP;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_AIM;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_RELOAD;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_RUN;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_CROUCH;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_CAMERA;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_FIRST_RIFLE;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_SECOND_RIFLE;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_MELEE;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_PISTOL;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_THROWABLE;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_DROP_WEAPON;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_PICKUP;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_CHANGE_VIEW;
+
 	virtual void SetupInputComponent() override;
 
 	UFUNCTION(Server, Reliable)
@@ -50,4 +97,17 @@ public:
 	void SetViewmodelOverlay(UMaterialInstanceDynamic* MID);
 	void ShowScope();
 	void HideScope();
+
+	void Move(const FInputActionValue& Value);
+    void OnLeftClickStart();
+	void OnLeftClickRelease();
+    void Jump();
+    void ClickCrouch();
+    void Look(const FInputActionValue& Value);
+    void ClickAim();
+	void StartReload();
+	void Pickup();
+	void EquipSlot(const int32 SlotIndex);
+	void DropWeapon();
+	void ChangeView();
 };

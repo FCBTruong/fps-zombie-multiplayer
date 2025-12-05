@@ -9,7 +9,7 @@
 
 ATeamEliminationMode::ATeamEliminationMode()
 {
-    bRoundInProgress = true;
+
 }
 
 void ATeamEliminationMode::AddPlayer(APlayerController* NewPlayer)
@@ -71,6 +71,11 @@ AActor* ATeamEliminationMode::ChoosePlayerStart_Implementation(AController* Play
     UE_LOG(LogTemp, Warning, TEXT("DEBUGXXX-02"));
     AMyPlayerState* PS = Player->GetPlayerState<AMyPlayerState>();
 
+	if (!PS) {
+        UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in ChoosePlayerStart_Implementation"));
+        return Super::ChoosePlayerStart_Implementation(Player); // fallback
+	}
+
 
     FName TeamId = PS->GetTeamID();
 
@@ -96,10 +101,33 @@ AActor* ATeamEliminationMode::ChoosePlayerStart_Implementation(AController* Play
     return Super::ChoosePlayerStart_Implementation(Player); // fallback
 }
 
+void ATeamEliminationMode::BeginPlay()
+{
+    Super::BeginPlay();
+
+    UE_LOG(LogTemp, Warning, TEXT("GameMode StartRound in 2 seconds"));
+
+    GetWorld()->GetTimerManager().SetTimer(
+        RoundStartTimer,
+        this,
+        &ATeamEliminationMode::StartRound,
+        2.0f,
+        false
+    );
+}
+
 void ATeamEliminationMode::StartRound()
 {
+    UE_LOG(LogTemp, Warning, TEXT("Start round"));
+
+    if (bRoundInProgress) {
+        return;
+    }
 	bRoundInProgress = true;
     ResetPlayers();
+
+    // test create bot AI 
+	SpawnBot("A");
 }
 
 void ATeamEliminationMode::ResetPlayers()
@@ -253,4 +281,29 @@ void ATeamEliminationMode::EndRound(FName WinningTeam)
 
     StartNextRound();
 }
+
+ABotAIController* ATeamEliminationMode::SpawnBot(FName TeamID)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Spawning Bot for Team %s"), *TeamID.ToString());
+    FActorSpawnParameters Params;
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+    // 1) Spawn AI controller
+    ABotAIController* Bot = GetWorld()->SpawnActor<ABotAIController>(ABotAIController::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
+    if (!Bot) return nullptr;
+
+    // 2) Set team in PlayerState
+    if (AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>())
+    {
+        PS->SetTeamID(TeamID);
+        PS->SetIsAlive(true);
+    }
+
+    // 3) Restart to spawn Pawn
+    RestartPlayer(Bot);
+	UE_LOG(LogTemp, Warning, TEXT("Spawned Bot for Team %s"), *TeamID.ToString());
+
+    return Bot;
+}
+
 

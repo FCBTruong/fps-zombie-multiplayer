@@ -5,7 +5,6 @@
 #include "Characters/BaseCharacter.h"
 #include "Weapons/WeaponDataManager.h"
 #include "Weapons/WeaponFirearm.h"
-#include "Characters/PlayerCharacter.h"
 #include "Weapons/WeaponMelee.h"
 #include "Weapons/WeaponThrowable.h"
 #include "Kismet/GameplayStatics.h"
@@ -65,7 +64,11 @@ void UWeaponComponent::InitState() {
             [this]()
             {
                 MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
-                EquipWeapon(EItemId::MELEE_KNIFE_BASIC);
+				PistolState.ItemId = EItemId::PISTOL_PL_14;
+				UWeaponData* PistolData = GMR->GetWeaponDataById(EItemId::PISTOL_PL_14);
+                PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
+				PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
+				EquipWeapon(EItemId::PISTOL_PL_14);
             },
             1.0f,
             false
@@ -359,7 +362,7 @@ bool UWeaponComponent::CanShoot() {
     return true;
 }
 
-void UWeaponComponent::OnLeftClickStart() {
+void UWeaponComponent::StartAttack() {
     if (CurrentWeaponId == EItemId::NONE) {
         UE_LOG(LogTemp, Warning, TEXT("HandleStartFire: No weapon equipped"));
         return;
@@ -402,7 +405,7 @@ void UWeaponComponent::OnLeftClickStart() {
 	}
 }
 
-void UWeaponComponent::OnLeftClickRelease() {
+void UWeaponComponent::StopAttack() {
     if (bIsFiring) {
         GetOwner()->GetWorldTimerManager().ClearTimer(FireTimerHandle);
         bIsFiring = false;
@@ -695,7 +698,7 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
 	UWeaponData* WeaponConf = CurrentWeapon->GetWeaponData();
     
     if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
-        APlayerCharacter* Player = Cast<APlayerCharacter>(GetOwner());
+        ABaseCharacter* Player = Cast<ABaseCharacter>(GetOwner());
 
         if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
             Player->PlayFireRifleMontage(TargetPoint);

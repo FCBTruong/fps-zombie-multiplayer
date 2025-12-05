@@ -171,25 +171,6 @@ void UPlayerUI::OpenShop()
 
     WBP_Shop->SetVisibility(ESlateVisibility::Visible);
 	WBP_Shop->OnActive();
-
-    APlayerController* PC = GetWorld()->GetFirstPlayerController();
-    if (!PC) {
-		UE_LOG(LogTemp, Warning, TEXT("OpenShop: PlayerController is null"));
-        return;
-    }
-
-    PC->bShowMouseCursor = true;
-
-    //FInputModeUIOnly InputMode;
-    //InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-    //InputMode.SetWidgetToFocus(TakeWidget()); // focus this widget
-    //PC->SetInputMode(InputMode);
-
-    // Optionally disable pawn input
-    if (APawn* Pawn = PC->GetPawn())
-    {
-        Pawn->DisableInput(PC);
-    }
 }
 
 void UPlayerUI::CloseShop()
@@ -201,23 +182,6 @@ void UPlayerUI::CloseShop()
     }
 
     WBP_Shop->SetVisibility(ESlateVisibility::Hidden);
-
-    APlayerController* PC = GetWorld()->GetFirstPlayerController();
-    if (!PC) {
-		UE_LOG(LogTemp, Warning, TEXT("CloseShop: PlayerController is null"));
-        return;
-    }
-	UE_LOG(LogTemp, Warning, TEXT("CloseShop: Hiding mouse cursor"));
-
-
-    FInputModeGameOnly GameInput;
-    PC->SetInputMode(GameInput);
-    PC->bShowMouseCursor = false;
-
-    if (APawn* Pawn = PC->GetPawn())
-    {
-        Pawn->EnableInput(PC);
-    }
 }
 
 void UPlayerUI::ShowIconGrenade(EItemId ItemId, bool bShow)

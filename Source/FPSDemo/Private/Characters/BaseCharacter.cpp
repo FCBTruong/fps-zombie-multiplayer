@@ -60,22 +60,6 @@ void ABaseCharacter::BeginPlay()
     
     ThrowableLocation = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("ThrowableLocation")));
 
-    // Add mapping context at runtime
-    if (APlayerController* PC = Cast<APlayerController>(Controller))
-    {
-        if (ULocalPlayer* LP = PC->GetLocalPlayer())
-        {
-            if (UEnhancedInputLocalPlayerSubsystem* Subsys =
-                ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP))
-            {
-                if (IMC_FPS)
-                {
-                    Subsys->AddMappingContext(IMC_FPS, 0);
-                }
-            }
-        }
-    }
-
     if (CrouchCurve)
     {
         FOnTimelineFloat ProgressFunction;
@@ -117,7 +101,9 @@ void ABaseCharacter::BeginPlay()
         BaseStunDuration = StunTimeline.GetTimelineLength();
     }
 
-    if (IsLocallyControlled())
+  
+	ViewmodelCapture = Cast<USceneCaptureComponent2D>(GetDefaultSubobjectByName(TEXT("ViewmodelCap")));
+    if (this->IsLocallyControlled())
     {
         if (FlashCollection)
         {
@@ -127,10 +113,6 @@ void ABaseCharacter::BeginPlay()
                 MPC->SetScalarParameterValue("Intensity", 0.0f);
             }
         }
-    }
-	ViewmodelCapture = Cast<USceneCaptureComponent2D>(GetDefaultSubobjectByName(TEXT("ViewmodelCap")));
-    if (this->IsLocallyControlled())
-    {
         if (ViewmodelCapture)
         {
             UE_LOG(LogTemp, Warning, TEXT("ViewmodelCapture is valid in ABaseCharacter"));
@@ -159,6 +141,25 @@ void ABaseCharacter::BeginPlay()
             ViewmodelCapture->DestroyComponent();
 			ViewmodelCapture = nullptr;
 		}
+
+        bIsFPS = false;
+
+        if (FirstPersonCamera)
+        {
+            FirstPersonCamera->DestroyComponent();
+            FirstPersonCamera = nullptr;
+        }
+
+        if (MeshFps)
+        {
+            MeshFps->DestroyComponent();
+            MeshFps = nullptr;
+        }
+
+        if (ThirdPersonCamera) {
+            ThirdPersonCamera->DestroyComponent();
+            ThirdPersonCamera = nullptr;
+        }
     }
 
     if (this->IsLocallyControlled())
@@ -179,84 +180,99 @@ void ABaseCharacter::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     CrouchTimeline.TickTimeline(DeltaTime);
     StunTimeline.TickTimeline(DeltaTime);
+
+    if (FirstPersonCamera)
+    {
+        float CurrentFOV = FirstPersonCamera->FieldOfView;
+        float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f); // 10 = speed
+        FirstPersonCamera->SetFieldOfView(NewFOV);
+    }
+}
+
+
+void ABaseCharacter::UpdateAimingState()
+{
+    if (IsLocallyControlled()) {
+        UE_LOG(LogTemp, Warning, TEXT("Updating Aiming State: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
+        // Get Player controller and show scope widget
+        AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
+
+        if (!PC) {
+            UE_LOG(LogTemp, Warning, TEXT("PlayerController is null in UpdateAimingState"));
+            return;
+        }
+        if (bAiming)
+        {
+            // Smooth FOV zoom
+            TargetFOV = 70.f;
+
+            if (WeaponComp->IsScopeEquipped()) {
+                TargetFOV = 20.f;
+                FirstPersonCamera->SetRelativeLocation(FVector(15.f, 20.f, 0.f));
+                AimSensitivity = 0.2f;
+
+                PC->ShowScope();
+
+
+                // update speed
+                GetCharacterMovement()->MaxWalkSpeed = ABaseCharacter::AIM_WALK_SPEED;
+            }
+        }
+        else
+        {
+            TargetFOV = 90.f;
+
+            FirstPersonCamera->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+            AimSensitivity = 1.0f;
+            PC->HideScope();
+            HandleUpdateSpeedWalkCurrently();
+        }
+    }
+}
+
+void ABaseCharacter::PlayFireRifleMontage(FVector TargetPoint)
+{
+    // Implement firing animation logic here
+    UE_LOG(LogTemp, Warning, TEXT("Playing Fire Rifle Montage"));
+
+    if (FireRifleMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+    {
+        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireRifleMontage);
+    }
+}
+
+void ABaseCharacter::PlayFirePistolMontage(FVector TargetPoint)
+{
+    // Implement firing animation logic here
+    UE_LOG(LogTemp, Warning, TEXT("Playing Fire Pistol Montage"));
+    if (FirePistolMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+    {
+        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FirePistolMontage);
+    }
+}
+
+void ABaseCharacter::PlayReloadMontage(UWeaponData* WeaponConf)
+{
+    if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
+        if (ReloadMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+        {
+            GetCurrentMesh()->GetAnimInstance()->Montage_Play(ReloadMontage);
+        }
+        UE_LOG(LogTemp, Warning, TEXT("Playing Reload Rifle Montage"));
+    }
+    else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
+        UE_LOG(LogTemp, Warning, TEXT("Playing Reload Pistol Montage"));
+        if (ReloadPistolMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
+        {
+            GetCurrentMesh()->GetAnimInstance()->Montage_Play(ReloadPistolMontage);
+        }
+    }
 }
 
 // Called to bind functionality to input
 void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-    if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent))
-    {
-        if (IA_Shoot)
-        {
-            EIC->BindAction(IA_Shoot, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::OnLeftClickStart);
-			EIC->BindAction(IA_Shoot, ETriggerEvent::Completed, WeaponComp, &UWeaponComponent::OnLeftClickRelease);
-        }
-        if (IA_Movement)
-        {
-            EIC->BindAction(IA_Movement, ETriggerEvent::Triggered, this, &ABaseCharacter::Move);
-        }
-        if (IA_JUMP)
-        {
-            EIC->BindAction(IA_JUMP, ETriggerEvent::Started, this, &ABaseCharacter::Jump);
-            EIC->BindAction(IA_JUMP, ETriggerEvent::Completed, this, &ABaseCharacter::StopJumping);
-        }
-        if (IA_RUN)
-        {
-            EIC->BindAction(IA_RUN, ETriggerEvent::Started, this, &ABaseCharacter::StartRunning);
-            EIC->BindAction(IA_RUN, ETriggerEvent::Completed, this, &ABaseCharacter::StopRunning);
-        }
-        if (IA_CROUCH)
-        {
-            EIC->BindAction(IA_CROUCH, ETriggerEvent::Started, this, &ABaseCharacter::ClickCrouch);
-        }
-        if (IA_CAMERA)
-        {
-            EIC->BindAction(IA_CAMERA, ETriggerEvent::Triggered, this, &ABaseCharacter::Look);
-        }
-        if (IA_CHANGE_VIEW)
-        {
-            EIC->BindAction(IA_CHANGE_VIEW, ETriggerEvent::Started, this, &ABaseCharacter::ChangeView);
-        }
-        if (IA_SELECT_FIRST_RIFLE)
-        {
-            EIC->BindAction(IA_SELECT_FIRST_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_RIFLE);
-		}
-        if (IA_SELECT_SECOND_RIFLE)
-        {
-            //EIC->BindAction(IA_SELECT_SECOND_RIFLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_LONG_GUN_2);
-        }
-        if (IA_SELECT_MELEE)
-        {
-            EIC->BindAction(IA_SELECT_MELEE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_MELEE);
-        }
-        if (IA_SELECT_PISTOL)
-        {
-            EIC->BindAction(IA_SELECT_PISTOL, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_PISTOL);
-        }
-        if (IA_SELECT_THROWABLE)
-        {
-            EIC->BindAction(IA_SELECT_THROWABLE, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::EquipSlot, FGameConstants::SLOT_THROWABLE);
-        }
-        if (IA_DROP_WEAPON)
-        {
-            EIC->BindAction(IA_DROP_WEAPON, ETriggerEvent::Started, this, &ABaseCharacter::DropWeapon);
-        }
-        if (IA_PICKUP)
-        {
-            // With this line, using Enhanced Input system:
-            EIC->BindAction(IA_PICKUP, ETriggerEvent::Started, InteractComp, &UInteractComponent::TryPickup);
-        }
-        if (IA_AIM)
-        {
-            EIC->BindAction(IA_AIM, ETriggerEvent::Started, this, &ABaseCharacter::ClickAim);
-        }
-        if (IA_RELOAD)
-        {
-            EIC->BindAction(IA_RELOAD, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::StartReload);
-		}
-    }
 }
 
 
@@ -298,13 +314,7 @@ void ABaseCharacter::Jump()
 
 bool ABaseCharacter::IsRunning()
 {
-    const float Speed = GetVelocity().Size2D();
-
-    return bHoldingShift
-        && Speed > NORMAL_WALK_SPEED
-        && !bCrouching
-        && !GetCharacterMovement()->IsFalling()
-        && moveInput.Y > 0.f;   // any forward movement
+    return false;
 }
 
 
@@ -386,21 +396,7 @@ void ABaseCharacter::AddWeapon(AWeaponBase* NewWeapon)
 {
 	
 }
-
-
-void ABaseCharacter::Look(const FInputActionValue& Value)
-{
-    FVector2D LookAxisVector = Value.Get<FVector2D>();
-    if (Controller != nullptr)
-    {
-		LookInput = LookAxisVector;
-        //Server_UpdateLookInput(LookAxisVector);
-        // add yaw and pitch input to controller
-        AddControllerYawInput(LookInput.X * AimSensitivity * 0.3);
-        AddControllerPitchInput(LookInput.Y * -1 * AimSensitivity * 0.3);
-    }
-}
-
+                                                                                                                          
 
 void ABaseCharacter::ChangeView()
 {
@@ -519,12 +515,28 @@ EWeaponSubTypes ABaseCharacter::GetWeaponSubType()
 
 void ABaseCharacter::ClickAim()
 {
-    
+    if (!WeaponComp->CanWeaponAim()) {
+        return;
+    }
+    if (bAiming) {
+        ServerSetAiming(false);
+    }
+    else {
+        ServerSetAiming(true);
+    }
+	bAiming = !bAiming; // force update for current client
+
+	// if is locally controlled, update immediately
+    if (IsLocallyControlled()) {
+        UpdateAimingState();
+	}
 }
 
 void ABaseCharacter::OnRep_IsAiming()
 {
-    // debug
+    if (IsLocallyControlled()) {
+		return; // already handled locally
+	}
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_IsAiming: %s"), bAiming ? TEXT("true") : TEXT("false"));
     UpdateAimingState();
 }
@@ -535,10 +547,6 @@ void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
     OnRep_IsAiming();
 }
 
-void ABaseCharacter::UpdateAimingState()
-{
-   
-}
 
 void ABaseCharacter::PlayEquipWeaponAnimation(EWeaponTypes WeaponType)
 {
@@ -867,4 +875,8 @@ void ABaseCharacter::SetPosViewmodelCaptureForGun() {
 		ViewmodelCapture->SetRelativeLocation(ViewmodelCaptureDefaultPos);
 		ViewmodelCapture->SetRelativeRotation(ViewmodelCaptureDefaultRot);
 	}
+}
+
+float ABaseCharacter::GetAimSensitivity() {
+    return AimSensitivity;
 }
