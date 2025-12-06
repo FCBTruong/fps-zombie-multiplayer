@@ -28,8 +28,13 @@ void UBTTask_Shoot::TickTask(
     ABotAIController* AI = Cast<ABotAIController>(OwnerComp.GetAIOwner());
     if (!AI) { FinishLatentTask(OwnerComp, EBTNodeResult::Failed); return; }
 
+    UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
     ABaseCharacter* Char = Cast<ABaseCharacter>(AI->GetPawn());
-    if (!Char) { FinishLatentTask(OwnerComp, EBTNodeResult::Failed); return; }
+    if (!Char || !BB) { FinishLatentTask(OwnerComp, EBTNodeResult::Failed); return; }
+
+    bool bLOS = BB->GetValueAsBool("HasLineOfSight");
+    if (!bLOS)
+        return;
 
     UWeaponComponent* WC = Char->GetWeaponComponent();
     if (!WC) { FinishLatentTask(OwnerComp, EBTNodeResult::Failed); return; }
@@ -46,6 +51,10 @@ void UBTTask_Shoot::TickTask(
 
         if (WC->GetCurrentAmmoInClip() <= 0)
         {
+            if (!WC->CanReload())
+            {
+                return;
+            }
             WC->StartReload();
             return;
         }

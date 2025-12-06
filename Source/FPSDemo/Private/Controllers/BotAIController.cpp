@@ -8,14 +8,14 @@
 
 ABotAIController::ABotAIController()
 {
-    PrimaryActorTick.bCanEverTick = false; 
+    PrimaryActorTick.bCanEverTick = true; 
 
     PerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>("Perception");
     SetPerceptionComponent(*PerceptionComp);
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>("SightConfig");
 
-    SightConfig->SightRadius = 3000.f;
-    SightConfig->LoseSightRadius = 3500.f;
+    SightConfig->SightRadius = 5000.f;
+    SightConfig->LoseSightRadius = 5500.f;
     SightConfig->PeripheralVisionAngleDegrees = 90.f;
 
     SightConfig->DetectionByAffiliation.bDetectEnemies = true;
@@ -23,7 +23,7 @@ ABotAIController::ABotAIController()
     SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
 
     PerceptionComp->ConfigureSense(*SightConfig);
-    PerceptionComp->SetDominantSense(UAISenseConfig_Sight::StaticClass());
+    PerceptionComp->SetDominantSense(UAISense_Sight::StaticClass());
 
     PerceptionComp->OnPerceptionUpdated.AddDynamic(this, &ABotAIController::OnPerceptionUpdated);
 }
@@ -46,52 +46,42 @@ void ABotAIController::OnPossess(APawn* InPawn)
 
 void ABotAIController::OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors)
 {
-    AActor* NewTarget = nullptr;
     
-    AMyPlayerState* MyPS = GetPlayerState<AMyPlayerState>();
-    if (!MyPS)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("BotAIController: My PlayerState is null"));
-        return;
-	}
-    FName MyTeamId = MyPS->GetTeamID();
+}
 
-    for (AActor* Actor : UpdatedActors)
-    {
-        // check is enemy or ally
-        ABaseCharacter* BC = Cast<ABaseCharacter>(Actor);
-        if (!BC)
-            continue;
 
-		AMyPlayerState* BC_PS = BC->GetPlayerState<AMyPlayerState>();
-        if (!BC_PS)
-        {
-            continue;
-        }
-        if (BC_PS->GetTeamID() == MyTeamId)
-        {
-            continue; // same team, skip
-		}
+void ABotAIController::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
 
-        FActorPerceptionBlueprintInfo Info;
-        PerceptionComp->GetActorsPerception(Actor, Info);
+    if (!GetPawn()) return;
 
-        if (Info.LastSensedStimuli.Num() > 0 &&
-            Info.LastSensedStimuli[0].WasSuccessfullySensed())
-        {
-            NewTarget = Actor;
-            break;
-        }
-    }
+    FVector Loc = GetPawn()->GetActorLocation();
+    FRotator Rot = GetPawn()->GetActorRotation();
 
-    CurrentTarget = NewTarget;
-	UE_LOG(LogTemp, Log, TEXT("BotAIController: New CurrentTarget is %s"), 
-		CurrentTarget ? *CurrentTarget->GetName() : TEXT("None"));
+    // Sight radius
+    DrawDebugCircle(
+        GetWorld(),
+        Loc,
+        SightConfig->SightRadius,
+        32,
+        FColor::Green,
+        false,
+        -1,
+        0,
+        2,
+        FVector(1, 0, 0),
+        FVector(0, 1, 0),
+        false
+    );
 
-    if (Blackboard)
-    {
-        UE_LOG(LogTemp, Log, TEXT("BotAIController: Updating TargetActor in Blackboard to %s"), 
-			CurrentTarget ? *CurrentTarget->GetName() : TEXT("None"));
-        Blackboard->SetValueAsObject("TargetActor", CurrentTarget);
-    }
+    // FOV direction lines
+    float HalfFOV = SightConfig->PeripheralVisionAngleDegrees;
+    FVector Fwd = Rot.Vector();
+
+    FVector LeftDir = Fwd.RotateAngleAxis(-HalfFOV, FVector::UpVector);
+    FVector RightDir = Fwd.RotateAngleAxis(+HalfFOV, FVector::UpVector);
+
+    DrawDebugLine(GetWorld(), Loc, Loc + LeftDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);
+    DrawDebugLine(GetWorld(), Loc, Loc + RightDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);
 }

@@ -91,3 +91,8 @@ bool AMyPlayerState::CanBuyThisItem(const UItemData* Item) const
 	}
 	return Money >= Item->Price;
 }
+
+void AMyPlayerState::OnRep_TeamId()
+{
+	UE_LOG(LogTemp, Warning, TEXT("TeamId updated: %s"), *TeamID.ToString());
+}

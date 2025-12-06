@@ -1016,8 +1016,7 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
     //Character->LookInput;
     FVector Start = Character->GetActorLocation() + FVector(0, 0, 70);
     FRotator CamRot = Character->GetControlRotation();
-    CamRot.Yaw += Character->LookInput.X;
-    CamRot.Pitch += Character->LookInput.Y;
+
 
     FVector LookDir = CamRot.Vector();
     FVector End = Start + LookDir * 150;
@@ -1380,4 +1379,12 @@ int UWeaponComponent::GetCurrentAmmoInClip() {
         return WeaponState->AmmoInClip;
     }
     return 0;
+}
+
+bool UWeaponComponent::CanReload() {
+    FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
+    if (WeaponState) {
+        return WeaponState->AmmoReserve > 0;
+    }
+    return false;
 }

@@ -111,9 +111,6 @@ protected:
     EWeaponTypes GetWeaponType();
     UFUNCTION(BlueprintPure)
 	EWeaponSubTypes GetWeaponSubType();
-  
-    UFUNCTION(Server, Reliable)
-    void Server_UpdateLookInput(FVector2D NewLookInput);
 
     UFUNCTION(Server, Reliable)
     void ServerSetCrouching(bool bNewCrouching);
@@ -157,6 +154,10 @@ protected:
 
     UPROPERTY()
     UAIPerceptionStimuliSourceComponent* StimuliSource;
+
+    void OnRep_PlayerState() override;
+
+    bool bAppliedTeamMesh = false;
 public:
     ABaseCharacter();
 
@@ -184,8 +185,6 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FVector2D moveInput;
-    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Data")
-    FVector2D LookInput;
     UPROPERTY(BlueprintReadWrite, Category = "State")
     float AimSensitivity = 1.0f;
 
@@ -293,4 +292,6 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "AI")
     UBehaviorTree* BehaviorTree;
+
+    void SetMeshBaseOnTeam();
 };

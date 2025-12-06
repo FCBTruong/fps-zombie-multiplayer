@@ -16,6 +16,7 @@ public:
 protected:
     virtual void OnPossess(APawn* InPawn) override;
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaSeconds) override;
     UFUNCTION()
     void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
 

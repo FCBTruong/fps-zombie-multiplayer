@@ -18,8 +18,10 @@ class FPSDEMO_API AMyPlayerState : public APlayerState
 	GENERATED_BODY()
 
 protected:
+	UPROPERTY(ReplicatedUsing = OnRep_TeamId)
 	FName TeamID = "";
-	int PlayerID = -1;
+
+	UPROPERTY(Replicated)
 	bool bIsAlive = true;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Money)
@@ -30,6 +32,9 @@ protected:
 	UFUNCTION()
 	void OnRep_Money();
 
+	UFUNCTION()
+	void OnRep_TeamId();
+
 	UPROPERTY(ReplicatedUsing = OnRep_BoughtItems)
 	TArray<EItemId> BoughtItems;
 
@@ -39,10 +44,8 @@ public:
 	AMyPlayerState();
 
 	FName GetTeamID() const { return TeamID; }
-	int GetPlayerID() const { return PlayerID; }
 	bool IsAlive() const { return bIsAlive; }
 	void SetTeamID(FName NewTeamID) { TeamID = NewTeamID; }
-	void SetPlayerID(int NewPlayerID) { PlayerID = NewPlayerID; }
 	void SetIsAlive(bool bNewIsAlive) { bIsAlive = bNewIsAlive; }
 	void ProcessBuy(const UItemData* Item);
 	int GetMoney() const { return Money; }

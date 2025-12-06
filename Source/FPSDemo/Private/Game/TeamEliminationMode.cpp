@@ -107,8 +107,14 @@ void ATeamEliminationMode::BeginPlay()
 
     UE_LOG(LogTemp, Warning, TEXT("GameMode StartRound in 2 seconds"));
 
-   
-    ATeamEliminationMode::StartRound();
+    FTimerHandle StartRoundTimer;
+    GetWorldTimerManager().SetTimer(
+        StartRoundTimer,
+        this,
+        &ATeamEliminationMode::StartRound,
+        1.0f,
+        false
+    );
 }
 
 void ATeamEliminationMode::StartRound()

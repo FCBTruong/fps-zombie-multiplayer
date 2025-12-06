@@ -31,4 +31,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
 	USoundBase* TouchSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Characters")
+	USkeletalMesh* TerroristMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Characters")
+	USkeletalMesh* CounterTerroristMesh;
 };

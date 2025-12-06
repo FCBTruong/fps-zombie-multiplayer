@@ -17,6 +17,7 @@
 #include "Damage/MyDamageType.h"
 #include "Engine/DamageEvents.h"
 #include "Damage/MyPointDamageEvent.h"
+#include "Controllers/MyPlayerState.h"
 
 
 // Sets default values
@@ -176,6 +177,46 @@ void ABaseCharacter::BeginPlay()
         UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
     }
     UpdateView();
+}
+
+void ABaseCharacter::OnRep_PlayerState() {
+    // Set mesh based on team
+    if (!bAppliedTeamMesh) {
+        bAppliedTeamMesh = true;
+        SetMeshBaseOnTeam();
+	}
+}
+
+void ABaseCharacter::SetMeshBaseOnTeam()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Setting mesh based on team"));
+    UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+    if (GMR && GMR->GlobalData)
+    {
+        // get player state
+        AMyPlayerState* MyPS = Cast<AMyPlayerState>(GetPlayerState());
+        if (MyPS) {
+            USkeletalMesh* NewMesh = nullptr;
+
+            UE_LOG(LogTemp, Warning,
+                TEXT("SetMeshBaseOnTeam: TeamID = %s"),
+                *MyPS->GetTeamID().ToString());
+            if (MyPS->GetTeamID() == "A") {
+                NewMesh = GMR->GlobalData->CounterTerroristMesh;
+            }
+            else {
+                NewMesh = GMR->GlobalData->TerroristMesh;
+            }
+            if (NewMesh)
+            {
+				UE_LOG(LogTemp, Warning, TEXT("Setting new mesh for team"));
+                GetMesh()->SetSkeletalMesh(NewMesh);
+            }
+        }
+        else {
+			UE_LOG(LogTemp, Warning, TEXT("MyPS is null in SetMeshBaseOnTeam"));
+        }
+    }
 }
 
 // Called every frame
@@ -478,18 +519,9 @@ USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh()
     }
 }
 
-void ABaseCharacter::Server_UpdateLookInput_Implementation(FVector2D NewLookInput)
-{
-    LookInput = NewLookInput; 
-
-    AddControllerYawInput(LookInput.X * AimSensitivity);
-    AddControllerPitchInput(LookInput.Y * -1 * AimSensitivity);
-}
-
 void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(ABaseCharacter, LookInput);
     DOREPLIFETIME(ABaseCharacter, bCrouching);
     DOREPLIFETIME(ABaseCharacter, bAiming);
 	DOREPLIFETIME(ABaseCharacter, SpeedWalkCurrently);

@@ -13,8 +13,10 @@ public:
     UBTTask_RotateToTarget();
 
 protected:
-    virtual EBTNodeResult::Type ExecuteTask(
-        UBehaviorTreeComponent& OwnerComp,
-        uint8* NodeMemory
-    ) override;
+    virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+    virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+    virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTNodeResult::Type TaskResult) override;
+
+    UPROPERTY(EditAnywhere)
+    float RotateSpeed = 10.f;
 };

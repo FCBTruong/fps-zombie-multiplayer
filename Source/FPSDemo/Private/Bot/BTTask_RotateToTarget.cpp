@@ -5,32 +5,65 @@
 UBTTask_RotateToTarget::UBTTask_RotateToTarget()
 {
     NodeName = "Rotate To Target";
+    bNotifyTick = true;
 }
 
 EBTNodeResult::Type UBTTask_RotateToTarget::ExecuteTask(
     UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+    return EBTNodeResult::InProgress;
+}
+
+void UBTTask_RotateToTarget::TickTask(
+    UBehaviorTreeComponent& OwnerComp,
+    uint8* NodeMemory,
+    float DeltaSeconds)
+{
     ABotAIController* AI = Cast<ABotAIController>(OwnerComp.GetAIOwner());
-    if (!AI) return EBTNodeResult::Failed;
+    if (!AI) { FinishLatentTask(OwnerComp, EBTNodeResult::Failed); return; }
 
     APawn* Pawn = AI->GetPawn();
-    UObject* Obj = AI->GetBlackboardComponent()->GetValueAsObject("TargetActor");
-    AActor* Target = Cast<AActor>(Obj);
+    UBlackboardComponent* BB = AI->GetBlackboardComponent();
+    AActor* Target = Cast<AActor>(BB->GetValueAsObject("TargetActor"));
 
     if (!Pawn || !Target)
-        return EBTNodeResult::Failed;
+    {
+        FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+        return;
+    }
 
     FVector Dir = (Target->GetActorLocation() - Pawn->GetActorLocation()).GetSafeNormal();
     FRotator TargetRot = Dir.Rotation();
 
-    Pawn->SetActorRotation(
-        FMath::RInterpTo(
-            Pawn->GetActorRotation(),
-            TargetRot,
-            AI->GetWorld()->GetDeltaSeconds(),
-            10.f
-        )
+    FRotator CurrentRot = AI->GetControlRotation();
+
+    FRotator NewRot = FMath::RInterpTo(
+        CurrentRot,
+        TargetRot,
+        DeltaSeconds,
+        RotateSpeed
     );
 
-    return EBTNodeResult::Succeeded;
+    AI->SetControlRotation(NewRot);
+
+    float DeltaYaw = FMath::Abs(FMath::FindDeltaAngleDegrees(NewRot.Yaw, TargetRot.Yaw));
+
+    UE_LOG(LogTemp, Warning,
+        TEXT("RotateTask: Current=%.1f Target=%.1f New=%.1f Delta=%.2f"),
+        CurrentRot.Yaw, TargetRot.Yaw, NewRot.Yaw, DeltaYaw);
+
+    if (DeltaYaw < 1.0f)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("RotateTask: Finished"));
+        FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+        return;
+    }
+}
+
+void UBTTask_RotateToTarget::OnTaskFinished(
+    UBehaviorTreeComponent& OwnerComp,
+    uint8* NodeMemory,
+    EBTNodeResult::Type TaskResult)
+{
+    UE_LOG(LogTemp, Warning, TEXT("RotateTask FINISHED with result = %d"), (int)TaskResult);
 }

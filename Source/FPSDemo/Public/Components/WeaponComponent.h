@@ -194,4 +194,5 @@ public:
 
 	void TriggerUpdateUI();
 	bool IsReloading() const { return bIsReloading; }
+	bool CanReload();
 };
