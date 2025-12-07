@@ -87,6 +87,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_CHANGE_VIEW;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SELECT_SPIKE;
+
 	virtual void SetupInputComponent() override;
 
 	UFUNCTION(Server, Reliable)

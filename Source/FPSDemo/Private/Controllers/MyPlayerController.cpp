@@ -246,6 +246,9 @@ void AMyPlayerController::SetupInputComponent()
         {
             EnhancedInput->BindAction(IA_DROP_WEAPON, ETriggerEvent::Started, this, &AMyPlayerController::DropWeapon);
         }
+        if (IA_SELECT_SPIKE) {
+			EnhancedInput->BindAction(IA_SELECT_SPIKE, ETriggerEvent::Started, this, &AMyPlayerController::EquipSlot, FGameConstants::SLOT_SPIKE);
+        }
     }
 }
 

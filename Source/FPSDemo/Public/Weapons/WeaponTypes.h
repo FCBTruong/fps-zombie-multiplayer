@@ -9,7 +9,8 @@ enum class EWeaponTypes : uint8
 	Firearm       UMETA(DisplayName = "Firearm"),
 	Melee		UMETA(DisplayName = "Melee"),
 	Throwable   UMETA(DisplayName = "Throwable"),
-	Equipment   UMETA(DisplayName = "Equipment")
+	Equipment   UMETA(DisplayName = "Equipment"),
+	Spike      UMETA(DisplayName = "Spike")
 };
 
 UENUM(BlueprintType)

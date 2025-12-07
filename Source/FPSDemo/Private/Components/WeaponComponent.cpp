@@ -68,7 +68,8 @@ void UWeaponComponent::InitState() {
 				UWeaponData* PistolData = GMR->GetWeaponDataById(EItemId::PISTOL_PL_14);
                 PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
 				PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
-				EquipWeapon(EItemId::PISTOL_PL_14);
+				//EquipWeapon(EItemId::PISTOL_PL_14);
+                EquipWeapon(EItemId::SPIKE);
             },
             1.0f,
             false
@@ -139,6 +140,11 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
             }
 		}
     }
+    else if (WeaponConf->WeaponType == EWeaponTypes::Spike) {
+        if (bHasSpike) {
+            NewWeaponId = EItemId::SPIKE;
+        }
+	}
     else {
         if (RifleState.ItemId == ItemId) {
             NewWeaponId = RifleState.ItemId;
@@ -771,6 +777,7 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 // Clients press 1, 2, 3 to equip weapon in that slot
 void UWeaponComponent::EquipSlot(int32 SlotIndex)
 {
+	UE_LOG(LogTemp, Warning, TEXT("EquipSlot called for slot %d"), SlotIndex);
     if (bIsPriming) {
         return; // can not change weapon while priming
     }
@@ -827,6 +834,12 @@ void UWeaponComponent::EquipSlot(int32 SlotIndex)
         if (PistolState.ItemId != EItemId::NONE) {
             ServerEquipWeapon(PistolState.ItemId);
         }
+    }
+    else if (SlotIndex == FGameConstants::SLOT_SPIKE) {
+		UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Equipping spike"));
+        if (bHasSpike) {
+            ServerEquipWeapon(EItemId::SPIKE);
+		}
     }
 }
 
@@ -963,6 +976,9 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     else if (WeaType == EWeaponTypes::Throwable) {
         SocketName = "throwable_socket";
     }
+    else if (WeaType == EWeaponTypes::Spike) {
+        SocketName = "throwable_socket";
+	}
 
     CurrentWeapon->AttachToComponent(Character->GetCurrentMesh(),
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
@@ -1263,6 +1279,13 @@ AWeaponBase* UWeaponComponent::SpawnWeaponByItemId(EItemId ItemId)
             Params
         );
     }
+    else if (WeaponConf->WeaponType == EWeaponTypes::Spike) {
+        NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            Params
+        );
+	}
     if (NewWeapon) {
         NewWeapon->InitFromData(WeaponConf);
     }
@@ -1387,4 +1410,39 @@ bool UWeaponComponent::CanReload() {
         return WeaponState->AmmoReserve > 0;
     }
     return false;
+}
+
+void UWeaponComponent::ServerStartPlantSpike_Implementation() {
+    if (bHasSpike == false) {
+        return; // no spike to plant
+    }
+   
+    //MulticastPlantSpike();
+}
+
+void UWeaponComponent::ServerStopPlantSpike_Implementation() {
+    if (bHasSpike == false) {
+        return; // no spike to plant
+    }
+
+    //MulticastPlantSpike();
+}
+
+void UWeaponComponent::MulticastStartPlantSpike_Implementation() {
+  /*  if (Character) {
+        Character->PlayPlantSpikeMontage();
+    }
+    bHasSpike = false;*/
+}
+
+void UWeaponComponent::MulticastStopPlantSpike_Implementation() {
+    /*  if (Character) {
+          Character->PlayPlantSpikeMontage();
+      }
+      bHasSpike = false;*/
+}
+
+
+void UWeaponComponent::ServerDefuseSpike_Implementation() {
+
 }

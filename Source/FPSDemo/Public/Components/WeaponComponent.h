@@ -81,6 +81,7 @@ protected:
 	
 	float ThrowAngle = 10.f;
 	float GrenadeInitSpeed = 1400.f;
+	bool bHasSpike = true;
 
 
 	ABaseCharacter* Character;
@@ -126,6 +127,21 @@ public:
 	void ServerOnFire(const FVector& StartPoint, const FVector& TargetPoint, const FString& HitBoneName);
 	UFUNCTION(Server, Reliable)
 	void ServerDoMeleeAttack(int AttackIdx);
+
+	UFUNCTION(Server, Reliable)
+	void ServerStartPlantSpike();
+
+	UFUNCTION(Server, Reliable)
+	void ServerStopPlantSpike();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastStartPlantSpike();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastStopPlantSpike();
+
+	UFUNCTION(Server, Reliable)
+	void ServerDefuseSpike();
 
 	void StartAttack();
 	void StopAttack();
