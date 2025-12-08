@@ -90,6 +90,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_SELECT_SPIKE;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_DEFUSE_SPIKE;
+
 	virtual void SetupInputComponent() override;
 
 	UFUNCTION(Server, Reliable)
@@ -113,4 +116,6 @@ public:
 	void EquipSlot(const int32 SlotIndex);
 	void DropWeapon();
 	void ChangeView();
+	void StartDefuseSpike();
+	void StopDefuseSpike();
 };

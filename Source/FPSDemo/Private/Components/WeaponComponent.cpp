@@ -17,7 +17,9 @@
 #include "GameFramework/DamageType.h"
 #include "Engine/EngineTypes.h"
 #include "Damage/MyPointDamageEvent.h"
-
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Game/SpikeMode.h"
+#include "Game/ShooterGameState.h"
 
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
@@ -162,6 +164,10 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         return;
     }
 	CurrentWeaponId = NewWeaponId;
+
+    if (GetNetMode() == NM_ListenServer) {
+        OnRep_CurrentWeapon();
+    }
 
 	// update speed based on weapon
     if (Character) {
@@ -368,7 +374,7 @@ bool UWeaponComponent::CanShoot() {
     return true;
 }
 
-void UWeaponComponent::StartAttack() {
+void UWeaponComponent::OnInput_StartAttack() {
     if (CurrentWeaponId == EItemId::NONE) {
         UE_LOG(LogTemp, Warning, TEXT("HandleStartFire: No weapon equipped"));
         return;
@@ -411,7 +417,7 @@ void UWeaponComponent::StartAttack() {
 	}
 }
 
-void UWeaponComponent::StopAttack() {
+void UWeaponComponent::OnInput_StopAttack() {
     if (bIsFiring) {
         GetOwner()->GetWorldTimerManager().ClearTimer(FireTimerHandle);
         bIsFiring = false;
@@ -1417,15 +1423,33 @@ void UWeaponComponent::ServerStartPlantSpike_Implementation() {
         return; // no spike to plant
     }
    
-    //MulticastPlantSpike();
+    if (bIsPlantingSpike) {
+        return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("ServerStartPlantSpike called"));
+
+	bIsPlantingSpike = true;
+
+    GetWorld()->GetTimerManager().SetTimer(
+        SpikePlantTimerHandle,
+        this,
+        &UWeaponComponent::FinishPlantSpike,
+        3.0f,     // delay
+        false      // non-looping
+    );
 }
 
 void UWeaponComponent::ServerStopPlantSpike_Implementation() {
+	UE_LOG(LogTemp, Warning, TEXT("ServerStopPlantSpike called"));
     if (bHasSpike == false) {
         return; // no spike to plant
     }
 
-    //MulticastPlantSpike();
+    if (!bIsPlantingSpike) {
+		return;
+    }
+	bIsPlantingSpike = false;
+    GetWorld()->GetTimerManager().ClearTimer(SpikePlantTimerHandle);
 }
 
 void UWeaponComponent::MulticastStartPlantSpike_Implementation() {
@@ -1443,6 +1467,142 @@ void UWeaponComponent::MulticastStopPlantSpike_Implementation() {
 }
 
 
-void UWeaponComponent::ServerDefuseSpike_Implementation() {
+void UWeaponComponent::ServerStartDefuseSpike_Implementation() {
+	UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike called"));
+    // Validate
+    // check spike is planted in game mode
+	ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    if (!SpikeGM) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No SpikeGM found"));
+        return;
+	}
+	AShooterGameState* GameState = Cast<AShooterGameState>(GetWorld()->GetGameState());
+    if (GameState->GetMatchState() != EMyMatchState::PLAYING) {
+		return; // can only defuse during playing state
+    }
+	if (!SpikeGM->IsSpikePlanted()) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No spike planted"));
+		return;
+	}
 
+	bIsDefusingSpike = true;
+
+    GetWorld()->GetTimerManager().SetTimer(
+        SpikeDefuseTimerHandle,
+        this,
+        &UWeaponComponent::FinishDefuseSpike,
+        3.0f,     // delay
+        false      // non-looping
+    );
+}
+
+void UWeaponComponent::FinishDefuseSpike() {
+	bIsDefusingSpike = false;
+    // check spike is planted in game mode
+    ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    if (!SpikeGM) {
+        UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike: No SpikeGM found"));
+        return;
+    }
+    if (!SpikeGM->IsSpikePlanted()) {
+        UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike: No spike planted"));
+        return;
+    }
+    SpikeGM->DefuseSpike(Cast<AMyPlayerController>(Character->GetController()));
+    UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike called"));
+}
+
+void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
+	bIsDefusingSpike = false;
+	GetWorld()->GetTimerManager().ClearTimer(SpikeDefuseTimerHandle);
+}
+
+void UWeaponComponent::OnInput_StartPlantSpike() {
+	UE_LOG(LogTemp, Warning, TEXT("OnInput_StartPlantSpike called"));
+    if (bHasSpike == false) {
+        return; // no spike to plant
+    }
+    if (bIsPlantingSpike) {
+        return;
+    }
+	ServerStartPlantSpike();
+}
+
+void UWeaponComponent::OnInput_StopPlantSpike() {
+    if (bHasSpike == false) {
+        return; // no spike to plant
+    }
+    if (!bIsPlantingSpike) {
+        return;
+	}
+    ServerStopPlantSpike();
+}
+
+void UWeaponComponent::OnRep_IsPlantingSpike() {
+    OnUpdatePlantSpikeState.Broadcast(bIsPlantingSpike);
+
+    // play sound
+    if (bIsPlantingSpike) {
+        if (Character) {
+            Character->PlayPlantSpikeEffect();
+        }
+    }
+    else {
+        if (Character) {
+            Character->StopPlantSpikeEffect();
+        }
+	}
+}
+
+void UWeaponComponent::FinishPlantSpike() {
+    if (bHasSpike == false) {
+        return;
+    }
+    if (!bIsPlantingSpike) {
+        return;
+    }
+
+    // get spike game mode
+	ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+
+    if (!SpikeGM) {
+        UE_LOG(LogTemp, Warning, TEXT("FinishPlantSpike: No SpikeGM found"));
+        return;
+    }
+    FVector SpikeLocation = Character->GetActorLocation()
+        + Character->GetActorForwardVector() * 50.f;
+	SpikeGM->PlantSpike(SpikeLocation, Cast<AMyPlayerController>(Character->GetController()));
+    bIsPlantingSpike = false;
+	bHasSpike = false;
+
+	UE_LOG(LogTemp, Warning, TEXT("FinishPlantSpike called"));
+
+	// change player equipment
+    EquipWeapon(EItemId::MELEE_KNIFE_BASIC);
+}
+
+void UWeaponComponent::MulticastSpikePlanted_Implementation() {
+    
+}
+
+void UWeaponComponent::OnInput_StartDefuseSpike() {
+	ServerStartDefuseSpike();
+}
+
+void UWeaponComponent::OnInput_StopDefuseSpike() {
+    ServerStopDefuseSpike();
+}
+
+void UWeaponComponent::OnRep_IsDefusingSpike() {
+    OnUpdateDefuseSpikeState.Broadcast(bIsDefusingSpike);
+   /* if (bIsDefusingSpike) {
+        if (Character) {
+            Character->PlayDefuseSpikeEffect();
+        }
+    }
+    else {
+        if (Character) {
+            Character->StopDefuseSpikeEffect();
+        }
+	}*/
 }

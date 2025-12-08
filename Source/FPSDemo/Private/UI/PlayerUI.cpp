@@ -106,6 +106,7 @@ void UPlayerUI::OnEnter()
 	ShowIconGrenade(EItemId::GRENADE_STUN, false);
 	ShowIconGrenade(EItemId::GRENADE_INCENDIARY, false);
 	ScopeUI->HideScope();
+	PnSpike->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponConf, bool bIsHeadShot)
@@ -332,4 +333,25 @@ void UPlayerUI::ShowScope()
 void UPlayerUI::HideScope()
 {
     ScopeUI->HideScope();
+}
+
+void UPlayerUI::OnUpdatePlantSpikeState(bool IsPlanting) {
+    if (IsPlanting) {
+		PnSpike->SetVisibility(ESlateVisibility::Visible);
+        PlayAnimation(StartPlantSpikeAnim);
+    } else {
+        StopAnimation(StartPlantSpikeAnim);
+		PnSpike->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
+void UPlayerUI::OnUpdateDefuseSpikeState(bool IsDefusing) {
+    if (IsDefusing) {
+        PnSpike->SetVisibility(ESlateVisibility::Visible);
+        PlayAnimation(StartDefuseSpikeAnim);
+    }
+    else {
+        StopAnimation(StartDefuseSpikeAnim);
+        PnSpike->SetVisibility(ESlateVisibility::Hidden);
+    }
 }

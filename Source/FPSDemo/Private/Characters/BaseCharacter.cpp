@@ -320,24 +320,6 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-
-void ABaseCharacter::Move(const FInputActionValue& Value)
-{
-    moveInput = Value.Get<FVector2D>();
-
-    if (Controller)
-    {
-        const FRotator ControlRot = Controller->GetControlRotation();
-        const FRotator YawRot(0, ControlRot.Yaw, 0);
-
-        const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
-        const FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
-
-        AddMovementInput(Forward, moveInput.Y);
-        AddMovementInput(Right, moveInput.X);
-    }
-}
-
 void ABaseCharacter::StartRunning()
 {
 	//bHoldingShift = true;
@@ -915,4 +897,24 @@ void ABaseCharacter::SetPosViewmodelCaptureForGun() {
 
 float ABaseCharacter::GetAimSensitivity() {
     return AimSensitivity;
+}
+
+void ABaseCharacter::PlayPlantSpikeEffect() {
+    // play sound
+    if (PlantingSpikeSound) {
+        if (PlantSpikeAudioComp && PlantSpikeAudioComp->IsPlaying())
+            return;
+        PlantSpikeAudioComp = UGameplayStatics::SpawnSoundAttached(
+            PlantingSpikeSound,
+            RootComponent
+        );
+	}
+}
+
+void ABaseCharacter::StopPlantSpikeEffect() {
+    if (PlantSpikeAudioComp)
+    {
+        PlantSpikeAudioComp->Stop();
+        PlantSpikeAudioComp = nullptr;
+    }
 }

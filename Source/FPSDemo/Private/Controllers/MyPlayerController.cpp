@@ -100,6 +100,8 @@ void AMyPlayerController::BindingUI()
             WC->OnUpdateCurrentWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdateCurrentWeapon);
             WC->OnUpdateRifleWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdateRifle);
             WC->OnUpdatePistolWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdatePistol);
+			WC->OnUpdatePlantSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdatePlantSpikeState);
+			WC->OnUpdateDefuseSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdateDefuseSpikeState);
 
             WC->TriggerUpdateUI();
 		}
@@ -249,6 +251,10 @@ void AMyPlayerController::SetupInputComponent()
         if (IA_SELECT_SPIKE) {
 			EnhancedInput->BindAction(IA_SELECT_SPIKE, ETriggerEvent::Started, this, &AMyPlayerController::EquipSlot, FGameConstants::SLOT_SPIKE);
         }
+        if (IA_DEFUSE_SPIKE) {
+			EnhancedInput->BindAction(IA_DEFUSE_SPIKE, ETriggerEvent::Started, this, &AMyPlayerController::StartDefuseSpike);
+			EnhancedInput->BindAction(IA_DEFUSE_SPIKE, ETriggerEvent::Completed, this, &AMyPlayerController::StopDefuseSpike);
+        }
     }
 }
 
@@ -337,6 +343,16 @@ void AMyPlayerController::Move(const FInputActionValue& Value)
 {
     APawn* MyPawn = GetPawn();
     if (!MyPawn) return;
+	ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn);
+
+	if (!MyChar) return;
+	UWeaponComponent* WeaponComp = MyChar->GetWeaponComponent();
+    if (WeaponComp) {
+        if (WeaponComp->IsPlantingSpike()) {
+            return; // cannot move while planting spike
+        }
+    }
+
     FVector2D MoveInput = Value.Get<FVector2D>();
 
     const FRotator ControlRot = this->GetControlRotation();
@@ -358,7 +374,12 @@ void AMyPlayerController::OnLeftClickStart()
     {
         if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
         {
-            WC->StartAttack();
+            if (WC->GetCurrentWeaponType() == EWeaponTypes::Spike) {
+				WC->OnInput_StartPlantSpike();
+            }
+            else {
+                WC->OnInput_StartAttack();
+            }
         }
     }
 }
@@ -372,7 +393,12 @@ void AMyPlayerController::OnLeftClickRelease()
     {
         if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
         {
-            WC->StopAttack();
+            if (WC->GetCurrentWeaponType() == EWeaponTypes::Spike) {
+                WC->OnInput_StopPlantSpike();
+            }
+            else {
+                WC->OnInput_StopAttack();
+            }
         }
     }
 }
@@ -471,5 +497,30 @@ void AMyPlayerController::ChangeView() {
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
         MyChar->ChangeView();
+    }
+}
+
+void AMyPlayerController::StartDefuseSpike() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        {
+            WC->OnInput_StartDefuseSpike();
+        }
+    }
+}
+
+void AMyPlayerController::StopDefuseSpike() {
+	UE_LOG(LogTemp, Warning, TEXT("StopDefuseSpike called"));
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        {
+            WC->OnInput_StopDefuseSpike();
+        }
     }
 }

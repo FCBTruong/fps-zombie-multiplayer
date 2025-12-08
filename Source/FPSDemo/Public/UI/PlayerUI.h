@@ -86,6 +86,13 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UVerticalBox* WeaponsBox;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* PnSpike;
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* StartPlantSpikeAnim;
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* StartDefuseSpikeAnim;
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
@@ -119,4 +126,6 @@ public:
 	void HideScope();
 	void UpdatePistol(const EItemId& ItemId);
 	void UpdateRifle(const EItemId& ItemId);
+	void OnUpdatePlantSpikeState(bool IsPlanting);
+	void OnUpdateDefuseSpikeState(bool IsDefusing);
 };

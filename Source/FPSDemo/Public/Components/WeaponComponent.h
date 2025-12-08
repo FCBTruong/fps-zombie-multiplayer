@@ -26,7 +26,8 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGrenades, const TArray<EItemId>&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateCurrentWeapon, const EItemId&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRifleWeapon, const EItemId&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePistolWeapon, const EItemId&);
-
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePlantSpikeState, bool);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateDefuseSpikeState, bool);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponComponent : public UActorComponent
@@ -48,6 +49,14 @@ protected:
 
 	UPROPERTY(Replicated)
 	bool bIsFiring;
+
+	UPROPERTY(ReplicatedUsing = OnRep_IsPlantingSpike)
+	bool bIsPlantingSpike;
+
+	UPROPERTY(ReplicatedUsing = OnRep_IsDefusingSpike)
+	bool bIsDefusingSpike;
+	UFUNCTION() void OnRep_IsDefusingSpike();
+
 	bool bIsScopeEquipped;
 	bool bIsMeleeAttacking;
 
@@ -56,6 +65,7 @@ protected:
 	UFUNCTION(Server, Unreliable) void ServerSetIsPriming(bool bNewIsPriming);
 
 	UFUNCTION() void OnRep_IsPriming();
+	UFUNCTION() void OnRep_IsPlantingSpike();
 	bool bIsThrowing;
 
 
@@ -113,6 +123,13 @@ protected:
 	void UpdateStateCurrentWeapon();
 	UFUNCTION()
 	void OnRep_Grenades();
+	FTimerHandle SpikePlantTimerHandle;
+	FTimerHandle SpikeDefuseTimerHandle;
+	void FinishPlantSpike();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastSpikePlanted();
+
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -141,10 +158,13 @@ public:
 	void MulticastStopPlantSpike();
 
 	UFUNCTION(Server, Reliable)
-	void ServerDefuseSpike();
+	void ServerStartDefuseSpike();
 
-	void StartAttack();
-	void StopAttack();
+	UFUNCTION(Server, Reliable)
+	void ServerStopDefuseSpike();
+
+	void OnInput_StartAttack();
+	void OnInput_StopAttack();
 	void OnFire();
 	void HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, const FString& HitBoneName);
 	void StartAiming();
@@ -211,4 +231,15 @@ public:
 	void TriggerUpdateUI();
 	bool IsReloading() const { return bIsReloading; }
 	bool CanReload();
+	void OnInput_StartPlantSpike();
+	void OnInput_StopPlantSpike();
+	void OnInput_StartDefuseSpike();
+	void OnInput_StopDefuseSpike();
+
+	FOnUpdatePlantSpikeState OnUpdatePlantSpikeState;
+	FOnUpdateDefuseSpikeState OnUpdateDefuseSpikeState;
+	bool IsPlantingSpike() const {
+		return bIsPlantingSpike;
+	}
+	void FinishDefuseSpike();
 };

@@ -114,3 +114,80 @@ void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class ACont
 {
     
 }
+
+void AShooterGameMode::AddPlayer(APlayerController* NewPlayer)
+{
+    
+}
+
+FString AShooterGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) {
+
+    UE_LOG(LogTemp, Warning, TEXT("InitNewPlayer called in TeamEliminationMode"));
+    AddPlayer(NewPlayerController);
+    return Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
+}
+
+void AShooterGameMode::ResetPlayers()
+{
+    for (APlayerController* PC : TeamA)
+    {
+        if (PC)
+        {
+            if (APawn* OldPawn = PC->GetPawn())
+            {
+                OldPawn->Destroy();     // Required!
+            }
+            RestartPlayer(PC);          // Will now actually respawn at a PlayerStart
+        }
+    }
+
+    for (APlayerController* PC : TeamB)
+    {
+        if (PC)
+        {
+            if (APawn* OldPawn = PC->GetPawn())
+            {
+                OldPawn->Destroy();
+            }
+            RestartPlayer(PC);
+        }
+    }
+}
+
+void AShooterGameMode::RestartPlayer(AController* NewPlayer)
+{
+    Super::RestartPlayer(NewPlayer);
+    if (AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>())
+    {
+        PS->SetIsAlive(true);
+    }
+}
+
+
+
+ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Spawning Bot for Team %s"), *TeamID.ToString());
+    FActorSpawnParameters Params;
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+    // 1) Spawn AI controller
+    ABotAIController* Bot = GetWorld()->SpawnActor<ABotAIController>(ABotAIController::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
+    if (!Bot) return nullptr;
+
+    // 2) Set team in PlayerState
+    AMyPlayerState* NewPS = GetWorld()->SpawnActor<AMyPlayerState>(PlayerStateClass);
+    NewPS->SetOwner(Bot);
+    Bot->PlayerState = NewPS;
+
+    NewPS->SetTeamID(TeamID);
+    NewPS->SetIsAlive(true);
+
+    // 3) Restart to spawn Pawn
+    RestartPlayer(Bot);
+    UE_LOG(LogTemp, Warning, TEXT("Spawned Bot for Team %s"), *TeamID.ToString());
+
+    return Bot;
+}
+
+

@@ -25,6 +25,7 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Perception/AISense_Sight.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Components/AudioComponent.h"
 #include "BaseCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -98,9 +99,6 @@ protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    // Input handlers
-    void Move(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
     void StartRunning();
     void StopRunning();
     void CustomCrouch();
@@ -158,6 +156,11 @@ protected:
     void OnRep_PlayerState() override;
 
     bool bAppliedTeamMesh = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spike")
+    USoundBase* PlantingSpikeSound;
+    UPROPERTY()
+    UAudioComponent* PlantSpikeAudioComp = nullptr;
 public:
     ABaseCharacter();
 
@@ -294,4 +297,6 @@ public:
     UBehaviorTree* BehaviorTree;
 
     void SetMeshBaseOnTeam();
+	void PlayPlantSpikeEffect();
+	void StopPlantSpikeEffect();
 };

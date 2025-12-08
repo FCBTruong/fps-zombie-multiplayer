@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Weapons/WeaponBase.h"
 #include "GameFramework/GameMode.h"
+#include "Controllers/BotAIController.h"
 #include "ShooterGameMode.generated.h"
 
 /**
@@ -17,10 +18,21 @@ class FPSDEMO_API AShooterGameMode : public AGameMode
 public:
 	virtual void StartPlay() override;
 	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser = nullptr, bool bWasHeadShot = false);
+	virtual void AddPlayer(APlayerController* NewPlayer);
+	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
+	void RestartPlayer(AController* NewPlayer) override;
+	void ResetPlayers();
+	ABotAIController* SpawnBot(FName TeamID);
 protected:
-    // Configurable in editor
-    UPROPERTY(EditDefaultsOnly, Category = "Weapons")
-    TArray<TSubclassOf<AWeaponBase>> WeaponClasses;
     virtual void PostLogin(APlayerController* NewPlayer) override;
-  
+
+
+	UPROPERTY()
+	TArray<APlayerController*> TeamA;
+
+	UPROPERTY()
+	TArray<APlayerController*> TeamB;
+
+	FTimerHandle RoundStartTimer;
+	bool bRoundInProgress = false;
 };
