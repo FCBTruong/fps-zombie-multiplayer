@@ -8,6 +8,7 @@
 #include "Components/SphereComponent.h"
 #include "PickupItem.generated.h"
 
+class ABaseCharacter;
 UCLASS()
 class FPSDEMO_API APickupItem : public AActor
 {
@@ -18,17 +19,23 @@ public:
 	APickupItem();
 
 private:
+	UPROPERTY(ReplicatedUsing = OnRep_Data)
 	FPickupData Data;
 	UPROPERTY()
 	UStaticMeshComponent* ItemMesh;
 	UPROPERTY()
 	USphereComponent* PickupSphere;
-
+	double LastDropTimeMs = 0;
+	ABaseCharacter* LastOwner = nullptr;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	
+	UFUNCTION()
+	void OnRep_Data();
+	void OnLoadData();
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -41,4 +48,8 @@ public:
 	FORCEINLINE FPickupData GetData() const { return Data; }
 	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
 	FString GetItemName() const;
+
+	FPickupData GetPickupData() const { return Data; }
+	void PlayerDropInfo(ABaseCharacter* Character);
+	bool IsJustDropped(ABaseCharacter* Character) const;
 };

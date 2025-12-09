@@ -14,33 +14,7 @@ ATeamEliminationMode::ATeamEliminationMode()
 
 void ATeamEliminationMode::AddPlayer(APlayerController* NewPlayer)
 {
-	UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in TeamEliminationMode"));
-    if (!NewPlayer)
-    {
-        return;
-    }
-
-    AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>();
-    if (!PS) {
-		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in AddPlayer"));
-        return;
-    }
-	UE_LOG(LogTemp, Warning, TEXT("Adding player to team..."));
-
-    FName AssignedTeam;
-
-    if (TeamA.Num() > TeamB.Num())
-    {
-        AssignedTeam = "B";
-        TeamB.Add(NewPlayer);
-    }
-    else
-    {
-        AssignedTeam = "A";
-        TeamA.Add(NewPlayer);
-    }
-
-    PS->SetTeamID(AssignedTeam);
+	Super::AddPlayer(NewPlayer);
 }
 
 
@@ -140,96 +114,13 @@ void ATeamEliminationMode::EndGame(FName WinningTeam)
 void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeadShot)
 {
     Super::NotifyPlayerKilled(Killer, Victim, DamageCauser);
-	UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in TeamEliminationMode"));
-
-	// log damage causer is null or not
-	UE_LOG(LogTemp, Warning, TEXT("DamageCauser is %snull"), DamageCauser ? TEXT("not ") : TEXT(""));
-    AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
-    AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
-    if (!VictimPS) {
-		UE_LOG(LogTemp, Warning, TEXT("VictimPS is null in NotifyPlayerKilled"));
-        return;
-    }
-	VictimPS->SetIsAlive(false);
-    
-    if (bRoundInProgress) {
-        CheckRoundEnd();
-    }
-
-    ATeamEliminationState* GS = GetGameState<ATeamEliminationState>();
-    if (GS)
-    {
-        GS->MulticastKillNotify(KillerPS, VictimPS, DamageCauser, bWasHeadShot);
-    }
 }
 
 void ATeamEliminationMode::CheckRoundEnd()
 {
-    bool bTeamAAllDead = true;
-    bool bTeamBAllDead = true;
-
-    for (APlayerController* PC : TeamA)
-    {
-        if (AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>())
-        {
-            if (PS->IsAlive())
-            {
-                bTeamAAllDead = false;
-                break;
-            }
-        }
-    }
-
-    for (APlayerController* PC : TeamB)
-    {
-        if (AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>())
-        {
-            if (PS->IsAlive())
-            {
-                bTeamBAllDead = false;
-                break;
-            }
-        }
-    }
-
-    // Determine winner
-    if (bTeamAAllDead && !bTeamBAllDead)
-    {
-        EndRound("B");
-    }
-    else if (bTeamBAllDead && !bTeamAAllDead)
-    {
-        EndRound("A");
-    }
+    
 }
 void ATeamEliminationMode::EndRound(FName WinningTeam)
 {
-    ATeamEliminationState* GS = GetGameState<ATeamEliminationState>();
-    if (!GS) {
-        return;
-	}
-	bRoundInProgress = false;
-	UE_LOG(LogTemp, Warning, TEXT("Round Over! Team %s wins the round!"), *WinningTeam.ToString());
-    if (WinningTeam == "A")
-    {
-		GS->TeamAScore++;
-    }
-    else
-    {
-		GS->TeamBScore++;
-    }
-
-    // Match victory
-    if (GS->TeamAScore >= MaxRoundsToWin)
-    {
-        EndGame("A");
-        return;
-    }
-    if (GS->TeamBScore >= MaxRoundsToWin)
-    {
-        EndGame("B");
-        return;
-    }
-
-    StartNextRound();
+    
 }

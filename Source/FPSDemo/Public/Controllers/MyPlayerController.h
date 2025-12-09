@@ -24,9 +24,6 @@ private:
 	UGameManager* GMR;
 public:
 	AMyPlayerController();
-
-	UFUNCTION(Client, Reliable)
-	void Client_ReceiveItemsOnMap(const TArray<FPickupData>& Items);
 	void BeginPlay() override;
 	UPlayerUI* PlayerUI;
 	void OnPossess(APawn* InPawn) override;
@@ -118,4 +115,5 @@ public:
 	void ChangeView();
 	void StartDefuseSpike();
 	void StopDefuseSpike();
+	FName GetTeamId();
 };

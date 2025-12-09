@@ -91,7 +91,9 @@ protected:
 	
 	float ThrowAngle = 10.f;
 	float GrenadeInitSpeed = 1400.f;
-	bool bHasSpike = true;
+
+	UPROPERTY(Replicated)
+	bool bHasSpike = false;
 
 
 	ABaseCharacter* Character;
@@ -129,7 +131,6 @@ protected:
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastSpikePlanted();
-
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -176,9 +177,6 @@ public:
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayFireRifle(FVector TargetPoint);
-
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastDropWeapon(FPickupData Data);
 
 	bool IsScopeEquipped();
 
@@ -242,4 +240,6 @@ public:
 		return bIsPlantingSpike;
 	}
 	void FinishDefuseSpike();
+	bool CanPlantSpikeAtCurrentLocation();
+	void RefreshOverlapPickupActors();
 };

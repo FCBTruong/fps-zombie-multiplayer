@@ -6,7 +6,7 @@
 
 void AShooterGameMode::StartPlay()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Game Started!"));
+    UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode:Game Started!"));
     Super::StartPlay();
 
     AShooterGameState* GS = GetGameState<AShooterGameState>();
@@ -22,68 +22,6 @@ void AShooterGameMode::StartPlay()
     {
         return;
     }
-
-    FVector Origin(0.f, 0.f, 100.f);
-    float RangeX = 1000.f;
-    float RangeY = 1000.f;
-    TArray<FPickupData> ItemArray;
-
-	TArray<UWeaponData*> SpawnableItems = TArray<UWeaponData*>();
-	TArray<UWeaponData*> AllWeapons = WeaponDataMgr->GetAllWeapons();
-    for (UWeaponData* Weapon : AllWeapons)
-    {
-        if (Weapon)
-        {
-            if (Weapon->WeaponType == EWeaponTypes::Firearm) {
-                SpawnableItems.Add(Weapon);
-            }
-        }
-	}
-    if (SpawnableItems.Num() == 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No spawnable items found"));
-        return;
-	}
-    for (int32 i = 0; i < 50; i++)
-    {
-        float RandX = FMath::FRandRange(-RangeX, RangeX);
-        float RandY = FMath::FRandRange(-RangeY, RangeY);
-        float RandZ = 100.f;
-
-        FVector SpawnLocation(RandX, RandY, RandZ);
-
-        UWeaponData* PickupObj = SpawnableItems[FMath::RandRange(0, SpawnableItems.Num() - 1)];
-        if (!PickupObj)
-        {
-            continue;
-        }
-
-        FPickupData P;
-		P.Id = GMR->GetNextItemOnMapId();
-        P.ItemId = PickupObj->Id;
-        P.Amount = 1;
-        P.Location = SpawnLocation;
-
-        GS->ItemsOnMap.Add(P.Id, P);
-        ItemArray.Add(P);
-    }
-
-
-    UWorld* World = GetWorld();
-    if (World)
-    {
-        if (World->GetNetMode() == NM_DedicatedServer)
-        {
-            UE_LOG(LogTemp, Log, TEXT("Skip GenItemNodesOnMap on dedicated server"));
-            return;
-        }
-        else {
-            GMR->GenItemNodesOnMap(ItemArray);
-        }
-    }
-    
-
-    UE_LOG(LogTemp, Log, TEXT("Generated %d items on map"), GS->ItemsOnMap.Num());
 }
 
 void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
@@ -96,28 +34,61 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
         AMyPlayerController* MyPC = Cast<AMyPlayerController>(NewPlayer);
         if (MyPC)
         {
-            FTimerHandle TimerHandle;
-            GetWorld()->GetTimerManager().SetTimer(TimerHandle, [MyPC, this]()
-                {
-                    AShooterGameState* GS = GetGameState<AShooterGameState>();
-                    if (GS)
-                    {
-                        MyPC->Client_ReceiveItemsOnMap(GS->GetItemsOnMap());
-                    }
-                }, 0.5f, false);
+           
         }
     }
 }
 
 
-void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeatShot)
+void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeadShot)
 {
-    
+    UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in TeamEliminationMode"));
+
+    AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
+    AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
+    if (!VictimPS) {
+        UE_LOG(LogTemp, Warning, TEXT("VictimPS is null in NotifyPlayerKilled"));
+        return;
+    }
+    VictimPS->SetIsAlive(false);
+
+   
+    AShooterGameState* GS = GetGameState<AShooterGameState>();
+    if (GS)
+    {
+        GS->MulticastKillNotify(KillerPS, VictimPS, DamageCauser, bWasHeadShot);
+    }
 }
 
 void AShooterGameMode::AddPlayer(APlayerController* NewPlayer)
 {
-    
+    UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in TeamEliminationMode"));
+    if (!NewPlayer)
+    {
+        return;
+    }
+
+    AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>();
+    if (!PS) {
+        UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in AddPlayer"));
+        return;
+    }
+    UE_LOG(LogTemp, Warning, TEXT("Adding player to team..."));
+
+    FName AssignedTeam;
+
+    if (TeamA.Num() > TeamB.Num())
+    {
+        AssignedTeam = "B";
+        TeamB.Add(NewPlayer);
+    }
+    else
+    {
+        AssignedTeam = "A";
+        TeamA.Add(NewPlayer);
+    }
+
+    PS->SetTeamID(AssignedTeam);
 }
 
 FString AShooterGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) {
@@ -129,7 +100,7 @@ FString AShooterGameMode::InitNewPlayer(APlayerController* NewPlayerController, 
 
 void AShooterGameMode::ResetPlayers()
 {
-    for (APlayerController* PC : TeamA)
+    for (AController* PC : TeamA)
     {
         if (PC)
         {
@@ -141,7 +112,7 @@ void AShooterGameMode::ResetPlayers()
         }
     }
 
-    for (APlayerController* PC : TeamB)
+    for (AController* PC : TeamB)
     {
         if (PC)
         {
@@ -187,7 +158,47 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
     RestartPlayer(Bot);
     UE_LOG(LogTemp, Warning, TEXT("Spawned Bot for Team %s"), *TeamID.ToString());
 
+    if (TeamID == "A")
+    {
+        TeamA.Add(Bot);
+    }
+    else if (TeamID == "B")
+    {
+        TeamB.Add(Bot);
+	}
+
     return Bot;
 }
 
+bool AShooterGameMode::CheckAllTeamDead(FName TeamID)
+{
+    const TArray<AController*>* TeamArray = nullptr;
 
+    if (TeamID == "A")
+    {
+        TeamArray = &TeamA;
+    }
+    else if (TeamID == "B")
+    {
+        TeamArray = &TeamB;
+    }
+    else
+    {
+        return false; // invalid team
+    }
+
+    // Check players
+    for (AController* PC : *TeamArray)
+    {
+        if (!PC) continue;
+
+        AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>();
+        if (PS && PS->IsAlive())
+        {
+            return false; // At least 1 alive team NOT dead
+        }
+    }
+
+    // No alive players
+    return true;
+}

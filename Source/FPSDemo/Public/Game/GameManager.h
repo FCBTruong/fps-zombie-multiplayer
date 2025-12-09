@@ -8,6 +8,7 @@
 #include "Items/ItemData.h"
 #include "Game/GlobalDataAsset.h"
 #include "Weapons/WeaponDataManager.h"
+#include "Pickup/PickupItem.h"
 #include "GameManager.generated.h"
 
 /**
@@ -19,21 +20,19 @@ class FPSDEMO_API UGameManager : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 private:
-	UPROPERTY()
-	TMap<int32, AActor*> ItemNodesOnMap;
 	UWeaponDataManager* WeaponDataManager;
+	TMap<int32, APickupItem*> PickupItemsOnMap;
 public:
-	void GenItemNodesOnMap(const TArray<FPickupData>& Items);
-	void OnReceivedItemsFromServer(const TArray<FPickupData>& Items);
 	FPickupData GetDataPickupItem(int32 ItemOnMapId);
-	void FindAndDestroyItem(int32 ItemOnMapId);
+	void FindAndDestroyItemNode(int32 ItemOnMapId);
 	UItemData* GetItemDataById(EItemId ItemId);
-	void OnNewItemDataSpawned(const TArray<FPickupData>& Items);
-	void OnNewItemNodeSpawned(AActor* Item, int32 OnMapId);
 	int32 GetNextItemOnMapId();
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	UWeaponDataManager* GetWeaponDataManager();
 
 	UGlobalDataAsset* GlobalData;
 	UWeaponData* GetWeaponDataById(EItemId ItemId);
+	APickupItem* CreatePickupActor(FPickupData Data);
+	void CleanPickupItemsOnMap();
+	APickupItem* GetPickupNode(int PickupId);
 };

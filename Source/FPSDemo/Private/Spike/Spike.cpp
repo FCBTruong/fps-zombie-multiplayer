@@ -4,6 +4,8 @@
 #include "Spike/Spike.h"
 #include <Kismet/GameplayStatics.h>
 #include "Components/AudioComponent.h"
+#include "Game/SpikeMode.h"
+
 // Sets default values
 ASpike::ASpike()
 {
@@ -64,7 +66,7 @@ void ASpike::Tick(float DeltaTime)
         float Alpha = FMath::Clamp(ExplodeTimer / 0.5f, 0.f, 1.f);
 
         // scale animation: 0 - 3
-        float Scale = FMath::Lerp(0.f, 8.f, Alpha);
+        float Scale = FMath::Lerp(0.f, 15.f, Alpha);
         ExplodeSphere->SetWorldScale3D(FVector(Scale));
 
         if (Alpha >= 1.f)
@@ -85,6 +87,8 @@ void ASpike::Explode()
         return;
     }
 
+	ASpikeMode* SpikeMode = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(this));
+	SpikeMode->SpikeExploded();
 	Multicast_Explode();
 }
 

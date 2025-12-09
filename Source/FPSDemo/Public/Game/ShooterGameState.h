@@ -13,6 +13,9 @@ enum EMyMatchState {
 	GAME_ENDED
 };
 
+
+DECLARE_MULTICAST_DELEGATE(FOnUpdateScore)
+
 UCLASS()
 class FPSDEMO_API AShooterGameState : public AGameState
 {
@@ -20,12 +23,22 @@ class FPSDEMO_API AShooterGameState : public AGameState
 
 protected:
 	EMyMatchState CurrentMatchState = EMyMatchState::WAITING_TO_START;
+
+	UPROPERTY(Replicated)
+    FName AttackerTeam = FName(TEXT("A"));
+
+    UPROPERTY(ReplicatedUsing = OnRep_Score)
+    int TeamAScore = 0;
+
+    UPROPERTY(ReplicatedUsing = OnRep_Score)
+    int TeamBScore = 0;
+    
+    UFUNCTION()
+    void OnRep_Score();
+
 public:
 	AShooterGameState();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-    TMap<int32, FPickupData> ItemsOnMap;
-	TArray<FPickupData> GetItemsOnMap() const;
     
     UFUNCTION(NetMulticast, UnReliable)
     void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser, bool bWasHeadShot);
@@ -35,4 +48,20 @@ public:
     EMyMatchState GetMatchState() const {
 		return CurrentMatchState;
 	}
+	UFUNCTION(NetMulticast, UnReliable)
+	void Multicast_RoundResult(FName WinningTeam);
+    FName GetAttackerTeam() const {
+        return AttackerTeam;
+	}
+    FName GetDefenderTeam() const {
+        return AttackerTeam == FName(TEXT("A")) ? FName(TEXT("B")) : FName(TEXT("A"));
+	}
+
+    FOnUpdateScore OnUpdateScore;
+
+    void AddScoreTeam(FName TeamId, int ScoreToAdd);
+    int GetScoreTeam(FName TeamId) const;
+    void SetAttackerTeam(FName NewAttackerTeam) {
+        AttackerTeam = NewAttackerTeam;
+    }
 };

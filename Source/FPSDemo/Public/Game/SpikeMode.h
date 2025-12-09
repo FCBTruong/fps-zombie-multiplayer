@@ -20,11 +20,20 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
 	TSubclassOf<ASpike> SpikeClass;
 	ASpike* PlantedSpike;
+	FTimerHandle StartRoundTimerHandle;
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeadShot) override;
 public:
 	virtual void StartPlay() override;
+	void StartRound();
+	void EndRound(FName WinningTeam);
+	void EndGame(FName WinningTeam);
 	void PlantSpike(FVector Location, AMyPlayerController* Planter);
 	bool IsSpikePlanted() {
 		return PlantedSpike != nullptr;
 	}
 	void DefuseSpike(AMyPlayerController* Defuser);
+	void SpikeExploded();
+	static constexpr int32 ScoreToWin = 9;
+
 };

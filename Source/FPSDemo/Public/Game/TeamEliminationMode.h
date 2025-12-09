@@ -17,8 +17,8 @@ class FPSDEMO_API ATeamEliminationMode : public AShooterGameMode
 	GENERATED_BODY()
 
 
-private:
-
+protected:
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 public:
 	ATeamEliminationMode();
 	virtual void BeginPlay() override;
@@ -32,6 +32,5 @@ public:
 	
 	static constexpr int MaxRoundsToWin = 5;
 	virtual void AddPlayer(APlayerController* NewPlayer) override;
-	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
-	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser = nullptr, bool bWasHeadShot = false) override;
+	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeadShot) override;
 };

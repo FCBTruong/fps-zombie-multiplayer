@@ -161,6 +161,10 @@ protected:
     USoundBase* PlantingSpikeSound;
     UPROPERTY()
     UAudioComponent* PlantSpikeAudioComp = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spike")
+    USoundBase* DefusingSpikeSound;
+    UPROPERTY()
+	UAudioComponent* DefuseSpikeAudioComp = nullptr;
 public:
     ABaseCharacter();
 
@@ -299,4 +303,6 @@ public:
     void SetMeshBaseOnTeam();
 	void PlayPlantSpikeEffect();
 	void StopPlantSpikeEffect();
+    void PlayDefuseSpikeEffect();
+	void StopDefuseSpikeEffect();
 };

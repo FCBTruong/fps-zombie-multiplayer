@@ -20,6 +20,13 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Game/SpikeMode.h"
 #include "Game/ShooterGameState.h"
+#include "Engine/DecalActor.h"
+#include "Components/DecalComponent.h"
+#include "Game/ActorManager.h"
+#include <Engine/TriggerBox.h>
+#include "Components/BoxComponent.h"
+#include <Kismet/KismetMathLibrary.h>
+#include "Components/CapsuleComponent.h"
 
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
@@ -70,8 +77,7 @@ void UWeaponComponent::InitState() {
 				UWeaponData* PistolData = GMR->GetWeaponDataById(EItemId::PISTOL_PL_14);
                 PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
 				PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
-				//EquipWeapon(EItemId::PISTOL_PL_14);
-                EquipWeapon(EItemId::SPIKE);
+				EquipWeapon(EItemId::PISTOL_PL_14);
             },
             1.0f,
             false
@@ -254,15 +260,25 @@ void UWeaponComponent::HandleDropWeapon() {
     }
 
 	// spawn new pickup item on map
-	FVector DropPoint = GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 300.f + FVector(0.f, 0.f, 100.f);
+	FVector DropPoint = GetOwner()->GetActorLocation() + FVector(0.f, 0.f, 60.f) + Character->GetActorForwardVector() * 30;
     FPickupData Data;
 	Data.Location = DropPoint;
 	Data.Amount = 1;
 	Data.ItemId = CurrentWeaponId;
 	Data.Id = GMR->GetNextItemOnMapId();
-    GMR->OnNewItemDataSpawned({ Data });
 
-	MulticastDropWeapon(Data);
+    FVector LookDir = Character->GetControlRotation().Vector();
+    FVector LaunchVelocity = LookDir * 600.f;
+
+    // Spawn Pickup item
+    APickupItem* Pickup = GMR->CreatePickupActor(Data);
+
+    if (Pickup && Pickup->GetItemMesh())
+    {
+        Pickup->PlayerDropInfo(Character);
+		UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: Dropped weapon %d at location %s"), (int32)CurrentWeaponId, *DropPoint.ToString());
+        Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
+    }
 
 	if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
 		// remove from throwables array
@@ -277,35 +293,28 @@ void UWeaponComponent::HandleDropWeapon() {
         }
     }
 
- 
+    // refresh overlapping actors
+    RefreshOverlapPickupActors();
+
 	EquipWeapon(MeleeState.ItemId);
 }
 
-void UWeaponComponent::MulticastDropWeapon_Implementation(FPickupData Data) {
-    // Throw it forward
-    FVector ForwardVector = Character->GetActorForwardVector();
-    FVector LaunchVelocity = ForwardVector * 300.f + FVector(0.f, 0.f, 100.f);
-    //CurrentWeapon->WeaponMesh->AddImpulse(LaunchVelocity, NAME_None, true);
-
-    // Spawn Pickup item
-    APickupItem* Pickup = GetWorld()->SpawnActor<APickupItem>(
-        APickupItem::StaticClass(),
-        GetOwner()->GetActorLocation(),
-        FRotator::ZeroRotator
-    );
-
-    if (Pickup) {
-        Pickup->SetData(Data);
-        Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
-        Pickup->GetItemMesh()->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
-        Pickup->GetItemMesh()->SetEnableGravity(true);
-        Pickup->GetItemMesh()->SetLinearDamping(0.8f);
-        Pickup->GetItemMesh()->SetAngularDamping(0.8f);
-        Pickup->GetItemMesh()->SetPhysicsMaxAngularVelocityInDegrees(720.f);
-
-		// add pickup data to game state due to server will not update for clients
-		GMR->OnNewItemDataSpawned({ Data });
-		GMR->OnNewItemNodeSpawned(Pickup, Data.Id);
+void UWeaponComponent::RefreshOverlapPickupActors() {
+    UCapsuleComponent* Cap = Character->GetCapsuleComponent();
+    TArray<AActor*> OverlappingActors;
+    Cap->GetOverlappingActors(OverlappingActors);
+    for (AActor* A : OverlappingActors)
+    {
+        APickupItem* Item = Cast<APickupItem>(A);
+        if (Item && !Item->IsJustDropped(Character))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Overlapping PickupItem: %s"), *Item->GetName());
+			// call pickup component to manually trigger overlap
+			UPickupComponent* PickupComp = Character->GetPickupComponent();
+            if (PickupComp) {
+                PickupComp->PickupItem(Item);
+            }
+        }
     }
 }
 
@@ -571,7 +580,6 @@ void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
         return;
     }*/
 	bIsMeleeAttacking = true;
-	Character->PlayMeleeAttackAnimation(AttackIdx);
 	MulticastDoMeleeAttack(AttackIdx);
 }
 
@@ -734,6 +742,8 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
 }
 
 void UWeaponComponent::MulticastPlayFireRifle_Implementation(FVector TargetPoint) {
+    if (IsNetMode(NM_DedicatedServer)) return;
+
 	if (IsLocalControl()) {
         return; // skip local player
 	}
@@ -1339,6 +1349,16 @@ bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
             return static_cast<int32>(A) < static_cast<int32>(B);
             });
     }
+    else if (WeaponConf->WeaponType == EWeaponTypes::Spike) {
+		// check if player is allowed to have spike
+        AMyPlayerState* MyPS = Cast<AMyPlayerState>(Character->GetPlayerState());
+		AShooterGameState* GS = Cast<AShooterGameState>(GetWorld()->GetGameState());
+        if (GS->GetAttackerTeam() != MyPS->GetTeamID()) {
+            return false; // only attackers can have spike
+        }
+        
+		bHasSpike = true;
+    }
     return true;
 }
 
@@ -1426,6 +1446,10 @@ void UWeaponComponent::ServerStartPlantSpike_Implementation() {
     if (bIsPlantingSpike) {
         return;
 	}
+    if (!CanPlantSpikeAtCurrentLocation()) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartPlantSpike: Cannot plant spike at current location"));
+        return;
+    }
 	UE_LOG(LogTemp, Warning, TEXT("ServerStartPlantSpike called"));
 
 	bIsPlantingSpike = true;
@@ -1525,7 +1549,60 @@ void UWeaponComponent::OnInput_StartPlantSpike() {
     if (bIsPlantingSpike) {
         return;
     }
+    if (!CanPlantSpikeAtCurrentLocation()) {
+        UE_LOG(LogTemp, Warning, TEXT("OnInput_StartPlantSpike: Cannot plant spike at current location"));
+        return;
+	}
 	ServerStartPlantSpike();
+}
+
+bool UWeaponComponent::CanPlantSpikeAtCurrentLocation() {
+    if (!Character) {
+        return false;
+    }
+    
+    if (AActorManager::Instance == nullptr) {
+        UE_LOG(LogTemp, Warning, TEXT("CanPlantSpikeAtCurrentLocation: ActorManager instance is null"));
+        return false;
+	}
+    TArray<ATriggerBox*> BombAreas = {
+        AActorManager::Instance->GetAreaBombA(),
+		AActorManager::Instance->GetAreaBombB()
+    };
+    for (ATriggerBox* Area : BombAreas)
+    {
+        if (!Area)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("CanPlantSpikeAtCurrentLocation: Bomb area is invalid"));
+            continue;   // skip invalid area
+        }
+
+        UBoxComponent* Box = Cast<UBoxComponent>(Area->GetCollisionComponent());
+        if (!Box) return false;
+
+        FVector BoxCenter = Box->GetComponentLocation();
+        FVector BoxSize = Box->GetScaledBoxExtent();
+
+        FVector CharLoc = Character->GetActorLocation();
+
+        bool bInside = UKismetMathLibrary::IsPointInBox(
+            CharLoc,
+            BoxCenter,
+            BoxSize
+        );
+
+        if (bInside)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Character IS inside %s"), *Area->GetName());
+            return true;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Character is NOT inside %s"), *Area->GetName());
+        }
+    }
+
+    return false;
 }
 
 void UWeaponComponent::OnInput_StopPlantSpike() {
@@ -1595,7 +1672,7 @@ void UWeaponComponent::OnInput_StopDefuseSpike() {
 
 void UWeaponComponent::OnRep_IsDefusingSpike() {
     OnUpdateDefuseSpikeState.Broadcast(bIsDefusingSpike);
-   /* if (bIsDefusingSpike) {
+    if (bIsDefusingSpike) {
         if (Character) {
             Character->PlayDefuseSpikeEffect();
         }
@@ -1604,5 +1681,5 @@ void UWeaponComponent::OnRep_IsDefusingSpike() {
         if (Character) {
             Character->StopDefuseSpikeEffect();
         }
-	}*/
+	}
 }

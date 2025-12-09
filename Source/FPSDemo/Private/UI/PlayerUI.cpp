@@ -76,13 +76,13 @@ void UPlayerUI::UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints)
 void UPlayerUI::OnUpdateScore()
 {
     // Get game state and update scores
-    ATeamEliminationState* GST = GetWorld()->GetGameState<ATeamEliminationState>();
-    if (GST) {
-        // Assuming we have a way to determine which team is "my team"
-        int MyTeamPoints = GST->TeamAScore; // Replace with actual team logic
-        int OpponentTeamPoints = GST->TeamBScore; // Replace with actual team logic
-		UpdateTeamScores(MyTeamPoints, OpponentTeamPoints);
-    }
+  //  ATeamEliminationState* GST = GetWorld()->GetGameState<ATeamEliminationState>();
+  //  if (GST) {
+  //      // Assuming we have a way to determine which team is "my team"
+  //      int MyTeamPoints = GST->TeamAScore; // Replace with actual team logic
+  //      int OpponentTeamPoints = GST->TeamBScore; // Replace with actual team logic
+		//UpdateTeamScores(MyTeamPoints, OpponentTeamPoints);
+  //  }
 }
 
 void UPlayerUI::OnHit()
@@ -107,6 +107,9 @@ void UPlayerUI::OnEnter()
 	ShowIconGrenade(EItemId::GRENADE_INCENDIARY, false);
 	ScopeUI->HideScope();
 	PnSpike->SetVisibility(ESlateVisibility::Hidden);
+    if (MatchToastPn) {
+        MatchToastPn->SetVisibility(ESlateVisibility::Hidden);
+    }
 }
 
 void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponConf, bool bIsHeadShot)
@@ -353,5 +356,38 @@ void UPlayerUI::OnUpdateDefuseSpikeState(bool IsDefusing) {
     else {
         StopAnimation(StartDefuseSpikeAnim);
         PnSpike->SetVisibility(ESlateVisibility::Hidden);
+    }
+}
+
+void UPlayerUI::ShowMatchStateToast(FText Txt, float Delay)
+{
+    if (Delay <= 0.f)
+    {
+        // run immediately
+        DoShowMatchStateToast(Txt);
+        return;
+    }
+
+    // Capture text for delayed execution
+    FText LocalText = Txt;
+
+    FTimerHandle TimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(
+        TimerHandle,
+        [this, LocalText]()
+        {
+            DoShowMatchStateToast(LocalText);
+        },
+        Delay,
+        false
+    );
+}
+void UPlayerUI::DoShowMatchStateToast(FText Txt)
+{
+    if (MatchStateLb)
+    {
+        MatchStateLb->SetText(Txt);
+        MatchToastPn->SetVisibility(ESlateVisibility::Visible);
+        PlayAnimation(ShowMatchStateAnim);
     }
 }

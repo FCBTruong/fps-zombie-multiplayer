@@ -18,6 +18,7 @@
 #include "Engine/DamageEvents.h"
 #include "Damage/MyPointDamageEvent.h"
 #include "Controllers/MyPlayerState.h"
+#include "Game/ShooterGameState.h"
 
 
 // Sets default values
@@ -195,17 +196,18 @@ void ABaseCharacter::SetMeshBaseOnTeam()
     {
         // get player state
         AMyPlayerState* MyPS = Cast<AMyPlayerState>(GetPlayerState());
+		AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
         if (MyPS) {
             USkeletalMesh* NewMesh = nullptr;
 
             UE_LOG(LogTemp, Warning,
                 TEXT("SetMeshBaseOnTeam: TeamID = %s"),
                 *MyPS->GetTeamID().ToString());
-            if (MyPS->GetTeamID() == "A") {
-                NewMesh = GMR->GlobalData->CounterTerroristMesh;
+            if (MyPS->GetTeamID() == GS->GetAttackerTeam()) {
+                NewMesh = GMR->GlobalData->TerroristMesh;
             }
             else {
-                NewMesh = GMR->GlobalData->TerroristMesh;
+                NewMesh = GMR->GlobalData->CounterTerroristMesh;
             }
             if (NewMesh)
             {
@@ -754,6 +756,16 @@ void ABaseCharacter::HandleDeath()
         }
 
         Multicast_HandleDeath();
+
+        AAIController* AI = Cast<AAIController>(GetController());
+        if (AI)
+        {
+            UBrainComponent* Brain = AI->GetBrainComponent();
+            if (Brain)
+            {
+                Brain->StopLogic("Bot died");
+            }
+        }
     }
 }
 
@@ -916,5 +928,25 @@ void ABaseCharacter::StopPlantSpikeEffect() {
     {
         PlantSpikeAudioComp->Stop();
         PlantSpikeAudioComp = nullptr;
+    }
+}
+
+void ABaseCharacter::PlayDefuseSpikeEffect() {
+    // play sound
+    if (DefusingSpikeSound) {
+        if (DefuseSpikeAudioComp && DefuseSpikeAudioComp->IsPlaying())
+            return;
+        DefuseSpikeAudioComp = UGameplayStatics::SpawnSoundAttached(
+            DefusingSpikeSound,
+            RootComponent
+        );
+    }
+}
+
+void ABaseCharacter::StopDefuseSpikeEffect() {
+    if (DefuseSpikeAudioComp)
+    {
+        DefuseSpikeAudioComp->Stop();
+        DefuseSpikeAudioComp = nullptr;
     }
 }

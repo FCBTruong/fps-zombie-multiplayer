@@ -17,14 +17,6 @@ AMyPlayerController::AMyPlayerController() {
     CheatClass = UMyCheatManager::StaticClass(); 
 }
 
-void AMyPlayerController::Client_ReceiveItemsOnMap_Implementation(const TArray<FPickupData>& Items)
-{
-    UE_LOG(LogTemp, Warning, TEXT("Client_ReceiveItemsOnMap received %d items"), Items.Num());
-    if (GMR) {
-        GMR->OnReceivedItemsFromServer(Items);
-    }
-}
-
 void AMyPlayerController::BeginPlay()
 {
     Super::BeginPlay();
@@ -523,4 +515,14 @@ void AMyPlayerController::StopDefuseSpike() {
             WC->OnInput_StopDefuseSpike();
         }
     }
+}
+
+FName AMyPlayerController::GetTeamId()
+{
+    AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
+    if (PS)
+    {
+        return PS->GetTeamID();
+    }
+    return NAME_None;
 }

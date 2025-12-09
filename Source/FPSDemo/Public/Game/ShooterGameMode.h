@@ -23,15 +23,16 @@ public:
 	void RestartPlayer(AController* NewPlayer) override;
 	void ResetPlayers();
 	ABotAIController* SpawnBot(FName TeamID);
+	bool CheckAllTeamDead(FName TeamID);
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 
 
 	UPROPERTY()
-	TArray<APlayerController*> TeamA;
+	TArray<AController*> TeamA;
 
 	UPROPERTY()
-	TArray<APlayerController*> TeamB;
+	TArray<AController*> TeamB;
 
 	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;

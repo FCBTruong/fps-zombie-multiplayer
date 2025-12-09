@@ -9,8 +9,6 @@
 // Sets default values
 APickupItem::APickupItem()
 {
-	PrimaryActorTick.bCanEverTick = false;
-
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
 	RootComponent = ItemMesh;
 
@@ -19,7 +17,7 @@ APickupItem::APickupItem()
 	ItemMesh->SetSimulatePhysics(true);
 	ItemMesh->CanCharacterStepUpOn = ECB_Yes;
 
-	/*PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
+	PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
 	PickupSphere->SetupAttachment(RootComponent);
 	PickupSphere->SetSphereRadius(50.f);
 	PickupSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -27,9 +25,11 @@ APickupItem::APickupItem()
 	PickupSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	PickupSphere->SetHiddenInGame(true);
 
-	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &APickupItem::OnOverlapBegin);*/
-	SetActorTickEnabled(false);
+	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &APickupItem::OnOverlapBegin);
 	UE_LOG(LogTemp, Warning, TEXT("PickupItem Constructor called"));
+    // Replace direct access to bReplicateMovement with the public setter function
+    bReplicates = true;
+    SetReplicateMovement(true);
 }
 
 
@@ -48,11 +48,17 @@ void APickupItem::Tick(float DeltaTime)
 
 void APickupItem::SetData(const FPickupData& NewData)
 {
-    Data = NewData;
+	Data = NewData;
+	OnLoadData();
+}
 
+void APickupItem::OnLoadData(){
     UGameInstance* GI = GetGameInstance();
-    if (!GI)
-        return;
+	UE_LOG(LogTemp, Warning, TEXT("OnLoadData called in PickupItem"));
+	if (!GI)
+	{
+		return;
+	}
 
     UWeaponDataManager* WeaponDataMgr = GI->GetSubsystem<UWeaponDataManager>();
     if (!WeaponDataMgr)
@@ -60,6 +66,7 @@ void APickupItem::SetData(const FPickupData& NewData)
 
     // local variable
     UWeaponData* WeaponData = WeaponDataMgr->GetWeaponById(Data.ItemId);
+	UE_LOG(LogTemp, Warning, TEXT("OnLoadData: Retrieved WeaponData for ItemId %d"), static_cast<int32>(Data.ItemId));
     if (WeaponData && WeaponData->StaticMesh && ItemMesh)
     {
         ItemMesh->SetStaticMesh(WeaponData->StaticMesh);
@@ -70,11 +77,35 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	bool bFromSweep, const FHitResult& SweepResult)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));
-	//if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
-	//{
-	//	Player->GetPickupComponent()->PickupItem(this);
-	//}
+	// only allow on server
+	if (!HasAuthority())
+	{
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));
+	if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
+	{
+		if (!Player)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("OverlapBegin: OtherActor is not ABaseCharacter"));
+			return;
+		}
+		if (IsJustDropped(Player))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("OverlapBegin: Item was just dropped by this player, ignoring pickup"));
+			return;
+		}
+		Player->GetPickupComponent()->PickupItem(this);
+	}
+}
+
+bool APickupItem::IsJustDropped(ABaseCharacter* Character) const
+{
+	if (Character != LastOwner) {
+		return false;
+	}
+	double CurrentTimeMs = FPlatformTime::Seconds() * 1000.0;
+	return (CurrentTimeMs - LastDropTimeMs) < 500.0;
 }
 
 FString APickupItem::GetItemName() const
@@ -97,4 +128,24 @@ FString APickupItem::GetItemName() const
 	}
 
 	return Name;
+}
+
+void APickupItem::OnRep_Data()
+{
+	OnLoadData();
+}
+
+void APickupItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APickupItem, Data);
+}
+
+void APickupItem::PlayerDropInfo(ABaseCharacter* Character)
+{
+	if (!Character) return;
+	// Record the time of drop
+	LastDropTimeMs = FPlatformTime::Seconds() * 1000.0;
+	LastOwner = Character;
+	// Optionally, you can add logic here to prevent immediate re-pickup by the dropping player
 }

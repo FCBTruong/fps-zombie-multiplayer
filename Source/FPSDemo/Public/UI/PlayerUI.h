@@ -93,6 +93,16 @@ protected:
 	UWidgetAnimation* StartPlantSpikeAnim;
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* StartDefuseSpikeAnim;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* MatchStateLb;
+	UPROPERTY(meta = (BindWidget))
+	UWidget* MatchToastPn;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* ShowMatchStateAnim;
+
+	void DoShowMatchStateToast(FText Txt);
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
@@ -128,4 +138,5 @@ public:
 	void UpdateRifle(const EItemId& ItemId);
 	void OnUpdatePlantSpikeState(bool IsPlanting);
 	void OnUpdateDefuseSpikeState(bool IsDefusing);
+	void ShowMatchStateToast(FText Txt, float Delay);
 };

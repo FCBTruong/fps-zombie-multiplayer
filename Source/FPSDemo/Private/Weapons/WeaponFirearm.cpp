@@ -13,7 +13,6 @@
 AWeaponFirearm::AWeaponFirearm()
 {
 	MagMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MagMesh"));
-	AttachMagToDefault();
 }
 
 void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint)

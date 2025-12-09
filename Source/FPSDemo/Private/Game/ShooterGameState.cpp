@@ -18,13 +18,6 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
     
 }
 
-TArray<FPickupData> AShooterGameState::GetItemsOnMap() const
-{
-    TArray<FPickupData> OutItems;
-    ItemsOnMap.GenerateValueArray(OutItems);
-    return OutItems;
-}
-
 
 void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser, bool bWasHeadShot)
 {
@@ -46,3 +39,52 @@ void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Kille
 		MyPC->PlayerUI->NotifyKill(KillerName, VictimName, DamageCauser, bWasHeadShot);
     }
 }
+
+void AShooterGameState::Multicast_RoundResult_Implementation(FName WinningTeam)
+{
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        AMyPlayerController* MyPC = Cast<AMyPlayerController>(It->Get());
+        if (MyPC && MyPC->PlayerUI)
+        {
+			bool IsWinner = false;
+            if (MyPC->GetTeamId() == WinningTeam) {
+				IsWinner = true;
+            }
+			FText ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
+			MyPC->PlayerUI->ShowMatchStateToast(ResultText, 2);
+        }
+    }
+}
+
+void AShooterGameState::AddScoreTeam(FName TeamId, int ScoreToAdd)
+{
+    if (TeamId == FName(TEXT("A")))
+    {
+        TeamAScore += ScoreToAdd;
+    }
+    else if (TeamId == FName(TEXT("B")))
+    {
+        TeamBScore += ScoreToAdd;
+    }
+    OnUpdateScore.Broadcast();
+}
+
+int AShooterGameState::GetScoreTeam(FName TeamId) const
+{
+    if (TeamId == FName(TEXT("A")))
+    {
+        return TeamAScore;
+    }
+    else if (TeamId == FName(TEXT("B")))
+    {
+        return TeamBScore;
+    }
+    return 0;
+}
+
+void AShooterGameState::OnRep_Score()
+{
+    OnUpdateScore.Broadcast();
+}
+

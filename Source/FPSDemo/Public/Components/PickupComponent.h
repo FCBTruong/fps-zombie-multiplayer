@@ -28,12 +28,4 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void PickupItem(class APickupItem* Item);
-
-	UFUNCTION(Server, Reliable)
-	void ServerPickupItem(int32 ItemOnMapId);
-
-	void HandlePickupItem(int32 ItemOnMapId);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPickupItem(int32 ItemOnMapId);
 };

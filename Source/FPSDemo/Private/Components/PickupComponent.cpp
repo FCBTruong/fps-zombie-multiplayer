@@ -36,65 +36,29 @@ void UPickupComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 }
 
-void UPickupComponent::PickupItem(APickupItem* Item)
+void UPickupComponent::PickupItem(APickupItem* PickupItem)
 {
-	ServerPickupItem(Item->GetData().Id);
-}
-
-void UPickupComponent::ServerPickupItem_Implementation(int32 ItemOnMapId)
-{
-	HandlePickupItem(ItemOnMapId);
-}
-
-// This function runs on the server
-void UPickupComponent::HandlePickupItem(int32 ItemOnMapId) {
-	UE_LOG(LogTemp, Log, TEXT("HandlePickupItem called with ItemOnMapId: %d"), ItemOnMapId);
-	UInventoryComponent* Inventory = GetOwner()->FindComponentByClass<UInventoryComponent>();
-	if (!Inventory) {
-		UE_LOG(LogTemp, Warning, TEXT("Inventory component not found on actor: %s"), *GetOwner()->GetName());
+	if (!PickupItem) {
+		UE_LOG(LogTemp, Warning, TEXT("PickupItem called with null Item"));
 		return;
 	}
-
 	if (!GMR)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("GameManager subsystem not found"));
 		return;
 	}
 
-	FPickupData PickupData = GMR->GetDataPickupItem(ItemOnMapId);
-	if (PickupData.Id == -1) {
-		UE_LOG(LogTemp, Warning, TEXT("Pickup data not found for ItemOnMapId: %d"), ItemOnMapId);
-		return;
-	}
-
-	// Check if player nearby or not
-	FVector ItemLocation = PickupData.Location;
-	FVector PlayerLocation = GetOwner()->GetActorLocation();
-	float Distance = FVector::Dist2D(ItemLocation, PlayerLocation);
-
-	if (Distance > 500.f) {
-		UE_LOG(LogTemp, Warning, TEXT("Player is too far to pick up the item. Distance: %f"), Distance);
-		return;
-	}
-	
-	// Get the item data from your items manager
-	UItemData* ItemData = GMR->GetItemDataById(PickupData.ItemId);
 
 	UWeaponComponent* WeaponComp = GetOwner()->FindComponentByClass<UWeaponComponent>();
 	
 	if (!WeaponComp) {
 		return;
 	}
-	bool Added = WeaponComp->AddNewWeapon(ItemData->Id);
+	
+	// Check if overlap
+    bool Added = WeaponComp->AddNewWeapon(PickupItem->GetPickupData().ItemId);
+	UE_LOG(LogTemp, Warning, TEXT("PickupItem: Added = %s"), Added ? TEXT("true") : TEXT("false"));
 	if (Added) {
-		MulticastPickupItem(ItemOnMapId);
-		GMR->FindAndDestroyItem(ItemOnMapId);
+		GMR->FindAndDestroyItemNode(PickupItem->GetPickupData().Id);
 	}
-}
-
-// This function runs on all clients
-void UPickupComponent::MulticastPickupItem_Implementation(int32 ItemOnMapId)
-{
-	FPickupData PickupData = GMR->GetDataPickupItem(ItemOnMapId);
-	GMR->FindAndDestroyItem(ItemOnMapId);
 }

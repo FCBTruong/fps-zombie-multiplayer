@@ -9,13 +9,6 @@ void ATeamEliminationState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME(ATeamEliminationState, TeamAScore);
-    DOREPLIFETIME(ATeamEliminationState, TeamBScore);
 }
 
-void ATeamEliminationState::OnRep_Score()
-{
-	OnUpdateScore.Broadcast();
-	UE_LOG(LogTemp, Warning, TEXT("Scores updated: Team A: %d, Team B: %d"), TeamAScore, TeamBScore);
-}
 
