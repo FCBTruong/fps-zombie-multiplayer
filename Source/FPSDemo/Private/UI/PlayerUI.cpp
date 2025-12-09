@@ -107,6 +107,7 @@ void UPlayerUI::OnEnter()
 	ShowIconGrenade(EItemId::GRENADE_INCENDIARY, false);
 	ScopeUI->HideScope();
 	PnSpike->SetVisibility(ESlateVisibility::Hidden);
+	NotiToastPn->SetVisibility(ESlateVisibility::Hidden);
     if (MatchToastPn) {
         MatchToastPn->SetVisibility(ESlateVisibility::Hidden);
     }
@@ -349,6 +350,7 @@ void UPlayerUI::OnUpdatePlantSpikeState(bool IsPlanting) {
 }
 
 void UPlayerUI::OnUpdateDefuseSpikeState(bool IsDefusing) {
+	UE_LOG(LogTemp, Warning, TEXT("OnUpdateDefuseSpikeState: IsDefusing = %s"), IsDefusing ? TEXT("true") : TEXT("false"));
     if (IsDefusing) {
         PnSpike->SetVisibility(ESlateVisibility::Visible);
         PlayAnimation(StartDefuseSpikeAnim);
@@ -389,5 +391,15 @@ void UPlayerUI::DoShowMatchStateToast(FText Txt)
         MatchStateLb->SetText(Txt);
         MatchToastPn->SetVisibility(ESlateVisibility::Visible);
         PlayAnimation(ShowMatchStateAnim);
+    }
+}
+
+void UPlayerUI::ShowNotiToast(FText Txt)
+{
+    if (NotiToastLb && NotiToastPn)
+    {
+        NotiToastLb->SetText(Txt);
+        NotiToastPn->SetVisibility(ESlateVisibility::Visible);
+        PlayAnimation(ShowNotiToastAnim);
     }
 }

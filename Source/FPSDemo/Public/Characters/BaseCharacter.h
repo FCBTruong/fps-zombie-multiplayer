@@ -305,4 +305,5 @@ public:
 	void StopPlantSpikeEffect();
     void PlayDefuseSpikeEffect();
 	void StopDefuseSpikeEffect();
+	void Destroyed() override;
 };

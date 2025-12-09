@@ -94,7 +94,7 @@ void AMyPlayerController::BindingUI()
             WC->OnUpdatePistolWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdatePistol);
 			WC->OnUpdatePlantSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdatePlantSpikeState);
 			WC->OnUpdateDefuseSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdateDefuseSpikeState);
-
+			
             WC->TriggerUpdateUI();
 		}
 

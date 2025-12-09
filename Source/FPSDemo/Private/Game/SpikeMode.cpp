@@ -108,6 +108,7 @@ void ASpikeMode::StartRound()
 	}
 
 	UGameManager* GMR = GetGameInstance()->GetSubsystem<UGameManager>();
+	GMR->CleanPickupItemsOnMap();
 	FPickupData P;
 	P.Id = GMR->GetNextItemOnMapId();
 	P.ItemId = EItemId::SPIKE;

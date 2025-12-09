@@ -103,6 +103,14 @@ protected:
 	UWidgetAnimation* ShowMatchStateAnim;
 
 	void DoShowMatchStateToast(FText Txt);
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* NotiToastLb;
+	UPROPERTY(meta = (BindWidget))
+	UWidget* NotiToastPn;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* ShowNotiToastAnim;
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
@@ -139,4 +147,5 @@ public:
 	void OnUpdatePlantSpikeState(bool IsPlanting);
 	void OnUpdateDefuseSpikeState(bool IsDefusing);
 	void ShowMatchStateToast(FText Txt, float Delay);
+	void ShowNotiToast(FText Txt);
 };

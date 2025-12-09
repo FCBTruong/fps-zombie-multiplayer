@@ -131,7 +131,10 @@ void AShooterGameMode::RestartPlayer(AController* NewPlayer)
     if (AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>())
     {
         PS->SetIsAlive(true);
+        PS->ResetBoughtItems();
     }
+    NewPlayer->SetIgnoreLookInput(true);
+    NewPlayer->SetIgnoreMoveInput(true);
 }
 
 

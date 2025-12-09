@@ -92,9 +92,11 @@ protected:
 	float ThrowAngle = 10.f;
 	float GrenadeInitSpeed = 1400.f;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_HasSpike)
 	bool bHasSpike = false;
 
+	UFUNCTION()
+	void OnRep_HasSpike();
 
 	ABaseCharacter* Character;
 	void InitState();
@@ -242,4 +244,5 @@ public:
 	void FinishDefuseSpike();
 	bool CanPlantSpikeAtCurrentLocation();
 	void RefreshOverlapPickupActors();
+	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
 };

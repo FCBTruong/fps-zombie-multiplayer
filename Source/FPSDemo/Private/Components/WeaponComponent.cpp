@@ -171,9 +171,9 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
     }
 	CurrentWeaponId = NewWeaponId;
 
-    if (GetNetMode() == NM_ListenServer) {
+   /* if (GetNetMode() == NM_ListenServer) {
         OnRep_CurrentWeapon();
-    }
+    }*/ // alert when enable this again, this cause crash random
 
 	// update speed based on weapon
     if (Character) {
@@ -1515,7 +1515,7 @@ void UWeaponComponent::ServerStartDefuseSpike_Implementation() {
         SpikeDefuseTimerHandle,
         this,
         &UWeaponComponent::FinishDefuseSpike,
-        3.0f,     // delay
+        6.0f,     // delay
         false      // non-looping
     );
 }
@@ -1537,6 +1537,9 @@ void UWeaponComponent::FinishDefuseSpike() {
 }
 
 void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
+    if (!bIsDefusingSpike) {
+        return;
+    }
 	bIsDefusingSpike = false;
 	GetWorld()->GetTimerManager().ClearTimer(SpikeDefuseTimerHandle);
 }
@@ -1682,4 +1685,14 @@ void UWeaponComponent::OnRep_IsDefusingSpike() {
             Character->StopDefuseSpikeEffect();
         }
 	}
+}
+
+void UWeaponComponent::OnRep_HasSpike() {
+    if (bHasSpike) {
+        AMyPlayerController* PC = Cast<AMyPlayerController>(Character->GetController());
+
+        if (PC && PC->PlayerUI) {
+            PC->PlayerUI->ShowNotiToast(FText::FromString(TEXT("You picked up Photon")));
+        }
+    }
 }

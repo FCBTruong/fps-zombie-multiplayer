@@ -27,4 +27,5 @@ public:
 	UStaticMeshComponent* MagMesh;
 	void AttachMagToDefault();
 	int32 GetMaxAmmo() const;
+	void Destroyed() override;
 };

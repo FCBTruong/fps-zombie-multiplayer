@@ -13,6 +13,7 @@
 AWeaponFirearm::AWeaponFirearm()
 {
 	MagMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MagMesh"));
+	AttachMagToDefault();
 }
 
 void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint)
@@ -131,4 +132,13 @@ void AWeaponFirearm::AttachMagToDefault()
 int32 AWeaponFirearm::GetMaxAmmo() const
 {
 	return Data->MaxAmmoInClip;
+}
+
+void AWeaponFirearm::Destroyed()
+{
+	Super::Destroyed();
+	if (MagMesh)
+	{
+		MagMesh->DestroyComponent();
+	}
 }

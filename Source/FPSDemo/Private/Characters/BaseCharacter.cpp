@@ -778,7 +778,8 @@ void ABaseCharacter::Multicast_HandleDeath_Implementation()
         if (!PC) {
             return;
         }
-        PC->DisableInput(PC);
+        PC->SetIgnoreLookInput(true);
+        PC->SetIgnoreMoveInput(true);
         
         if (bIsFPS) {
             ChangeView(); // switch to tps view
@@ -948,5 +949,15 @@ void ABaseCharacter::StopDefuseSpikeEffect() {
     {
         DefuseSpikeAudioComp->Stop();
         DefuseSpikeAudioComp = nullptr;
+    }
+}
+
+void ABaseCharacter::Destroyed()
+{
+    Super::Destroyed();
+
+    if (WeaponComp && WeaponComp->GetCurrentWeapon())
+    {
+        WeaponComp->GetCurrentWeapon()->Destroy();
     }
 }

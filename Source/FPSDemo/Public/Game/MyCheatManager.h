@@ -16,4 +16,6 @@ class FPSDEMO_API UMyCheatManager : public UCheatManager
 
 public:
 	UFUNCTION(exec) void Live();
+
+	UFUNCTION(exec) void Cmd(int id);
 };
