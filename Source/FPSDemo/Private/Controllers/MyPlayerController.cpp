@@ -102,10 +102,12 @@ void AMyPlayerController::BindingUI()
     }
 
 	// get game state and bind to score updates
-    ATeamEliminationState* GST = GetWorld()->GetGameState<ATeamEliminationState>();
+    AShooterGameState* GST = GetWorld()->GetGameState<AShooterGameState>();
     if (GST)
     {
-        GST->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::OnUpdateScore);
+        GST->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::UpdateTeamScores);
+		GST->OnUpdateRoundTime.AddUObject(PlayerUI, &UPlayerUI::OnUpdateRoundTime);
+		GST->OnUpdateMatchState.AddUObject(PlayerUI, &UPlayerUI::UpdateGameState);
     }
 }
 

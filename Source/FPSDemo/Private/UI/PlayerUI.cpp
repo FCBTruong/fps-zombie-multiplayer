@@ -23,6 +23,23 @@ void UPlayerUI::NativeConstruct()
         }
     }
 }
+
+void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
+	Super::NativeTick(MyGeometry, InDeltaTime);
+    if (RoundTimeEnd > 0) {
+        int32 CurrentTime = FMath::CeilToInt(GetWorld()->GetTimeSeconds());
+        int32 RemainingTime = RoundTimeEnd - CurrentTime;
+        if (RemainingTime < 0) {
+            RemainingTime = 0;
+        }
+        int32 Minutes = RemainingTime / 60;
+        int32 Seconds = RemainingTime % 60;
+        FString TimeStr = FString::Printf(TEXT("%2d:%02d"), Minutes, Seconds);
+        if (MatchTimeLb) {
+            MatchTimeLb->SetText(FText::FromString(TimeStr));
+        }
+	}
+}
 void UPlayerUI::ShowPickupMessage(const FString& Message)
 {
     if (UTextBlock* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("PickupLabel"))))
@@ -71,18 +88,6 @@ void UPlayerUI::UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints)
     {
         OpponentTeamScore->SetText(FText::AsNumber(OpponentTeamPoints));
     }
-}
-
-void UPlayerUI::OnUpdateScore()
-{
-    // Get game state and update scores
-  //  ATeamEliminationState* GST = GetWorld()->GetGameState<ATeamEliminationState>();
-  //  if (GST) {
-  //      // Assuming we have a way to determine which team is "my team"
-  //      int MyTeamPoints = GST->TeamAScore; // Replace with actual team logic
-  //      int OpponentTeamPoints = GST->TeamBScore; // Replace with actual team logic
-		//UpdateTeamScores(MyTeamPoints, OpponentTeamPoints);
-  //  }
 }
 
 void UPlayerUI::OnHit()
@@ -401,5 +406,37 @@ void UPlayerUI::ShowNotiToast(FText Txt)
         NotiToastLb->SetText(Txt);
         NotiToastPn->SetVisibility(ESlateVisibility::Visible);
         PlayAnimation(ShowNotiToastAnim);
+    }
+}
+
+void UPlayerUI::OnUpdateRoundTime(int TimeEnd) {
+	RoundTimeEnd = TimeEnd;
+}
+
+void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
+	PhotonPlantedIcon->SetVisibility(ESlateVisibility::Hidden);
+	MatchTimeLb->SetVisibility(ESlateVisibility::Visible);
+    switch (State) {
+        case EMyMatchState::PRE_MATCH:
+            ShowMatchStateToast(FText::FromString("Prepare for battle!"), 0.f);
+			break;
+        case EMyMatchState::ROUND_START:
+			ShowMatchStateToast(FText::FromString("Round Started!"), 0.f);
+            break;
+        case EMyMatchState::BUY_PHASE:
+            ShowMatchStateToast(FText::FromString("Buy Phase"), 0.f);
+			break;
+        case EMyMatchState::ROUND_IN_PROGRESS:
+			ShowMatchStateToast(FText::FromString("Round In Progress"), 0.f);
+            break;
+		case EMyMatchState::SPIKE_PLANTED:
+			MatchTimeLb->SetVisibility(ESlateVisibility::Hidden);
+			PhotonPlantedIcon->SetVisibility(ESlateVisibility::Visible);
+			PlayAnimation(PhotonPlantedAnim, 0.f, 0);
+            ShowMatchStateToast(FText::FromString("Spike Planted!"), 0.f);
+            break;
+		case EMyMatchState::ROUND_ENDED:
+            ShowMatchStateToast(FText::FromString("Round Ended"), 0.f);
+			break;
     }
 }

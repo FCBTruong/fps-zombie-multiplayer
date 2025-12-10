@@ -23,19 +23,15 @@ void ASpikeMode::StartPlay()
 void ASpikeMode::PlantSpike(FVector Location, AMyPlayerController* Planter)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Spike planted at location: %s"), *Location.ToString());
-	
-	// Gen object Spike
-	if (SpikeClass)
-	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = Planter;
-		SpawnParams.Instigator = Planter ? Planter->GetPawn() : nullptr;
-		PlantedSpike = GetWorld()->SpawnActor<ASpike>(SpikeClass, Location, FRotator::ZeroRotator, SpawnParams);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SpikeClass is not set in SpikeMode"));
-	}
+
+	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = Planter;
+	SpawnParams.Instigator = Planter ? Planter->GetPawn() : nullptr;
+	PlantedSpike = GetWorld()->SpawnActor<ASpike>(SpikeClass, Location, FRotator::ZeroRotator, SpawnParams);
+
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	GS->SetMatchState(EMyMatchState::SPIKE_PLANTED);
 }
 
 void ASpikeMode::DefuseSpike(AMyPlayerController* Defuser)
@@ -60,6 +56,9 @@ void ASpikeMode::DefuseSpike(AMyPlayerController* Defuser)
 void ASpikeMode::EndRound(FName WinningTeam)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Round Ended! Team %s wins!"), *WinningTeam.ToString());
+	// Clear timer 
+	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
+
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	
 	GS->SetMatchState(EMyMatchState::ROUND_ENDED);
@@ -118,7 +117,19 @@ void ASpikeMode::StartRound()
 	GMR->CreatePickupActor(P);
 	// add spike data to map
 	
-	GS->SetMatchState(EMyMatchState::PLAYING);
+	GS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
+
+	int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
+	GS->SetRoundEndTime(TimeEnd);
+
+
+	GetWorld()->GetTimerManager().SetTimer(
+		RoundTimerHandle,
+		this,
+		&ASpikeMode::OnRoundTimeExpired,
+		TimePerRound,
+		false
+	);
 }
 
 void ASpikeMode::EndGame(FName WinningTeam)
@@ -214,3 +225,14 @@ void ASpikeMode::NotifyPlayerKilled(class AController* Killer, class AController
 	}
 }
 
+
+void ASpikeMode::OnRoundTimeExpired()
+{
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+
+	// If spike NOT planted -> defenders win
+	if (!IsSpikePlanted())
+	{
+		EndRound(GS->GetDefenderTeam());
+	}
+}

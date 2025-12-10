@@ -15,7 +15,9 @@ AShooterGameState::AShooterGameState()
 void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    
+	DOREPLIFETIME(AShooterGameState, TeamAScore);
+	DOREPLIFETIME(AShooterGameState, TeamBScore);
+	DOREPLIFETIME(AShooterGameState, AttackerTeam);
 }
 
 
@@ -52,7 +54,7 @@ void AShooterGameState::Multicast_RoundResult_Implementation(FName WinningTeam)
 				IsWinner = true;
             }
 			FText ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
-			MyPC->PlayerUI->ShowMatchStateToast(ResultText, 2);
+			MyPC->PlayerUI->ShowMatchStateToast(ResultText, 1);
         }
     }
 }
@@ -67,7 +69,6 @@ void AShooterGameState::AddScoreTeam(FName TeamId, int ScoreToAdd)
     {
         TeamBScore += ScoreToAdd;
     }
-    OnUpdateScore.Broadcast();
 }
 
 int AShooterGameState::GetScoreTeam(FName TeamId) const
@@ -85,6 +86,20 @@ int AShooterGameState::GetScoreTeam(FName TeamId) const
 
 void AShooterGameState::OnRep_Score()
 {
-    OnUpdateScore.Broadcast();
+	UE_LOG(LogTemp, Log, TEXT("Scores updated: Team A: %d, Team B: %d"), TeamAScore, TeamBScore);
+    OnUpdateScore.Broadcast(TeamAScore, TeamBScore);
 }
 
+void AShooterGameState::OnRep_RoundEndTime()
+{
+    // You can add any client-side logic here that needs to respond to RoundEndTime changes
+    if (RoundEndTime < 0) {
+        //return;
+	}
+	OnUpdateRoundTime.Broadcast(RoundEndTime);
+}
+
+void AShooterGameState::OnRep_MyMatchState()
+{
+    OnUpdateMatchState.Broadcast(CurrentMatchState);
+}

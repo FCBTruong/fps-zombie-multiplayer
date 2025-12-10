@@ -65,7 +65,16 @@ void UWeaponComponent::BeginPlay()
 }
 
 void UWeaponComponent::InitState() {
-    if (GetOwner()->HasAuthority())
+    if (GetOwner()->HasAuthority()) {
+        MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
+        PistolState.ItemId = EItemId::PISTOL_PL_14;
+        CurrentWeaponId = EItemId::PISTOL_PL_14;
+
+        UWeaponData* PistolData = GMR->GetWeaponDataById(EItemId::PISTOL_PL_14);
+        PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
+        PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
+    }
+    /*if (GetOwner()->HasAuthority())
     {
         FTimerHandle Timer;
         GetWorld()->GetTimerManager().SetTimer(
@@ -79,10 +88,10 @@ void UWeaponComponent::InitState() {
 				PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
 				EquipWeapon(EItemId::PISTOL_PL_14);
             },
-            1.0f,
+            0.0f,
             false
         );
-    }
+    }*/
 }
 
 
@@ -1501,13 +1510,9 @@ void UWeaponComponent::ServerStartDefuseSpike_Implementation() {
         return;
 	}
 	AShooterGameState* GameState = Cast<AShooterGameState>(GetWorld()->GetGameState());
-    if (GameState->GetMatchState() != EMyMatchState::PLAYING) {
+    if (GameState->GetMatchState() == EMyMatchState::SPIKE_PLANTED) {
 		return; // can only defuse during playing state
     }
-	if (!SpikeGM->IsSpikePlanted()) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No spike planted"));
-		return;
-	}
 
 	bIsDefusingSpike = true;
 

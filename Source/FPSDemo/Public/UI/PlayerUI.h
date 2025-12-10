@@ -14,6 +14,7 @@
 #include "UI/ScopeUI.h"
 #include "Components/VerticalBox.h"
 #include "UI/Crosshair.h"
+#include "Game/MyMatchState.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -109,8 +110,21 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UWidget* NotiToastPn;
 
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* MatchTimeLb;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowNotiToastAnim;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* PhotonPlantedIcon;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* PhotonPlantedAnim;
+
+	int RoundTimeEnd = 0;
+
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
@@ -127,7 +141,6 @@ public:
 	void UpdateHealth(float CurrentHealth, float MaxHealth);
 	void UpdateAmmo(int CurrentAmmoValue, int TotalAmmoValue);
 	void UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints);
-	void OnUpdateScore();
 	void OnHit();
 	void OnEnter();
 	void NotifyKill(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponTex, bool bIsHeadShot);
@@ -148,4 +161,6 @@ public:
 	void OnUpdateDefuseSpikeState(bool IsDefusing);
 	void ShowMatchStateToast(FText Txt, float Delay);
 	void ShowNotiToast(FText Txt);
+	void OnUpdateRoundTime(int TimeEnd);
+	void UpdateGameState(const EMyMatchState& State);
 };

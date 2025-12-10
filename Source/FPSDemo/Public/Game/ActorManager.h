@@ -55,4 +55,7 @@ public:
 	APlayerStart* GetRandomAttackerStart();
 	APlayerStart* GetRandomDefenderStart();
 	void ResetPlayerStartsUsage();
+
+	UPROPERTY(EditInstanceOnly, Category = "Setup")
+	AActor* MainPlane;
 };

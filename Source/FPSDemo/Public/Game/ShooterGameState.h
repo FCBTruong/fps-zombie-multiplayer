@@ -4,17 +4,14 @@
 #include "Pickup/PickupData.h"
 #include "Controllers/MyPlayerState.h"
 #include "Weapons/WeaponData.h"
+#include "Game/MyMatchState.h"
 #include "ShooterGameState.generated.h"
 
-enum EMyMatchState {
-	WAITING_TO_START,
-    PLAYING,
-    ROUND_ENDED,
-	GAME_ENDED
-};
 
 
-DECLARE_MULTICAST_DELEGATE(FOnUpdateScore)
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateScore, int32, int32)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRoundTime, int32)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateMatchState, const EMyMatchState&)
 
 UCLASS()
 class FPSDEMO_API AShooterGameState : public AGameState
@@ -22,7 +19,8 @@ class FPSDEMO_API AShooterGameState : public AGameState
     GENERATED_BODY()
 
 protected:
-	EMyMatchState CurrentMatchState = EMyMatchState::WAITING_TO_START;
+	UPROPERTY(ReplicatedUsing = OnRep_MyMatchState)
+	EMyMatchState CurrentMatchState;
 
 	UPROPERTY(Replicated)
     FName AttackerTeam = FName(TEXT("A"));
@@ -32,9 +30,18 @@ protected:
 
     UPROPERTY(ReplicatedUsing = OnRep_Score)
     int TeamBScore = 0;
+
+    UPROPERTY(ReplicatedUsing = OnRep_RoundEndTime)
+    int RoundEndTime = -1;
     
     UFUNCTION()
     void OnRep_Score();
+
+	UFUNCTION()
+	void OnRep_RoundEndTime();
+
+	UFUNCTION()
+	void OnRep_MyMatchState();
 
 public:
 	AShooterGameState();
@@ -58,10 +65,15 @@ public:
 	}
 
     FOnUpdateScore OnUpdateScore;
+	FOnUpdateRoundTime OnUpdateRoundTime;
+	FOnUpdateMatchState OnUpdateMatchState;
 
     void AddScoreTeam(FName TeamId, int ScoreToAdd);
     int GetScoreTeam(FName TeamId) const;
     void SetAttackerTeam(FName NewAttackerTeam) {
         AttackerTeam = NewAttackerTeam;
     }
+    void SetRoundEndTime(int NewRoundEndTime) {
+        RoundEndTime = NewRoundEndTime;
+	}
 };

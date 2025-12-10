@@ -21,6 +21,8 @@ protected:
 	TSubclassOf<ASpike> SpikeClass;
 	ASpike* PlantedSpike;
 	FTimerHandle StartRoundTimerHandle;
+	FTimerHandle RoundTimerHandle;
+	void OnRoundTimeExpired();
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeadShot) override;
 public:
@@ -35,5 +37,5 @@ public:
 	void DefuseSpike(AMyPlayerController* Defuser);
 	void SpikeExploded();
 	static constexpr int32 ScoreToWin = 9;
-
+	static constexpr int32 TimePerRound = 90; // seconds
 };
