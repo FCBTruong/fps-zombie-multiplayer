@@ -11,13 +11,13 @@ void UMinimapRadarUI::NativeConstruct()
 	Super::NativeConstruct();
 	UE_LOG(LogTemp, Warning, TEXT("MinimapccRadarUI: NativeTick called"));
 	
-	if (!AActorManager::Instance) {
+	if (!AActorManager::Get(GetWorld())) {
 		return;
 	}
-	if (!AActorManager::Instance->MainPlane) {
+	if (!AActorManager::Get(GetWorld())->MainPlane) {
 		return;
 	}
-	AActor* MainPlane = AActorManager::Instance->MainPlane;
+	AActor* MainPlane = AActorManager::Get(GetWorld())->MainPlane;
 	MainPlane->GetActorBounds(true, WorldOrigin, WorldExtent);
 
 	PlaneSize = WorldExtent * 2.f;

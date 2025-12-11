@@ -48,7 +48,6 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	static AActorManager* Instance;
 	ATriggerBox* GetAreaBombA() { return TriggerBoxAreaA; };
 	ATriggerBox* GetAreaBombB() { return TriggerBoxAreaB; };
 	FVector GetSpikeStartLocation();
@@ -58,4 +57,5 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "Setup")
 	AActor* MainPlane;
+	static AActorManager* Get(UObject* WorldContextObject);
 };

@@ -2,8 +2,7 @@
 
 
 #include "Game/ActorManager.h"
-
-AActorManager* AActorManager::Instance = nullptr;
+#include "EngineUtils.h"
 
 // Sets default values
 AActorManager::AActorManager()
@@ -26,8 +25,6 @@ void AActorManager::BeginPlay()
     else {
 		UE_LOG(LogTemp, Warning, TEXT("ActorManager: Bomb areas set up properly"));
 	}
-
-    Instance = this;
 
     const ENetRole LocalRole = GetLocalRole();
     UE_LOG(LogTemp, Warning, TEXT("BeginPlay: %s | Role=%d (%s) | World=%s"),
@@ -112,4 +109,22 @@ APlayerStart* AActorManager::GetRandomAttackerStart()
 APlayerStart* AActorManager::GetRandomDefenderStart()
 {
     return GetRandomStart(DefenderStarts);
+}
+
+
+AActorManager* AActorManager::Get(UObject* WorldContextObject)
+{
+    if (!WorldContextObject)
+        return nullptr;
+
+    UWorld* World = WorldContextObject->GetWorld();
+    if (!World)
+        return nullptr;
+
+    for (TActorIterator<AActorManager> It(World); It; ++It)
+    {
+        return *It; // return first found
+    }
+
+    return nullptr;
 }

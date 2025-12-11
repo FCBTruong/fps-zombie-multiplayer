@@ -6,14 +6,11 @@
 #include "Game/ShooterGameState.h"
 #include "Weapons/WeaponDataManager.h"
 
-
-UGameManager* UGameManager::Instance = nullptr;
 int32 UGameManager::CurrentPickupId = 1000;
 
 void UGameManager::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
-    Instance = this;
     UE_LOG(LogTemp, Warning, TEXT("ObjectAAA address = %p"), this);
 
     GlobalData = TSoftObjectPtr<UGlobalDataAsset>(
@@ -131,4 +128,19 @@ APickupItem* UGameManager::GetPickupSpike() {
         }
     }
     return nullptr;
+}
+
+UGameManager* UGameManager::Get(UObject* WorldContextObject) {
+    if (!WorldContextObject) {
+        return nullptr;
+    }
+    UWorld* World = WorldContextObject->GetWorld();
+    if (!World) {
+        return nullptr;
+    }
+    UGameInstance* GI = World->GetGameInstance();
+    if (!GI) {
+        return nullptr;
+    }
+    return GI->GetSubsystem<UGameManager>();
 }

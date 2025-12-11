@@ -10,6 +10,7 @@
 #include "Characters/BaseCharacter.h"
 #include "Game/GameManager.h"
 #include "Pickup/PickupItem.h"
+#include <Kismet/GameplayStatics.h>
 
 UBTService_UpdateSpikeState::UBTService_UpdateSpikeState()
 {
@@ -72,9 +73,13 @@ void UBTService_UpdateSpikeState::TickNode(
         //UE_LOG(LogTemp, Warning, TEXT("Object address2 = %p"), UGameManager::Instance);
 
 
-        APickupItem* P = UGameManager::Instance->GetPickupSpike();
+        UGameManager* GM = AICon->GetWorld()
+            ->GetGameInstance()
+            ->GetSubsystem<UGameManager>();
+        APickupItem* P = GM->GetPickupSpike();
         if (P) {
             SpikePos = P->GetActorLocation();
+           
         }
         else {
             //UE_LOG(LogTemp, Log, TEXT("UBTService_UpdateSpikeState: PNULL SpikeLocation called"));

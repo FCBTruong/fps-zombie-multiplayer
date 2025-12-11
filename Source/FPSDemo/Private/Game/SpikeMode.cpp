@@ -86,7 +86,7 @@ void ASpikeMode::EndRound(FName WinningTeam)
 
 void ASpikeMode::StartRound()
 {
-	AActorManager::Instance->ResetPlayerStartsUsage();
+	AActorManager::Get(GetWorld())->ResetPlayerStartsUsage();
 	for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
 	{
 		ABotAIController* Bot = Cast<ABotAIController>(*It);
@@ -111,14 +111,14 @@ void ASpikeMode::StartRound()
 
 	// Random spike for attacker team
 	FVector SpawnLocation = FVector::ZeroVector;
-	if (AActorManager::Instance) {
-		SpawnLocation = AActorManager::Instance->GetSpikeStartLocation();
+	if (AActorManager::Get(GetWorld())) {
+		SpawnLocation = AActorManager::Get(GetWorld())->GetSpikeStartLocation();
 	}
 	else {
 		UE_LOG(LogTemp, Warning, TEXT("ActorManager instance is null"));
 	}
 
-	UGameManager* GMR = UGameManager::Instance;
+	UGameManager* GMR = UGameManager::Get(GetWorld());
 	GMR->CleanPickupItemsOnMap();
 
 	FPickupData P;
@@ -181,7 +181,7 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 
 	if (TeamId == GS->GetAttackerTeam())
 	{
-		APlayerStart* AttackerStart = AActorManager::Instance ? AActorManager::Instance->GetRandomAttackerStart() : nullptr;
+		APlayerStart* AttackerStart = AActorManager::Get(GetWorld()) ? AActorManager::Get(GetWorld())->GetRandomAttackerStart() : nullptr;
 		if (AttackerStart)
 		{
 			return AttackerStart;
@@ -189,7 +189,7 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 	}
 	else {
 
-		APlayerStart* DefenderStart = AActorManager::Instance ? AActorManager::Instance->GetRandomDefenderStart() : nullptr;
+		APlayerStart* DefenderStart = AActorManager::Get(GetWorld()) ? AActorManager::Get(GetWorld())->GetRandomDefenderStart() : nullptr;
 		if (DefenderStart)
 		{
 			return DefenderStart;
