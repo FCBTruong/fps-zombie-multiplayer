@@ -35,4 +35,8 @@ public:
 	APickupItem* CreatePickupActor(FPickupData Data);
 	void CleanPickupItemsOnMap();
 	APickupItem* GetPickupNode(int PickupId);
+
+	static UGameManager* Instance;
+	static int CurrentPickupId;
+	APickupItem* GetPickupSpike();
 };

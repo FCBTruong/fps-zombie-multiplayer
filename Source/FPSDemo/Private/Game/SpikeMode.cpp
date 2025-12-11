@@ -17,6 +17,9 @@ void ASpikeMode::StartPlay()
 	FName AttackerTeam = (FMath::RandBool()) ? FName("A") : FName("B");
 	GS->SetAttackerTeam(AttackerTeam);
 	SpawnBot("B");
+	SpawnBot("B");
+	SpawnBot("B");
+	SpawnBot("A");
 	StartRound();
 }
 
@@ -84,6 +87,15 @@ void ASpikeMode::EndRound(FName WinningTeam)
 void ASpikeMode::StartRound()
 {
 	AActorManager::Instance->ResetPlayerStartsUsage();
+	for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+	{
+		ABotAIController* Bot = Cast<ABotAIController>(*It);
+		if (Bot)
+		{
+			Bot->ResetAIState();
+		}
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("Starting new round..."));
 
 	// Clean map
@@ -106,8 +118,9 @@ void ASpikeMode::StartRound()
 		UE_LOG(LogTemp, Warning, TEXT("ActorManager instance is null"));
 	}
 
-	UGameManager* GMR = GetGameInstance()->GetSubsystem<UGameManager>();
+	UGameManager* GMR = UGameManager::Instance;
 	GMR->CleanPickupItemsOnMap();
+
 	FPickupData P;
 	P.Id = GMR->GetNextItemOnMapId();
 	P.ItemId = EItemId::SPIKE;
@@ -115,6 +128,8 @@ void ASpikeMode::StartRound()
 	P.Location = SpawnLocation;
 
 	GMR->CreatePickupActor(P);
+	UE_LOG(LogTemp, Warning, TEXT("Object address = %p"), GMR);
+	
 	// add spike data to map
 	
 	GS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);

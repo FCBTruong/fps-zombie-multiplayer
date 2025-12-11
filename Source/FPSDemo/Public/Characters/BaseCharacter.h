@@ -181,6 +181,12 @@ protected:
 
 	void PlayFootstepSound();
 	void UpdateFootstepSound(float DeltaTime);
+
+    virtual void Landed(const FHitResult& Hit) override;
+    void PlayLandingSound();
+
+    UPROPERTY(EditDefaultsOnly, Category = "Sound")
+    USoundBase* LandingSound;
 public:
     ABaseCharacter();
 

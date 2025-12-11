@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/Image.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/CanvasPanel.h"
 #include "MinimapRadarUI.generated.h"
 
 /**
@@ -18,7 +19,15 @@ class FPSDEMO_API UMinimapRadarUI : public UUserWidget
 protected:
 
 	UPROPERTY(meta = (BindWidget))
-	class UImage* MinimapImage;
+	class UCanvasPanel* MinimapImgPn;
+
+	UPROPERTY(meta = (BindWidget))
+	class UCanvasPanel* MainPn;
+
+	UPROPERTY(meta = (BindWidget))
+	class UCanvasPanel* B_Point;
+	UPROPERTY(meta = (BindWidget))
+	class UCanvasPanel* A_Point;
 
 	UPROPERTY(meta = (BindWidget))
 	class UImage* Dot;
@@ -27,7 +36,15 @@ protected:
 	FVector WorldExtent;
 	FVector PlaneSize;
 	FVector2D MinimapSize;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* A_Lb;
+	UPROPERTY(meta = (BindWidget))
+	UWidget* B_Lb;
 public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeConstruct() override;
+
+	void UpdateBombAreaLabels();
+	void UpdateLabelPosition(UWidget* PointWidget, UWidget* LabelWidget);
 };

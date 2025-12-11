@@ -1051,3 +1051,21 @@ bool ABaseCharacter::IsAlive() const
     }
     return true; // if no health component, assume alive
 }
+
+void ABaseCharacter::Landed(const FHitResult& Hit)
+{
+    Super::Landed(Hit);
+
+    PlayLandingSound();
+}
+
+void ABaseCharacter::PlayLandingSound()
+{
+    if (!LandingSound)
+        return;
+    UGameplayStatics::PlaySoundAtLocation(
+        this,
+        LandingSound,
+        GetActorLocation()
+    );
+}

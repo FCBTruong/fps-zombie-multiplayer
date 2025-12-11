@@ -24,6 +24,7 @@ public:
 	void ResetPlayers();
 	ABotAIController* SpawnBot(FName TeamID);
 	bool CheckAllTeamDead(FName TeamID);
+	TArray<AController*> GetTeamPlayers(FName TeamID);
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 

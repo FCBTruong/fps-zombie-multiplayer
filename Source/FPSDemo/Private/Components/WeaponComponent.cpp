@@ -44,14 +44,6 @@ void UWeaponComponent::BeginPlay()
     UE_LOG(LogTemp, Warning, TEXT("WeaponComponent: BeginPlay"));
 	Super::BeginPlay();
 
-    GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-    if (!GMR) {
-        UE_LOG(LogTemp, Warning, TEXT("WeaponComponent: Failed to get GameManager subsystem"));
-        return;
-    }
-    else {
-        UE_LOG(LogTemp, Warning, TEXT("WeaponComponent: Successfully got GameManager subsystem"));
-    }
     Character = Cast<ABaseCharacter>(GetOwner());
 
 	InventoryComp = GetOwner()->FindComponentByClass<UInventoryComponent>();
@@ -70,28 +62,10 @@ void UWeaponComponent::InitState() {
         PistolState.ItemId = EItemId::PISTOL_PL_14;
         CurrentWeaponId = EItemId::PISTOL_PL_14;
 
-        UWeaponData* PistolData = GMR->GetWeaponDataById(EItemId::PISTOL_PL_14);
+        UWeaponData* PistolData = UGameManager::Instance->GetWeaponDataById(EItemId::PISTOL_PL_14);
         PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
         PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
     }
-    /*if (GetOwner()->HasAuthority())
-    {
-        FTimerHandle Timer;
-        GetWorld()->GetTimerManager().SetTimer(
-            Timer,
-            [this]()
-            {
-                MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
-				PistolState.ItemId = EItemId::PISTOL_PL_14;
-				UWeaponData* PistolData = GMR->GetWeaponDataById(EItemId::PISTOL_PL_14);
-                PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
-				PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
-				EquipWeapon(EItemId::PISTOL_PL_14);
-            },
-            0.0f,
-            false
-        );
-    }*/
 }
 
 
@@ -139,12 +113,12 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         // already equipped
         return;
 	}
-    if(!GMR) {
+    if(!UGameManager::Instance) {
         UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: GameManager is null"));
 		return; 
 	}
 
-    UWeaponData* WeaponConf = GMR->GetWeaponDataById(ItemId);
+    UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(ItemId);
     if (!WeaponConf) {
         UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: No weapon data found for %d"), (int32)ItemId);
         return;
@@ -205,8 +179,8 @@ void UWeaponComponent::OnNewItemPickup(int32 NewInventoryId) {
 }
 
 EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
-    if (GMR) {
-        UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+    if (UGameManager::Instance) {
+        UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
         if (WeaponConf) {
             return WeaponConf->WeaponType;
         }
@@ -215,8 +189,8 @@ EWeaponTypes UWeaponComponent::GetCurrentWeaponType() {
 }
 
 EWeaponSubTypes UWeaponComponent::GetCurrentWeaponSubType() {
-    if (GMR) {
-        UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+    if (UGameManager::Instance) {
+        UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
         if (WeaponConf) {
             return WeaponConf->WeaponSubType;
         }
@@ -247,7 +221,7 @@ void UWeaponComponent::HandleDropWeapon() {
         UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: No weapon to drop"));
         return;
 	}
-	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+	UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
 
     if (!WeaponConf) {
         UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: No weapon data found for %d"), (int32)CurrentWeaponId);
@@ -265,13 +239,13 @@ void UWeaponComponent::HandleDropWeapon() {
 	Data.Location = DropPoint;
 	Data.Amount = 1;
 	Data.ItemId = CurrentWeaponId;
-	Data.Id = GMR->GetNextItemOnMapId();
+	Data.Id = UGameManager::Instance->GetNextItemOnMapId();
 
     FVector LookDir = Character->GetControlRotation().Vector();
     FVector LaunchVelocity = LookDir * 600.f;
 
     // Spawn Pickup item
-    APickupItem* Pickup = GMR->CreatePickupActor(Data);
+    APickupItem* Pickup = UGameManager::Instance->CreatePickupActor(Data);
 
     if (Pickup && Pickup->GetItemMesh())
     {
@@ -334,7 +308,7 @@ void UWeaponComponent::StartReload() {
 		}
 
 		// if full clip, no need to reload
-		UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+		UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
         if (!WeaponConf) {
             UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon data found for %d"), (int32)CurrentWeaponId);
 			return;
@@ -403,7 +377,7 @@ void UWeaponComponent::OnInput_StartAttack() {
 	UE_LOG(LogTemp, Warning, TEXT("OnLeftClickStart called"));
 
     // is fire arm
-	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+	UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
 
     if (!WeaponConf) {
         UE_LOG(LogTemp, Warning, TEXT("OnLeftClickStart: No weapon data found for %d"), (int32)CurrentWeaponId);
@@ -444,7 +418,7 @@ void UWeaponComponent::OnInput_StopAttack() {
         bIsFiring = false;
 	}
 
-    UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+    UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
     if (!WeaponConf) {
         return;
     }
@@ -477,7 +451,7 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
 
     AThrownProjectile* ThrownProj = nullptr;
     
-	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+	UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
     if (WeaponConf->WeaponSubType == EWeaponSubTypes::Smoke) {
         ThrownProj = GetWorld()->SpawnActor<AThrownProjectileSmoke>(
             AThrownProjectileSmoke::StaticClass(),
@@ -670,7 +644,7 @@ void UWeaponComponent::HandleOnFire(const FVector& StartPos, const FVector& Targ
             );
         }
 
-		UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+		UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
         if (!WeaponConf) {
             UE_LOG(LogTemp, Warning, TEXT("OnFire: Server no weapon data for %d"), (int32)CurrentWeaponId);
             return;
@@ -826,7 +800,7 @@ void UWeaponComponent::EquipSlot(int32 SlotIndex)
             Id = ThrowablesArray[0];
         }
         else {
-            UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+            UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
             if (WeaponConf->WeaponType != EWeaponTypes::Throwable)
             {
                 Id = ThrowablesArray[0];
@@ -1052,6 +1026,9 @@ bool UWeaponComponent::CanWeaponAim() {
     if (CurrentWeapon->GetWeaponType() != EWeaponTypes::Firearm) {
         return false;
     }
+    if (!IsScopeEquipped()) {
+        return false;
+	}
     return true;
 }
 
@@ -1098,7 +1075,7 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
             DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
             DamageEvent.WeaponID = CurrentWeaponId;
 
-			UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+			UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
 
             float ActualDamage = Hit.GetActor()->TakeDamage(WeaponConf->Damage, DamageEvent, Character->GetController(), nullptr);
         }
@@ -1108,7 +1085,8 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
 
 void UWeaponComponent::OnRep_CurrentWeapon()
 {
-    if (!GMR) {
+    if (!UGameManager::Instance) {
+		UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon: UGameManager::Instance is null"));
         return;
     }
     if (CurrentWeaponId == EItemId::NONE) {
@@ -1117,7 +1095,7 @@ void UWeaponComponent::OnRep_CurrentWeapon()
 
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon called for weapon id %d"), (int32)CurrentWeaponId);
 
-	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+	UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
     if (!WeaponConf) {
         UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon: No weapon data found for id %d"), (int32)CurrentWeaponId);
 		return;
@@ -1165,7 +1143,7 @@ void UWeaponComponent::HandleReload()
         return; // already reloading
     }
     // check can reload
-	UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+	UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
     if (!WeaponConf) {
 		return;
 	}
@@ -1209,7 +1187,7 @@ void UWeaponComponent::OnFinishedReload()
     {
         bIsReloading = false;
 		UE_LOG(LogTemp, Warning, TEXT("OnFinishedReload called"));
-		UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
+		UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(CurrentWeaponId);
 		FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
 
 		if (!WeaponConf || !WeaponState) {
@@ -1283,7 +1261,7 @@ void UWeaponComponent::OnNewItemAdded(int32 NewInventoryId)
 
 AWeaponBase* UWeaponComponent::SpawnWeaponByItemId(EItemId ItemId)
 {
-    UWeaponData* WeaponConf = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
+    UWeaponData* WeaponConf = Cast<UWeaponData>(UGameManager::Instance->GetItemDataById(ItemId));
     if (!WeaponConf) {
         UE_LOG(LogTemp, Warning, TEXT("SpawnWeaponByItemId: No weapon data found for id %d"), (int32)ItemId);
         return nullptr;
@@ -1329,7 +1307,7 @@ AWeaponBase* UWeaponComponent::SpawnWeaponByItemId(EItemId ItemId)
 
 bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
 {
-	UWeaponData* WeaponConf = GMR->GetWeaponDataById(ItemId);
+	UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(ItemId);
     if (!WeaponConf) {
 		return false;
 	}
@@ -1385,7 +1363,7 @@ bool UWeaponComponent::CanDropWeapon(EItemId Id)
 {
     if (!Character || !Character->IsAlive()) return false;
 
-    UWeaponData* WeaponConf = GMR->GetWeaponDataById(Id);
+    UWeaponData* WeaponConf = UGameManager::Instance->GetWeaponDataById(Id);
     if (!WeaponConf) {
         return false;
     }
@@ -1705,6 +1683,9 @@ void UWeaponComponent::OnRep_IsDefusingSpike() {
 }
 
 void UWeaponComponent::OnRep_HasSpike() {
+    if (!Character) {
+        return;
+    }
     if (bHasSpike) {
         AMyPlayerController* PC = Cast<AMyPlayerController>(Character->GetController());
 
@@ -1712,4 +1693,8 @@ void UWeaponComponent::OnRep_HasSpike() {
             PC->PlayerUI->ShowNotiToast(FText::FromString(TEXT("You picked up Photon")));
         }
     }
+}
+
+bool UWeaponComponent::IsHasSpike() {
+    return bHasSpike;
 }

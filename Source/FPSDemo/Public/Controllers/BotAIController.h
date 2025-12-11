@@ -13,6 +13,7 @@ class FPSDEMO_API ABotAIController : public AAIController
 public:
     ABotAIController();
 
+    void ResetAIState();
 protected:
     virtual void OnPossess(APawn* InPawn) override;
     virtual void BeginPlay() override;

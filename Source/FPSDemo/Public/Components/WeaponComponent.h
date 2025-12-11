@@ -39,8 +39,6 @@ public:
 	UWeaponComponent();
 
 protected:
-	UGameManager* GMR;
-
 	UPROPERTY(Replicated)
 	bool bIsReloading;
 
@@ -245,4 +243,5 @@ public:
 	bool CanPlantSpikeAtCurrentLocation();
 	void RefreshOverlapPickupActors();
 	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
+	bool IsHasSpike();
 };

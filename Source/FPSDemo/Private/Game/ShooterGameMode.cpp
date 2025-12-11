@@ -205,3 +205,17 @@ bool AShooterGameMode::CheckAllTeamDead(FName TeamID)
     // No alive players
     return true;
 }
+
+
+TArray<AController*> AShooterGameMode::GetTeamPlayers(FName TeamID)
+{
+    if (TeamID == "A")
+    {
+        return TeamA;
+    }
+    else if (TeamID == "B")
+    {
+        return TeamB;
+    }
+    return TArray<AController*>();
+}

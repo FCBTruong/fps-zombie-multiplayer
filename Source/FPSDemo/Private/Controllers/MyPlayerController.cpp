@@ -121,6 +121,7 @@ void AMyPlayerController::ApplyFlash(const float& Strength)
 
 void AMyPlayerController::ToggleShop()
 {
+    UE_LOG(LogTemp, Warning, TEXT("ObjectToggleShop address = %p"), GMR);
 	UE_LOG(LogTemp, Warning, TEXT("Toggling shop UI"));
     if (!PlayerUI)
     {

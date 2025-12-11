@@ -16,7 +16,7 @@ ABotAIController::ABotAIController()
 
     SightConfig->SightRadius = 5000.f;
     SightConfig->LoseSightRadius = 5500.f;
-    SightConfig->PeripheralVisionAngleDegrees = 90.f;
+    SightConfig->PeripheralVisionAngleDegrees = 180.f;
 
     SightConfig->DetectionByAffiliation.bDetectEnemies = true;
     SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
@@ -84,4 +84,25 @@ void ABotAIController::Tick(float DeltaSeconds)
 
     DrawDebugLine(GetWorld(), Loc, Loc + LeftDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);
     DrawDebugLine(GetWorld(), Loc, Loc + RightDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);
+}
+
+
+void ABotAIController::ResetAIState()
+{
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (!BB) return;
+
+    // Clear target data
+    BB->ClearValue("TargetActor");
+    BB->ClearValue("HasLineOfSight");
+    BB->ClearValue("TargetLocation");
+
+    // Clear AI focus
+    ClearFocus(EAIFocusPriority::Gameplay);
+
+    // Clear perception knowledge
+    if (PerceptionComp)
+    {
+        PerceptionComp->ForgetAll();
+    }
 }

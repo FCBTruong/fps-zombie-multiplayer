@@ -6,9 +6,16 @@
 #include "Game/ShooterGameState.h"
 #include "Weapons/WeaponDataManager.h"
 
+
+UGameManager* UGameManager::Instance = nullptr;
+int32 UGameManager::CurrentPickupId = 1000;
+
 void UGameManager::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+    Instance = this;
+    UE_LOG(LogTemp, Warning, TEXT("ObjectAAA address = %p"), this);
+
     GlobalData = TSoftObjectPtr<UGlobalDataAsset>(
         FSoftObjectPath(TEXT("/Game/Main/Data/GlobalData.GlobalData"))
     ).LoadSynchronous();
@@ -69,11 +76,11 @@ UWeaponDataManager* UGameManager::GetWeaponDataManager() {
 }
 
 int32 UGameManager::GetNextItemOnMapId() {
-    static int32 CurrentId = 1000; // Start from 1000 to avoid conflicts with predefined IDs
-    return CurrentId++;
+    return CurrentPickupId++;
 }
 
-APickupItem* UGameManager::CreatePickupActor(FPickupData Data) {
+APickupItem* UGameManager::CreatePickupActor(FPickupData Data)
+{
     APickupItem* Pickup = GetWorld()->SpawnActor<APickupItem>(
         APickupItem::StaticClass(),
         FVector::ZeroVector,
@@ -109,4 +116,19 @@ APickupItem* UGameManager::GetPickupNode(int PickupId) {
         return PickupItemsOnMap[PickupId];
 	}
 	return nullptr;
+}
+
+APickupItem* UGameManager::GetPickupSpike() {
+    UE_LOG(LogTemp, Warning, TEXT("PickupItemsOnMap count = %d"), PickupItemsOnMap.Num());
+    for (const TPair<int32, APickupItem*>& Pair : PickupItemsOnMap)
+    {
+        APickupItem* Item = Pair.Value;
+        if (!Item) continue;
+
+        if (Item->GetData().ItemId == EItemId::SPIKE)   
+        {
+            return Item;
+        }
+    }
+    return nullptr;
 }

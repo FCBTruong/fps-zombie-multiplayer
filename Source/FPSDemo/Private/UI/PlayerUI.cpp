@@ -35,7 +35,14 @@ void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
         int32 Minutes = RemainingTime / 60;
         int32 Seconds = RemainingTime % 60;
         FString TimeStr = FString::Printf(TEXT("%2d:%02d"), Minutes, Seconds);
+
         if (MatchTimeLb) {
+			FLinearColor C = FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("FFFACDFF")));
+            if (RemainingTime <= 10) {
+				C = FLinearColor::Red;
+			}
+			MatchTimeLb->SetColorAndOpacity(C);
+            
             MatchTimeLb->SetText(FText::FromString(TimeStr));
         }
 	}
