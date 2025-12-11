@@ -57,7 +57,7 @@ public:
     class UInputAction* IA_RELOAD;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_RUN;
+    class UInputAction* IA_SLOW;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_CROUCH;
@@ -67,9 +67,6 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_SELECT_FIRST_RIFLE;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_SELECT_SECOND_RIFLE;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_SELECT_MELEE;
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -106,6 +103,7 @@ public:
 	void OnLeftClickRelease();
     void Jump();
     void ClickCrouch();
+	void StopCrouch();
     void Look(const FInputActionValue& Value);
     void ClickAim();
 	void StartReload();
@@ -115,5 +113,7 @@ public:
 	void ChangeView();
 	void StartDefuseSpike();
 	void StopDefuseSpike();
+	void ClickSlow();
+	void ReleaseSlow();
 	FName GetTeamId();
 };

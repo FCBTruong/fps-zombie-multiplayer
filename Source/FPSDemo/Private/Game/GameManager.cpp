@@ -54,7 +54,6 @@ UWeaponData* UGameManager::GetWeaponDataById(EItemId ItemId) {
 
 UWeaponDataManager* UGameManager::GetWeaponDataManager() {
     if (WeaponDataManager) {
-		UE_LOG(LogTemp, Warning, TEXT("GetWeaponDataManager: Returning cached WeaponDataManager"));
         return WeaponDataManager;
 	}
     UWorld* World = GetWorld();

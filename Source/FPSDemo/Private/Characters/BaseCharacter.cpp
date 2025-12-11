@@ -234,6 +234,33 @@ void ABaseCharacter::Tick(float DeltaTime)
         float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f); // 10 = speed
         FirstPersonCamera->SetFieldOfView(NewFOV);
     }
+
+    // logic sound
+    UpdateFootstepSound(DeltaTime);
+}
+
+void ABaseCharacter::UpdateFootstepSound(float DeltaTime) {
+    const float Speed = GetVelocity().Size2D();
+    const bool bGrounded = !GetCharacterMovement()->IsFalling();
+
+    // stop footstep when slow
+    if (Speed < 300.f || !bGrounded)
+        return;
+
+    const float CurrentTime = GetWorld()->GetTimeSeconds();
+
+    float FootstepInterval = 0.35f;
+    if (Speed > 500.f) {
+        FootstepInterval = 0.25f;
+    }
+    else if (Speed > 450.f) {
+        FootstepInterval = 0.3f;
+	}
+    if (CurrentTime - LastFootstepTime >= FootstepInterval)
+    {
+        LastFootstepTime = CurrentTime;
+		PlayFootstepSound();
+    }
 }
 
 
@@ -334,10 +361,14 @@ void ABaseCharacter::StopRunning()
 
 void ABaseCharacter::Jump()
 {
-    if (bCrouching)
+    if (GetCharacterMovement()->IsFalling()) {
+        return;
+	}
+    if (CurrentMovementState == EMovementState::Crouch)
     {
         CustomUnCrouch();
-    }
+        return;
+	}
     Super::Jump();
 }
 
@@ -356,46 +387,47 @@ void ABaseCharacter::StopJumping()
 void ABaseCharacter::CustomCrouch()
 {
     UE_LOG(LogTemp, Warning, TEXT("Crouch"));
-    if (IsRunning())
-    {
-        StopRunning();
-    }
-    if (bCrouching) return;
+	if (CurrentMovementState == EMovementState::Crouch) return;
 
     // Tell server to update state
     ServerSetCrouching(true);
+    CrouchTimeline.PlayFromStart();
 }
 
 void ABaseCharacter::CustomUnCrouch()
 {
-    if (!bCrouching) return;
+    if (CurrentMovementState != EMovementState::Crouch)
+    {
+        return;
+    }
     UE_LOG(LogTemp, Warning, TEXT("UnCrouch"));
 	ServerSetCrouching(false);
+	CrouchTimeline.Reverse();
 }
 
 void ABaseCharacter::ServerSetCrouching_Implementation(bool bNewCrouching)
 {
-    if (bNewCrouching && IsRunning()) {
-        StopRunning();
-    }
-    if (bCrouching == bNewCrouching) {
-        return;
-    }
+    if (bNewCrouching) {
+		if (CurrentMovementState == EMovementState::Crouch) return;
 
-    bCrouching = bNewCrouching;
-    OnRep_Crouching(); // apply on server too
-}
-
-void ABaseCharacter::OnRep_Crouching()
-{
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_Crouching: %s"), bCrouching ? TEXT("true") : TEXT("false"));
-    GetCharacterMovement()->MaxWalkSpeed = bCrouching ? CROUCH_WALK_SPEED : GetSpeedWalkCurrently();
-    if (bCrouching) {
-        CrouchTimeline.PlayFromStart();
+        CurrentMovementState = EMovementState::Crouch;
     }
     else {
-        CrouchTimeline.ReverseFromEnd();
+        if (CurrentMovementState != EMovementState::Crouch) return;
+		CurrentMovementState = EMovementState::Normal;
+	}
+	
+
+    if (CurrentMovementState == EMovementState::Crouch)
+    {
+        CrouchTimeline.PlayFromStart();
     }
+    else
+    {
+        CrouchTimeline.Reverse();
+    }
+
+	HandleUpdateSpeedWalkCurrently();
 }
 
 void ABaseCharacter::HandleCrouchProgress(float Value) {
@@ -405,19 +437,18 @@ void ABaseCharacter::HandleCrouchProgress(float Value) {
 }
 
 
-void ABaseCharacter::ClickCrouch()
+void ABaseCharacter::Input_Crouch()
 {
     if (GetCharacterMovement()->IsFalling()) {
         return;
     }
-    if (bCrouching)
-    {
-        CustomUnCrouch();
-    }
-    else
-    {
-        CustomCrouch();
-    }
+	
+    CustomCrouch();
+}
+
+void ABaseCharacter::Input_UnCrouch()
+{
+    CustomUnCrouch();
 }
 
 
@@ -506,9 +537,8 @@ USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh()
 void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(ABaseCharacter, bCrouching);
     DOREPLIFETIME(ABaseCharacter, bAiming);
-	DOREPLIFETIME(ABaseCharacter, SpeedWalkCurrently);
+	DOREPLIFETIME(ABaseCharacter, CurrentMovementState);
 }
 
 void ABaseCharacter::DropWeapon()
@@ -576,21 +606,33 @@ void ABaseCharacter::PlayEquipWeaponAnimation(EWeaponTypes WeaponType)
     }
 }
 
-float ABaseCharacter::GetSpeedWalkCurrently()
+float ABaseCharacter::GetSpeedWalkRatio()
 {
-	return SpeedWalkCurrently;
-}
-
-// This function called on server to set new speed
-void ABaseCharacter::SetSpeedWalkCurrently(float NewSpeed)
-{
-    SpeedWalkCurrently = NewSpeed;
-    HandleUpdateSpeedWalkCurrently();
+	EWeaponTypes WeaponType = WeaponComp->GetCurrentWeaponType();
+    if (WeaponType == EWeaponTypes::Firearm) {
+        return 1;
+    }
+    else if (WeaponType == EWeaponTypes::Melee) {
+        return 1.5f;
+    }
+    else if (WeaponType == EWeaponTypes::Throwable) {
+        return 1.5f;
+	}
+    else if (WeaponType == EWeaponTypes::Spike) {
+        return 1.5f;
+    }
+    return 1.0f;
 }
 
 void ABaseCharacter::HandleUpdateSpeedWalkCurrently() {
-    if (!bCrouching) {
-        GetCharacterMovement()->MaxWalkSpeed = SpeedWalkCurrently;
+    if (CurrentMovementState == EMovementState::Crouch) {
+        GetCharacterMovement()->MaxWalkSpeed = CROUCH_WALK_SPEED;
+    }
+    else if (CurrentMovementState == EMovementState::Slow) {
+        GetCharacterMovement()->MaxWalkSpeed = SLOW_WALK_SPEED;
+    }
+    else {
+        GetCharacterMovement()->MaxWalkSpeed = NORMAL_WALK_SPEED * GetSpeedWalkRatio();
     }
 }
 
@@ -731,6 +773,9 @@ void ABaseCharacter::HandleDeath()
 	UE_LOG(LogTemp, Warning, TEXT("Character has died."));
     if (HasAuthority())
     {
+        GetCharacterMovement()->StopMovementImmediately();
+        GetCharacterMovement()->DisableMovement();
+
         // get game mode and notify
         if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
         {
@@ -960,4 +1005,49 @@ void ABaseCharacter::Destroyed()
     {
         WeaponComp->GetCurrentWeapon()->Destroy();
     }
+}
+
+void ABaseCharacter::ServerSetIsSlow_Implementation(bool bNewIsSlow)
+{
+	UE_LOG(LogTemp, Warning, TEXT("ServerSetIsSlow called with bNewIsSlow: %s"), bNewIsSlow ? TEXT("true") : TEXT("false"));
+	CurrentMovementState = bNewIsSlow ? EMovementState::Slow : EMovementState::Normal;
+	
+	HandleUpdateSpeedWalkCurrently();
+}
+
+void ABaseCharacter::OnRep_CurrentMovementState()
+{
+    HandleUpdateSpeedWalkCurrently();
+}
+
+void ABaseCharacter::PlayFootstepSound()
+{
+    if (!FootstepCue)
+        return;
+
+    const float Speed = GetVelocity().Size2D();
+    const bool bGrounded = !GetCharacterMovement()->IsFalling();
+
+    // OFF when slow
+    if (Speed < 300.f)
+        return;
+
+    if (!bGrounded)
+        return;
+
+    // Play at actor's feet
+    UGameplayStatics::PlaySoundAtLocation(
+        this,
+        FootstepCue,
+        GetActorLocation()
+    );
+}
+
+bool ABaseCharacter::IsAlive() const
+{
+    if (HealthComp)
+    {
+        return !HealthComp->IsDead();
+    }
+    return true; // if no health component, assume alive
 }

@@ -47,7 +47,7 @@ void UMinimapRadarUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	
 	float YawValue = FRotator::NormalizeAxis(Pawn->GetActorRotation().Yaw);
 	FWidgetTransform T;
-	T.Angle = -90 -YawValue;
+	T.Angle = -90 - YawValue;
 
 	float PivotX = NormalizedX;
 	float PivotY = NormalizedY;

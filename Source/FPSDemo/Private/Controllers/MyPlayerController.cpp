@@ -197,6 +197,12 @@ void AMyPlayerController::SetupInputComponent()
         if (IA_CROUCH)
         {
             EnhancedInput->BindAction(IA_CROUCH, ETriggerEvent::Started, this, &AMyPlayerController::ClickCrouch);
+			EnhancedInput->BindAction(IA_CROUCH, ETriggerEvent::Completed, this, &AMyPlayerController::StopCrouch);
+        }
+
+        if (IA_SLOW) {
+            EnhancedInput->BindAction(IA_SLOW, ETriggerEvent::Started, this, &AMyPlayerController::ClickSlow);
+            EnhancedInput->BindAction(IA_SLOW, ETriggerEvent::Completed, this, &AMyPlayerController::ReleaseSlow);
         }
 
         if (IA_CAMERA)
@@ -411,7 +417,16 @@ void AMyPlayerController::ClickCrouch() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        MyChar->ClickCrouch();
+        MyChar->Input_Crouch();
+    }
+}
+
+void AMyPlayerController::StopCrouch() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        MyChar->Input_UnCrouch();
     }
 }
 
@@ -527,4 +542,22 @@ FName AMyPlayerController::GetTeamId()
         return PS->GetTeamID();
     }
     return NAME_None;
+}
+
+void AMyPlayerController::ClickSlow() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        MyChar->ServerSetIsSlow(true);
+    }
+}
+
+void AMyPlayerController::ReleaseSlow() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        MyChar->ServerSetIsSlow(false);
+    }
 }

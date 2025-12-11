@@ -30,6 +30,14 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
 
+UENUM(BlueprintType)
+enum class EMovementState : uint8
+{
+    Normal,
+	Slow,
+	Crouch
+};
+
 UCLASS()
 class FPSDEMO_API ABaseCharacter : public ACharacter
 {
@@ -53,8 +61,6 @@ protected:
     UPROPERTY()
     UWeaponData* LastDamageCauser = nullptr;
 
-    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRepSpeedWalkCurrently, Category = "Data")
-	float SpeedWalkCurrently = NORMAL_WALK_SPEED;
     UFUNCTION()
 	void OnRepSpeedWalkCurrently();
 
@@ -113,8 +119,6 @@ protected:
     UFUNCTION(Server, Reliable)
     void ServerSetCrouching(bool bNewCrouching);
 
-	UFUNCTION()
-	void OnRep_Crouching();
     void UpdateAttachLocationWeapon();
     void DropWeapon();
 
@@ -165,6 +169,18 @@ protected:
     USoundBase* DefusingSpikeSound;
     UPROPERTY()
 	UAudioComponent* DefuseSpikeAudioComp = nullptr;
+
+    UPROPERTY(ReplicatedUsing = OnRep_CurrentMovementState)
+	EMovementState CurrentMovementState = EMovementState::Normal;
+    UFUNCTION()
+	void OnRep_CurrentMovementState();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+    USoundBase* FootstepCue;
+    float LastFootstepTime = 0.f;
+
+	void PlayFootstepSound();
+	void UpdateFootstepSound(float DeltaTime);
 public:
     ABaseCharacter();
 
@@ -176,9 +192,6 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bEquipped = false;
-
-    UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Crouching, Category = "State")
-    bool bCrouching = false;
 
     UPROPERTY(BlueprintReadWrite, Category = "State")
     bool bIsFPS = false;
@@ -226,6 +239,7 @@ public:
     static constexpr float MELEE_WALK_SPEED = 500.f;
     static constexpr float CROUCH_WALK_SPEED = 200.f;
 	static constexpr float AIM_WALK_SPEED = 250.f;
+	static constexpr float SLOW_WALK_SPEED = 200.f;
     void AddWeapon(AWeaponBase* weapon);
     FORCEINLINE UPickupComponent* GetPickupComponent() const {
         return PickupComponent;
@@ -243,8 +257,7 @@ public:
     bool IsRunning();
 	bool IsFpsViewMode() const { return bIsFPS; }
     void PlayEquipWeaponAnimation(EWeaponTypes WeaponType);
-	float GetSpeedWalkCurrently();
-    void SetSpeedWalkCurrently(float NewSpeed);
+    float GetSpeedWalkRatio();
 	void HandleUpdateSpeedWalkCurrently();
     virtual float TakeDamage(
         float DamageAmount,
@@ -293,7 +306,8 @@ public:
     void StopAiming();
     virtual void Jump() override;
     virtual void StopJumping() override;
-    void ClickCrouch();
+    void Input_Crouch();
+	void Input_UnCrouch();
     void ChangeView();
     float GetAimSensitivity();
 
@@ -306,4 +320,11 @@ public:
     void PlayDefuseSpikeEffect();
 	void StopDefuseSpikeEffect();
 	void Destroyed() override;
+
+    UFUNCTION(Server, Reliable)
+    void ServerSetIsSlow(bool bNewIsSlow);
+   
+	UFUNCTION(BlueprintCallable)
+	EMovementState GetCurrentMovementState() const { return CurrentMovementState; }
+	bool IsAlive() const;
 };

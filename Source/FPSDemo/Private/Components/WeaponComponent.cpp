@@ -105,6 +105,8 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UWeaponComponent::EquipWeapon(EItemId ItemId)
 {
+    if (Character && !Character->IsAlive()) return;
+
     if (GetOwner()->GetLocalRole() < ROLE_Authority) {
         // Client
         ServerEquipWeapon(ItemId);
@@ -128,6 +130,8 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Invalid ItemId NONE"));
         return;
 	}
+
+    if (!Character || !Character->IsAlive()) return;
 
 	if (CurrentWeaponId == ItemId) 
     {
@@ -180,22 +184,9 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
     }
 	CurrentWeaponId = NewWeaponId;
 
-   /* if (GetNetMode() == NM_ListenServer) {
-        OnRep_CurrentWeapon();
-    }*/ // alert when enable this again, this cause crash random
-
 	// update speed based on weapon
     if (Character) {
-		// melee, rifle, pistol
-        float NewSpeed = ABaseCharacter::NORMAL_WALK_SPEED;
-
-        if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
-            NewSpeed = ABaseCharacter::NORMAL_WALK_SPEED;
-        }
-        else if (WeaponConf->WeaponType == EWeaponTypes::Melee) {
-            NewSpeed = ABaseCharacter::MELEE_WALK_SPEED;
-        }
-		Character->SetSpeedWalkCurrently(NewSpeed);
+        Character->HandleUpdateSpeedWalkCurrently();
 	}
 
     if (bIsAiming) {
@@ -328,6 +319,8 @@ void UWeaponComponent::RefreshOverlapPickupActors() {
 }
 
 void UWeaponComponent::StartReload() {
+    if (!Character->IsAlive()) return;
+
     if (!bIsReloading) {
         if (CurrentWeaponId == EItemId::NONE) {
             UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon equipped"));
@@ -367,6 +360,14 @@ void UWeaponComponent::StartAiming() {
 
 // This function only apply for firearms
 bool UWeaponComponent::CanShoot() {
+    if (!Character) {
+        return false;
+    }
+    if (!Character->IsAlive())
+    {
+        return false;
+    }
+
     if (Character->IsRunning()) {
 		return false;
     }
@@ -393,6 +394,8 @@ bool UWeaponComponent::CanShoot() {
 }
 
 void UWeaponComponent::OnInput_StartAttack() {
+    if (!Character || !Character->IsAlive()) return;
+
     if (CurrentWeaponId == EItemId::NONE) {
         UE_LOG(LogTemp, Warning, TEXT("HandleStartFire: No weapon equipped"));
         return;
@@ -578,6 +581,8 @@ void UWeaponComponent::ServerOnFire_Implementation(const FVector& StartPoint, co
 }
 
 void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
+    if (!Character->IsAlive()) return;
+
     if (bIsMeleeAttacking) {
         return; // already attacking
 	}
@@ -1139,6 +1144,9 @@ void UWeaponComponent::OnRep_CurrentWeapon()
     if (Character) {
         EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
         Character->PlayEquipWeaponAnimation(WeaType);
+
+        // update speed
+        Character->HandleUpdateSpeedWalkCurrently();
 	}
 
     OnUpdateCurrentWeapon.Broadcast(CurrentWeaponId);
@@ -1151,6 +1159,7 @@ void UWeaponComponent::ServerReload_Implementation()
 
 void UWeaponComponent::HandleReload()
 {
+    if (!Character->IsAlive()) return;
     UE_LOG(LogTemp, Warning, TEXT("OnEquipWeaponFinished called"));
     if (bIsReloading) {
         return; // already reloading
@@ -1195,6 +1204,7 @@ void UWeaponComponent::MulticastReload_Implementation()
 
 void UWeaponComponent::OnFinishedReload()
 {
+    if (!Character->IsAlive()) return;
     if (GetOwner()->HasAuthority()) // only server makes changes
     {
         bIsReloading = false;
@@ -1373,6 +1383,8 @@ bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
 
 bool UWeaponComponent::CanDropWeapon(EItemId Id)
 {
+    if (!Character || !Character->IsAlive()) return false;
+
     UWeaponData* WeaponConf = GMR->GetWeaponDataById(Id);
     if (!WeaponConf) {
         return false;
