@@ -116,7 +116,6 @@ APickupItem* UGameManager::GetPickupNode(int PickupId) {
 }
 
 APickupItem* UGameManager::GetPickupSpike() {
-    UE_LOG(LogTemp, Warning, TEXT("PickupItemsOnMap count = %d"), PickupItemsOnMap.Num());
     for (const TPair<int32, APickupItem*>& Pair : PickupItemsOnMap)
     {
         APickupItem* Item = Pair.Value;

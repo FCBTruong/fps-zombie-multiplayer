@@ -128,3 +128,16 @@ AActorManager* AActorManager::Get(UObject* WorldContextObject)
 
     return nullptr;
 }
+
+
+FVector AActorManager::GetRandomHoldLocationNearBombSite(FName BombSiteName) {
+    TArray<ATargetPoint*> HoldPoints = (BombSiteName == FName(TEXT("A"))) ? HoldPointsA : HoldPointsB;
+
+    if (HoldPoints.Num() > 0) {
+        int32 RandomIndex = FMath::RandRange(0, HoldPoints.Num() - 1);
+        return HoldPoints[RandomIndex]->GetActorLocation();
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("No hold points available for bomb site: %s"), *BombSiteName.ToString());
+    return FVector::ZeroVector;
+}

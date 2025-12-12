@@ -38,4 +38,5 @@ public:
 	void SpikeExploded();
 	static constexpr int32 ScoreToWin = 9;
 	static constexpr int32 TimePerRound = 90; // seconds
+	void NotifyPlayerSpikeState(ABaseCharacter* Player, bool bHasSpike);
 };

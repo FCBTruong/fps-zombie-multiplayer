@@ -29,4 +29,5 @@ protected:
 
 	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;
+	TArray<ABotAIController*> BotControllers;
 };

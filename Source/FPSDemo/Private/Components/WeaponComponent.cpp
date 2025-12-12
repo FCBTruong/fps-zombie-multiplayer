@@ -246,6 +246,12 @@ void UWeaponComponent::HandleDropWeapon() {
 
     // Spawn Pickup item
     APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
+    if (Data.ItemId == EItemId::SPIKE) {
+        ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+        if (SpikeGM) {
+            SpikeGM->NotifyPlayerSpikeState(Character, false);
+        }
+    }
 
     if (Pickup && Pickup->GetItemMesh())
     {
@@ -1305,6 +1311,7 @@ AWeaponBase* UWeaponComponent::SpawnWeaponByItemId(EItemId ItemId)
     return NewWeapon;
 }
 
+// Logic server only
 bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
 {
 	UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(ItemId);
@@ -1355,6 +1362,12 @@ bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
         }
         
 		bHasSpike = true;
+
+		// speical case, need to tell game mode that player has spike
+        ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+        if (SpikeGM) {
+            SpikeGM->NotifyPlayerSpikeState(Character, true);
+        }
     }
     return true;
 }
@@ -1456,6 +1469,7 @@ void UWeaponComponent::ServerStartPlantSpike_Implementation() {
 	UE_LOG(LogTemp, Warning, TEXT("ServerStartPlantSpike called"));
 
 	bIsPlantingSpike = true;
+    Character->ServerSetCrouching(true);
 
     GetWorld()->GetTimerManager().SetTimer(
         SpikePlantTimerHandle,
@@ -1655,7 +1669,8 @@ void UWeaponComponent::FinishPlantSpike() {
 	bHasSpike = false;
 
 	UE_LOG(LogTemp, Warning, TEXT("FinishPlantSpike called"));
-
+    
+    Character->ServerSetCrouching(false);
 	// change player equipment
     AutoEquipBestWeapon();
 }

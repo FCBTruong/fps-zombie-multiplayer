@@ -6,6 +6,8 @@
 #include <GameFramework/PlayerStart.h>
 #include "Game/ActorManager.h"
 #include <Kismet/GameplayStatics.h>
+#include "BehaviorTree/BlackboardComponent.h"
+#include "Characters/BaseCharacter.h"
 
 void ASpikeMode::StartPlay()
 {
@@ -36,6 +38,21 @@ void ASpikeMode::PlantSpike(FVector Location, AMyPlayerController* Planter)
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	GS->SetMatchState(EMyMatchState::SPIKE_PLANTED);
+
+	// update blackboard for bots
+	for (ABotAIController* Bot : BotControllers)
+	{
+		UBlackboardComponent* BB = Bot->GetBlackboardComponent();
+		if (BB)
+		{
+			BB->SetValueAsBool(TEXT("B_IsSpikePlanted"), true);
+
+			// random pick hold location for player to move to
+			FName BombSite = BB->GetValueAsName(TEXT("Name_BombSite"));
+			FVector HoldLocation = AActorManager::Get(GetWorld())->GetRandomHoldLocationNearBombSite(BombSite);
+			BB->SetValueAsVector(TEXT("Vec_HoldLocation"), HoldLocation);
+		}
+	}
 }
 
 void ASpikeMode::DefuseSpike(AMyPlayerController* Defuser)
@@ -87,20 +104,50 @@ void ASpikeMode::EndRound(FName WinningTeam)
 
 void ASpikeMode::StartRound()
 {
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+
 	AActorManager::Get(GetWorld())->ResetPlayerStartsUsage();
-	for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+
+	TArray<ABotAIController*> Attackers;
+
+	FName BombSite = FMath::RandBool() ? FName(TEXT("A")) : FName(TEXT("B"));
+	for (ABotAIController* Bot : BotControllers)
 	{
-		ABotAIController* Bot = Cast<ABotAIController>(*It);
-		if (Bot)
+		Bot->ResetAIState();
+		AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
+
+		bool IsAttacker = (PS->GetTeamID() == GS->GetAttackerTeam());
+		// update bot data to blackboard
+		UBlackboardComponent* BB = Bot->GetBlackboardComponent();
+		if (!BB) continue;
+
+		BB->SetValueAsBool(TEXT("B_IsAttacker"), IsAttacker);
+		BB->SetValueAsName(TEXT("Name_BombSite"), BombSite);
+
+		FVector PlantLocation =
+			(BombSite == FName(TEXT("A")))
+			? AActorManager::Get(GetWorld())->GetAreaBombA()->GetActorLocation()
+			: AActorManager::Get(GetWorld())->GetAreaBombB()->GetActorLocation();
+		BB->SetValueAsVector(TEXT("Vec_PlantLocation"), PlantLocation);
+
+		if (IsAttacker)
 		{
-			Bot->ResetAIState();
+			Attackers.Add(Bot);
 		}
+	}
+	// auto assign spike carrier for one of the attackers
+	if (Attackers.Num() > 0)
+	{
+		int32 RandomIndex = FMath::RandRange(0, Attackers.Num() - 1);
+		ABotAIController* SpikeCarrierBot = Attackers[RandomIndex];
+		SpikeCarrierBot->GetBlackboardComponent()->SetValueAsBool("B_IsSpikeCarrier", true);
+		UE_LOG(LogTemp, Warning, TEXT("Bot %s assigned as Spike Carrier"), *SpikeCarrierBot->GetName());
+		SpikeCarrierBot->GetBlackboardComponent()->SetValueAsVector("Vec_SpikeLocation", AActorManager::Get(GetWorld())->GetSpikeStartLocation());
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Starting new round..."));
 
 	// Clean map
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
 
 	if (PlantedSpike)
 	{
@@ -250,5 +297,32 @@ void ASpikeMode::OnRoundTimeExpired()
 	if (!IsSpikePlanted())
 	{
 		EndRound(GS->GetDefenderTeam());
+	}
+}
+
+void ASpikeMode::NotifyPlayerSpikeState(ABaseCharacter* Player, bool bHasSpike)
+{
+	// If bot, set blackboard value
+	ABotAIController* BotController = Cast<ABotAIController>(Player->GetController());
+	if (BotController)
+	{
+		UBlackboardComponent* BB = BotController->GetBlackboardComponent();
+		if (BB)
+		{
+			BB->SetValueAsBool("B_HasSpike", bHasSpike);
+			UE_LOG(LogTemp, Warning, TEXT("Bot %s notified as Spike Carrier"), *BotController->GetName());
+		}
+
+		// update other bots' blackboard
+		for (ABotAIController* OtherBot : BotControllers)
+		{
+			AMyPlayerState* OtherPS = OtherBot->GetPlayerState<AMyPlayerState>();
+			if (OtherPS->GetTeamID() != BotController->GetPlayerState<AMyPlayerState>()->GetTeamID()) continue;
+			UBlackboardComponent* OtherBB = OtherBot->GetBlackboardComponent();
+			if (OtherBB)
+			{
+				OtherBB->SetValueAsBool("B_TeamHasSpike", bHasSpike);
+			}
+		}
 	}
 }

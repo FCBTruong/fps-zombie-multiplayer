@@ -186,6 +186,8 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
     GS->AddPlayerState(NewPS);
 
+    BotControllers.Add(Bot);
+
     return Bot;
 }
 

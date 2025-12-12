@@ -418,6 +418,7 @@ void ABaseCharacter::ServerSetCrouching_Implementation(bool bNewCrouching)
         if (CurrentMovementState != EMovementState::Crouch) return;
 		CurrentMovementState = EMovementState::Normal;
 	}
+	bIsCrouching = bNewCrouching;
 	
 
     if (CurrentMovementState == EMovementState::Crouch)
@@ -541,6 +542,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ABaseCharacter, bAiming);
 	DOREPLIFETIME(ABaseCharacter, CurrentMovementState);
+	DOREPLIFETIME(ABaseCharacter, bIsCrouching);
 }
 
 void ABaseCharacter::DropWeapon()
@@ -1077,4 +1079,18 @@ void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
     Super::EndPlay(EndPlayReason);
     
 	UGameManager::Get(GetWorld())->UnregisterPlayer(this);
+}
+
+void ABaseCharacter::OnRep_IsCrouching()
+{
+	// ignore if player is local controller
+    if (IsLocallyControlled()) {
+        return;
+	}
+    if (bIsCrouching) {
+        CrouchTimeline.PlayFromStart();
+    }
+    else {
+        CrouchTimeline.Reverse();
+    }
 }

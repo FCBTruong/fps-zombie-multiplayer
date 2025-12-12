@@ -117,9 +117,6 @@ protected:
     UFUNCTION(BlueprintPure)
 	EWeaponSubTypes GetWeaponSubType();
 
-    UFUNCTION(Server, Reliable)
-    void ServerSetCrouching(bool bNewCrouching);
-
     void UpdateAttachLocationWeapon();
     void DropWeapon();
 
@@ -175,6 +172,12 @@ protected:
 	EMovementState CurrentMovementState = EMovementState::Normal;
     UFUNCTION()
 	void OnRep_CurrentMovementState();
+
+	UPROPERTY(ReplicatedUsing = OnRep_IsCrouching)
+	bool bIsCrouching = false;
+
+    UFUNCTION()
+	void OnRep_IsCrouching();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
     USoundBase* FootstepCue;
@@ -334,4 +337,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	EMovementState GetCurrentMovementState() const { return CurrentMovementState; }
 	bool IsAlive() const;
+
+    UFUNCTION(Server, Reliable)
+    void ServerSetCrouching(bool bNewCrouching);
 };

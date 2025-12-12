@@ -42,6 +42,12 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Setup")
 	TArray<APlayerStart*> DefenderStarts;
 
+	UPROPERTY(EditInstanceOnly, Category = "Setup")
+	TArray<ATargetPoint*> HoldPointsA;
+
+	UPROPERTY(EditInstanceOnly, Category = "Setup")
+	TArray<ATargetPoint*> HoldPointsB;
+
 	TMap<APlayerStart*, bool> StartUsage;
 
 	APlayerStart* GetRandomStart(const TArray<APlayerStart*>& Starts);
@@ -58,4 +64,5 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "Setup")
 	AActor* MainPlane;
 	static AActorManager* Get(UObject* WorldContextObject);
+	FVector GetRandomHoldLocationNearBombSite(FName BombSiteName);
 };

@@ -17,7 +17,7 @@ ABotAIController::ABotAIController()
 
     SightConfig->SightRadius = 5000.f;
     SightConfig->LoseSightRadius = 5500.f;
-    SightConfig->PeripheralVisionAngleDegrees = 180.f;
+    SightConfig->PeripheralVisionAngleDegrees = 90.f;
 
     SightConfig->DetectionByAffiliation.bDetectEnemies = true;
     SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
@@ -94,13 +94,18 @@ void ABotAIController::ResetAIState()
     if (!BB) return;
 
     // Clear target data
-    BB->ClearValue("TargetActor");
-    BB->ClearValue("HasLineOfSight");
-    BB->ClearValue("TargetLocation");
-    BB->ClearValue("ShouldPlant");
-    BB->ClearValue("IsTeamBringSpike");
-    BB->ClearValue("IsSpikePlanted");
-	BB->ClearValue("SpikeLocation");
+    BB->ClearValue("Obj_TargetActor");
+    BB->ClearValue("B_HasLineSight");
+    BB->ClearValue("Vec_TargetLocation");
+    BB->ClearValue("B_IsInBombArea");
+    BB->ClearValue("B_TeamHasSpike");
+    BB->ClearValue("B_IsSpikePlanted");
+	BB->ClearValue("Vec_SpikeLocation");
+	BB->ClearValue("B_IsSpikeCarrier");
+    BB->ClearValue("Vec_PlantLocation");
+	BB->ClearValue("Name_BombSite");
+    BB->ClearValue("B_HasSpike");
+    BB->ClearValue("Vec_HoldLocation");
 
     // Clear AI focus
     ClearFocus(EAIFocusPriority::Gameplay);
