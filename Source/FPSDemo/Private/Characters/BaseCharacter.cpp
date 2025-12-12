@@ -57,6 +57,8 @@ ABaseCharacter::ABaseCharacter()
 void ABaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+	UGameManager::Get(GetWorld())->RegisterPlayer(this);
    
     mesh = GetMesh();
 
@@ -1068,4 +1070,11 @@ void ABaseCharacter::PlayLandingSound()
         LandingSound,
         GetActorLocation()
     );
+}
+
+void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+    
+	UGameManager::Get(GetWorld())->UnregisterPlayer(this);
 }

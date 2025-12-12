@@ -18,6 +18,8 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterGameState, TeamAScore);
 	DOREPLIFETIME(AShooterGameState, TeamBScore);
 	DOREPLIFETIME(AShooterGameState, AttackerTeam);
+	DOREPLIFETIME(AShooterGameState, RoundEndTime);
+	DOREPLIFETIME(AShooterGameState, CurrentMatchState);
 }
 
 
@@ -103,3 +105,4 @@ void AShooterGameState::OnRep_MyMatchState()
 {
     OnUpdateMatchState.Broadcast(CurrentMatchState);
 }
+

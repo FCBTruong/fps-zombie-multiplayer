@@ -22,6 +22,7 @@ class FPSDEMO_API UGameManager : public UGameInstanceSubsystem
 private:
 	UWeaponDataManager* WeaponDataManager;
 	TMap<int32, APickupItem*> PickupItemsOnMap;
+	TArray<ABaseCharacter*> RegisteredPlayers; // for clients access
 public:
 	FPickupData GetDataPickupItem(int32 ItemOnMapId);
 	void FindAndDestroyItemNode(int32 ItemOnMapId);
@@ -39,4 +40,7 @@ public:
 	static int CurrentPickupId;
 	APickupItem* GetPickupSpike();
 	static UGameManager* Get(UObject* WorldContextObject);
+	void RegisterPlayer(ABaseCharacter* Pawn);
+	void UnregisterPlayer(ABaseCharacter* Pawn);
+	TArray<ABaseCharacter*> GetRegisteredPlayers() const { return RegisteredPlayers; }
 };

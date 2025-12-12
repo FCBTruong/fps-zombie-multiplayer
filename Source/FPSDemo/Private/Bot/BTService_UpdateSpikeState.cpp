@@ -11,6 +11,7 @@
 #include "Game/GameManager.h"
 #include "Pickup/PickupItem.h"
 #include <Kismet/GameplayStatics.h>
+#include "Game/ActorManager.h"
 
 UBTService_UpdateSpikeState::UBTService_UpdateSpikeState()
 {
@@ -26,7 +27,7 @@ void UBTService_UpdateSpikeState::TickNode(
     float DeltaSeconds)
 {
     Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
-    //UE_LOG(LogTemp, Log, TEXT("UBTService_UpdateSpikeState: debug03 called"));
+    UE_LOG(LogTemp, Log, TEXT("UBTService_UpdateSpikeState: debug03 called"));
     ABotAIController* AICon = Cast<ABotAIController>(OwnerComp.GetAIOwner());
     if (!AICon) return;
 
@@ -49,7 +50,7 @@ void UBTService_UpdateSpikeState::TickNode(
 	ASpikeMode* SpikeMode = Cast<ASpikeMode>(AICon->GetWorld()->GetAuthGameMode());
 	if (!SpikeMode) return;
 
-	TArray<AController*> Teammates = SpikeMode->GetTeamPlayers(MyPS->GetTeamID());
+	TArray<AController*> Teammates;
 
     bool GotSpike = false;
     for (AController* TeammateCon : Teammates)
@@ -70,8 +71,6 @@ void UBTService_UpdateSpikeState::TickNode(
 	}
     if (!GotSpike) {
         FVector SpikePos;
-        //UE_LOG(LogTemp, Warning, TEXT("Object address2 = %p"), UGameManager::Instance);
-
 
         UGameManager* GM = AICon->GetWorld()
             ->GetGameInstance()
@@ -85,5 +84,18 @@ void UBTService_UpdateSpikeState::TickNode(
             //UE_LOG(LogTemp, Log, TEXT("UBTService_UpdateSpikeState: PNULL SpikeLocation called"));
         }
         BB->SetValueAsVector("SpikeLocation", SpikePos);
+    }
+    else {
+		FVector AreaLocation = AActorManager::Get(AICon->GetWorld())->GetAreaBombA()->GetActorLocation();
+        BB->SetValueAsVector("PlantLocation", AreaLocation);
+
+		// check if player is near plant location
+		APawn* AIPawn = AICon->GetPawn();
+		if (AIPawn) {
+			float DistToPlant = FVector::Dist(AIPawn->GetActorLocation(), AreaLocation);
+			bool bShouldPlant = (DistToPlant < 100.f);
+			BB->SetValueAsBool("ShouldPlant", bShouldPlant);
+			UE_LOG(LogTemp, Log, TEXT("UBTService_UpdateSpikeState: DistToPlant = %f, bShouldPlant=%d"), DistToPlant, bShouldPlant);
+		}
     }
 }

@@ -77,16 +77,37 @@ void AShooterGameMode::AddPlayer(APlayerController* NewPlayer)
 
     FName AssignedTeam;
 
-    if (TeamA.Num() > TeamB.Num())
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+
+    // pick suitable team
+	int32 TeamACount = 0;
+	int32 TeamBCount = 0;
+    TArray<APlayerState*> PlayerStates = GS->PlayerArray;
+    for (APlayerState* ExistingPS : PlayerStates)
     {
-        AssignedTeam = "B";
-        TeamB.Add(NewPlayer);
+        if (!ExistingPS) continue;
+        AMyPlayerState* MyExistingPS = Cast<AMyPlayerState>(ExistingPS);
+        if (MyExistingPS && MyExistingPS->GetTeamID() == FName("A"))
+        {
+            TeamACount++;
+        }
+        else if (MyExistingPS && MyExistingPS->GetTeamID() == FName("B"))
+        {
+            TeamBCount++;
+        }
+    }
+    if (TeamACount <= TeamBCount)
+    {
+        AssignedTeam = FName("A");
     }
     else
     {
-        AssignedTeam = "A";
-        TeamA.Add(NewPlayer);
+        AssignedTeam = FName("B");
     }
+
+	PS->SetTeamID(AssignedTeam);
+	UE_LOG(LogTemp, Warning, TEXT("Assigned Team: %s"), *AssignedTeam.ToString());
+	GS->AddPlayerState(PS);
 
     PS->SetTeamID(AssignedTeam);
 }
@@ -100,29 +121,32 @@ FString AShooterGameMode::InitNewPlayer(APlayerController* NewPlayerController, 
 
 void AShooterGameMode::ResetPlayers()
 {
-    for (AController* PC : TeamA)
-    {
-        if (PC)
-        {
-            if (APawn* OldPawn = PC->GetPawn())
-            {
-                OldPawn->Destroy();     // Required!
-            }
-            RestartPlayer(PC);          // Will now actually respawn at a PlayerStart
-        }
-    }
+    AShooterGameState* GS = GetGameState<AShooterGameState>();
+    
+	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
 
-    for (AController* PC : TeamB)
+    for (APlayerState* PS : PlayerStates)
     {
-        if (PC)
+		if (!PS) continue;
+        AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
+        if (MyPS)
         {
-            if (APawn* OldPawn = PC->GetPawn())
-            {
-                OldPawn->Destroy();
-            }
-            RestartPlayer(PC);
+            MyPS->SetIsAlive(true);
+            MyPS->ResetBoughtItems();
         }
-    }
+       
+        AController* Controller = PS->GetOwner<AController>();
+        if (!Controller) continue;
+        APawn* Pawn = Controller->GetPawn();
+        if (Pawn)
+        {
+            Pawn->Destroy();
+        }
+        if (Controller)
+        {
+            RestartPlayer(Controller);
+        }
+	}
 }
 
 void AShooterGameMode::RestartPlayer(AController* NewPlayer)
@@ -136,8 +160,6 @@ void AShooterGameMode::RestartPlayer(AController* NewPlayer)
     NewPlayer->SetIgnoreLookInput(true);
     NewPlayer->SetIgnoreMoveInput(true);
 }
-
-
 
 ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
 {
@@ -161,42 +183,25 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
     RestartPlayer(Bot);
     UE_LOG(LogTemp, Warning, TEXT("Spawned Bot for Team %s"), *TeamID.ToString());
 
-    if (TeamID == "A")
-    {
-        TeamA.Add(Bot);
-    }
-    else if (TeamID == "B")
-    {
-        TeamB.Add(Bot);
-	}
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+    GS->AddPlayerState(NewPS);
 
     return Bot;
 }
 
 bool AShooterGameMode::CheckAllTeamDead(FName TeamID)
 {
-    const TArray<AController*>* TeamArray = nullptr;
-
-    if (TeamID == "A")
-    {
-        TeamArray = &TeamA;
-    }
-    else if (TeamID == "B")
-    {
-        TeamArray = &TeamB;
-    }
-    else
-    {
-        return false; // invalid team
-    }
-
     // Check players
-    for (AController* PC : *TeamArray)
-    {
-        if (!PC) continue;
+    TArray<APlayerState*> PlayerStates = GetGameState<AShooterGameState>()->PlayerArray;
 
-        AMyPlayerState* PS = PC->GetPlayerState<AMyPlayerState>();
-        if (PS && PS->IsAlive())
+    for (APlayerState* PS : PlayerStates)
+    {
+        AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
+        if (!MyPS) continue;
+
+		if (MyPS->GetTeamID() != TeamID) continue;
+
+        if (MyPS->IsAlive())
         {
             return false; // At least 1 alive team NOT dead
         }
@@ -206,16 +211,3 @@ bool AShooterGameMode::CheckAllTeamDead(FName TeamID)
     return true;
 }
 
-
-TArray<AController*> AShooterGameMode::GetTeamPlayers(FName TeamID)
-{
-    if (TeamID == "A")
-    {
-        return TeamA;
-    }
-    else if (TeamID == "B")
-    {
-        return TeamB;
-    }
-    return TArray<AController*>();
-}

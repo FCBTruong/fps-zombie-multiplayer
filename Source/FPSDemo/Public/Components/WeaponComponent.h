@@ -244,4 +244,5 @@ public:
 	void RefreshOverlapPickupActors();
 	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
 	bool IsHasSpike();
+	void AutoEquipBestWeapon();
 };

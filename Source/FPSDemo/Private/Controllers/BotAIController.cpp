@@ -5,6 +5,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "Controllers/MyPlayerState.h"
+#include "Items/ItemIds.h"
 
 ABotAIController::ABotAIController()
 {
@@ -60,7 +61,7 @@ void ABotAIController::Tick(float DeltaSeconds)
     FRotator Rot = GetPawn()->GetActorRotation();
 
     // Sight radius
-    DrawDebugCircle(
+   /* DrawDebugCircle(
         GetWorld(),
         Loc,
         SightConfig->SightRadius,
@@ -73,7 +74,7 @@ void ABotAIController::Tick(float DeltaSeconds)
         FVector(1, 0, 0),
         FVector(0, 1, 0),
         false
-    );
+    );*/
 
     // FOV direction lines
     float HalfFOV = SightConfig->PeripheralVisionAngleDegrees;
@@ -82,8 +83,8 @@ void ABotAIController::Tick(float DeltaSeconds)
     FVector LeftDir = Fwd.RotateAngleAxis(-HalfFOV, FVector::UpVector);
     FVector RightDir = Fwd.RotateAngleAxis(+HalfFOV, FVector::UpVector);
 
-    DrawDebugLine(GetWorld(), Loc, Loc + LeftDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);
-    DrawDebugLine(GetWorld(), Loc, Loc + RightDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);
+   /* DrawDebugLine(GetWorld(), Loc, Loc + LeftDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);
+    DrawDebugLine(GetWorld(), Loc, Loc + RightDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);*/
 }
 
 
@@ -96,6 +97,10 @@ void ABotAIController::ResetAIState()
     BB->ClearValue("TargetActor");
     BB->ClearValue("HasLineOfSight");
     BB->ClearValue("TargetLocation");
+    BB->ClearValue("ShouldPlant");
+    BB->ClearValue("IsTeamBringSpike");
+    BB->ClearValue("IsSpikePlanted");
+	BB->ClearValue("SpikeLocation");
 
     // Clear AI focus
     ClearFocus(EAIFocusPriority::Gameplay);
@@ -104,5 +109,24 @@ void ABotAIController::ResetAIState()
     if (PerceptionComp)
     {
         PerceptionComp->ForgetAll();
+    }
+}
+
+
+void ABotAIController::StartPlantingSpike() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        {
+            if (WC->GetCurrentWeaponType() == EWeaponTypes::Spike) {
+                WC->OnInput_StartPlantSpike();
+            }
+            else {
+				WC->EquipWeapon(EItemId::SPIKE);
+				WC->OnInput_StartPlantSpike();
+            }
+        }
     }
 }

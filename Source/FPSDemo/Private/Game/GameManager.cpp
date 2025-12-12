@@ -144,3 +144,13 @@ UGameManager* UGameManager::Get(UObject* WorldContextObject) {
     }
     return GI->GetSubsystem<UGameManager>();
 }
+
+void UGameManager::RegisterPlayer(ABaseCharacter* Pawn) {
+    if (!Pawn) return;
+	RegisteredPlayers.Add(Pawn);
+}
+
+void UGameManager::UnregisterPlayer(ABaseCharacter* Pawn) {
+    if (!Pawn) return;
+    RegisteredPlayers.Remove(Pawn);
+}

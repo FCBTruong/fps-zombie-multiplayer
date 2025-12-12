@@ -21,10 +21,6 @@ void ATeamEliminationMode::AddPlayer(APlayerController* NewPlayer)
 void ATeamEliminationMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-
-	// log number of players in each team
-	UE_LOG(LogTemp, Warning, TEXT("Team A has %d players."), TeamA.Num());
-	UE_LOG(LogTemp, Warning, TEXT("Team B has %d players."), TeamB.Num());
 }
 
 AActor* ATeamEliminationMode::ChoosePlayerStart_Implementation(AController* Player)

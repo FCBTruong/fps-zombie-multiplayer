@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/CanvasPanel.h"
+#include "UI/PlayerMapDot.h"
 #include "MinimapRadarUI.generated.h"
 
 /**
@@ -29,9 +30,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* A_Point;
 
-	UPROPERTY(meta = (BindWidget))
-	class UImage* Dot;
-
 	FVector WorldOrigin;
 	FVector WorldExtent;
 	FVector PlaneSize;
@@ -41,10 +39,19 @@ protected:
 	UWidget* A_Lb;
 	UPROPERTY(meta = (BindWidget))
 	UWidget* B_Lb;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Teammate")
+	TSubclassOf<UUserWidget> TeammateWidgetClass;
+
+	TMap<APlayerState*, UUserWidget*> TeammateWidgetsMap;
+
+	UPROPERTY(meta = (BindWidget))
+	UPlayerMapDot* MyDot;
 public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeConstruct() override;
 
 	void UpdateBombAreaLabels();
-	void UpdateLabelPosition(UWidget* PointWidget, UWidget* LabelWidget);
+	void UpdateLabelPosition(const FVector2D& AbsPoint, UWidget* LabelWidget);
+	void UpdateTeammates();
 };

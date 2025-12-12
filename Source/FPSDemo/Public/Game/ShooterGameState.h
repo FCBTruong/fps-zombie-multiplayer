@@ -42,7 +42,6 @@ protected:
 
 	UFUNCTION()
 	void OnRep_MyMatchState();
-
 public:
 	AShooterGameState();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

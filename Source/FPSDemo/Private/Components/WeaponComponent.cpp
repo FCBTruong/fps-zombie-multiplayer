@@ -60,7 +60,7 @@ void UWeaponComponent::InitState() {
     if (GetOwner()->HasAuthority()) {
         MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
         PistolState.ItemId = EItemId::PISTOL_PL_14;
-        CurrentWeaponId = EItemId::PISTOL_PL_14;
+		AutoEquipBestWeapon();
 
         UWeaponData* PistolData = UGameManager::Get(GetWorld())->GetWeaponDataById(EItemId::PISTOL_PL_14);
         PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
@@ -270,7 +270,7 @@ void UWeaponComponent::HandleDropWeapon() {
     // refresh overlapping actors
     RefreshOverlapPickupActors();
 
-	EquipWeapon(MeleeState.ItemId);
+	AutoEquipBestWeapon();
 }
 
 void UWeaponComponent::RefreshOverlapPickupActors() {
@@ -1445,6 +1445,10 @@ void UWeaponComponent::ServerStartPlantSpike_Implementation() {
     if (bIsPlantingSpike) {
         return;
 	}
+    if (CurrentWeaponId != EItemId::SPIKE) {
+		return; // not equipping spike
+	}
+
     if (!CanPlantSpikeAtCurrentLocation()) {
         UE_LOG(LogTemp, Warning, TEXT("ServerStartPlantSpike: Cannot plant spike at current location"));
         return;
@@ -1653,7 +1657,7 @@ void UWeaponComponent::FinishPlantSpike() {
 	UE_LOG(LogTemp, Warning, TEXT("FinishPlantSpike called"));
 
 	// change player equipment
-    EquipWeapon(EItemId::MELEE_KNIFE_BASIC);
+    AutoEquipBestWeapon();
 }
 
 void UWeaponComponent::MulticastSpikePlanted_Implementation() {
@@ -1697,4 +1701,17 @@ void UWeaponComponent::OnRep_HasSpike() {
 
 bool UWeaponComponent::IsHasSpike() {
     return bHasSpike;
+}
+
+void UWeaponComponent::AutoEquipBestWeapon()
+{
+    if (RifleState.ItemId != EItemId::NONE) {
+        EquipWeapon(RifleState.ItemId);
+    }
+    else if (PistolState.ItemId != EItemId::NONE) {
+        EquipWeapon(PistolState.ItemId);
+    }
+    else if (MeleeState.ItemId != EItemId::NONE) {
+        EquipWeapon(MeleeState.ItemId);
+    }
 }
