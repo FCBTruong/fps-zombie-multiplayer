@@ -116,6 +116,9 @@ APickupItem* UGameManager::GetPickupNode(int PickupId) {
 }
 
 APickupItem* UGameManager::GetPickupSpike() {
+    if (PickupSpike.IsValid()) {
+        return PickupSpike.Get();
+	}
     for (const TPair<int32, APickupItem*>& Pair : PickupItemsOnMap)
     {
         APickupItem* Item = Pair.Value;
@@ -123,6 +126,7 @@ APickupItem* UGameManager::GetPickupSpike() {
 
         if (Item->GetData().ItemId == EItemId::SPIKE)   
         {
+			PickupSpike = Item;
             return Item;
         }
     }

@@ -78,7 +78,7 @@ void ASpike::Tick(float DeltaTime)
 
 void ASpike::Explode()
 {
-    if (IsDefused)
+    if (bIsDefused)
     {
 		return;
 	}
@@ -86,6 +86,9 @@ void ASpike::Explode()
     if (!HasAuthority()) {
         return;
     }
+
+	// clear defuse timer if any
+	GetWorld()->GetTimerManager().ClearTimer(DefuseTimerHandle);
 
 	ASpikeMode* SpikeMode = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(this));
 	SpikeMode->SpikeExploded();
@@ -117,16 +120,37 @@ void ASpike::Multicast_Explode_Implementation()
 
 void ASpike::Defused()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Spike defused"));
     // stop explode timer
     GetWorld()->GetTimerManager().ClearTimer(TimerHandle_Explode);
     // off sound
 
-	IsDefused = true;
+    bIsDefused = true;
 
-	Multicast_Defused();
-    
-    // destroy actor
-    //Destroy();
+    ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    if (!SpikeGM) {
+        UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike: No SpikeGM found"));
+        return;
+    }
+    if (!SpikeGM->IsSpikePlanted()) {
+        UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike: No spike planted"));
+        return;
+    }
+    APawn* Pawn = Cast<APawn>(DefusingComponent->GetOwner());
+    if (!Pawn)
+    {
+        return;
+    }
+
+    AController* PC = Cast<AController>(Pawn->GetController());
+    if (!PC)
+    {
+        return;
+    }
+
+    SpikeGM->DefuseSpike(PC);
+
+    Multicast_Defused();
 }
 
 void ASpike::Multicast_Defused_Implementation()
@@ -142,4 +166,44 @@ void ASpike::Multicast_Defused_Implementation()
     {
         ActiveSoundComp->Stop();
 	}
+}
+
+void ASpike::StartDefuse(UWeaponComponent* WeaponComp)
+{
+    if (bIsDefuseInProgress || IsDefused())
+    {
+        return;
+    }
+    bIsDefuseInProgress = true;
+
+    DefusingComponent = WeaponComp;
+
+	UE_LOG(LogTemp, Warning, TEXT("Spike defuse started"));
+    GetWorld()->GetTimerManager().SetTimer(
+        DefuseTimerHandle,
+        this,
+        &ASpike::Defused,
+        6.0f, // time to defuse in seconds
+        false // no loop
+    );
+}
+
+bool ASpike::IsDefuseInProgress() const {
+    return bIsDefuseInProgress;
+}
+
+void ASpike::CancelDefuse()
+{
+    bIsDefuseInProgress = false;
+	GetWorld()->GetTimerManager().ClearTimer(DefuseTimerHandle);
+    DefusingComponent = nullptr;
+}
+
+void ASpike::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (ActiveSoundComp)
+    {
+        ActiveSoundComp->Stop();
+    }
+    Super::EndPlay(EndPlayReason);
 }

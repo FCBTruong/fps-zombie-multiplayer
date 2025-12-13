@@ -10,8 +10,6 @@
 UBTService_UpdateTarget::UBTService_UpdateTarget()
 {
 	UE_LOG(LogTemp, Log, TEXT("BTService_UpdateTarget: Constructor called"));
-    Interval = 0.1f;
-    RandomDeviation = 0.f;
     bNotifyTick = true;
 }
 
@@ -63,7 +61,7 @@ void UBTService_UpdateTarget::TickNode(
     }
 
     // Update blackboard
-    BB->SetValueAsObject("TargetActor", BestTarget);
+    BB->SetValueAsObject("Obj_TargetActor", BestTarget);
 
     if (BestTarget)
     {
@@ -81,12 +79,12 @@ void UBTService_UpdateTarget::TickNode(
 
         bool bHasLOS = (!bHit || Hit.GetActor() == BestTarget);
 
-        BB->SetValueAsBool("HasLineOfSight", bHasLOS);
-        BB->SetValueAsVector("TargetLocation", TargetLoc);
+        BB->SetValueAsBool("B_HasLineSight", bHasLOS);
+        BB->SetValueAsVector("Vec_TargetLocation", TargetLoc);
     }
     else
     {
-        BB->SetValueAsBool("HasLineOfSight", false);
+        BB->SetValueAsBool("B_HasLineSight", false);
     }
     AICon->SetFocus(BestTarget);
 }

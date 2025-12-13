@@ -11,7 +11,7 @@ AMyPlayerState::AMyPlayerState()
 	SetMinNetUpdateFrequency(30.f);
 }
 
-void AMyPlayerState::ProcessBuy(const UItemData* Item)
+void AMyPlayerState::ProcessBuy(const UWeaponData* Item)
 {
 	if (!Item)
 	{
@@ -44,7 +44,14 @@ void AMyPlayerState::ProcessBuy(const UItemData* Item)
 				UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem: WeaponComponent is null"));
 				return;
 			}
-			WepComp->AddNewWeapon(Item->Id);
+			FPickupData PickupData;
+			PickupData.ItemId = Item->Id;
+
+			// for weapons, set initial ammo
+			
+			PickupData.AmmoInClip = Item->MaxAmmoInClip;
+			PickupData.AmmoReserve = Item->AmmoBonusShop;
+			WepComp->AddNewWeapon(PickupData);
 		}
 		double Time = FPlatformTime::Seconds();
 	}

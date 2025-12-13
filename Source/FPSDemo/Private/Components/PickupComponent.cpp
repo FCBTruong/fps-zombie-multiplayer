@@ -38,6 +38,17 @@ void UPickupComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UPickupComponent::PickupItem(APickupItem* PickupItem)
 {
+	ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
+	if (!OwnerCharacter)
+	{
+		return;
+	}
+
+	if (!OwnerCharacter->IsAlive())
+	{
+		return;
+	}
+
 	if (!PickupItem) {
 		UE_LOG(LogTemp, Warning, TEXT("PickupItem called with null Item"));
 		return;
@@ -56,7 +67,7 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem)
 	}
 	
 	// Check if overlap
-    bool Added = WeaponComp->AddNewWeapon(PickupItem->GetPickupData().ItemId);
+    bool Added = WeaponComp->AddNewWeapon(PickupItem->GetPickupData());
 	UE_LOG(LogTemp, Warning, TEXT("PickupItem: Added = %s"), Added ? TEXT("true") : TEXT("false"));
 	if (Added) {
 		GMR->FindAndDestroyItemNode(PickupItem->GetPickupData().Id);

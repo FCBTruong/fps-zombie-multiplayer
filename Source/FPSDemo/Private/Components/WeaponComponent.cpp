@@ -248,6 +248,7 @@ void UWeaponComponent::HandleDropWeapon() {
     APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
     if (Data.ItemId == EItemId::SPIKE) {
         ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+		bHasSpike = false;
         if (SpikeGM) {
             SpikeGM->NotifyPlayerSpikeState(Character, false);
         }
@@ -354,6 +355,9 @@ bool UWeaponComponent::CanShoot() {
     if (bIsReloading) {
         return false;
     }
+    if (bIsPlantingSpike || bIsDefusingSpike) {
+        return false;
+	}
     if (CurrentWeaponId == EItemId::NONE) {
         return false;
     }
@@ -412,7 +416,7 @@ void UWeaponComponent::OnInput_StartAttack() {
     }
     else if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
         if (!bIsPriming) {
-            DrawProjectileCurve();
+            //DrawProjectileCurve();
             ServerSetIsPriming(true);
         }
 	}
@@ -529,7 +533,7 @@ void UWeaponComponent::OnFire() {
         FRotator CameraRotation;
         Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
         FVector ShotDirection = CameraRotation.Vector();
-		FString HitBoneName = TEXT("");
+		FName HitBoneName = TEXT("");
         
 		// Trace to find hit point and bone name
 		FVector Start = CameraLocation;
@@ -543,7 +547,7 @@ void UWeaponComponent::OnFire() {
         );
 
 		if (bHit) {
-            HitBoneName = Hit.BoneName.ToString();
+            HitBoneName = Hit.BoneName;
 		}
         else {
             HitBoneName = TEXT("None");
@@ -556,7 +560,7 @@ void UWeaponComponent::OnFire() {
     }
 }
 
-void UWeaponComponent::ServerOnFire_Implementation(const FVector& StartPoint, const FVector& TargetPoint, const FString& HitBoneName) {
+void UWeaponComponent::ServerOnFire_Implementation(const FVector& StartPoint, const FVector& TargetPoint, FName HitBoneName) {
 	HandleOnFire(StartPoint, TargetPoint, HitBoneName);
 }
 
@@ -583,7 +587,7 @@ void UWeaponComponent::MulticastDoMeleeAttack_Implementation(int AttackIdx) {
 
 
 // Server function
-void UWeaponComponent::HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, const FString& HitBoneName) {
+void UWeaponComponent::HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, FName HitBoneName) {
     if (GetOwner()->HasAuthority()) // only server makes changes
     {
         if (!Character) {
@@ -599,14 +603,24 @@ void UWeaponComponent::HandleOnFire(const FVector& StartPos, const FVector& Targ
             UE_LOG(LogTemp, Warning, TEXT("OnFire: Server can not shoot now"));
             return;
 		}
-        UE_LOG(LogTemp, Warning, TEXT("OnFire: Server hit bone: %s"), *HitBoneName);
+        UE_LOG(LogTemp, Warning, TEXT("OnFire: Server hit bone: %s"), *HitBoneName.ToString());
 
 		// decrease ammo
+		bool NeedUpdateAmmo = false;
         if (CurrentWeaponId == RifleState.ItemId) {
 			RifleState.AmmoInClip = FMath::Max(0, RifleState.AmmoInClip - 1);
+            if (RifleState.AmmoInClip == 0) {
+                NeedUpdateAmmo = true;
             }
-		else if (CurrentWeaponId == PistolState.ItemId) {
+        }
+        else if (CurrentWeaponId == PistolState.ItemId) {
             PistolState.AmmoInClip = FMath::Max(0, PistolState.AmmoInClip - 1);
+            if (PistolState.AmmoInClip == 0) {
+                NeedUpdateAmmo = true;
+			}
+        }
+        if (NeedUpdateAmmo) {
+            HandleReload();
 		}
 
 		// validate, prevent cheating
@@ -678,17 +692,35 @@ void UWeaponComponent::HandleOnFire(const FVector& StartPos, const FVector& Targ
                 float Multiplier = 1.f;
                 UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *Hit.GetComponent()->GetName());
 
-                if (HitBoneName == "head")
+                const FString Bone = HitBoneName.ToString();
+
+                // === Head ===
+                if (HitBoneName == TEXT("head"))
                 {
-                    Multiplier = 3.0f;
-					DamageEvent.bIsHeadshot = true;
+                    Multiplier = 5.0f;
+                    DamageEvent.bIsHeadshot = true;
                 }
-                else if (HitBoneName.StartsWith("neck") || HitBoneName.Contains("spine") || HitBoneName == "pelvis" || HitBoneName.Contains("clavicle"))
-                    Multiplier = 1.0f;
-                else if (HitBoneName.Contains("arm") || HitBoneName.Contains("hand"))
+                // === Upper body ===
+                else if (Bone.StartsWith(TEXT("neck")) ||
+                    Bone.Contains(TEXT("spine")) ||
+                    Bone.Contains(TEXT("clavicle")) ||
+                    HitBoneName == TEXT("pelvis"))
+                {
+                    Multiplier = 1.25f;
+                }
+                // === Arms ===
+                else if (Bone.Contains(TEXT("arm")) ||
+                    Bone.Contains(TEXT("hand")))
+                {
                     Multiplier = 0.75f;
-                else if (HitBoneName.Contains("thigh") || HitBoneName.Contains("calf") || HitBoneName.Contains("foot"))
+                }
+                // === Legs ===
+                else if (Bone.Contains(TEXT("thigh")) ||
+                    Bone.Contains(TEXT("calf")) ||
+                    Bone.Contains(TEXT("foot")))
+                {
                     Multiplier = 0.75f;
+                }
 
                 float FinalDamage = Damage * Multiplier;
 
@@ -787,6 +819,11 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 // Clients press 1, 2, 3 to equip weapon in that slot
 void UWeaponComponent::EquipSlot(int32 SlotIndex)
 {
+	if (!Character->IsAlive()) return;
+    if (bIsPlantingSpike || bIsDefusingSpike) {
+        return; // can not change weapon while planting or defusing spike
+    }
+
 	UE_LOG(LogTemp, Warning, TEXT("EquipSlot called for slot %d"), SlotIndex);
     if (bIsPriming) {
         return; // can not change weapon while priming
@@ -1096,6 +1133,10 @@ void UWeaponComponent::OnRep_CurrentWeapon()
         return;
     }
     if (CurrentWeaponId == EItemId::NONE) {
+        if (CurrentWeapon) {
+            CurrentWeapon->Destroy();
+            CurrentWeapon = nullptr;
+        }
         return;
     }
 
@@ -1312,8 +1353,9 @@ AWeaponBase* UWeaponComponent::SpawnWeaponByItemId(EItemId ItemId)
 }
 
 // Logic server only
-bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
+bool UWeaponComponent::AddNewWeapon(FPickupData PickupData)
 {
+	EItemId ItemId = PickupData.ItemId;
 	UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(ItemId);
     if (!WeaponConf) {
 		return false;
@@ -1326,8 +1368,8 @@ bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
             }
 			RifleState.ItemId = ItemId;
             int TotalAmmo = WeaponConf->AmmoBonusShop;
-			RifleState.AmmoInClip = FMath::Min(TotalAmmo, WeaponConf->MaxAmmoInClip);
-			RifleState.AmmoReserve = TotalAmmo - RifleState.AmmoInClip;
+			RifleState.AmmoInClip = PickupData.AmmoInClip;
+			RifleState.AmmoReserve = PickupData.AmmoReserve;
 			EquipWeapon(ItemId);
             return true;
         }
@@ -1337,8 +1379,8 @@ bool UWeaponComponent::AddNewWeapon(EItemId ItemId)
 			}
 			PistolState.ItemId = ItemId;
 			int TotalAmmo = WeaponConf->AmmoBonusShop;
-			PistolState.AmmoInClip = FMath::Min(TotalAmmo, WeaponConf->MaxAmmoInClip);
-			PistolState.AmmoReserve = TotalAmmo - PistolState.AmmoInClip;
+			PistolState.AmmoInClip = PickupData.AmmoInClip;
+			PistolState.AmmoReserve = PickupData.AmmoReserve;
 			EquipWeapon(ItemId);
             return true;
         }
@@ -1476,7 +1518,7 @@ void UWeaponComponent::ServerStartPlantSpike_Implementation() {
         this,
         &UWeaponComponent::FinishPlantSpike,
         3.0f,     // delay
-        false      // non-looping
+        false     // non-looping
     );
 }
 
@@ -1518,35 +1560,44 @@ void UWeaponComponent::ServerStartDefuseSpike_Implementation() {
         return;
 	}
 	AShooterGameState* GameState = Cast<AShooterGameState>(GetWorld()->GetGameState());
-    if (GameState->GetMatchState() == EMyMatchState::SPIKE_PLANTED) {
+
+    ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
+    if (GameState->GetMatchState() != EMyMatchState::SPIKE_PLANTED) {
 		return; // can only defuse during playing state
     }
+    if (!SpikeActor) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No planted spike found"));
+        return;
+	}
+
+    if (SpikeActor->IsDefuseInProgress()) {
+		UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Defuse already in progress"));
+        return;
+	}
+
+
+    if (SpikeActor->IsDefused()) {
+		UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Spike is already defused"));
+        return;
+	}
+
+    // check team
+	AMyPlayerState* MyPS = Cast<AMyPlayerState>(Character->GetPlayerState());
+    if (MyPS->GetTeamID() == GameState->GetAttackerTeam()) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Attackers cannot defuse spike"));
+        return; // attackers cannot defuse
+	}
 
 	bIsDefusingSpike = true;
-
-    GetWorld()->GetTimerManager().SetTimer(
-        SpikeDefuseTimerHandle,
-        this,
-        &UWeaponComponent::FinishDefuseSpike,
-        6.0f,     // delay
-        false      // non-looping
-    );
+    SpikeActor->StartDefuse(this);
+    Character->ServerSetCrouching(true);
 }
 
 void UWeaponComponent::FinishDefuseSpike() {
 	bIsDefusingSpike = false;
     // check spike is planted in game mode
-    ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
-    if (!SpikeGM) {
-        UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike: No SpikeGM found"));
-        return;
-    }
-    if (!SpikeGM->IsSpikePlanted()) {
-        UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike: No spike planted"));
-        return;
-    }
-    SpikeGM->DefuseSpike(Cast<AMyPlayerController>(Character->GetController()));
     UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike called"));
+    Character->ServerSetCrouching(false);
 }
 
 void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
@@ -1554,7 +1605,15 @@ void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
         return;
     }
 	bIsDefusingSpike = false;
-	GetWorld()->GetTimerManager().ClearTimer(SpikeDefuseTimerHandle);
+    Character->ServerSetCrouching(false);
+
+	ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
+    if (SpikeActor) {
+        if (SpikeActor->IsDefuseInProgress()) {
+            SpikeActor->CancelDefuse();
+        }
+	}
 }
 
 void UWeaponComponent::OnInput_StartPlantSpike() {
@@ -1664,7 +1723,7 @@ void UWeaponComponent::FinishPlantSpike() {
     }
     FVector SpikeLocation = Character->GetActorLocation()
         + Character->GetActorForwardVector() * 50.f;
-	SpikeGM->PlantSpike(SpikeLocation, Cast<AMyPlayerController>(Character->GetController()));
+	SpikeGM->PlantSpike(SpikeLocation, Character->GetController());
     bIsPlantingSpike = false;
 	bHasSpike = false;
 
@@ -1729,4 +1788,55 @@ void UWeaponComponent::AutoEquipBestWeapon()
     else if (MeleeState.ItemId != EItemId::NONE) {
         EquipWeapon(MeleeState.ItemId);
     }
+}
+
+void UWeaponComponent::OnOwnerDeath() {
+    if (bIsPlantingSpike) {
+        ServerStopPlantSpike();
+	}
+    if (bIsDefusingSpike) {
+        ServerStopDefuseSpike();
+	}
+
+	CurrentWeaponId = EItemId::NONE;
+    // drop all weapons
+    FVector DropPoint = GetOwner()->GetActorLocation() + Character->GetActorForwardVector() * 30;
+    if (bHasSpike) {
+        FPickupData Data;
+        Data.Location = DropPoint;
+        Data.Amount = 1;
+        Data.ItemId = EItemId::SPIKE;
+        Data.Id = UGameManager::Get(GetWorld())->GetNextItemOnMapId();
+
+        // Spawn Pickup item
+        APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
+       
+        ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+        if (SpikeGM) {
+            SpikeGM->NotifyPlayerSpikeState(Character, false);
+        }
+        bHasSpike = false;
+    }
+
+    if (RifleState.ItemId != EItemId::NONE) {
+        FPickupData Data;
+        Data.Location = DropPoint;
+        Data.AmmoInClip = RifleState.AmmoInClip;
+		Data.AmmoReserve = RifleState.AmmoReserve;
+        Data.ItemId = RifleState.ItemId;
+        Data.Id = UGameManager::Get(GetWorld())->GetNextItemOnMapId();
+        // Spawn Pickup item
+        APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
+	}
+
+    if (PistolState.ItemId != EItemId::NONE) {
+        FPickupData Data;
+        Data.Location = DropPoint;
+		Data.AmmoInClip = PistolState.AmmoInClip;
+		Data.AmmoReserve = PistolState.AmmoReserve;
+        Data.ItemId = PistolState.ItemId;
+        Data.Id = UGameManager::Get(GetWorld())->GetNextItemOnMapId();
+        // Spawn Pickup item
+        APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
+	}
 }

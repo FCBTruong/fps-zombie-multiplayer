@@ -11,5 +11,7 @@ struct FPickupData
     UPROPERTY() int32 Id = 0;
     UPROPERTY() EItemId ItemId;
     UPROPERTY() int32 Amount = 0;
+	UPROPERTY() int32 AmmoInClip = 0;
+	UPROPERTY() int32 AmmoReserve = 0;
     UPROPERTY() FVector_NetQuantize Location;
 };

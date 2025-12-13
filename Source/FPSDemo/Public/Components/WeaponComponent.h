@@ -126,7 +126,6 @@ protected:
 	UFUNCTION()
 	void OnRep_Grenades();
 	FTimerHandle SpikePlantTimerHandle;
-	FTimerHandle SpikeDefuseTimerHandle;
 	void FinishPlantSpike();
 
 	UFUNCTION(NetMulticast, Unreliable)
@@ -142,7 +141,7 @@ public:
 	EWeaponSubTypes GetCurrentWeaponSubType();
 	void DropWeapon();
 	UFUNCTION(Server, Reliable)
-	void ServerOnFire(const FVector& StartPoint, const FVector& TargetPoint, const FString& HitBoneName);
+	void ServerOnFire(const FVector& StartPoint, const FVector& TargetPoint, FName HitBoneName);
 	UFUNCTION(Server, Reliable)
 	void ServerDoMeleeAttack(int AttackIdx);
 
@@ -167,7 +166,7 @@ public:
 	void OnInput_StartAttack();
 	void OnInput_StopAttack();
 	void OnFire();
-	void HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, const FString& HitBoneName);
+	void HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, FName HitBoneName);
 	void StartAiming();
 	void StartReload();
 	bool CanShoot();
@@ -214,7 +213,7 @@ public:
 	void OnNotifyInsertMag();
 	void OnNewItemAdded(int32 NewInventoryId);
 	AWeaponBase* SpawnWeaponByItemId(EItemId ItemId);
-	bool AddNewWeapon(EItemId ItemId);
+	bool AddNewWeapon(FPickupData ItemData);
 
 	bool CanDropWeapon(EItemId ItemId);
 	FWeaponState* GetWeaponStateByItemId(EItemId ItemId);
@@ -245,4 +244,5 @@ public:
 	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
 	bool IsHasSpike();
 	void AutoEquipBestWeapon();
+	void OnOwnerDeath();
 };

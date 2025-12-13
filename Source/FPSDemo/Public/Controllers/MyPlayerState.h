@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
-#include "Items/ItemData.h"
+#include "Weapons/WeaponData.h"
 #include "MyPlayerState.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnUpdateMoney)
@@ -47,9 +47,10 @@ public:
 	bool IsAlive() const { return bIsAlive; }
 	void SetTeamID(FName NewTeamID) { TeamID = NewTeamID; }
 	void SetIsAlive(bool bNewIsAlive) { bIsAlive = bNewIsAlive; }
-	void ProcessBuy(const UItemData* Item);
+	void ProcessBuy(const UWeaponData* Item);
 	int GetMoney() const { return Money; }
 	void ResetBoughtItems() { BoughtItems.Empty(); }
+	bool IsDead() const { return !bIsAlive; }
 
 	FOnUpdateMoney OnUpdateMoney;
 	FOnUpdateBoughtItems OnUpdateBoughtItems;

@@ -48,15 +48,17 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Setup")
 	TArray<ATargetPoint*> HoldPointsB;
 
-	TMap<APlayerStart*, bool> StartUsage;
+	TArray<ATargetPoint*> ScoutLocations;
+
+	TSet<APlayerStart*> StartUsage;
 
 	APlayerStart* GetRandomStart(const TArray<APlayerStart*>& Starts);
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	ATriggerBox* GetAreaBombA() { return TriggerBoxAreaA; };
-	ATriggerBox* GetAreaBombB() { return TriggerBoxAreaB; };
-	FVector GetSpikeStartLocation();
+	ATriggerBox* GetAreaBombA() const { return TriggerBoxAreaA; };
+	ATriggerBox* GetAreaBombB() const { return TriggerBoxAreaB; };
+	FVector GetSpikeStartLocation() const;
 	APlayerStart* GetRandomAttackerStart();
 	APlayerStart* GetRandomDefenderStart();
 	void ResetPlayerStartsUsage();
@@ -64,5 +66,6 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "Setup")
 	AActor* MainPlane;
 	static AActorManager* Get(UObject* WorldContextObject);
-	FVector GetRandomHoldLocationNearBombSite(FName BombSiteName);
+	FVector GetRandomHoldLocationNearBombSite(FName BombSiteName) const;
+	FVector GetRandomScoutLocation() const;
 };

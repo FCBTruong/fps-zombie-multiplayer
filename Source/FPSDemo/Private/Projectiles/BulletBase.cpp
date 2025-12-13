@@ -84,7 +84,7 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     UE_LOG(LogTemp, Warning, TEXT("Hit actor: %s"), *OtherActor->GetName());
 
     // explosion FX
-    if (ExplosionFX)
+    if ((!OtherActor->IsA<APawn>()) && ExplosionFX)
     {
         UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionFX, Hit.ImpactPoint);
     }

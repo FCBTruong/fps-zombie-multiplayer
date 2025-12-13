@@ -30,13 +30,17 @@ public:
 	void StartRound();
 	void EndRound(FName WinningTeam);
 	void EndGame(FName WinningTeam);
-	void PlantSpike(FVector Location, AMyPlayerController* Planter);
+	void PlantSpike(FVector Location, AController* Planter);
 	bool IsSpikePlanted() {
 		return PlantedSpike != nullptr;
 	}
-	void DefuseSpike(AMyPlayerController* Defuser);
+	void DefuseSpike(AController* Defuser);
 	void SpikeExploded();
 	static constexpr int32 ScoreToWin = 9;
 	static constexpr int32 TimePerRound = 90; // seconds
 	void NotifyPlayerSpikeState(ABaseCharacter* Player, bool bHasSpike);
+	
+	ASpike* GetPlantedSpike() const {
+		return PlantedSpike;
+	}
 };

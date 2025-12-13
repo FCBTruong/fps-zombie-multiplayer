@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/WeaponComponent.h"
 #include "Spike.generated.h"
 
 UCLASS()
@@ -19,7 +20,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
-	bool IsDefused = false;
+	bool bIsDefused = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Explode")
 	UStaticMeshComponent* ExplodeSphere;
@@ -42,6 +43,7 @@ protected:
 	FTimerHandle TimerHandle_Explode;
 	UPROPERTY()
 	UAudioComponent* ActiveSoundComp;
+	bool bIsDefuseInProgress = false;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -54,4 +56,17 @@ public:
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_Explode();
+
+	void StartDefuse(UWeaponComponent* DefuseComp);
+
+	FTimerHandle DefuseTimerHandle;
+
+	UWeaponComponent* DefusingComponent;
+
+	bool IsDefuseInProgress() const;
+
+	void CancelDefuse();
+
+	bool IsDefused() const { return bIsDefused; }
+	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 };

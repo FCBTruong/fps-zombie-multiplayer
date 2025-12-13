@@ -78,7 +78,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Crouch")
     UCurveFloat* CrouchCurve;   // assign in editor
 
-    FTimeline CrouchTimeline;
     UFUNCTION()
     void HandleCrouchProgress(float Value);
 
@@ -212,6 +211,8 @@ public:
     UPROPERTY()
     bool bHoldingShift = false;
 
+	bool bIsBot = false;
+
 
     UPROPERTY(BlueprintReadOnly, Category = "Data")
     FVector2D moveInput;
@@ -340,4 +341,5 @@ public:
 
     UFUNCTION(Server, Reliable)
     void ServerSetCrouching(bool bNewCrouching);
+    FTimeline CrouchTimeline;
 };

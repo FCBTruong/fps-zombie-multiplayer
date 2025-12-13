@@ -3,6 +3,7 @@
 
 #include "Game/ActorManager.h"
 #include "EngineUtils.h"
+#include <Kismet/GameplayStatics.h>
 
 // Sets default values
 AActorManager::AActorManager()
@@ -33,6 +34,30 @@ void AActorManager::BeginPlay()
         LocalRole == ROLE_Authority ? TEXT("Authority") : TEXT("NonAuthority"),
         *GetWorld()->GetName()
     );
+
+    ScoutLocations.Empty();
+
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsOfClass(
+        GetWorld(),
+        ATargetPoint::StaticClass(),
+        FoundActors
+    );
+	UE_LOG(LogTemp, Warning, TEXT("ActorManager: Found %d TargetPoint actors"), FoundActors.Num());
+
+    for (AActor* Actor : FoundActors)
+    {
+        ATargetPoint* TargetPoint = Cast<ATargetPoint>(Actor);
+        if (!TargetPoint)
+        {
+            continue;
+        }
+
+        if (TargetPoint->ActorHasTag(TEXT("ScoutPoint")))
+        {
+            ScoutLocations.Add(TargetPoint);
+        }
+    }
 }
 
 // Called every frame
@@ -42,7 +67,7 @@ void AActorManager::Tick(float DeltaTime)
 
 }
 
-FVector AActorManager::GetSpikeStartLocation()
+FVector AActorManager::GetSpikeStartLocation() const
 {
     if (TargetPointSpike)
     {
@@ -60,37 +85,24 @@ APlayerStart* AActorManager::GetRandomStart(const TArray<APlayerStart*>& Starts)
     if (Starts.Num() == 0)
         return nullptr;
 
-    // Build usage map if empty
-    for (APlayerStart* PS : Starts)
-    {
-        if (PS && !StartUsage.Contains(PS))
-        {
-            StartUsage.Add(PS, false);
-        }
-    }
-
     // Collect unused
     TArray<APlayerStart*> Candidates;
-    for (auto& Pair : StartUsage)
+    for (APlayerStart* Start : Starts)
     {
-        if (!Pair.Value && Starts.Contains(Pair.Key))
+        if (!StartUsage.Contains(Start))
         {
-            Candidates.Add(Pair.Key);
+            Candidates.Add(Start);
         }
-    }
+	}
 
-    // If none unused left reset
     if (Candidates.Num() == 0)
     {
-        for (APlayerStart* PS : Starts)
-            StartUsage[PS] = false;
-
         Candidates = Starts;
     }
 
     // Pick random
     APlayerStart* Chosen = Candidates[FMath::RandRange(0, Candidates.Num() - 1)];
-    StartUsage[Chosen] = true;
+	StartUsage.Add(Chosen);
 
     return Chosen;
 }
@@ -130,7 +142,7 @@ AActorManager* AActorManager::Get(UObject* WorldContextObject)
 }
 
 
-FVector AActorManager::GetRandomHoldLocationNearBombSite(FName BombSiteName) {
+FVector AActorManager::GetRandomHoldLocationNearBombSite(FName BombSiteName) const {
     TArray<ATargetPoint*> HoldPoints = (BombSiteName == FName(TEXT("A"))) ? HoldPointsA : HoldPointsB;
 
     if (HoldPoints.Num() > 0) {
@@ -140,4 +152,24 @@ FVector AActorManager::GetRandomHoldLocationNearBombSite(FName BombSiteName) {
 
     UE_LOG(LogTemp, Warning, TEXT("No hold points available for bomb site: %s"), *BombSiteName.ToString());
     return FVector::ZeroVector;
+}
+
+FVector AActorManager::GetRandomScoutLocation() const
+{
+    if (ScoutLocations.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ScoutLocations is empty"));
+        return FVector::ZeroVector;
+    }
+
+    const int32 Index = FMath::RandRange(0, ScoutLocations.Num() - 1);
+    ATargetPoint* Target = ScoutLocations[Index];
+
+    if (!IsValid(Target))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Invalid ScoutLocation at index %d"), Index);
+        return FVector::ZeroVector;
+    }
+
+    return Target->GetActorLocation();
 }

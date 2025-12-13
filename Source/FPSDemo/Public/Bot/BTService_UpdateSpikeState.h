@@ -16,7 +16,8 @@ class FPSDEMO_API UBTService_UpdateSpikeState : public UBTService
 
 public:
     UBTService_UpdateSpikeState();
-
+	 
 protected:
     virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+	virtual void OnBecomeRelevant(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 };

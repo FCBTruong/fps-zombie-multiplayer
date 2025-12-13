@@ -19,7 +19,8 @@
 #include "Damage/MyPointDamageEvent.h"
 #include "Controllers/MyPlayerState.h"
 #include "Game/ShooterGameState.h"
-
+#include "Perception/AISense_Damage.h"
+#include "Controllers/BotAIController.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -393,7 +394,6 @@ void ABaseCharacter::CustomCrouch()
 
     // Tell server to update state
     ServerSetCrouching(true);
-    CrouchTimeline.PlayFromStart();
 }
 
 void ABaseCharacter::CustomUnCrouch()
@@ -404,7 +404,6 @@ void ABaseCharacter::CustomUnCrouch()
     }
     UE_LOG(LogTemp, Warning, TEXT("UnCrouch"));
 	ServerSetCrouching(false);
-	CrouchTimeline.Reverse();
 }
 
 void ABaseCharacter::ServerSetCrouching_Implementation(bool bNewCrouching)
@@ -679,6 +678,16 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
     HealthComp->ApplyDamage(ActualDamage);
     ClientPlayHitEffect();
+
+	// if bot, notify AI perception
+    if (GetController() && GetController()->IsA<AAIController>()) {
+        bIsBot = true;
+    }
+    if (bIsBot) {
+       /* ABotAIController* AICon = Cast<ABotAIController>(GetController());*/
+		ABotAIController* AICon = Cast<ABotAIController>(GetController());
+        AICon->SetFocus(EventInstigator);
+    }
     return ActualDamage;
 }
 
@@ -815,6 +824,8 @@ void ABaseCharacter::HandleDeath()
                 Brain->StopLogic("Bot died");
             }
         }
+
+		WeaponComp->OnOwnerDeath();
     }
 }
 
@@ -1083,10 +1094,6 @@ void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void ABaseCharacter::OnRep_IsCrouching()
 {
-	// ignore if player is local controller
-    if (IsLocallyControlled()) {
-        return;
-	}
     if (bIsCrouching) {
         CrouchTimeline.PlayFromStart();
     }

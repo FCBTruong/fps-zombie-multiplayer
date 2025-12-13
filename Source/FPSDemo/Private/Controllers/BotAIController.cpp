@@ -26,7 +26,12 @@ ABotAIController::ABotAIController()
     PerceptionComp->ConfigureSense(*SightConfig);
     PerceptionComp->SetDominantSense(UAISense_Sight::StaticClass());
 
+    DamageConfig = CreateDefaultSubobject<UAISenseConfig_Damage>("DamageConfig");
+    PerceptionComp->ConfigureSense(*DamageConfig);
+
     PerceptionComp->OnPerceptionUpdated.AddDynamic(this, &ABotAIController::OnPerceptionUpdated);
+    PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(
+        this, &ABotAIController::OnTargetPerceptionUpdated);
 }
 
 void ABotAIController::BeginPlay()
@@ -48,6 +53,13 @@ void ABotAIController::OnPossess(APawn* InPawn)
 void ABotAIController::OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors)
 {
     
+}
+
+void ABotAIController::OnTargetPerceptionUpdated(
+    AActor* Actor,
+    FAIStimulus Stimulus)
+{
+	
 }
 
 
@@ -98,13 +110,9 @@ void ABotAIController::ResetAIState()
     BB->ClearValue("B_HasLineSight");
     BB->ClearValue("Vec_TargetLocation");
     BB->ClearValue("B_IsInBombArea");
-    BB->ClearValue("B_TeamHasSpike");
-    BB->ClearValue("B_IsSpikePlanted");
 	BB->ClearValue("Vec_SpikeLocation");
-	BB->ClearValue("B_IsSpikeCarrier");
     BB->ClearValue("Vec_PlantLocation");
 	BB->ClearValue("Name_BombSite");
-    BB->ClearValue("B_HasSpike");
     BB->ClearValue("Vec_HoldLocation");
 
     // Clear AI focus
@@ -132,6 +140,18 @@ void ABotAIController::StartPlantingSpike() {
 				WC->EquipWeapon(EItemId::SPIKE);
 				WC->OnInput_StartPlantSpike();
             }
+        }
+    }
+}
+
+void ABotAIController::StartDefusingSpike() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        {     
+           WC->OnInput_StartDefuseSpike();
         }
     }
 }

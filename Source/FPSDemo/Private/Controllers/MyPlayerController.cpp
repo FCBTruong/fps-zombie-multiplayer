@@ -266,7 +266,7 @@ void AMyPlayerController::ServerBuyItem_Implementation(const EItemId Itemid)
         UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called but GMR is null"));
         return;
 	}
-	const UItemData* Item = GMR->GetItemDataById(Itemid);
+	const UWeaponData* Item = GMR->GetWeaponDataById(Itemid);
     if (!Item) {
         UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called with null Item"));
         return;

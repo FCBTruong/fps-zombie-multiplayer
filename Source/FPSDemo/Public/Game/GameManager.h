@@ -43,4 +43,5 @@ public:
 	void RegisterPlayer(ABaseCharacter* Pawn);
 	void UnregisterPlayer(ABaseCharacter* Pawn);
 	TArray<ABaseCharacter*> GetRegisteredPlayers() const { return RegisteredPlayers; }
+	TWeakObjectPtr<APickupItem> PickupSpike;
 };
