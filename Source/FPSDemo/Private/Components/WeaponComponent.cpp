@@ -996,7 +996,7 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     FVector offsetRot = FVector(0.f, 0.f, 0.f);
     FString SocketName = "ik_hand_gun";
     bool bIsFPS = Character->IsFpsViewMode();
-	UWeaponData* WeaponConf = CurrentWeapon->GetWeaponData();
+    UWeaponData* WeaponConf = CurrentWeapon->GetWeaponData();
     if (!WeaponConf) {
         UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: No weapon data found"));
         return;
@@ -1006,7 +1006,7 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
         if (bIsFPS) {
             SocketName = "ik_hand_gun";
             if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
-				SocketName = "ik_fps_pistol";
+                SocketName = "ik_fps_pistol";
             }
             offset = CurrentWeapon->GetWeaponData()->EquippedOffsetFps;
             offsetRot = CurrentWeapon->GetWeaponData()->EquippedOffsetRotationFps;
@@ -1025,7 +1025,7 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     }
     else if (WeaType == EWeaponTypes::Spike) {
         SocketName = "throwable_socket";
-	}
+    }
 
     CurrentWeapon->AttachToComponent(Character->GetCurrentMesh(),
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
@@ -1036,28 +1036,26 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     Root->SetRelativeLocationAndRotation(offset, FRotator::MakeFromEuler(offsetRot));
 
     UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Update"));
-    if (Character->ViewmodelCapture) {    
-		CurrentWeapon->SetViewFps(bIsFPS);
-        
-        if (bIsFPS) {
-            Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
+    if (Character->ViewmodelCapture) {
+        CurrentWeapon->SetViewFps(bIsFPS);
 
-            if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
-                if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
-                {
-                    if (Firearm->MagMesh) {
-                        Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(Firearm->MagMesh);
-                        Firearm->MagMesh->SetOwnerNoSee(bIsFPS);
-                    }
+        Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
+
+        if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
+            if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+            {
+                if (Firearm->MagMesh) {
+                    Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(Firearm->MagMesh);
+                    Firearm->MagMesh->SetOwnerNoSee(bIsFPS);
                 }
-                Character->SetPosViewmodelCaptureForGun();
             }
-            else {
-                Character->ViewmodelCapture->SetRelativeLocationAndRotation(
-                    FVector3d::ZeroVector,
-                    FRotator::ZeroRotator
-                );
-            }
+            Character->SetPosViewmodelCaptureForGun();
+        }
+        else {
+            Character->ViewmodelCapture->SetRelativeLocationAndRotation(
+                FVector3d::ZeroVector,
+                FRotator::ZeroRotator
+            );
         }
     }
 }

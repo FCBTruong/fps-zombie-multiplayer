@@ -48,6 +48,16 @@ void AMyPlayerController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: OnPossess called"));
+
+	ABaseCharacter* Char = Cast<ABaseCharacter>(InPawn);
+    if (IsLocalController())
+    {
+		Char->SetFpsView(true);
+	}
+    else
+    {
+        Char->SetFpsView(false);
+    }
 }
 
 void AMyPlayerController::OnRep_Pawn()
@@ -368,7 +378,15 @@ void AMyPlayerController::Move(const FInputActionValue& Value)
 
 void AMyPlayerController::OnLeftClickStart()
 {
+	UE_LOG(LogTemp, Warning, TEXT("OnLeftClickStart called"));
     if (bIsShopOpen) return;
+
+    if (IsSpectatingState())
+    {
+        OnSpectateNextPressed();
+        return;
+    }
+
     APawn* MyPawn = GetPawn();
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
@@ -560,5 +578,128 @@ void AMyPlayerController::ReleaseSlow() {
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
         MyChar->ServerSetIsSlow(false);
+    }
+}
+
+AActor* AMyPlayerController::FindLivingTeammate(AController* Spectator)
+{
+    AMyPlayerState* SpectatorPS = Spectator->GetPlayerState<AMyPlayerState>();
+    if (!SpectatorPS) return nullptr;
+
+    for (APlayerState* PS : Spectator->GetWorld()->GetGameState()->PlayerArray)
+    {
+        AMyPlayerState* OtherPS = Cast<AMyPlayerState>(PS);
+        if (!OtherPS) continue;
+
+        if (OtherPS->GetTeamID() == SpectatorPS->GetTeamID()
+            && OtherPS->IsAlive())
+        {
+            return OtherPS->GetPawn();
+        }
+    }
+    return nullptr;
+}
+
+void AMyPlayerController::BeginSpectatingState()
+{
+	UE_LOG(LogTemp, Warning, TEXT("BeginSpectatingState called"));
+    Super::BeginSpectatingState();
+}
+
+void AMyPlayerController::EndSpectatingState()
+{
+    Super::EndSpectatingState();
+}
+
+void AMyPlayerController::UpdateSpectatedPawn(APawn* InPawn, bool bSpectating)
+{
+	
+}
+
+bool AMyPlayerController::IsSpectatingState() const
+{
+    return IsInState(NAME_Spectating);
+}
+
+void AMyPlayerController::OnSpectateNextPressed()
+{
+    if (!IsSpectatingState())
+        return;
+
+    // Must ask server to pick & apply the next target in online game
+    ServerSetSpectateTarget(true);
+}
+
+void AMyPlayerController::ServerSetSpectateTarget_Implementation(bool bNext)
+{
+    if (!PlayerState) return;
+
+    if (!PlayerState->IsSpectator())
+    {
+        return;
+    }
+
+    AActor* Target =
+        bNext
+        ? FindNextLivingTeammate(CurrentSpectateTarget)
+        : FindNextLivingTeammate(nullptr);
+
+    if (Target)
+    {
+        CurrentSpectateTarget = Target;
+        ClientSetSpectateViewTarget(Target, 0.3f);
+    }
+}
+
+AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
+{
+    UWorld* World = GetWorld();
+    if (!World) return nullptr;
+
+    AGameStateBase* GS = World->GetGameState();
+    if (!GS || !PlayerState) return nullptr;
+
+    // Replace with your team accessors
+    const FName MyTeamId = CastChecked<AMyPlayerState>(PlayerState)->GetTeamID();
+
+    TArray<AActor*> Candidates;
+    Candidates.Reserve(GS->PlayerArray.Num());
+
+    for (APlayerState* PS : GS->PlayerArray)
+    {
+        AMyPlayerState* MPS = Cast<AMyPlayerState>(PS);
+        if (!MPS) continue;
+        if (MPS->GetTeamID() != MyTeamId) continue;
+        if (MPS == PlayerState) continue;
+
+        APawn* MyPawn = MPS->GetPawn(); // Works if pawn is possessed; otherwise store pawn ref in PlayerState
+        ABaseCharacter* Char = Cast<ABaseCharacter>(MyPawn);
+        if (!Char) continue;
+        if (!Char->IsAlive()) continue;
+
+        Candidates.Add(Char);
+    }
+
+    if (Candidates.Num() == 0) return nullptr;
+
+    // Stable cycling: sort by something consistent (optional but recommended)
+    Candidates.Sort([](const AActor& A, const AActor& B)
+        {
+            return A.GetName() < B.GetName();
+        });
+
+    // If no current target, return first
+    if (!CurrentTarget) return Candidates[0];
+
+    int32 Index = Candidates.IndexOfByKey(CurrentTarget);
+    int32 NextIndex = (Index >= 0) ? (Index + 1) % Candidates.Num() : 0;
+    return Candidates[NextIndex];
+}
+
+void AMyPlayerController::ClientSetSpectateViewTarget_Implementation(AActor* Target, float BlendTime)
+{
+    if (Target)
+    {
+        SetViewTargetWithBlend(Target, BlendTime);
     }
 }

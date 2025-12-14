@@ -116,4 +116,22 @@ public:
 	void ClickSlow();
 	void ReleaseSlow();
 	FName GetTeamId();
+    AActor* FindLivingTeammate(AController* Spectator);
+	void BeginSpectatingState() override;
+	void EndSpectatingState() override;
+    void UpdateSpectatedPawn(APawn* InPawn, bool bSpectating);
+
+    void OnSpectateNextPressed();
+
+    AActor* FindNextLivingTeammate(AActor* CurrentTarget) const;
+    bool IsSpectatingState() const;
+
+    UFUNCTION(Server, Reliable)
+    void ServerSetSpectateTarget(bool bNext);
+
+    UFUNCTION(Client, Reliable)
+    void ClientSetSpectateViewTarget(AActor* Target, float BlendTime);
+
+    UPROPERTY()
+    AActor* CurrentSpectateTarget;
 };

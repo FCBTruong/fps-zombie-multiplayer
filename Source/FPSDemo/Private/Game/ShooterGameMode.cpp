@@ -132,6 +132,7 @@ void AShooterGameMode::ResetPlayers()
         if (MyPS)
         {
             MyPS->SetIsAlive(true);
+            MyPS->SetIsSpectator(false);
             MyPS->ResetBoughtItems();
         }
        
@@ -178,7 +179,9 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
 
     NewPS->SetTeamID(TeamID);
     NewPS->SetIsAlive(true);
-
+    const int32 RandomId = FMath::RandRange(1, 200);
+    NewPS->SetPlayerName(FString::Printf(TEXT("BOT_%d"), RandomId));
+	
     // 3) Restart to spawn Pawn
     RestartPlayer(Bot);
     UE_LOG(LogTemp, Warning, TEXT("Spawned Bot for Team %s"), *TeamID.ToString());

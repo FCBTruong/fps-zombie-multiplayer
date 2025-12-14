@@ -112,76 +112,26 @@ void ABaseCharacter::BeginPlay()
 
   
 	ViewmodelCapture = Cast<USceneCaptureComponent2D>(GetDefaultSubobjectByName(TEXT("ViewmodelCap")));
-    if (this->IsLocallyControlled())
+
+    if (ViewmodelCapture)
     {
-        if (FlashCollection)
-        {
-            if (UMaterialParameterCollectionInstance* MPC =
-                GetWorld()->GetParameterCollectionInstance(FlashCollection))
-            {
-                MPC->SetScalarParameterValue("Intensity", 0.0f);
-            }
-        }
-        if (ViewmodelCapture)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("ViewmodelCapture is valid in ABaseCharacter"));
-			ViewmodelCaptureDefaultPos = ViewmodelCapture->GetRelativeLocation();
-			ViewmodelCaptureDefaultRot = ViewmodelCapture->GetRelativeRotation();
-
-            UTextureRenderTarget2D* Texture = NewObject<UTextureRenderTarget2D>(this);
-            Texture->InitAutoFormat(1920, 1080);
-            Texture->ClearColor = FLinearColor::Transparent;
-            ViewmodelCapture->TextureTarget = Texture;
-            if (MaterialOverlayBase)
-            {
-                MaterialOverlayMID = UMaterialInstanceDynamic::Create(MaterialOverlayBase, this);
-                MaterialOverlayMID->SetTextureParameterValue("ViewmodelTexture", Texture);
-
-                if (AMyPlayerController* PC = Cast<AMyPlayerController>(GetController()))
-                {
-                    PC->SetViewmodelOverlay(MaterialOverlayMID);
-				}
-            }
-        }
-    }
-    else {
-        if (ViewmodelCapture)
-        {
-            ViewmodelCapture->DestroyComponent();
-			ViewmodelCapture = nullptr;
-		}
-
-        bIsFPS = false;
-
-        if (FirstPersonCamera)
-        {
-            FirstPersonCamera->DestroyComponent();
-            FirstPersonCamera = nullptr;
-        }
-
-        if (MeshFps)
-        {
-            MeshFps->DestroyComponent();
-            MeshFps = nullptr;
-        }
-
-        if (ThirdPersonCamera) {
-            ThirdPersonCamera->DestroyComponent();
-            ThirdPersonCamera = nullptr;
-        }
-    }
-
-    if (this->IsLocallyControlled())
+		ViewmodelCapture->Deactivate();
+        ViewmodelCaptureDefaultPos = ViewmodelCapture->GetRelativeLocation();
+        ViewmodelCaptureDefaultRot = ViewmodelCapture->GetRelativeRotation();
+	}
+   
+    if (FlashCollection)
     {
-        if (HasAuthority())
+        if (UMaterialParameterCollectionInstance* MPC =
+            GetWorld()->GetParameterCollectionInstance(FlashCollection))
         {
-            UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled and has authority"));
-		}
-        bIsFPS = true;
-        UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter is locally controlled"));
+            MPC->SetScalarParameterValue("Intensity", 0.0f);
+        }
     }
+
     UpdateView();
 }
+
 
 void ABaseCharacter::OnRep_PlayerState() {
     // Set mesh based on team
@@ -807,12 +757,7 @@ void ABaseCharacter::HandleDeath()
         GetMesh()->SetSimulatePhysics(true);
         GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
 
-        APlayerController* PC = Cast<APlayerController>(GetController());
-        if (PC)
-        {
-            // use PC
-        }
-
+ 
         Multicast_HandleDeath();
 
         AAIController* AI = Cast<AAIController>(GetController());
@@ -826,6 +771,15 @@ void ABaseCharacter::HandleDeath()
         }
 
 		WeaponComp->OnOwnerDeath();
+
+		AMyPlayerState* MyPS = Cast<AMyPlayerState>(GetPlayerState());
+        if (MyPS) {
+            MyPS->SetIsSpectator(true);
+        }
+		AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
+        if (PC) {
+            PC->StartSpectatingOnly();
+        }
     }
 }
 
@@ -834,7 +788,7 @@ void ABaseCharacter::Multicast_HandleDeath_Implementation()
 	// if local player, show death UI, etc.
     // change to tps mmode
     if (IsLocallyControlled()) {
-        APlayerController* PC = Cast<APlayerController>(GetController());
+        AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
         if (!PC) {
             return;
         }
@@ -869,6 +823,18 @@ void ABaseCharacter::Multicast_HandleDeath_Implementation()
         // Blend view to death camera
         PC->SetViewTargetWithBlend(Proxy, 0.15f, VTBlend_EaseOut);
 		UE_LOG(LogTemp, Warning, TEXT("Switched to death camera proxy."));
+
+		// view spectator mode
+        FTimerHandle TmpTimer;
+        GetWorld()->GetTimerManager().SetTimer(
+            TmpTimer,
+            [PC]()
+            {
+                PC->ServerSetSpectateTarget(false);
+            },
+            2.0f,
+            false
+        );
     }
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     GetMesh()->SetSimulatePhysics(true);
@@ -1099,5 +1065,81 @@ void ABaseCharacter::OnRep_IsCrouching()
     }
     else {
         CrouchTimeline.Reverse();
+    }
+}
+
+void ABaseCharacter::SetFpsView(bool bNewIsFps)
+{
+    bIsFPS = bNewIsFps;
+    UpdateView();
+}
+
+
+void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
+{
+    Super::BecomeViewTarget(PC);
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called"));
+
+    if (!PC || !PC->IsLocalController()) {
+        return;
+    }
+ 
+	AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC);
+    if (!MyPC)
+    {
+        UE_LOG(LogTemp, Error, TEXT("PC is not AMyPlayerController in BecomeViewTarget"));
+        return;
+	}
+    if (ViewmodelCapture)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ViewmodelCapture is valid in ABaseCharacter"));
+
+        if (!ViewmodelRenderTarget)
+        {
+            ViewmodelRenderTarget = NewObject<UTextureRenderTarget2D>(this);
+            ViewmodelRenderTarget->ClearColor = FLinearColor::Transparent;
+
+            int32 SizeX = 0;
+            int32 SizeY = 0;
+            PC->GetViewportSize(SizeX, SizeY);
+
+            // Fallback safety
+            SizeX = FMath::Max(SizeX, 1);
+            SizeY = FMath::Max(SizeY, 1);
+
+            ViewmodelRenderTarget->InitAutoFormat(SizeX, SizeY);
+        }
+        ViewmodelCapture->TextureTarget = ViewmodelRenderTarget;
+        ViewmodelCapture->Activate();
+        if (MaterialOverlayBase && !MaterialOverlayMID)
+        {
+            MaterialOverlayMID = UMaterialInstanceDynamic::Create(MaterialOverlayBase, this);
+            MaterialOverlayMID->SetTextureParameterValue(
+                TEXT("ViewmodelTexture"),
+                ViewmodelRenderTarget
+            );
+        }
+        if (MaterialOverlayMID)
+        {
+            MyPC->SetViewmodelOverlay(MaterialOverlayMID);
+        }
+    }
+	bIsFPS = true;
+
+    UpdateView();
+}
+
+void ABaseCharacter::EndViewTarget(APlayerController* PC)
+{
+    Super::EndViewTarget(PC);
+
+    if (!IsLocallyControlled() && PC && PC->IsLocalController())
+    {
+		SetFpsView(false);
+    }
+
+    if (ViewmodelCapture)
+    {
+        ViewmodelCapture->Deactivate();
     }
 }

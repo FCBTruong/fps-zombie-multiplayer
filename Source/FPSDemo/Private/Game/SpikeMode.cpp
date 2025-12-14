@@ -159,7 +159,7 @@ void ASpikeMode::StartRound()
 
 	const EBotRole AttackerRoles[] =
 	{
-		EBotRole::A_Escort,
+		//EBotRole::A_Escort,
 		EBotRole::Scout
 	};
 	const EBotRole DefenderRoles[] =
@@ -380,7 +380,7 @@ void ASpikeMode::NotifyPlayerSpikeState(ABaseCharacter* Player, bool bHasSpike)
 			UBlackboardComponent* BB = OtherBot->GetBlackboardComponent();
 			EBotRole BotRole = static_cast<EBotRole>(BB->GetValueAsEnum("E_Role"));
 			if (BotRole == EBotRole::A_FindSpike) { // no need to find spike anymore			
-				BB->SetValueAsEnum("E_Role", static_cast<uint8>(EBotRole::A_Escort));
+				BB->SetValueAsEnum("E_Role", static_cast<uint8>(EBotRole::Scout));
 			}
 		}
 	}

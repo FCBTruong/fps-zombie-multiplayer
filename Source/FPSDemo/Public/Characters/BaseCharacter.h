@@ -109,8 +109,6 @@ protected:
     void StopRunning();
     void CustomCrouch();
     void CustomUnCrouch();
-    UFUNCTION(BlueprintCallable)
-	void UpdateView();
     UFUNCTION(BlueprintPure)
     EWeaponTypes GetWeaponType();
     UFUNCTION(BlueprintPure)
@@ -234,6 +232,7 @@ public:
 	float BaseStunDuration = 0.f;
 
     USceneCaptureComponent2D* ViewmodelCapture;
+	UTextureRenderTarget2D* ViewmodelRenderTarget;
 
     // Timeline callback
     UFUNCTION()
@@ -342,4 +341,10 @@ public:
     UFUNCTION(Server, Reliable)
     void ServerSetCrouching(bool bNewCrouching);
     FTimeline CrouchTimeline;
+
+    UFUNCTION(BlueprintCallable)
+    void UpdateView();
+    void SetFpsView(bool bNewIsFPS);
+	void BecomeViewTarget(APlayerController* PC) override;
+	void EndViewTarget(APlayerController* PC) override;
 };
