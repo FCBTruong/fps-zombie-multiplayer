@@ -48,16 +48,6 @@ void AMyPlayerController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: OnPossess called"));
-
-	ABaseCharacter* Char = Cast<ABaseCharacter>(InPawn);
-    if (IsLocalController())
-    {
-		Char->SetFpsView(true);
-	}
-    else
-    {
-        Char->SetFpsView(false);
-    }
 }
 
 void AMyPlayerController::OnRep_Pawn()
@@ -266,6 +256,10 @@ void AMyPlayerController::SetupInputComponent()
 			EnhancedInput->BindAction(IA_DEFUSE_SPIKE, ETriggerEvent::Started, this, &AMyPlayerController::StartDefuseSpike);
 			EnhancedInput->BindAction(IA_DEFUSE_SPIKE, ETriggerEvent::Completed, this, &AMyPlayerController::StopDefuseSpike);
         }
+        if (IA_SCOREBOARD) {
+            EnhancedInput->BindAction(IA_SCOREBOARD, ETriggerEvent::Started, this, &AMyPlayerController::ShowScoreboard);
+            EnhancedInput->BindAction(IA_SCOREBOARD, ETriggerEvent::Completed, this, &AMyPlayerController::HideScoreboard);
+		}
     }
 }
 
@@ -700,6 +694,52 @@ void AMyPlayerController::ClientSetSpectateViewTarget_Implementation(AActor* Tar
 {
     if (Target)
     {
-        SetViewTargetWithBlend(Target, BlendTime);
+        //SetViewTargetWithBlend(Target, BlendTime);
+		SetViewTarget(Target);
+    }
+}
+
+void AMyPlayerController::SetPlayerSpectate()
+{
+    if (!HasAuthority()) return;
+
+    // Mark as spectator for replication/UI.
+    PlayerState->SetIsSpectator(true);
+
+    // Switch gameplay state to spectating.
+    ChangeState(NAME_Spectating);
+
+    // If you want them considered "waiting to respawn".
+    bPlayerIsWaiting = true;
+
+    // Ensure the owning client transitions too.
+    ClientGotoState(NAME_Spectating);
+}
+
+void AMyPlayerController::SetPlayerPlay()
+{
+    if (!HasAuthority()) return;
+
+    PlayerState->SetIsSpectator(false);
+    ChangeState(NAME_Playing);
+    bPlayerIsWaiting = false;
+
+    ClientGotoState(NAME_Playing);
+}
+
+
+void AMyPlayerController::ShowScoreboard()
+{
+    if (PlayerUI)
+    {
+        PlayerUI->ShowScoreboard(true);
+    }
+}
+
+void AMyPlayerController::HideScoreboard()
+{
+    if (PlayerUI)
+    {
+        PlayerUI->ShowScoreboard(false);
     }
 }

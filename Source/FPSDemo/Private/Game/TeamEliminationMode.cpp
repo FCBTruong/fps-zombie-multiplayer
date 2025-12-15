@@ -12,11 +12,6 @@ ATeamEliminationMode::ATeamEliminationMode()
 
 }
 
-void ATeamEliminationMode::AddPlayer(APlayerController* NewPlayer)
-{
-	Super::AddPlayer(NewPlayer);
-}
-
 
 void ATeamEliminationMode::PostLogin(APlayerController* NewPlayer)
 {

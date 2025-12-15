@@ -531,6 +531,10 @@ void UWeaponComponent::OnFire() {
     if (Character) {
         FVector CameraLocation;
         FRotator CameraRotation;
+        if (!Character->Controller) {
+            UE_LOG(LogTemp, Warning, TEXT("OnFire: No controller found"));
+            return;
+        }
         Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
         FVector ShotDirection = CameraRotation.Vector();
 		FName HitBoneName = TEXT("");
@@ -991,6 +995,7 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     if (!CurrentWeapon || !Character) {
         return;
     }
+	UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Called"));
 
     FVector offset = FVector(0.f, 0.f, 0.f);
     FVector offsetRot = FVector(0.f, 0.f, 0.f);
@@ -1039,8 +1044,10 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     if (Character->ViewmodelCapture) {
         CurrentWeapon->SetViewFps(bIsFPS);
 
+		UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Update ViewmodelCapture"));
         Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
 
+		UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Set OwnerNoSee to %s"), bIsFPS ? TEXT("true") : TEXT("false"));
         if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
             if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
             {
@@ -1049,6 +1056,7 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
                     Firearm->MagMesh->SetOwnerNoSee(bIsFPS);
                 }
             }
+			UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Setting viewmodel for gun"));
             Character->SetPosViewmodelCaptureForGun();
         }
         else {
@@ -1057,6 +1065,7 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
                 FRotator::ZeroRotator
             );
         }
+		UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Finished updating viewmodel"));
     }
 }
 

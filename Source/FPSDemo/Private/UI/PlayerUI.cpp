@@ -4,6 +4,7 @@
 #include "UI/PlayerUI.h"
 #include "Game/TeamEliminationState.h"
 #include "Game/GameManager.h"
+#include "UI/ScoreboardUI.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -125,14 +126,14 @@ void UPlayerUI::OnEnter()
     }
 }
 
-void UPlayerUI::NotifyKill(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponConf, bool bIsHeadShot)
+void UPlayerUI::NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victim, UWeaponData* WeaponConf, bool bIsHeadShot)
 {
     if (KillNotifyWidgetClass && KillNotifyStack)
     {
         UKillNotifySlot* KillNotifyWidget = CreateWidget<UKillNotifySlot>(GetWorld(), KillNotifyWidgetClass);
         if (KillNotifyWidget)
         {
-            KillNotifyWidget->SetInfo(KillerName, VictimName, WeaponConf, bIsHeadShot);
+            KillNotifyWidget->SetInfo(Killer, Victim, WeaponConf, bIsHeadShot);
             KillNotifyStack->AddChild(KillNotifyWidget);
             FTimerHandle TimerHandle;
             TWeakObjectPtr<UKillNotifySlot> WeakKillNotifyWidget = KillNotifyWidget;
@@ -445,5 +446,19 @@ void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
 		case EMyMatchState::ROUND_ENDED:
             ShowMatchStateToast(FText::FromString("Round Ended"), 0.f);
 			break;
+    }
+}
+
+void UPlayerUI::ShowScoreboard(bool bShow) {
+    if (UWidget* ScoreboardPn = GetWidgetFromName(TEXT("ScoreboardPn"))) {
+        ScoreboardPn->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+
+		UScoreboardUI* ScoreboardWidget = Cast<UScoreboardUI>(ScoreboardPn);
+        if (ScoreboardWidget) {
+            if (bShow) {
+                AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+                ScoreboardWidget->UpdateScoreboard(GS);
+            }
+        }
     }
 }

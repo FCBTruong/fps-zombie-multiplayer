@@ -18,12 +18,16 @@ class FPSDEMO_API AShooterGameMode : public AGameMode
 public:
 	virtual void StartPlay() override;
 	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser = nullptr, bool bWasHeadShot = false);
-	virtual void AddPlayer(APlayerController* NewPlayer);
+	virtual void AssignPlayerTeam(APlayerController* NewPlayer);
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
-	void RestartPlayer(AController* NewPlayer) override;
-	void ResetPlayers();
-	ABotAIController* SpawnBot(FName TeamID);
-	bool CheckAllTeamDead(FName TeamID);
+	virtual void RestartPlayer(AController* NewPlayer) override;
+	virtual void ResetPlayers();
+	virtual ABotAIController* SpawnBot(FName TeamID);
+	virtual bool CheckAllTeamDead(FName TeamID);
+	virtual void AutoBuyForBots();
+	virtual void SavePlayersGunsForNextRound();
+	virtual void CleanPawnsOnMap();
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 

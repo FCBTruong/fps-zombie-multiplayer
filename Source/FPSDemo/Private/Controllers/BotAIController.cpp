@@ -17,7 +17,7 @@ ABotAIController::ABotAIController()
 
     SightConfig->SightRadius = 5000.f;
     SightConfig->LoseSightRadius = 5500.f;
-    SightConfig->PeripheralVisionAngleDegrees = 90.f;
+    SightConfig->PeripheralVisionAngleDegrees = 80.f;
 
     SightConfig->DetectionByAffiliation.bDetectEnemies = true;
     SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
@@ -32,6 +32,8 @@ ABotAIController::ABotAIController()
     PerceptionComp->OnPerceptionUpdated.AddDynamic(this, &ABotAIController::OnPerceptionUpdated);
     PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(
         this, &ABotAIController::OnTargetPerceptionUpdated);
+
+
 }
 
 void ABotAIController::BeginPlay()

@@ -5,6 +5,7 @@
 #include "Pickup/PickupItem.h"
 #include "Game/ShooterGameState.h"
 #include "Weapons/WeaponDataManager.h"
+#include "Characters/BaseCharacter.h"
 
 int32 UGameManager::CurrentPickupId = 1000;
 

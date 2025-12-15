@@ -3,11 +3,14 @@
 #include "Weapons/WeaponDataManager.h"
 #include "Controllers/MyPlayerController.h"
 #include "Game/GameManager.h"
+#include "Weapons/WeaponState.h"
+#include "Characters/BaseCharacter.h"
 
 void AShooterGameMode::StartPlay()
 {
-    UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode:Game Started!"));
     Super::StartPlay();
+
+    UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode:Game Started!"));
 
     AShooterGameState* GS = GetGameState<AShooterGameState>();
     if (!GS)
@@ -24,19 +27,16 @@ void AShooterGameMode::StartPlay()
     }
 }
 
+void AShooterGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
+    Super::HandleStartingNewPlayer_Implementation(NewPlayer);
+    UE_LOG(LogTemp, Warning, TEXT("HandleStartingNewPlayer called in AShooterGameMode"));
+}
+
 void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player Logged In: %s"), *GetNameSafe(NewPlayer));
     Super::PostLogin(NewPlayer);
-
-    if (!NewPlayer->IsLocalController())
-    {
-        AMyPlayerController* MyPC = Cast<AMyPlayerController>(NewPlayer);
-        if (MyPC)
-        {
-           
-        }
-    }
 }
 
 
@@ -51,6 +51,12 @@ void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class ACont
         return;
     }
     VictimPS->SetIsAlive(false);
+	VictimPS->AddDeath();
+    
+    // check same team or not
+    if (KillerPS && KillerPS != VictimPS && KillerPS->GetTeamID() != VictimPS->GetTeamID()) {
+        KillerPS->AddKill();
+    }
 
    
     AShooterGameState* GS = GetGameState<AShooterGameState>();
@@ -60,7 +66,7 @@ void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class ACont
     }
 }
 
-void AShooterGameMode::AddPlayer(APlayerController* NewPlayer)
+void AShooterGameMode::AssignPlayerTeam(APlayerController* NewPlayer)
 {
     UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in TeamEliminationMode"));
     if (!NewPlayer)
@@ -78,6 +84,10 @@ void AShooterGameMode::AddPlayer(APlayerController* NewPlayer)
     FName AssignedTeam;
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) {
+		UE_LOG(LogTemp, Warning, TEXT("GameState is null in AssignPlayerTeam"));
+		return;
+	}
 
     // pick suitable team
 	int32 TeamACount = 0;
@@ -105,9 +115,7 @@ void AShooterGameMode::AddPlayer(APlayerController* NewPlayer)
         AssignedTeam = FName("B");
     }
 
-	PS->SetTeamID(AssignedTeam);
 	UE_LOG(LogTemp, Warning, TEXT("Assigned Team: %s"), *AssignedTeam.ToString());
-	GS->AddPlayerState(PS);
 
     PS->SetTeamID(AssignedTeam);
 }
@@ -115,14 +123,34 @@ void AShooterGameMode::AddPlayer(APlayerController* NewPlayer)
 FString AShooterGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) {
 
     UE_LOG(LogTemp, Warning, TEXT("InitNewPlayer called in TeamEliminationMode"));
-    AddPlayer(NewPlayerController);
+	AssignPlayerTeam(NewPlayerController);
     return Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
+}
+
+void AShooterGameMode::CleanPawnsOnMap()
+{
+    // Destroy all currently possessed pawns (players + bots)
+    for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+    {
+        AController* C = It->Get();
+        if (!C) continue;
+        if (APawn* P = C->GetPawn())
+        {
+            C->UnPossess();
+            P->Destroy();
+        }
+    }
 }
 
 void AShooterGameMode::ResetPlayers()
 {
     AShooterGameState* GS = GetGameState<AShooterGameState>();
-    
+
+    if (!GS) {
+		UE_LOG(LogTemp, Warning, TEXT("GameState is null in ResetPlayers"));
+		return;
+    }
+
 	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
 
     for (APlayerState* PS : PlayerStates)
@@ -137,12 +165,7 @@ void AShooterGameMode::ResetPlayers()
         }
        
         AController* Controller = PS->GetOwner<AController>();
-        if (!Controller) continue;
-        APawn* Pawn = Controller->GetPawn();
-        if (Pawn)
-        {
-            Pawn->Destroy();
-        }
+      
         if (Controller)
         {
             RestartPlayer(Controller);
@@ -158,8 +181,12 @@ void AShooterGameMode::RestartPlayer(AController* NewPlayer)
         PS->SetIsAlive(true);
         PS->ResetBoughtItems();
     }
-    NewPlayer->SetIgnoreLookInput(true);
-    NewPlayer->SetIgnoreMoveInput(true);
+  
+	AMyPlayerController* MyPC = Cast<AMyPlayerController>(NewPlayer);
+    if (MyPC)
+    {
+        MyPC->SetPlayerPlay();
+	}
 }
 
 ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
@@ -173,23 +200,20 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
     if (!Bot) return nullptr;
 
     // 2) Set team in PlayerState
-    AMyPlayerState* NewPS = GetWorld()->SpawnActor<AMyPlayerState>(PlayerStateClass);
-    NewPS->SetOwner(Bot);
-    Bot->PlayerState = NewPS;
+    Bot->InitPlayerState();
 
-    NewPS->SetTeamID(TeamID);
-    NewPS->SetIsAlive(true);
-    const int32 RandomId = FMath::RandRange(1, 200);
-    NewPS->SetPlayerName(FString::Printf(TEXT("BOT_%d"), RandomId));
-	
-    // 3) Restart to spawn Pawn
-    RestartPlayer(Bot);
+	AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
+	if (PS)
+	{
+		PS->SetTeamID(TeamID);
+		PS->SetIsAlive(true);
+		FName BotName = FName(*FString::Printf(TEXT("Bot_%s_%d"), *TeamID.ToString(), FMath::RandRange(1000, 9999)));
+		PS->SetPlayerName(BotName.ToString());
+	}
+
     UE_LOG(LogTemp, Warning, TEXT("Spawned Bot for Team %s"), *TeamID.ToString());
-
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-    GS->AddPlayerState(NewPS);
-
     BotControllers.Add(Bot);
+    RestartPlayer(Bot);
 
     return Bot;
 }
@@ -216,3 +240,40 @@ bool AShooterGameMode::CheckAllTeamDead(FName TeamID)
     return true;
 }
 
+void AShooterGameMode::AutoBuyForBots() {
+    for (ABotAIController* Bot : BotControllers)
+    {
+        if (!Bot) continue;
+        AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
+        if (!PS) continue;
+		PS->AutoBuy();
+    }
+}
+
+void AShooterGameMode::SavePlayersGunsForNextRound()
+{
+    AShooterGameState* GS = GetGameState<AShooterGameState>();
+    
+    TArray<APlayerState*> PlayerStates = GS->PlayerArray;
+    for (APlayerState* PS : PlayerStates)
+    {
+        if (!PS) continue;
+        AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
+        if (MyPS)
+        {
+            if (!MyPS->IsAlive()) {
+				MyPS->ClearOwnedWeapons();
+                continue;
+            }
+            // get pawn
+			APawn* Pawn = MyPS->GetPawn();
+            if (!Pawn) continue;
+            ABaseCharacter* MyChar = Cast<ABaseCharacter>(Pawn);
+            if (!MyChar) continue;
+            FWeaponState* W = MyChar->GetWeaponComponent()->GetRifleState();
+            if (W) {
+                MyPS->AddOwnedWeapon(W->ItemId);
+            }
+        }
+    }
+}

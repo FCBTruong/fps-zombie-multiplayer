@@ -31,6 +31,5 @@ public:
 	void EndRound(FName WinningTeam);
 	
 	static constexpr int MaxRoundsToWin = 5;
-	virtual void AddPlayer(APlayerController* NewPlayer) override;
 	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeadShot) override;
 };

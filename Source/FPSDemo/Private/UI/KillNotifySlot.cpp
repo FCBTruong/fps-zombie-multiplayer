@@ -4,8 +4,11 @@
 #include "UI/KillNotifySlot.h"
 
 
-void UKillNotifySlot::SetInfo(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponConf, bool bIsHeadShot)
+void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState* Victim, UWeaponData* WeaponConf, bool bIsHeadShot)
 {
+	const FString KillerName = Killer ? Killer->GetPlayerName() : TEXT("Unknown");
+	const FString VictimName = Victim ? Victim->GetPlayerName() : TEXT("Unknown");
+
 	UTexture2D* WeaponTex = nullptr;
 	if (WeaponConf)
 	{
@@ -18,14 +21,44 @@ void UKillNotifySlot::SetInfo(const FString& KillerName, const FString& VictimNa
 		}
 	}
 
-	if (KillerLb)
-	{
-		KillerLb->SetText(FText::FromString(KillerName));
-	}
-	if (VictimLb)
-	{
-		VictimLb->SetText(FText::FromString(VictimName));
-	}
+    // Define colors
+    const FLinearColor AttackerColor = FLinearColor(0.617f, 0.184f, 0.036, 1.0f); // Red
+    const FLinearColor DefenderColor = FLinearColor(0.3f, 0.65f, 1.0f, 1.0f); // Blue
+
+    if (KillerLb)
+    {
+        KillerLb->SetText(FText::FromString(KillerName));
+
+        if (Killer)
+        {
+            if (Killer->GetTeamID() == FName("A"))
+            {
+                KillerLb->SetColorAndOpacity(FSlateColor(DefenderColor));
+            }
+            else if (Killer->GetTeamID() == FName("B"))
+            {
+                KillerLb->SetColorAndOpacity(FSlateColor(AttackerColor));
+            }
+        }
+    }
+
+    if (VictimLb)
+    {
+        VictimLb->SetText(FText::FromString(VictimName));
+
+        if (Victim)
+        {
+            if (Victim->GetTeamID() == FName("A"))
+            {
+                VictimLb->SetColorAndOpacity(FSlateColor(DefenderColor));
+            }
+            else if (Victim->GetTeamID() == FName("B"))
+            {
+                VictimLb->SetColorAndOpacity(FSlateColor(AttackerColor));
+            }
+        }
+    }
+
 	if (WeaponIcon && WeaponTex)
 	{
 		WeaponIcon->SetBrushFromTexture(WeaponTex);

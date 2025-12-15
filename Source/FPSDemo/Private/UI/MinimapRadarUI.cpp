@@ -37,16 +37,16 @@ void UMinimapRadarUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	
 	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 	if (!PC) return;
-	APawn* Pawn = PC->GetPawn();
-	if (!Pawn) return;
+	AActor* ViewTarget = PC->GetViewTarget();
+	if (!IsValid(ViewTarget)) return;
 
-	FVector WorldPos = Pawn->GetActorLocation();
+	FVector WorldPos = ViewTarget->GetActorLocation();
 	FVector Offset = WorldPos - WorldOrigin;
 
 	float NormalizedX = (Offset.X + PlaneSize.X / 2) / PlaneSize.X;
 	float NormalizedY = (Offset.Y + PlaneSize.Y / 2) / PlaneSize.Y;
 	
-	float YawValue = FRotator::NormalizeAxis(Pawn->GetActorRotation().Yaw);
+	float YawValue = FRotator::NormalizeAxis(ViewTarget->GetActorRotation().Yaw);
 	FWidgetTransform T;
 	T.Angle = -90 - YawValue;
 
@@ -123,8 +123,24 @@ void UMinimapRadarUI::UpdateTeammates()
 	if (!PC) return;
 	FName MyTeamId = FName(TEXT("None"));
 	AMyPlayerState* MyPS = PC->GetPlayerState<AMyPlayerState>();
-	ABaseCharacter* MyPawn = PC->GetPawn<ABaseCharacter>();
-	MyDot->UpdateData(true, !MyPawn->IsAlive(), MyPawn->GetWeaponComponent()->IsHasSpike());
+	AActor* ViewTarget = PC->GetViewTarget();
+	if (!ViewTarget || !MyPS) return;
+	
+	if (ABaseCharacter* ViewChar = Cast<ABaseCharacter>(ViewTarget))
+	{
+		bool bHasSpike = false;
+		if (UWeaponComponent* WC = ViewChar->GetWeaponComponent())
+		{
+			bHasSpike = WC->IsHasSpike();
+		}
+
+		MyDot->UpdateData(
+			true,
+			!ViewChar->IsAlive(),
+			bHasSpike
+		);
+	}
+
 	if (MyPS) {
 		MyTeamId = MyPS->GetTeamID();
 	}
@@ -132,12 +148,15 @@ void UMinimapRadarUI::UpdateTeammates()
 	TArray<ABaseCharacter*> Players = UGameManager::Get(GetWorld())->GetRegisteredPlayers();
 	for (ABaseCharacter* PawnActor : Players)
 	{
+		if (!IsValid(PawnActor) || PawnActor->IsActorBeingDestroyed())
+			continue;
+
 		// Must have PlayerState (replicated)
 		AMyPlayerState* TeamPS = PawnActor->GetPlayerState<AMyPlayerState>();
 		if (!TeamPS) continue;
 
 		// Skip self
-		if (TeamPS == MyPS) continue;
+		if (PawnActor == ViewTarget) continue;
 
 		// Team filter
 		if (TeamPS->GetTeamID() != MyTeamId) continue;

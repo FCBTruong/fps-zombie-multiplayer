@@ -15,6 +15,7 @@
 #include "Components/VerticalBox.h"
 #include "UI/Crosshair.h"
 #include "Game/MyMatchState.h"
+#include "Controllers/MyPlayerState.h"
 #include "PlayerUI.generated.h"
 
 /**
@@ -143,7 +144,7 @@ public:
 	void UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints);
 	void OnHit();
 	void OnEnter();
-	void NotifyKill(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponTex, bool bIsHeadShot);
+	void NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victem, UWeaponData* WeaponTex, bool bIsHeadShot);
 	void ApplyFlashEffect(const float& Strength);
 	void FadeOutFlashEffect();
 	void OpenShop();
@@ -163,4 +164,5 @@ public:
 	void ShowNotiToast(FText Txt);
 	void OnUpdateRoundTime(int TimeEnd);
 	void UpdateGameState(const EMyMatchState& State);
+	void ShowScoreboard(bool bShow);
 };

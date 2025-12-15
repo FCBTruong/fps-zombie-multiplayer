@@ -188,6 +188,9 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, Category = "Sound")
     USoundBase* LandingSound;
+
+    bool bHasBeginPlayRun = false;
+	bool bRecallBVT_AtBegin = false; // recall become view target at begin play
 public:
     ABaseCharacter();
 
@@ -347,4 +350,8 @@ public:
     void SetFpsView(bool bNewIsFPS);
 	void BecomeViewTarget(APlayerController* PC) override;
 	void EndViewTarget(APlayerController* PC) override;
+
+    void ApplyRotationMode(bool bIsPlayer);
+	void PossessedBy(AController* NewController) override;
+	void OnRep_Controller() override;
 };

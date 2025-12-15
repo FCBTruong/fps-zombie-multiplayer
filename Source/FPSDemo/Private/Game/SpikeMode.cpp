@@ -22,11 +22,12 @@ void ASpikeMode::StartPlay()
 	GS->SetAttackerTeam(AttackerTeam);
 	SpawnBot("B");
 	SpawnBot("B");
-	SpawnBot("B");
-	SpawnBot("B");
+	//SpawnBot("B");
+	//SpawnBot("B");
+	//SpawnBot("A");
+	//SpawnBot("A");
 	SpawnBot("A");
-	SpawnBot("A");
-	SpawnBot("A");
+
 	StartRound();
 }
 
@@ -132,14 +133,20 @@ void ASpikeMode::EndRound(FName WinningTeam)
 		EndGame(WinningTeam);
 		return;
 	}
+
+	// save guns for next round if player is alive	
+	SavePlayersGunsForNextRound();
 	
-	// Start next round after delay
 	GetWorld()->GetTimerManager().SetTimer(
 		StartRoundTimerHandle,
-		this,
-		&ASpikeMode::StartRound,
-		5.0f,     // delay
-		false      // non-looping
+		[this]()
+		{
+			CleanPawnsOnMap();
+			ResetPlayers();
+			StartRound();
+		},
+		5.0f,
+		false
 	);
 }
 
@@ -213,8 +220,6 @@ void ASpikeMode::StartRound()
 		PlantedSpike->Destroy();
 		PlantedSpike = nullptr;
 	}
-	// reset players
-	ResetPlayers();
 
 	// Random spike for attacker team
 	FVector SpawnLocation = FVector::ZeroVector;
@@ -239,7 +244,21 @@ void ASpikeMode::StartRound()
 	
 	// add spike data to map
 	
-	GS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
+	GS->SetMatchState(EMyMatchState::BUY_PHASE);
+	// auto buy for bots
+	AutoBuyForBots();
+
+	// start game after buy phase 3 seconds
+	GetWorld()->GetTimerManager().SetTimer(
+		RoundTimerHandle,
+		[this]()
+		{
+			AShooterGameState* GSInner = GetGameState<AShooterGameState>();
+			GSInner->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
+		},
+		3.0f,
+		false
+	);
 
 	int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
 	GS->SetRoundEndTime(TimeEnd);

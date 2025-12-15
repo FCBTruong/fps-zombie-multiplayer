@@ -8,6 +8,7 @@
 #include "Components/Image.h"
 #include "Components/StackBox.h"
 #include "Weapons/WeaponData.h"
+#include "Controllers/MyPlayerState.h"
 #include "KillNotifySlot.generated.h"
 
 /**
@@ -28,5 +29,5 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UImage* HeadShotIcon;
 
-	void SetInfo(const FString& KillerName, const FString& VictimName, UWeaponData* WeaponTex, bool bIsHeadShot);
+	void SetInfo(const AMyPlayerState* Killer, const AMyPlayerState* Victem, UWeaponData* WeaponTex, bool bIsHeadShot);
 };

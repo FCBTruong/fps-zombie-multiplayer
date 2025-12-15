@@ -66,6 +66,11 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMyPlayerState, Money);
 	DOREPLIFETIME(AMyPlayerState, BoughtItems);
+	DOREPLIFETIME(AMyPlayerState, TeamID);
+	DOREPLIFETIME(AMyPlayerState, bIsAlive);
+	DOREPLIFETIME(AMyPlayerState, Kills);
+	DOREPLIFETIME(AMyPlayerState, Deaths);
+	DOREPLIFETIME(AMyPlayerState, Assists);
 }
 
 void AMyPlayerState::OnRep_Money()
@@ -102,4 +107,51 @@ bool AMyPlayerState::CanBuyThisItem(const UItemData* Item) const
 void AMyPlayerState::OnRep_TeamId()
 {
 	UE_LOG(LogTemp, Warning, TEXT("TeamId updated: %s"), *TeamID.ToString());
+}
+
+
+void AMyPlayerState::AutoBuy() {
+	// Print current owned weapons
+	UE_LOG(LogTemp, Log, TEXT("PlayerState [%s] this=%p OwnedWeapons:"),
+		*GetName(), this);
+
+	for (EItemId Item : OwnedWeapons)
+	{
+		UE_LOG(LogTemp, Log, TEXT("  - %s"),
+			*UEnum::GetValueAsString(Item));
+	}
+
+	TryBuySlot(EWeaponSubTypes::Rifle);
+}
+
+void AMyPlayerState::TryBuySlot(EWeaponSubTypes Type)
+{
+	TArray<UWeaponData*> AllWeapons =
+		UGameManager::Get(GetWorld())
+		->GetWeaponDataManager()
+		->GetAllWeapons();
+
+	// filter by type
+	TArray<UWeaponData*> FilteredWeapons;
+	for (UWeaponData* Wep : AllWeapons)
+	{
+		if (Wep->WeaponSubType == Type)
+		{
+			FilteredWeapons.Add(Wep);
+		}
+	}
+
+	// sort by price ascending
+	FilteredWeapons.Sort([](const UWeaponData& A, const UWeaponData& B) {
+		return A.Price > B.Price;
+		});
+
+	if (FilteredWeapons.Num() > 0)
+	{
+		UWeaponData* MostExpensive = FilteredWeapons[0];
+		if (CanBuyThisItem(MostExpensive))
+		{
+			ProcessBuy(MostExpensive);
+		}
+	}
 }

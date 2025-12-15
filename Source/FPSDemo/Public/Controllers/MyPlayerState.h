@@ -40,6 +40,17 @@ protected:
 
 	UFUNCTION()
 	void OnRep_BoughtItems();
+
+	TArray<EItemId> OwnedWeapons;
+
+	UPROPERTY(Replicated)
+	int Kills = 0;
+
+	UPROPERTY(Replicated)
+	int Deaths = 0;
+
+	UPROPERTY(Replicated)
+	int Assists = 0;
 public:
 	AMyPlayerState();
 
@@ -56,4 +67,34 @@ public:
 	FOnUpdateBoughtItems OnUpdateBoughtItems;
 
 	bool CanBuyThisItem(const UItemData* Item) const;
+	void AutoBuy();
+	void TryBuySlot(EWeaponSubTypes Type);
+	void AddOwnedWeapon(EItemId Id) {
+		OwnedWeapons.Add(Id);
+	}
+	void ClearOwnedWeapons() {
+		OwnedWeapons.Empty();
+	}
+	TArray<EItemId> GetOwnedWeapons() const {
+		return OwnedWeapons;
+	}
+
+	void AddKill() {
+		Kills++;
+	}
+	void AddDeath() {
+		Deaths++;
+	}
+	void AddAssist() {
+		Assists++;
+	}
+	int GetKills() const {
+		return Kills;
+	}
+	int GetDeaths() const {
+		return Deaths;
+	}
+	int GetAssists() const {
+		return Assists;
+	}
 };

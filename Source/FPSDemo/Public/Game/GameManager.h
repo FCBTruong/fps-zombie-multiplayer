@@ -43,5 +43,6 @@ public:
 	void RegisterPlayer(ABaseCharacter* Pawn);
 	void UnregisterPlayer(ABaseCharacter* Pawn);
 	TArray<ABaseCharacter*> GetRegisteredPlayers() const { return RegisteredPlayers; }
+	void ClearRegisteredPlayers() { RegisteredPlayers.Empty(); }
 	TWeakObjectPtr<APickupItem> PickupSpike;
 };

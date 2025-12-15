@@ -87,6 +87,9 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_DEFUSE_SPIKE;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_SCOREBOARD;
+
 	virtual void SetupInputComponent() override;
 
 	UFUNCTION(Server, Reliable)
@@ -134,4 +137,8 @@ public:
 
     UPROPERTY()
     AActor* CurrentSpectateTarget;
+    void SetPlayerPlay();
+	void SetPlayerSpectate();
+	void ShowScoreboard();
+	void HideScoreboard();
 };

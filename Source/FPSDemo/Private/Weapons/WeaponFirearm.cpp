@@ -13,6 +13,12 @@
 AWeaponFirearm::AWeaponFirearm()
 {
 	MagMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MagMesh"));
+	MagMesh->SetupAttachment(WeaponMesh, TEXT("MagSocket"));
+}
+
+void AWeaponFirearm::BeginPlay()
+{
+	Super::BeginPlay();
 	AttachMagToDefault();
 }
 

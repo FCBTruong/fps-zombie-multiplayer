@@ -16,6 +16,7 @@ class FPSDEMO_API AWeaponFirearm : public AWeaponBase
 
 protected:
 	void ApplyWeaponData() override;
+	virtual void BeginPlay() override;
 public:
 	AWeaponFirearm();
 	virtual bool CanFire() {

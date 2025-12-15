@@ -129,7 +129,19 @@ void ABaseCharacter::BeginPlay()
         }
     }
 
-    UpdateView();
+	bHasBeginPlayRun = true;
+    if (bRecallBVT_AtBegin)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Warning: ABaseCharacter::BeginPlay called before becoming view target"));
+
+        // trigger manually
+        APlayerController* PC = Cast<APlayerController>(GetController());
+        if (PC)
+        {
+            BecomeViewTarget(PC); 
+        }
+		bRecallBVT_AtBegin = false;
+    }
 }
 
 
@@ -419,6 +431,10 @@ void ABaseCharacter::ChangeView()
 
 void ABaseCharacter::UpdateView()
 {
+    if (!IsValid(this)) return;
+    if (!WeaponComp || IsActorBeingDestroyed()) return;
+	UE_LOG(LogTemp, Warning, TEXT("Updating View: %s"), bIsFPS ? TEXT("First Person") : TEXT("Third Person"));
+
     if (bIsFPS)
     {
         if (FirstPersonCamera)
@@ -772,13 +788,10 @@ void ABaseCharacter::HandleDeath()
 
 		WeaponComp->OnOwnerDeath();
 
-		AMyPlayerState* MyPS = Cast<AMyPlayerState>(GetPlayerState());
-        if (MyPS) {
-            MyPS->SetIsSpectator(true);
-        }
+		
 		AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
         if (PC) {
-            PC->StartSpectatingOnly();
+            PC->SetPlayerSpectate();
         }
     }
 }
@@ -1078,9 +1091,33 @@ void ABaseCharacter::SetFpsView(bool bNewIsFps)
 void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
 {
     Super::BecomeViewTarget(PC);
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called"));
+   /* if (true) {
+        return;
+    }*/
 
-    if (!PC || !PC->IsLocalController()) {
+    if (!bHasBeginPlayRun)
+    {
+        bRecallBVT_AtBegin = true;
+		// will be called again at BeginPlay
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning,
+        TEXT("BecomeViewTarget: World=%s NetMode=%d PC=%s Local=%d Pawn=%s"),
+        *GetWorld()->GetName(),
+        (int32)GetWorld()->GetNetMode(),
+        *PC->GetPathName(),
+        PC->IsLocalController(),
+        *GetPathName()
+    );
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called"));
+    if (!PC) {
+        UE_LOG(LogTemp, Error, TEXT("PC is null in BecomeViewTarget"));
+        return;
+    }
+
+    if (!PC->IsLocalController()) {
+        UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called - NO LOCAL"));
         return;
     }
  
@@ -1124,6 +1161,9 @@ void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
             MyPC->SetViewmodelOverlay(MaterialOverlayMID);
         }
     }
+    else {
+        UE_LOG(LogTemp, Error, TEXT("ViewmodelCapture is null in ABaseCharacter"));
+	}
 	bIsFPS = true;
 
     UpdateView();
@@ -1140,6 +1180,42 @@ void ABaseCharacter::EndViewTarget(APlayerController* PC)
 
     if (ViewmodelCapture)
     {
+		ViewmodelCapture->ShowOnlyComponents.Empty();
         ViewmodelCapture->Deactivate();
     }
+}
+
+void ABaseCharacter::ApplyRotationMode(bool bIsPlayer)
+{
+    auto* Move = GetCharacterMovement();
+    if (!Move) return;
+
+    bUseControllerRotationYaw = false; // keep false for smooth turning via MovementComponent
+
+    if (bIsPlayer)
+    {
+        // Smoothly rotate to controller yaw (camera yaw)
+        Move->bOrientRotationToMovement = false;
+        Move->bUseControllerDesiredRotation = true;
+        Move->RotationRate = FRotator(0.f, 540.f, 0.f);
+    }
+    else
+    {
+        // Smoothly rotate to movement direction during MoveTo
+        Move->bUseControllerDesiredRotation = false;
+        Move->bOrientRotationToMovement = true;
+        Move->RotationRate = FRotator(0.f, 360.f, 0.f);
+    }
+}
+
+void ABaseCharacter::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+    ApplyRotationMode(Cast<APlayerController>(NewController) != nullptr);
+}
+
+void ABaseCharacter::OnRep_Controller()
+{
+    Super::OnRep_Controller();
+    ApplyRotationMode(Cast<APlayerController>(Controller) != nullptr);
 }

@@ -5,6 +5,7 @@
 #include <Net/UnrealNetwork.h>
 #include "Pickup/PickupItem.h"
 #include "Controllers/MyPlayerController.h"
+#include "Controllers/MyPlayerState.h"
 
 AShooterGameState::AShooterGameState()
 {
@@ -25,9 +26,13 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser, bool bWasHeadShot)
 {
-    const FString KillerName = Killer ? Killer->GetPlayerName() : TEXT("Unknown");
-    const FString VictimName = Victim ? Victim->GetPlayerName() : TEXT("Unknown");
-
+    UE_LOG(LogTemp, Warning,
+        TEXT("MulticastKillNotify called | Killer=%s | Victim=%s | Weapon=%s | Headshot=%d"),
+        IsValid(Killer) ? *Killer->GetPathName() : TEXT("NULL"),
+        IsValid(Victim) ? *Victim->GetPathName() : TEXT("NULL"),
+        IsValid(DamageCauser) ? *DamageCauser->GetPathName() : TEXT("NULL"),
+        bWasHeadShot
+    );
     if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
     {
         AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC);
@@ -36,11 +41,9 @@ void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Kille
         }
         if (!MyPC->PlayerUI) {
             return;
-		}
+		}   
 
-       
-
-		MyPC->PlayerUI->NotifyKill(KillerName, VictimName, DamageCauser, bWasHeadShot);
+		MyPC->PlayerUI->NotifyKill(Killer, Victim, DamageCauser, bWasHeadShot);
     }
 }
 

@@ -245,4 +245,8 @@ public:
 	bool IsHasSpike();
 	void AutoEquipBestWeapon();
 	void OnOwnerDeath();
+	FWeaponState* GetRifleState() { return &RifleState; }
+	FWeaponState* GetPistolState() {
+		return &PistolState;
+	}
 };
