@@ -64,6 +64,17 @@ void UMinimapRadarUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 	UpdateBombAreaLabels();
 	UpdateTeammates();
+
+	// check if spike drop on map
+	auto Spike = UGameManager::Get(GetWorld())->GetPickupSpike();
+	if (Spike) {
+		SpikeIcon->SetVisibility(ESlateVisibility::Visible);
+		const FVector2D AbsSpike = WorldToMinimapAbsolute(Spike->GetActorLocation());
+		UpdateLabelPosition(AbsSpike, SpikeIcon);
+	}
+	else {
+		SpikeIcon->SetVisibility(ESlateVisibility::Hidden);
+	}
 }
 
 void UMinimapRadarUI::UpdateBombAreaLabels()
@@ -212,4 +223,23 @@ void UMinimapRadarUI::UpdateTeammates()
 			UpdateLabelPosition(AbsPoint, TeammateWidget);
 		}
 	}
+}
+
+FVector2D UMinimapRadarUI::WorldToMinimapLocal(const FVector& WorldPos) const
+{
+	const FVector Offset = WorldPos - WorldOrigin;
+
+	const float NormalizedX = (Offset.X + PlaneSize.X * 0.5f) / PlaneSize.X;
+	const float NormalizedY = (Offset.Y + PlaneSize.Y * 0.5f) / PlaneSize.Y;
+
+	return FVector2D(
+		NormalizedX * MinimapSize.X,
+		NormalizedY * MinimapSize.Y
+	);
+}
+
+FVector2D UMinimapRadarUI::WorldToMinimapAbsolute(const FVector& WorldPos) const
+{
+	const FVector2D Local = WorldToMinimapLocal(WorldPos);
+	return MinimapImgPn->GetCachedGeometry().LocalToAbsolute(Local);
 }

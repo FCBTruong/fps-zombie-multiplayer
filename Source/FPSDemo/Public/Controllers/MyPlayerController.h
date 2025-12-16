@@ -141,4 +141,5 @@ public:
 	void SetPlayerSpectate();
 	void ShowScoreboard();
 	void HideScoreboard();
+    void UpdateViewmodelCapture(bool bEnable);
 };

@@ -141,7 +141,7 @@ void ASpikeMode::EndRound(FName WinningTeam)
 		StartRoundTimerHandle,
 		[this]()
 		{
-			CleanPawnsOnMap();
+			//CleanPawnsOnMap();
 			ResetPlayers();
 			StartRound();
 		},

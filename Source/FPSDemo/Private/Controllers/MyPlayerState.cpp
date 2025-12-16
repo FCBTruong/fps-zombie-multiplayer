@@ -142,16 +142,20 @@ void AMyPlayerState::TryBuySlot(EWeaponSubTypes Type)
 	}
 
 	// sort by price ascending
-	FilteredWeapons.Sort([](const UWeaponData& A, const UWeaponData& B) {
+	/*FilteredWeapons.Sort([](const UWeaponData& A, const UWeaponData& B) {
 		return A.Price > B.Price;
-		});
+		});*/
 
-	if (FilteredWeapons.Num() > 0)
+	if (FilteredWeapons.Num() == 0)
 	{
-		UWeaponData* MostExpensive = FilteredWeapons[0];
-		if (CanBuyThisItem(MostExpensive))
-		{
-			ProcessBuy(MostExpensive);
-		}
+		return;
+	}
+
+	int32 RandomIndex = FMath::RandRange(0, FilteredWeapons.Num() - 1);
+	UWeaponData* RandomWeapon = FilteredWeapons[RandomIndex];
+
+	if (CanBuyThisItem(RandomWeapon))
+	{
+		ProcessBuy(RandomWeapon);
 	}
 }

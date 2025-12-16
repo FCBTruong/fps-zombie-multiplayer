@@ -47,6 +47,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UPlayerMapDot* MyDot;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* SpikeIcon;
 public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeConstruct() override;
@@ -54,4 +57,6 @@ public:
 	void UpdateBombAreaLabels();
 	void UpdateLabelPosition(const FVector2D& AbsPoint, UWidget* LabelWidget);
 	void UpdateTeammates();
+	FVector2D WorldToMinimapAbsolute(const FVector& WorldPos) const;
+	FVector2D WorldToMinimapLocal(const FVector& WorldPos) const;
 };

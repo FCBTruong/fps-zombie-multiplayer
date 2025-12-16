@@ -11,6 +11,7 @@
 #include "Game/TeamEliminationState.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Game/SpikeMode.h"
 
 
 AMyPlayerController::AMyPlayerController() { 
@@ -94,6 +95,8 @@ void AMyPlayerController::BindingUI()
             WC->OnUpdatePistolWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdatePistol);
 			WC->OnUpdatePlantSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdatePlantSpikeState);
 			WC->OnUpdateDefuseSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdateDefuseSpikeState);
+			WC->OnUpdateAmmor.AddUObject(PlayerUI, &UPlayerUI::UpdateArmor);
+            PlayerUI->UpdateArmor(0);
 			
             WC->TriggerUpdateUI();
 		}
@@ -627,10 +630,19 @@ void AMyPlayerController::OnSpectateNextPressed()
 void AMyPlayerController::ServerSetSpectateTarget_Implementation(bool bNext)
 {
     if (!PlayerState) return;
+	AMyPlayerState* PlayerMyState = Cast<AMyPlayerState>(PlayerState);
+	if (!PlayerMyState) return;
+	if (PlayerMyState->IsAlive()) return;
+
+    if (bNext) {
+        if (!PlayerState->IsSpectator()) {
+            return;
+        }
+    }
 
     if (!PlayerState->IsSpectator())
     {
-        return;
+        this->SetPlayerSpectate();
     }
 
     AActor* Target =
@@ -642,6 +654,17 @@ void AMyPlayerController::ServerSetSpectateTarget_Implementation(bool bNext)
     {
         CurrentSpectateTarget = Target;
         ClientSetSpectateViewTarget(Target, 0.3f);
+    }
+    else {
+        // get game mode
+		ASpikeMode* GM = GetWorld()->GetAuthGameMode<ASpikeMode>();
+        if (GM) {
+            if (GM->GetPlantedSpike()) {
+                CurrentSpectateTarget = GM->GetPlantedSpike();
+                ClientSetSpectateViewTarget(CurrentSpectateTarget, 0.3f);
+				return;
+            }
+        }
     }
 }
 
@@ -742,4 +765,12 @@ void AMyPlayerController::HideScoreboard()
     {
         PlayerUI->ShowScoreboard(false);
     }
+}
+
+void AMyPlayerController::UpdateViewmodelCapture(bool bEnable)
+{
+    if (PlayerUI)
+    {
+		PlayerUI->ViewmodelOverlay->SetVisibility(bEnable ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+	}
 }

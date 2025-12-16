@@ -301,6 +301,9 @@ void UWeaponComponent::RefreshOverlapPickupActors() {
 
 void UWeaponComponent::StartReload() {
     if (!Character->IsAlive()) return;
+    if (!CanReload()) {
+        return;
+    }
 
     if (!bIsReloading) {
         if (CurrentWeaponId == EItemId::NONE) {
@@ -397,7 +400,7 @@ void UWeaponComponent::OnInput_StartAttack() {
     if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
         if (CanShoot()) {
             bIsFiring = true;
-            float timeBetweenShots = 0.2f; // Example value, adjust as needed
+            float timeBetweenShots = 0.1f; // Example value, adjust as needed
 
             OnFire();
             GetOwner()->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UWeaponComponent::OnFire, timeBetweenShots, true);
@@ -817,6 +820,7 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UWeaponComponent, PistolState);
 	DOREPLIFETIME(UWeaponComponent, MeleeState);
 	DOREPLIFETIME(UWeaponComponent, ThrowablesArray);
+	DOREPLIFETIME(UWeaponComponent, ProofState);
     //DOREPLIFETIME(UWeaponComponent, ThrowablesArray);
 }
 
@@ -1192,6 +1196,9 @@ void UWeaponComponent::ServerReload_Implementation()
 void UWeaponComponent::HandleReload()
 {
     if (!Character->IsAlive()) return;
+    if (!CanReload()) {
+        return;
+    }
     UE_LOG(LogTemp, Warning, TEXT("OnEquipWeaponFinished called"));
     if (bIsReloading) {
         return; // already reloading
@@ -1416,6 +1423,20 @@ bool UWeaponComponent::AddNewWeapon(FPickupData PickupData)
         ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
         if (SpikeGM) {
             SpikeGM->NotifyPlayerSpikeState(Character, true);
+        }
+    }
+    else if (WeaponConf->WeaponType == EWeaponTypes::Equipment) {
+        // hard code for test
+        if (ItemId == EItemId::KEVLAR_VEST) {
+            ProofState.ArmorPoints = 100;
+			ProofState.ArmorEfficiency = 0.4f; 
+			ProofState.ArmorRatio = 0.3f;
+        }
+        else {
+            // level 2
+            ProofState.ArmorPoints = 100;
+			ProofState.ArmorEfficiency = 0.3f; 
+			ProofState.ArmorRatio = 0.5f;
         }
     }
     return true;
@@ -1846,4 +1867,8 @@ void UWeaponComponent::OnOwnerDeath() {
         // Spawn Pickup item
         APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
 	}
+}
+
+void UWeaponComponent::OnRep_ProofState() {
+    OnUpdateAmmor.Broadcast(ProofState.ArmorPoints);
 }

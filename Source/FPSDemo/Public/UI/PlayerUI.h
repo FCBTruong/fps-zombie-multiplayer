@@ -120,6 +120,12 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UWidget* PhotonPlantedIcon;
 
+	UPROPERTY(meta = (BindWidget))
+	UWidget* ArmorPn;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* AmmorPointLb;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* PhotonPlantedAnim;
 
@@ -165,4 +171,5 @@ public:
 	void OnUpdateRoundTime(int TimeEnd);
 	void UpdateGameState(const EMyMatchState& State);
 	void ShowScoreboard(bool bShow);
+	void UpdateArmor(int AmmorPoints);
 };

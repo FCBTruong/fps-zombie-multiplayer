@@ -25,3 +25,20 @@ public:
     UPROPERTY()
     EItemId ItemId = EItemId::NONE;
 };
+
+
+USTRUCT(BlueprintType)
+struct FPSDEMO_API FProofState
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY()
+    int ArmorPoints = 0;
+
+    UPROPERTY()
+    float ArmorRatio = 0;
+
+    UPROPERTY()
+    float ArmorEfficiency = 0;
+};

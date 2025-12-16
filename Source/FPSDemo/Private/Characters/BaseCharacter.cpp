@@ -21,6 +21,7 @@
 #include "Game/ShooterGameState.h"
 #include "Perception/AISense_Damage.h"
 #include "Controllers/BotAIController.h"
+#include "Weapons/WeaponState.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -460,6 +461,10 @@ void ABaseCharacter::UpdateView()
             ViewmodelCapture->ShowOnlyComponents.AddUnique(MeshFps);
 			ViewmodelCapture->Activate();
 		}
+        AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
+        if (PC && PC->IsLocalController()) {
+            PC->UpdateViewmodelCapture(true);
+        }
     }
     else
     {
@@ -484,6 +489,13 @@ void ABaseCharacter::UpdateView()
         if (ViewmodelCapture)
         {
 			ViewmodelCapture->ShowOnlyComponents.Empty();
+            ViewmodelCapture->Deactivate();
+        }
+
+		// get controller and update viewmodel
+		AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
+        if (PC && PC->IsLocalController()) {
+            PC->UpdateViewmodelCapture(false);
         }
     }
     WeaponComp->UpdateAttachLocationWeapon();
@@ -618,6 +630,29 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         return 0.f; // already dead
 	}
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+    // calculate with Armor
+    FProofState* Armor = WeaponComp->GetArmorState();
+    if (Armor)
+    {
+        if (Armor->ArmorPoints > 0)
+        {
+            float DamageToHealth = ActualDamage * Armor->ArmorRatio;
+            float DamageToArmor = (ActualDamage - DamageToHealth) * Armor->ArmorEfficiency;
+
+            if (DamageToArmor >= Armor->ArmorPoints)
+            {
+                float Overflow = DamageToArmor - Armor->ArmorPoints;
+                DamageToHealth += Overflow;
+                Armor->ArmorPoints = 0.0f;
+            }
+            else
+            {
+                Armor->ArmorPoints -= DamageToArmor;
+            }
+
+            ActualDamage = DamageToHealth;
+		}
+	}
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     LastHitByController = EventInstigator;
 	bLastHitWasHeadshot = false;
@@ -787,12 +822,7 @@ void ABaseCharacter::HandleDeath()
         }
 
 		WeaponComp->OnOwnerDeath();
-
-		
-		AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
-        if (PC) {
-            PC->SetPlayerSpectate();
-        }
+		SetLifeSpan(3.f); // auto destroy after 3 seconds
     }
 }
 
@@ -1159,6 +1189,7 @@ void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
         if (MaterialOverlayMID)
         {
             MyPC->SetViewmodelOverlay(MaterialOverlayMID);
+			MyPC->UpdateViewmodelCapture(true);
         }
     }
     else {

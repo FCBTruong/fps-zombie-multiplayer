@@ -28,6 +28,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRifleWeapon, const EItemId&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePistolWeapon, const EItemId&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePlantSpikeState, bool);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateDefuseSpikeState, bool);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateAmmor, int);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponComponent : public UActorComponent
@@ -108,6 +109,8 @@ protected:
 	FWeaponState MeleeState;
 	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
 	TArray<EItemId> ThrowablesArray;
+	UPROPERTY(ReplicatedUsing = OnRep_ProofState)
+	FProofState ProofState;
 
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
 	EItemId CurrentWeaponId;
@@ -122,6 +125,9 @@ protected:
 	void OnRep_PistolState();
 	UFUNCTION()
 	void OnRep_MeleeState();
+	UFUNCTION()
+	void OnRep_ProofState();
+
 	void UpdateStateCurrentWeapon();
 	UFUNCTION()
 	void OnRep_Grenades();
@@ -235,6 +241,7 @@ public:
 
 	FOnUpdatePlantSpikeState OnUpdatePlantSpikeState;
 	FOnUpdateDefuseSpikeState OnUpdateDefuseSpikeState;
+	FOnUpdateAmmor OnUpdateAmmor;
 	bool IsPlantingSpike() const {
 		return bIsPlantingSpike;
 	}
@@ -248,5 +255,8 @@ public:
 	FWeaponState* GetRifleState() { return &RifleState; }
 	FWeaponState* GetPistolState() {
 		return &PistolState;
+	}
+	FProofState* GetArmorState() {
+		return &ProofState;
 	}
 };
