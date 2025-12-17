@@ -97,7 +97,6 @@ protected:
 	UFUNCTION()
 	void OnRep_HasSpike();
 
-	ABaseCharacter* Character;
 	void InitState();
 	void OnFinishedReload();
 
@@ -259,4 +258,5 @@ public:
 	FProofState* GetArmorState() {
 		return &ProofState;
 	}
+	ABaseCharacter* GetCharacter() const;
 };

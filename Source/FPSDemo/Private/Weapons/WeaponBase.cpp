@@ -114,7 +114,7 @@ UMeshComponent* AWeaponBase::GetWeaponMesh()
 void AWeaponBase::SetViewFps(bool bIsFps)
 {
 	// log display name of data
-	UE_LOG(LogTemp, Warning, TEXT("WeaponBase SetOwnerNoSee called with %s for weapon %s"), bIsFps ? TEXT("true") : TEXT("false"), *GetName());
+	/*UE_LOG(LogTemp, Warning, TEXT("WeaponBase SetOwnerNoSee called with %s for weapon %s"), bIsFps ? TEXT("true") : TEXT("false"), *GetName());
 	if (WeaponMesh)
 	{
 		WeaponMesh->bVisibleInSceneCaptureOnly = bIsFps;
@@ -124,7 +124,8 @@ void AWeaponBase::SetViewFps(bool bIsFps)
 	{
 		WeaponStaticMesh->bVisibleInSceneCaptureOnly = bIsFps;
 		WeaponStaticMesh->MarkRenderStateDirty();
-	}
+	}*/
+	bIsFpsView = bIsFps;
 }
 
 void AWeaponBase::OnUnequipped()

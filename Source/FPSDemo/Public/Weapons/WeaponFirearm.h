@@ -29,4 +29,5 @@ public:
 	void AttachMagToDefault();
 	int32 GetMaxAmmo() const;
 	void Destroyed() override;
+	virtual void SetViewFps(bool bFps) override;
 };

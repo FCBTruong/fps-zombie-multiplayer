@@ -453,7 +453,7 @@ void ABaseCharacter::UpdateView()
         }
         if (MeshFps)
         {
-            MeshFps->SetOwnerNoSee(false);
+            //MeshFps->SetOwnerNoSee(true);
 		}
         if (ViewmodelCapture)
         {
@@ -483,7 +483,7 @@ void ABaseCharacter::UpdateView()
         }
         if (MeshFps)
         {
-			MeshFps->SetOwnerNoSee(true);
+			//MeshFps->SetOwnerNoSee(true);
 		}
 
         if (ViewmodelCapture)
@@ -971,10 +971,10 @@ void ABaseCharacter::OnStunTimelineFinished()
 }
 
 void ABaseCharacter::SetPosViewmodelCaptureForGun() {
-    if (ViewmodelCapture) {
+   /* if (ViewmodelCapture) {
 		ViewmodelCapture->SetRelativeLocation(ViewmodelCaptureDefaultPos);
 		ViewmodelCapture->SetRelativeRotation(ViewmodelCaptureDefaultRot);
-	}
+	}*/
 }
 
 float ABaseCharacter::GetAimSensitivity() {

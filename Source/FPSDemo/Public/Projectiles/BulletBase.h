@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Projectiles/BulletData.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "BulletBase.generated.h"
 
 UCLASS()
@@ -46,6 +47,6 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	void InitFromData(class UBulletData* InData, FVector FinalDestination);
-	void FireTowards(const FVector& Target);
+	void InitFromData(class UBulletData* InData, FVector FinalDestination, TWeakObjectPtr<USceneCaptureComponent2D> ViewmodelCapture);
+	void FireTowards(const FVector& Target, TWeakObjectPtr<USceneCaptureComponent2D> ViewmodelCapture);
 };

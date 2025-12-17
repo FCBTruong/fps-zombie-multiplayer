@@ -43,9 +43,6 @@ void UWeaponComponent::BeginPlay()
 {
     UE_LOG(LogTemp, Warning, TEXT("WeaponComponent: BeginPlay"));
 	Super::BeginPlay();
-
-    Character = Cast<ABaseCharacter>(GetOwner());
-
 	InventoryComp = GetOwner()->FindComponentByClass<UInventoryComponent>();
 
 	bIsInitialized = true;
@@ -79,6 +76,7 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UWeaponComponent::EquipWeapon(EItemId ItemId)
 {
+    ABaseCharacter* Character = GetCharacter();
     if (Character && !Character->IsAlive()) return;
 
     if (GetOwner()->GetLocalRole() < ROLE_Authority) {
@@ -105,6 +103,7 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         return;
 	}
 
+    ABaseCharacter* Character = GetCharacter();
     if (!Character || !Character->IsAlive()) return;
 
 	if (CurrentWeaponId == ItemId) 
@@ -234,6 +233,7 @@ void UWeaponComponent::HandleDropWeapon() {
     }
 
 	// spawn new pickup item on map
+    ABaseCharacter* Character = GetCharacter();
 	FVector DropPoint = GetOwner()->GetActorLocation() + FVector(0.f, 0.f, 60.f) + Character->GetActorForwardVector() * 30;
     FPickupData Data;
 	Data.Location = DropPoint;
@@ -281,6 +281,7 @@ void UWeaponComponent::HandleDropWeapon() {
 }
 
 void UWeaponComponent::RefreshOverlapPickupActors() {
+    ABaseCharacter* Character = GetCharacter();
     UCapsuleComponent* Cap = Character->GetCapsuleComponent();
     TArray<AActor*> OverlappingActors;
     Cap->GetOverlappingActors(OverlappingActors);
@@ -300,6 +301,7 @@ void UWeaponComponent::RefreshOverlapPickupActors() {
 }
 
 void UWeaponComponent::StartReload() {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character->IsAlive()) return;
     if (!CanReload()) {
         return;
@@ -344,6 +346,7 @@ void UWeaponComponent::StartAiming() {
 
 // This function only apply for firearms
 bool UWeaponComponent::CanShoot() {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character) {
         return false;
     }
@@ -381,6 +384,7 @@ bool UWeaponComponent::CanShoot() {
 }
 
 void UWeaponComponent::OnInput_StartAttack() {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character || !Character->IsAlive()) return;
 
     if (CurrentWeaponId == EItemId::NONE) {
@@ -458,6 +462,7 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
     // Logic throw, move object, and explode
     // Because on server, there's no current weapon, so we need to handle this
 	// gen object throwable
+    ABaseCharacter* Character = GetCharacter();
     FVector StartPos = Character->GetThrowableLocation();
     //StartPos += Character->GetActorForwardVector() * 10.f; // avoid collision                       // raise a bit if needed
     
@@ -523,7 +528,7 @@ void UWeaponComponent::MulticastThrowAction_Implementation(FVector LaunchVelocit
         TrajectoryPreviewRef->Destroy();
         TrajectoryPreviewRef = nullptr;
     }
-
+    ABaseCharacter* Character = GetCharacter();
     Character->PlayThrowNadeMontage();
     GetOwner()->GetWorldTimerManager().ClearTimer(ThrowProjectileTimer);
 }
@@ -531,6 +536,7 @@ void UWeaponComponent::MulticastThrowAction_Implementation(FVector LaunchVelocit
 // Client function, Client detects hit point and sends to server
 void UWeaponComponent::OnFire() {
 	UE_LOG(LogTemp, Warning, TEXT("OnFire: called"));
+    ABaseCharacter* Character = GetCharacter();
     if (Character) {
         FVector CameraLocation;
         FRotator CameraRotation;
@@ -572,6 +578,7 @@ void UWeaponComponent::ServerOnFire_Implementation(const FVector& StartPoint, co
 }
 
 void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character->IsAlive()) return;
 
     if (bIsMeleeAttacking) {
@@ -589,6 +596,7 @@ void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
 }
 
 void UWeaponComponent::MulticastDoMeleeAttack_Implementation(int AttackIdx) {
+    ABaseCharacter* Character = GetCharacter();
     Character->PlayMeleeAttackAnimation(AttackIdx);
 }
 
@@ -597,6 +605,7 @@ void UWeaponComponent::MulticastDoMeleeAttack_Implementation(int AttackIdx) {
 void UWeaponComponent::HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, FName HitBoneName) {
     if (GetOwner()->HasAuthority()) // only server makes changes
     {
+        ABaseCharacter* Character = GetCharacter();
         if (!Character) {
             return;
         }
@@ -764,9 +773,10 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
             // Get view point
             FVector CameraLocation;
             FRotator CameraRotation;
+            ABaseCharacter* Character = GetCharacter();
             Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
 
-            CurrentWeapon->OnFire(TargetPoint, true, CameraLocation);
+            CurrentWeapon->OnFire(TargetPoint);
 		}
         else {
             CurrentWeapon->OnFire(TargetPoint);
@@ -827,6 +837,7 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 // Clients press 1, 2, 3 to equip weapon in that slot
 void UWeaponComponent::EquipSlot(int32 SlotIndex)
 {
+    ABaseCharacter* Character = GetCharacter();
 	if (!Character->IsAlive()) return;
     if (bIsPlantingSpike || bIsDefusingSpike) {
         return; // can not change weapon while planting or defusing spike
@@ -914,6 +925,7 @@ void UWeaponComponent::DrawProjectileCurve()
         FVector::ZeroVector,
         FRotator::ZeroRotator
     );
+    ABaseCharacter* Character = GetCharacter();
     if (!Character->ThrowSpline) {
 		UE_LOG(LogTemp, Warning, TEXT("DrawProjectileCurve: SplineRef is invalid"));
     }
@@ -922,6 +934,7 @@ void UWeaponComponent::DrawProjectileCurve()
 
 void UWeaponComponent::UpdateProjectileCurve()
 {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character || !Character->ThrowSpline)
     {
         return;
@@ -955,6 +968,7 @@ void UWeaponComponent::UpdateProjectileCurve()
 
 FVector UWeaponComponent::GetVelocityGrenade() const
 {
+    ABaseCharacter* Character = GetCharacter();
     FRotator ControlRot = Character->GetControlRotation();
 
     // Add pitch offset (ThrowAngle is a float variable you define)
@@ -973,6 +987,7 @@ void UWeaponComponent::OnRep_IsPriming()
     // Handle changes when bIsPriming is replicated
     if (bIsPriming)
     {
+        ABaseCharacter* Character = GetCharacter();
         // Start priming effects
         UE_LOG(LogTemp, Warning, TEXT("OnRep_IsPriming: Started priming"));
 		Character->PlayHoldNadeMontage();
@@ -996,6 +1011,7 @@ void UWeaponComponent::ServerSetIsPriming_Implementation(bool bNewIsPriming)
 }
 
 void UWeaponComponent::UpdateAttachLocationWeapon() {
+    ABaseCharacter* Character = GetCharacter();
     if (!CurrentWeapon || !Character) {
         return;
     }
@@ -1053,13 +1069,6 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
 
 		UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Set OwnerNoSee to %s"), bIsFPS ? TEXT("true") : TEXT("false"));
         if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
-            if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
-            {
-                if (Firearm->MagMesh) {
-                    Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(Firearm->MagMesh);
-                    Firearm->MagMesh->SetOwnerNoSee(bIsFPS);
-                }
-            }
 			UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Setting viewmodel for gun"));
             Character->SetPosViewmodelCaptureForGun();
         }
@@ -1089,6 +1098,7 @@ bool UWeaponComponent::CanWeaponAim() {
 void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
 {
 	UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack called"));
+    ABaseCharacter* Character = GetCharacter();
     if (!Character) return;
     //Character->LookInput;
     FVector Start = Character->GetActorLocation() + FVector(0, 0, 70);
@@ -1171,6 +1181,11 @@ void UWeaponComponent::OnRep_CurrentWeapon()
         return;
     }
    
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon: Spawned weapon %s"), *CurrentWeapon->GetName());
+    ABaseCharacter* Character = GetCharacter();
+    if (Character) {
+        CurrentWeapon->SetViewCapture(Character->ViewmodelCapture);
+    }
 	CurrentWeapon->SetOwner(GetOwner());
 	CurrentWeapon->SetInstigator(Cast<APawn>(GetOwner()));
 	CurrentWeapon->InitFromData(WeaponConf);
@@ -1195,6 +1210,7 @@ void UWeaponComponent::ServerReload_Implementation()
 
 void UWeaponComponent::HandleReload()
 {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character->IsAlive()) return;
     if (!CanReload()) {
         return;
@@ -1230,6 +1246,7 @@ void UWeaponComponent::MulticastReload_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("MulticastReload called"));
     if (CurrentWeapon) {
+        ABaseCharacter* Character = GetCharacter();
         if (Character) {
             Character->PlayReloadMontage(CurrentWeapon->GetWeaponData());
         }
@@ -1243,6 +1260,7 @@ void UWeaponComponent::MulticastReload_Implementation()
 
 void UWeaponComponent::OnFinishedReload()
 {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character->IsAlive()) return;
     if (GetOwner()->HasAuthority()) // only server makes changes
     {
@@ -1278,6 +1296,7 @@ void UWeaponComponent::OnNotifyGrabMag() {
            /* Firearm->PlayGrabMagSound();*/
 			UE_LOG(LogTemp, Warning, TEXT("OnNotifyGrabMag: Attaching mag to hand_r"));
             Firearm->MagMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+            ABaseCharacter* Character = GetCharacter();
             if (Character->IsFpsViewMode()) {
                 Firearm->MagMesh->AttachToComponent(
                     Character->GetCurrentMesh(),
@@ -1374,6 +1393,7 @@ bool UWeaponComponent::AddNewWeapon(FPickupData PickupData)
     if (!WeaponConf) {
 		return false;
 	}
+    ABaseCharacter* Character = GetCharacter();
 
     if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
         if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
@@ -1444,6 +1464,7 @@ bool UWeaponComponent::AddNewWeapon(FPickupData PickupData)
 
 bool UWeaponComponent::CanDropWeapon(EItemId Id)
 {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character || !Character->IsAlive()) return false;
 
     UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(Id);
@@ -1539,6 +1560,7 @@ void UWeaponComponent::ServerStartPlantSpike_Implementation() {
 	UE_LOG(LogTemp, Warning, TEXT("ServerStartPlantSpike called"));
 
 	bIsPlantingSpike = true;
+    ABaseCharacter* Character = GetCharacter();
     Character->ServerSetCrouching(true);
 
     GetWorld()->GetTimerManager().SetTimer(
@@ -1610,6 +1632,7 @@ void UWeaponComponent::ServerStartDefuseSpike_Implementation() {
 	}
 
     // check team
+    ABaseCharacter* Character = GetCharacter();
 	AMyPlayerState* MyPS = Cast<AMyPlayerState>(Character->GetPlayerState());
     if (MyPS->GetTeamID() == GameState->GetAttackerTeam()) {
         UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Attackers cannot defuse spike"));
@@ -1622,6 +1645,7 @@ void UWeaponComponent::ServerStartDefuseSpike_Implementation() {
 }
 
 void UWeaponComponent::FinishDefuseSpike() {
+    ABaseCharacter* Character = GetCharacter();
 	bIsDefusingSpike = false;
     // check spike is planted in game mode
     UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike called"));
@@ -1632,6 +1656,7 @@ void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
     if (!bIsDefusingSpike) {
         return;
     }
+    ABaseCharacter* Character = GetCharacter();
 	bIsDefusingSpike = false;
     Character->ServerSetCrouching(false);
 
@@ -1660,6 +1685,7 @@ void UWeaponComponent::OnInput_StartPlantSpike() {
 }
 
 bool UWeaponComponent::CanPlantSpikeAtCurrentLocation() {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character) {
         return false;
     }
@@ -1720,6 +1746,7 @@ void UWeaponComponent::OnInput_StopPlantSpike() {
 
 void UWeaponComponent::OnRep_IsPlantingSpike() {
     OnUpdatePlantSpikeState.Broadcast(bIsPlantingSpike);
+    ABaseCharacter* Character = GetCharacter();
 
     // play sound
     if (bIsPlantingSpike) {
@@ -1749,6 +1776,7 @@ void UWeaponComponent::FinishPlantSpike() {
         UE_LOG(LogTemp, Warning, TEXT("FinishPlantSpike: No SpikeGM found"));
         return;
     }
+    ABaseCharacter* Character = GetCharacter();
     FVector SpikeLocation = Character->GetActorLocation()
         + Character->GetActorForwardVector() * 50.f;
 	SpikeGM->PlantSpike(SpikeLocation, Character->GetController());
@@ -1775,6 +1803,7 @@ void UWeaponComponent::OnInput_StopDefuseSpike() {
 }
 
 void UWeaponComponent::OnRep_IsDefusingSpike() {
+    ABaseCharacter* Character = GetCharacter();
     OnUpdateDefuseSpikeState.Broadcast(bIsDefusingSpike);
     if (bIsDefusingSpike) {
         if (Character) {
@@ -1789,6 +1818,7 @@ void UWeaponComponent::OnRep_IsDefusingSpike() {
 }
 
 void UWeaponComponent::OnRep_HasSpike() {
+    ABaseCharacter* Character = GetCharacter();
     if (!Character) {
         return;
     }
@@ -1827,6 +1857,7 @@ void UWeaponComponent::OnOwnerDeath() {
 	}
 
 	CurrentWeaponId = EItemId::NONE;
+    ABaseCharacter* Character = GetCharacter();
     // drop all weapons
     FVector DropPoint = GetOwner()->GetActorLocation() + Character->GetActorForwardVector() * 30;
     if (bHasSpike) {
@@ -1871,4 +1902,8 @@ void UWeaponComponent::OnOwnerDeath() {
 
 void UWeaponComponent::OnRep_ProofState() {
     OnUpdateAmmor.Broadcast(ProofState.ArmorPoints);
+}
+
+ABaseCharacter* UWeaponComponent::GetCharacter() const{
+    return Cast<ABaseCharacter>(GetOwner());
 }

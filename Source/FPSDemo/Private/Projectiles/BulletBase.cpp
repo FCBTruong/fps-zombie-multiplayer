@@ -3,6 +3,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Characters/BaseCharacter.h"
+#include "NiagaraComponent.h"
 
 // Sets default values
 ABulletBase::ABulletBase()
@@ -11,8 +12,8 @@ ABulletBase::ABulletBase()
     PrimaryActorTick.bCanEverTick = true;
 
     CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
-    CollisionComp->InitSphereRadius(2.f);
-	CollisionComp->SetHiddenInGame(true);
+    CollisionComp->InitSphereRadius(25.f);
+	CollisionComp->SetHiddenInGame(false);
 	CollisionComp->SetGenerateOverlapEvents(false);
     CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
    
@@ -27,8 +28,8 @@ ABulletBase::ABulletBase()
 
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
     ProjectileMovement->UpdatedComponent = CollisionComp;
-    ProjectileMovement->InitialSpeed = 30000.f;
-    ProjectileMovement->MaxSpeed = 30000.f;
+    ProjectileMovement->InitialSpeed = 10.f;
+    ProjectileMovement->MaxSpeed = 10.f;
     ProjectileMovement->bRotationFollowsVelocity = true;
     ProjectileMovement->bShouldBounce = false;
     ProjectileMovement->bAutoActivate = false;
@@ -104,11 +105,11 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
         Enemy->PlayBloodFx(Hit.ImpactPoint);
     }
 
-    Destroy();
+    SetLifeSpan(0.5f);
 }
 
 
-void ABulletBase::InitFromData(UBulletData* InData, FVector FireDestination)
+void ABulletBase::InitFromData(UBulletData* InData, FVector FireDestination, TWeakObjectPtr<USceneCaptureComponent2D> ViewmodelCapture)
 {
     Data = InData;
     if (Data)
@@ -123,11 +124,11 @@ void ABulletBase::InitFromData(UBulletData* InData, FVector FireDestination)
         }
     }
 
-    FireTowards(FireDestination);
+    FireTowards(FireDestination, ViewmodelCapture);
 }
 
 
-void ABulletBase::FireTowards(const FVector& Target)
+void ABulletBase::FireTowards(const FVector& Target, TWeakObjectPtr<USceneCaptureComponent2D> ViewmodelCapture)
 {
     FVector Start = GetActorLocation();
     FVector Dir = (Target - Start).GetSafeNormal();
@@ -147,5 +148,16 @@ void ABulletBase::FireTowards(const FVector& Target)
             EAttachLocation::SnapToTarget,
             true
         );
+
+        if (Trail && ViewmodelCapture.IsValid())
+        {
+            USceneCaptureComponent2D* Capture = ViewmodelCapture.Get();
+			UE_LOG(LogTemp, Warning, TEXT("Setting up trail for viewmodel capture"));
+            Capture->ShowOnlyComponents.AddUnique(Trail);
+                
+            // If not capturing every frame:
+            // Capture->CaptureScene();
+			Trail->SetOwnerNoSee(true);
+        }
     }
 }

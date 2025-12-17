@@ -9,6 +9,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/Character.h"
 #include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 AWeaponFirearm::AWeaponFirearm()
 {
@@ -26,24 +27,38 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 {
 	// Implement firing logic here
 	UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
-	UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAttached(
-		Data->MuzzleFX,                 // particle system
-		WeaponMesh,                   // attach to this component
-		TEXT("Muzzle"),        // socket name
-		FVector::ZeroVector,         // location offset
-		FRotator::ZeroRotator,       // rotation offset
-		EAttachLocation::SnapToTarget, // attach rules
-		true                         // auto destroy
-	);
+	if (Data->MuzzleFX) {
+		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAttached(
+			Data->MuzzleFX,                 // particle system
+			WeaponMesh,                   // attach to this component
+			TEXT("Muzzle"),        // socket name
+			FVector::ZeroVector,         // location offset
+			FRotator::ZeroRotator,       // rotation offset
+			EAttachLocation::SnapToTarget, // attach rules
+			true                         // auto destroy
+		);
 
-	if (PSC)
-	{
-		// ... rest of your code remains unchanged ...
-		UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));
-		PSC->SetWorldScale3D(FVector(0.15f));
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("Failed to spawn Muzzle Flash"));
+		if (PSC)
+		{
+			// ... rest of your code remains unchanged ...
+			UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));
+			PSC->SetWorldScale3D(FVector(0.15f));
+
+
+			if (bIsFpsView) {
+				if (USceneCaptureComponent2D* Capture = ViewmodelCapture.Get()) // ViewmodelCapture is TWeakObjectPtr
+				{
+					Capture->ShowOnlyComponent(PSC);
+					// If needed:
+					// Capture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+				}
+
+				PSC->SetOwnerNoSee(true);
+			}
+		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn Muzzle Flash"));
+		}
 	}
 
 	FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
@@ -61,13 +76,39 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		StartPointBullet = StartPoint;
 	}
 
-	ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
+	/*ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
 		ABulletBase::StaticClass(),
 		StartPointBullet,
 		FRotator::ZeroRotator,
 		SpawnParams
 	);
-	Bullet->InitFromData(Data->BulletData, TargetPoint);
+	Bullet->InitFromData(Data->BulletData, TargetPoint, ViewmodelCapture);*/
+
+	if (bIsFpsView) {
+		UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+		if (!GMR || !GMR->GlobalData || !GMR->GlobalData->BulletTrailNS) return;
+
+		UNiagaraComponent* Trail =
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),                               // World
+				GMR->GlobalData->BulletTrailNS,           // Niagara System
+				StartPointBullet,                         // Location (Start)
+				FRotator::ZeroRotator,
+				FVector::OneVector,
+				true,   // AutoDestroy
+				false    // AutoActivate
+			);
+
+		if (!Trail) return;
+
+		// log start and end points
+		UE_LOG(LogTemp, Warning, TEXT("Bullet Trail Start: %s, End: %s"), *StartPointBullet.ToString(), *TargetPoint.ToString());
+
+		Trail->SetVectorParameter(TEXT("BeamEnd"), StartPointBullet);
+		Trail->SetVectorParameter(TEXT("BeamStart"), TargetPoint);
+
+		Trail->Activate(true);
+	}
 
 	// Play sound
 	if (Data->FireSFX)
@@ -75,18 +116,23 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		UGameplayStatics::PlaySoundAtLocation(this, Data->FireSFX, GetActorLocation());
 	}
 
-	if (Data->MuzzleFlashFX) {
-		UNiagaraComponent* Niagara = UNiagaraFunctionLibrary::SpawnSystemAttached(
-			Data->MuzzleFlashFX,
-			WeaponMesh,
-			TEXT("Muzzle"),
-			FVector::ZeroVector,
-			FRotator::ZeroRotator,
-			EAttachLocation::SnapToTarget,
-			true,  // auto activate
-			true   // auto destroy
-		);
-	}
+
+	//if (Data && Data->MuzzleFlashFX && WeaponMesh)
+	//{
+	//	UNiagaraComponent* Niagara = UNiagaraFunctionLibrary::SpawnSystemAttached(
+	//		Data->MuzzleFlashFX,
+	//		WeaponMesh,
+	//		FName(TEXT("Muzzle")),
+	//		FVector::ZeroVector,
+	//		FRotator::ZeroRotator,
+	//		FVector(1.f),
+	//		EAttachLocation::SnapToTarget,
+	//		/*bAutoDestroy*/   true,
+	//		/*PoolingMethod*/  ENCPoolMethod::None,
+	//		/*bAutoActivate*/  true,
+	//		/*bPreCullCheck*/  true
+	//	);
+	//}
 }
 
 void AWeaponFirearm::PlayOutOfAmmoSound()
@@ -108,6 +154,7 @@ void AWeaponFirearm::PlayReloadSound()
 void AWeaponFirearm::ApplyWeaponData()
 {
 	Super::ApplyWeaponData();
+	UE_LOG(LogTemp, Warning, TEXT("Applying Weapon Data in Firearm"));
 	if (WeaponMesh) {
 		WeaponMesh->HideBoneByName(FName("b_gun_mag"), EPhysBodyOp::PBO_None);
 	}
@@ -146,5 +193,24 @@ void AWeaponFirearm::Destroyed()
 	if (MagMesh)
 	{
 		MagMesh->DestroyComponent();
+	}
+}
+
+void AWeaponFirearm::SetViewFps(bool bFps)
+{
+	Super::SetViewFps(bFps);
+	UE_LOG(LogTemp, Warning, TEXT("AWeaponFirearm::SetViewFps called with bFps=%d"), bFps);
+	if (MagMesh)
+	{
+		if (bFps) {
+			if (!ViewmodelCapture.IsValid()) {
+				return;
+			}
+			ViewmodelCapture->ShowOnlyComponents.AddUnique(MagMesh);
+			MagMesh->SetOwnerNoSee(true);
+		}
+		else {
+			MagMesh->SetOwnerNoSee(false);
+		}
 	}
 }

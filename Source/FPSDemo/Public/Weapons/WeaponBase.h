@@ -7,6 +7,7 @@
 #include "Components/SphereComponent.h"
 #include "Weapons/WeaponTypes.h"
 #include "Weapons/WeaponData.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "WeaponBase.generated.h"
 
 UCLASS()
@@ -19,6 +20,7 @@ public:
 	AWeaponBase();
 protected:
 	UWeaponData* Data;
+	bool bIsFpsView;
 
 	USkeletalMeshComponent* WeaponMesh;
 	UStaticMeshComponent* WeaponStaticMesh;
@@ -26,6 +28,9 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void PreInitializeComponents() override;
 	virtual void ApplyWeaponData();
+
+	UPROPERTY()
+	TWeakObjectPtr<USceneCaptureComponent2D> ViewmodelCapture;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -37,9 +42,10 @@ public:
 	bool CanDrop() const { return Data ? Data->CanDrop : false; }
 
 	UMeshComponent* GetWeaponMesh();
-	void SetViewFps(bool bIsFps);
+	virtual void SetViewFps(bool bIsFps);
 	void OnUnequipped();
 	void OnEquipped();
 
 	EItemId GetItemId() const { return Data ? Data->Id : EItemId::NONE; }
+	void SetViewCapture(USceneCaptureComponent2D* InCapture) { ViewmodelCapture = InCapture; }
 };
