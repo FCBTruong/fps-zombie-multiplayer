@@ -28,6 +28,32 @@ ABaseCharacter::ABaseCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
 
+    FpsPivot = CreateDefaultSubobject<USceneComponent>(TEXT("FpsPivot"));
+    FpsPivot->SetupAttachment(GetRootComponent());
+    FpsPivot->bEditableWhenInherited = true;
+
+    CameraFps = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraFps"));
+    CameraFps->SetupAttachment(FpsPivot);
+    CameraFps->bUsePawnControlRotation = true;
+    CameraFps->bEditableWhenInherited = true;
+
+    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBloom"));
+    CameraBoom->SetupAttachment(RootComponent);
+
+    CameraTps = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraTps"));
+    CameraTps->SetupAttachment(CameraBoom);
+    CameraTps->bUsePawnControlRotation = false;
+
+    MeshFps = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshFps"));
+    MeshFps->SetupAttachment(FpsPivot);
+    MeshFps->bEditableWhenInherited = true;
+
+    ViewmodelCap = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("ViewmodelCap"));
+    ViewmodelCap->SetupAttachment(CameraFps);
+    ViewmodelCap->bEditableWhenInherited = true;
+    ViewmodelCap->bCaptureEveryFrame = true;
+    ViewmodelCap->bCaptureOnMovement = true;
+
     bCloseToWall = false;
     bReloading = false;
     bEquipped = false;
@@ -61,13 +87,7 @@ void ABaseCharacter::BeginPlay()
     Super::BeginPlay();
 
 	UGameManager::Get(GetWorld())->RegisterPlayer(this);
-   
-    mesh = GetMesh();
 
-	MeshFps = Cast<USkeletalMeshComponent>(GetDefaultSubobjectByName(TEXT("MeshFps")));
-	FirstPersonCamera = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraFps")));
-	ThirdPersonCamera = Cast<UCameraComponent>(GetDefaultSubobjectByName(TEXT("CameraTps")));
-    
     ThrowableLocation = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("ThrowableLocation")));
 
     if (CrouchCurve)
@@ -78,10 +98,12 @@ void ABaseCharacter::BeginPlay()
     }
 
 
-    if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
-    {
-		UE_LOG(LogTemp, Warning, TEXT("FPSAnim is valid in ABaseCharacter"));
-        FPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+    if (MeshFps) {
+        if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("FPSAnim is valid in ABaseCharacter"));
+            FPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+        }
     }
 
     if (UAnimInstance* TPSAnim = GetMesh()->GetAnimInstance())
@@ -111,15 +133,6 @@ void ABaseCharacter::BeginPlay()
         BaseStunDuration = StunTimeline.GetTimelineLength();
     }
 
-  
-	ViewmodelCapture = Cast<USceneCaptureComponent2D>(GetDefaultSubobjectByName(TEXT("ViewmodelCap")));
-
-    if (ViewmodelCapture)
-    {
-		ViewmodelCapture->Deactivate();
-        ViewmodelCaptureDefaultPos = ViewmodelCapture->GetRelativeLocation();
-        ViewmodelCaptureDefaultRot = ViewmodelCapture->GetRelativeRotation();
-	}
    
     if (FlashCollection)
     {
@@ -194,11 +207,11 @@ void ABaseCharacter::Tick(float DeltaTime)
     CrouchTimeline.TickTimeline(DeltaTime);
     StunTimeline.TickTimeline(DeltaTime);
 
-    if (FirstPersonCamera)
+    if (CameraFps)
     {
-        float CurrentFOV = FirstPersonCamera->FieldOfView;
+        float CurrentFOV = CameraFps->FieldOfView;
         float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f); // 10 = speed
-        FirstPersonCamera->SetFieldOfView(NewFOV);
+        CameraFps->SetFieldOfView(NewFOV);
     }
 
     // logic sound
@@ -243,12 +256,8 @@ void ABaseCharacter::UpdateAimingState()
         }
         if (bAiming)
         {
-            // Smooth FOV zoom
-            TargetFOV = 70.f;
-
             if (WeaponComp->IsScopeEquipped()) {
                 TargetFOV = 20.f;
-                FirstPersonCamera->SetRelativeLocation(FVector(15.f, 20.f, 0.f));
                 AimSensitivity = 0.2f;
 
                 PC->ShowScope();
@@ -260,9 +269,7 @@ void ABaseCharacter::UpdateAimingState()
         }
         else
         {
-            TargetFOV = 90.f;
-
-            FirstPersonCamera->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+            TargetFOV = ABaseCharacter::DEFAULT_FPS_FOV;
             AimSensitivity = 1.0f;
             PC->HideScope();
             HandleUpdateSpeedWalkCurrently();
@@ -289,6 +296,9 @@ void ABaseCharacter::PlayFirePistolMontage(FVector TargetPoint)
     {
         GetCurrentMesh()->GetAnimInstance()->Montage_Play(FirePistolMontage);
     }
+
+    float CurrentFOV = CameraFps->FieldOfView;
+    UE_LOG(LogTemp, Warning, TEXT("Current FOV before recoil: %f"), CurrentFOV);
 }
 
 void ABaseCharacter::PlayReloadMontage(UWeaponData* WeaponConf)
@@ -398,7 +408,7 @@ void ABaseCharacter::ServerSetCrouching_Implementation(bool bNewCrouching)
 void ABaseCharacter::HandleCrouchProgress(float Value) {
     GetCapsuleComponent()->SetCapsuleHalfHeight(Value);
     BaseTranslationOffset.Z = -GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-	mesh->SetRelativeLocation(BaseTranslationOffset);
+	GetMesh()->SetRelativeLocation(BaseTranslationOffset);
 }
 
 
@@ -438,59 +448,41 @@ void ABaseCharacter::UpdateView()
 
     if (bIsFPS)
     {
-        if (FirstPersonCamera)
-        {
-            FirstPersonCamera->SetActive(true);
-            CurrentCamera = FirstPersonCamera;
-        }
-        if (ThirdPersonCamera)
-        {
-            ThirdPersonCamera->SetActive(false);
-        }
-        if (mesh)
-        {
-            mesh->SetOwnerNoSee(true);
-        }
+        CameraFps->SetActive(true);
+        CurrentCamera = CameraFps;
+
+        CameraTps->SetActive(false);
+        GetMesh()->SetOwnerNoSee(true);
         if (MeshFps)
         {
             //MeshFps->SetOwnerNoSee(true);
 		}
-        if (ViewmodelCapture)
-        {
-            ViewmodelCapture->ShowOnlyComponents.Empty();
-            ViewmodelCapture->ShowOnlyComponents.AddUnique(MeshFps);
-			ViewmodelCapture->Activate();
-		}
+       
+        ViewmodelCap->ShowOnlyComponents.Empty();
+        ViewmodelCap->ShowOnlyComponents.AddUnique(MeshFps);
+        ViewmodelCap->Activate();
+
         AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
         if (PC && PC->IsLocalController()) {
             PC->UpdateViewmodelCapture(true);
         }
     }
     else
-    {
-        if (FirstPersonCamera)
+    {      
+        CameraFps->SetActive(false);
+        if (CameraTps)
         {
-            FirstPersonCamera->SetActive(false);
+            CameraTps->SetActive(true);
+            CurrentCamera = CameraTps;
         }
-        if (ThirdPersonCamera)
-        {
-            ThirdPersonCamera->SetActive(true);
-            CurrentCamera = ThirdPersonCamera;
-        }
-        if (mesh)
-        {
-            mesh->SetOwnerNoSee(false);
-        }
+        GetMesh()->SetOwnerNoSee(false);
         if (MeshFps)
         {
 			//MeshFps->SetOwnerNoSee(true);
 		}
 
-        if (ViewmodelCapture)
-        {
-			ViewmodelCapture->ShowOnlyComponents.Empty();
-            ViewmodelCapture->Deactivate();
-        }
+        ViewmodelCap->ShowOnlyComponents.Empty();
+        ViewmodelCap->Deactivate();
 
 		// get controller and update viewmodel
 		AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
@@ -510,7 +502,7 @@ USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh()
     }
     else
     {
-        return mesh;
+        return GetMesh();
     }
 }
 
@@ -844,8 +836,8 @@ void ABaseCharacter::Multicast_HandleDeath_Implementation()
         if (!DeathCameraProxyClass) return;
 
         // Use current camera position as start
-        const FVector CamLoc = ThirdPersonCamera->GetComponentLocation();
-        const FRotator CamRot = ThirdPersonCamera->GetComponentRotation();
+        const FVector CamLoc = CameraTps->GetComponentLocation();
+        const FRotator CamRot = CameraTps->GetComponentRotation();
 
         // Spawn proxy actor that has physics + camera
         AActor* Proxy = GetWorld()->SpawnActor<AActor>(DeathCameraProxyClass, CamLoc, CamRot);
@@ -1121,14 +1113,14 @@ void ABaseCharacter::SetFpsView(bool bNewIsFps)
 void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
 {
     Super::BecomeViewTarget(PC);
-   /* if (true) {
-        return;
-    }*/
+    /* if (true) {
+         return;
+     }*/
 
     if (!bHasBeginPlayRun)
     {
         bRecallBVT_AtBegin = true;
-		// will be called again at BeginPlay
+        // will be called again at BeginPlay
         return;
     }
 
@@ -1140,7 +1132,7 @@ void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
         PC->IsLocalController(),
         *GetPathName()
     );
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called"));
+    UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called"));
     if (!PC) {
         UE_LOG(LogTemp, Error, TEXT("PC is null in BecomeViewTarget"));
         return;
@@ -1150,52 +1142,48 @@ void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
         UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called - NO LOCAL"));
         return;
     }
- 
-	AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC);
+
+    AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC);
     if (!MyPC)
     {
         UE_LOG(LogTemp, Error, TEXT("PC is not AMyPlayerController in BecomeViewTarget"));
         return;
-	}
-    if (ViewmodelCapture)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ViewmodelCapture is valid in ABaseCharacter"));
-
-        if (!ViewmodelRenderTarget)
-        {
-            ViewmodelRenderTarget = NewObject<UTextureRenderTarget2D>(this);
-            ViewmodelRenderTarget->ClearColor = FLinearColor::Transparent;
-
-            int32 SizeX = 0;
-            int32 SizeY = 0;
-            PC->GetViewportSize(SizeX, SizeY);
-
-            // Fallback safety
-            SizeX = FMath::Max(SizeX, 1);
-            SizeY = FMath::Max(SizeY, 1);
-
-            ViewmodelRenderTarget->InitAutoFormat(SizeX, SizeY);
-        }
-        ViewmodelCapture->TextureTarget = ViewmodelRenderTarget;
-        ViewmodelCapture->Activate();
-        if (MaterialOverlayBase && !MaterialOverlayMID)
-        {
-            MaterialOverlayMID = UMaterialInstanceDynamic::Create(MaterialOverlayBase, this);
-            MaterialOverlayMID->SetTextureParameterValue(
-                TEXT("ViewmodelTexture"),
-                ViewmodelRenderTarget
-            );
-        }
-        if (MaterialOverlayMID)
-        {
-            MyPC->SetViewmodelOverlay(MaterialOverlayMID);
-			MyPC->UpdateViewmodelCapture(true);
-        }
     }
-    else {
-        UE_LOG(LogTemp, Error, TEXT("ViewmodelCapture is null in ABaseCharacter"));
-	}
-	bIsFPS = true;
+
+    UE_LOG(LogTemp, Warning, TEXT("ViewmodelCapture is valid in ABaseCharacter"));
+
+    if (!ViewmodelRenderTarget)
+    {
+        ViewmodelRenderTarget = NewObject<UTextureRenderTarget2D>(this);
+        ViewmodelRenderTarget->ClearColor = FLinearColor::Transparent;
+
+        int32 SizeX = 0;
+        int32 SizeY = 0;
+        PC->GetViewportSize(SizeX, SizeY);
+
+        // Fallback safety
+        SizeX = FMath::Max(SizeX, 1);
+        SizeY = FMath::Max(SizeY, 1);
+
+        ViewmodelRenderTarget->InitAutoFormat(SizeX, SizeY);
+    }
+    ViewmodelCap->TextureTarget = ViewmodelRenderTarget;
+    ViewmodelCap->Activate();
+    if (MaterialOverlayBase && !MaterialOverlayMID)
+    {
+        MaterialOverlayMID = UMaterialInstanceDynamic::Create(MaterialOverlayBase, this);
+        MaterialOverlayMID->SetTextureParameterValue(
+            TEXT("ViewmodelTexture"),
+            ViewmodelRenderTarget
+        );
+    }
+    if (MaterialOverlayMID)
+    {
+        MyPC->SetViewmodelOverlay(MaterialOverlayMID);
+        MyPC->UpdateViewmodelCapture(true);
+    }
+
+    bIsFPS = true;
 
     UpdateView();
 }
@@ -1208,12 +1196,8 @@ void ABaseCharacter::EndViewTarget(APlayerController* PC)
     {
 		SetFpsView(false);
     }
-
-    if (ViewmodelCapture)
-    {
-		ViewmodelCapture->ShowOnlyComponents.Empty();
-        ViewmodelCapture->Deactivate();
-    }
+    ViewmodelCap->ShowOnlyComponents.Empty();
+    ViewmodelCap->Deactivate();
 }
 
 void ABaseCharacter::ApplyRotationMode(bool bIsPlayer)

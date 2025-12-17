@@ -26,6 +26,7 @@
 #include "Perception/AISense_Sight.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Components/AudioComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "BaseCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -67,34 +68,26 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
     UCameraComponent* CurrentCamera;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
-	UCameraComponent* FirstPersonCamera;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
-	UCameraComponent* ThirdPersonCamera;
-
-    USkeletalMeshComponent* mesh;
-	USkeletalMeshComponent* MeshFps;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Crouch")
-    UCurveFloat* CrouchCurve;   // assign in editor
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Crouch")
+    UCurveFloat* CrouchCurve;   
 
     UFUNCTION()
     void HandleCrouchProgress(float Value);
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
     UAnimMontage* EquipMontage;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
     UAnimMontage* ThrowNadeMontage;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
 	UAnimMontage* HoldNadeMontage;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
     UAnimMontage* KnifeAttack1Montage;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
     UAnimMontage* KnifeAttack2Montage;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Viewmodel")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Viewmodel")
     UMaterial* MaterialOverlayBase;
     UMaterialInstanceDynamic* MaterialOverlayMID;
 
@@ -129,25 +122,25 @@ protected:
 	UFUNCTION()
 	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|FX")
     UNiagaraSystem* BloodFx;
 
     UPROPERTY(EditDefaultsOnly)
     TSubclassOf<AActor> DeathCameraProxyClass; // BP with physics root + camera
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
     UAnimMontage* FireRifleMontage;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
     UAnimMontage* FirePistolMontage;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
     UAnimMontage* ReloadMontage;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
     UAnimMontage* ReloadPistolMontage;
 
-    float TargetFOV = 90.0f;
+    float TargetFOV = DEFAULT_FPS_FOV;
 
     UPROPERTY()
     UAIPerceptionStimuliSourceComponent* StimuliSource;
@@ -156,11 +149,11 @@ protected:
 
     bool bAppliedTeamMesh = false;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spike")
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Init|Sound")
     USoundBase* PlantingSpikeSound;
     UPROPERTY()
     UAudioComponent* PlantSpikeAudioComp = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spike")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Init|Sound")
     USoundBase* DefusingSpikeSound;
     UPROPERTY()
 	UAudioComponent* DefuseSpikeAudioComp = nullptr;
@@ -176,7 +169,7 @@ protected:
     UFUNCTION()
 	void OnRep_IsCrouching();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Sound")
     USoundBase* FootstepCue;
     float LastFootstepTime = 0.f;
 
@@ -186,11 +179,29 @@ protected:
     virtual void Landed(const FHitResult& Hit) override;
     void PlayLandingSound();
 
-    UPROPERTY(EditDefaultsOnly, Category = "Sound")
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Sound")
     USoundBase* LandingSound;
 
     bool bHasBeginPlayRun = false;
 	bool bRecallBVT_AtBegin = false; // recall become view target at begin play
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<USceneComponent> FpsPivot;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UCameraComponent> CameraFps;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<USkeletalMeshComponent> MeshFps;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<USceneCaptureComponent2D> ViewmodelCap;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UCameraComponent> CameraTps;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<USpringArmComponent> CameraBoom;
 public:
     ABaseCharacter();
 
@@ -220,7 +231,7 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "State")
     float AimSensitivity = 1.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
     UAnimMontage* FireMeleeMontage;
 
     USplineComponent* ThrowSpline;
@@ -234,7 +245,6 @@ public:
     FTimeline StunTimeline;
 	float BaseStunDuration = 0.f;
 
-    USceneCaptureComponent2D* ViewmodelCapture;
 	UTextureRenderTarget2D* ViewmodelRenderTarget;
 
     // Timeline callback
@@ -253,6 +263,7 @@ public:
     static constexpr float CROUCH_WALK_SPEED = 200.f;
 	static constexpr float AIM_WALK_SPEED = 250.f;
 	static constexpr float SLOW_WALK_SPEED = 200.f;
+    static constexpr float DEFAULT_FPS_FOV = 103.f;
     void AddWeapon(AWeaponBase* weapon);
     FORCEINLINE UPickupComponent* GetPickupComponent() const {
         return PickupComponent;
@@ -288,7 +299,7 @@ public:
 	}
 	void PlayMeleeAttackAnimation(int32 AttackIndex);
 
-    UPROPERTY(EditDefaultsOnly, Category = "Decal")
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Decal")
     UMaterialInterface* MeleeHitDecal;
 
 	void HandleDeath();
@@ -324,7 +335,7 @@ public:
     void ChangeView();
     float GetAimSensitivity();
 
-    UPROPERTY(EditAnywhere, Category = "AI")
+    UPROPERTY(EditAnywhere, Category = "Init|AI")
     UBehaviorTree* BehaviorTree;
 
     void SetMeshBaseOnTeam();
@@ -354,4 +365,8 @@ public:
     void ApplyRotationMode(bool bIsPlayer);
 	void PossessedBy(AController* NewController) override;
 	void OnRep_Controller() override;
+    USceneCaptureComponent2D* GetViewmodelCapture() const
+    {
+        return ViewmodelCap.Get();
+    }
 };

@@ -1061,14 +1061,14 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
     Root->SetRelativeLocationAndRotation(offset, FRotator::MakeFromEuler(offsetRot));
 
     UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Update"));
-    if (Character->ViewmodelCapture) {
+    if (Character->GetViewmodelCapture()) {
         CurrentWeapon->SetViewFps(bIsFPS);
 
 		UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Update ViewmodelCapture"));
-        Character->ViewmodelCapture->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
+        Character->GetViewmodelCapture()->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
 
 		UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Set OwnerNoSee to %s"), bIsFPS ? TEXT("true") : TEXT("false"));
-        if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
+       /* if (CurrentWeapon->GetWeaponType() == EWeaponTypes::Firearm) {
 			UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Setting viewmodel for gun"));
             Character->SetPosViewmodelCaptureForGun();
         }
@@ -1077,7 +1077,7 @@ void UWeaponComponent::UpdateAttachLocationWeapon() {
                 FVector3d::ZeroVector,
                 FRotator::ZeroRotator
             );
-        }
+        }*/
 		UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Finished updating viewmodel"));
     }
 }
@@ -1184,7 +1184,7 @@ void UWeaponComponent::OnRep_CurrentWeapon()
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon: Spawned weapon %s"), *CurrentWeapon->GetName());
     ABaseCharacter* Character = GetCharacter();
     if (Character) {
-        CurrentWeapon->SetViewCapture(Character->ViewmodelCapture);
+        CurrentWeapon->SetViewCapture(Character->GetViewmodelCapture());
     }
 	CurrentWeapon->SetOwner(GetOwner());
 	CurrentWeapon->SetInstigator(Cast<APawn>(GetOwner()));
