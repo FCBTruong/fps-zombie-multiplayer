@@ -6,6 +6,7 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Controllers/MyPlayerState.h"
 #include "Items/ItemIds.h"
+#include "Components/WeaponComponent.h"
 
 ABotAIController::ABotAIController()
 {
@@ -45,10 +46,10 @@ void ABotAIController::OnPossess(APawn* InPawn)
     Super::OnPossess(InPawn);
 
     ABaseCharacter* BC = Cast<ABaseCharacter>(InPawn);
-    if (BC && BC->BehaviorTree)
+    if (BC && BC->GetBehaviorTree())
     {
         UE_LOG(LogTemp, Log, TEXT("BotAIController: Running Behavior Tree"));
-        RunBehaviorTree(BC->BehaviorTree);
+        RunBehaviorTree(BC->GetBehaviorTree());
     }
 }
 

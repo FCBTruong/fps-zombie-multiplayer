@@ -14,7 +14,6 @@ void UMyCheatManager::Live() {
     if (!PC) return;
     auto* Char = Cast<ABaseCharacter>(PC->GetPawn());
     if (!Char) return;
-    Char->ServerRevive();
 }
 
 void UMyCheatManager::Cmd(int Id) {

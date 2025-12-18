@@ -12,7 +12,8 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Game/SpikeMode.h"
-
+#include "Components/HealthComponent.h"
+#include "Components/InteractComponent.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -76,17 +77,17 @@ void AMyPlayerController::BindingUI()
     if (auto* Char = Cast<ABaseCharacter>(GetPawn()))
     {
         UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Binding health update for possessed character"));
-        if (auto* HC = Char->FindComponentByClass<UHealthComponent>())
+        if (auto* HC = Char->GetHealthComponent())
         {
             HC->OnHealthUpdated.AddUObject(PlayerUI, &UPlayerUI::UpdateHealth);
             PlayerUI->UpdateHealth(HC->GetHealth(), HC->GetMaxHealth());
         }
-        if (auto* IC = Char->FindComponentByClass<UInteractComponent>())
+        if (auto* IC = Char->GetInteractComponent())
         {
             IC->ShowPickupMessage.AddUObject(PlayerUI, &UPlayerUI::ShowPickupMessage);
 			IC->HidePickupMessage.AddUObject(PlayerUI, &UPlayerUI::HidePickupMessage);
         }
-        if (auto* WC = Char->FindComponentByClass<UWeaponComponent>())
+        if (auto* WC = Char->GetWeaponComponent())
         {
             WC->OnUpdateAmmoState.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
             WC->OnUpdateGrenades.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
@@ -424,7 +425,7 @@ void AMyPlayerController::Jump() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        MyChar->Jump();
+        MyChar->RequestJump();
     }
 }
 
@@ -433,7 +434,7 @@ void AMyPlayerController::ClickCrouch() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        MyChar->Input_Crouch();
+        MyChar->RequestCrouch();
     }
 }
 
@@ -442,7 +443,7 @@ void AMyPlayerController::StopCrouch() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        MyChar->Input_UnCrouch();
+        MyChar->RequestUnCrouch();
     }
 }
 
@@ -487,7 +488,7 @@ void AMyPlayerController::Pickup() {
     {
         if (UInteractComponent* IC = MyChar->FindComponentByClass<UInteractComponent>())
         {
-            IC->TryPickup();
+			// Deprecated: direct call without Enhanced Input
         }
     }
 }
@@ -565,7 +566,7 @@ void AMyPlayerController::ClickSlow() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        MyChar->ServerSetIsSlow(true);
+        MyChar->RequestSlowMovement(true);
     }
 }
 
@@ -574,7 +575,7 @@ void AMyPlayerController::ReleaseSlow() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        MyChar->ServerSetIsSlow(false);
+        MyChar->RequestSlowMovement(false);
     }
 }
 

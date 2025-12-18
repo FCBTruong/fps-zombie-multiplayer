@@ -2,32 +2,38 @@
 
 #pragma once
 
-#include "Components/PickupComponent.h"
-#include "Components/InventoryComponent.h"
-#include "Components/WeaponComponent.h"
+
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Weapons/WeaponTypes.h"
-#include "Weapons/WeaponBase.h"
-#include "Weapons/WeaponKnifeBasic.h"
-#include "Net/UnrealNetwork.h"
-#include "InputActionValue.h"
-#include "Camera/CameraComponent.h"
 #include "Components/TimelineComponent.h"
-#include "Components/InteractComponent.h"
-#include "Components/HealthComponent.h"     
-#include "NiagaraFunctionLibrary.h"
-#include "NiagaraSystem.h"
-#include "Components/PostProcessComponent.h"
-#include "Components/SceneCaptureComponent2D.h"
-#include "Materials/MaterialInstanceDynamic.h"
-#include "Materials/Material.h"
-#include "BehaviorTree/BehaviorTree.h"
-#include "Perception/AISense_Sight.h"
-#include "Perception/AIPerceptionStimuliSourceComponent.h"
-#include "Components/AudioComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "BaseCharacter.generated.h"
+
+class UPickupComponent;
+class UInventoryComponent;
+class UInteractComponent;
+class UWeaponComponent;
+class UHealthComponent;
+class UCameraComponent;
+class USpringArmComponent;
+class USceneCaptureComponent2D;
+class USkeletalMeshComponent;
+class USceneComponent;
+class UCurveFloat;
+class UAnimMontage;
+class UNiagaraSystem;
+class UAIPerceptionStimuliSourceComponent;
+class USoundBase;
+class UMaterial;
+class UMaterialInstanceDynamic;
+class UMaterialParameterCollection;
+class UBehaviorTree;
+class UTextureRenderTarget2D;
+class AWeaponBase;
+class UWeaponData;
+class UAudioComponent;
+class USplineComponent;
+class UAnimationComponent;
+
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
 
@@ -39,334 +45,280 @@ enum class EMovementState : uint8
 	Crouch
 };
 
+
+USTRUCT(BlueprintType)
+struct FCharacterSoundSet
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditDefaultsOnly, Category = "Sound") TObjectPtr<USoundBase> PlantingSpike = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Sound") TObjectPtr<USoundBase> DefusingSpike = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Sound") TObjectPtr<USoundBase> Landing = nullptr;
+    UPROPERTY(EditDefaultsOnly, Category = "Sound") TObjectPtr<USoundBase> Footstep = nullptr;
+};
+
 UCLASS()
 class FPSDEMO_API ABaseCharacter : public ACharacter
 {
     GENERATED_BODY()
 
-protected:
-    UPickupComponent* PickupComponent;
-
-    UInventoryComponent* InventoryComp;
-
-    UInteractComponent* InteractComp;
-
-    UWeaponComponent* WeaponComp;
-
-	UHealthComponent* HealthComp;
-
-    UPROPERTY()
-	AController* LastHitByController = nullptr;
-	bool bLastHitWasHeadshot = false;
-
-    UPROPERTY()
-    UWeaponData* LastDamageCauser = nullptr;
-
-    UFUNCTION()
-	void OnRepSpeedWalkCurrently();
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera")
-    UCameraComponent* CurrentCamera;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Crouch")
-    UCurveFloat* CrouchCurve;   
-
-    UFUNCTION()
-    void HandleCrouchProgress(float Value);
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
-    UAnimMontage* EquipMontage;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
-    UAnimMontage* ThrowNadeMontage;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
-	UAnimMontage* HoldNadeMontage;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
-    UAnimMontage* KnifeAttack1Montage;
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Animation")
-    UAnimMontage* KnifeAttack2Montage;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Init|Viewmodel")
-    UMaterial* MaterialOverlayBase;
-    UMaterialInstanceDynamic* MaterialOverlayMID;
-
-    USceneComponent* ThrowableLocation;
-
-    // Lifecycle
-    virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-    void StartRunning();
-    void StopRunning();
-    void CustomCrouch();
-    void CustomUnCrouch();
-    UFUNCTION(BlueprintPure)
-    EWeaponTypes GetWeaponType();
-    UFUNCTION(BlueprintPure)
-	EWeaponSubTypes GetWeaponSubType();
-
-    void UpdateAttachLocationWeapon();
-    void DropWeapon();
-
-    UFUNCTION(Server, Reliable)
-    void ServerSetAiming(bool bNewAiming);
-
-    UFUNCTION()
-    void OnRep_IsAiming();
-
-	virtual void UpdateAimingState();
-	void OnMeleeNotify();
-
-	UFUNCTION()
-	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|FX")
-    UNiagaraSystem* BloodFx;
-
-    UPROPERTY(EditDefaultsOnly)
-    TSubclassOf<AActor> DeathCameraProxyClass; // BP with physics root + camera
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
-    UAnimMontage* FireRifleMontage;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
-    UAnimMontage* FirePistolMontage;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
-    UAnimMontage* ReloadMontage;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
-    UAnimMontage* ReloadPistolMontage;
-
-    float TargetFOV = DEFAULT_FPS_FOV;
-
-    UPROPERTY()
-    UAIPerceptionStimuliSourceComponent* StimuliSource;
-
-    void OnRep_PlayerState() override;
-
-    bool bAppliedTeamMesh = false;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Init|Sound")
-    USoundBase* PlantingSpikeSound;
-    UPROPERTY()
-    UAudioComponent* PlantSpikeAudioComp = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Init|Sound")
-    USoundBase* DefusingSpikeSound;
-    UPROPERTY()
-	UAudioComponent* DefuseSpikeAudioComp = nullptr;
-
-    UPROPERTY(ReplicatedUsing = OnRep_CurrentMovementState)
-	EMovementState CurrentMovementState = EMovementState::Normal;
-    UFUNCTION()
-	void OnRep_CurrentMovementState();
-
-	UPROPERTY(ReplicatedUsing = OnRep_IsCrouching)
-	bool bIsCrouching = false;
-
-    UFUNCTION()
-	void OnRep_IsCrouching();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Sound")
-    USoundBase* FootstepCue;
-    float LastFootstepTime = 0.f;
-
-	void PlayFootstepSound();
-	void UpdateFootstepSound(float DeltaTime);
-
-    virtual void Landed(const FHitResult& Hit) override;
-    void PlayLandingSound();
-
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Sound")
-    USoundBase* LandingSound;
-
-    bool bHasBeginPlayRun = false;
-	bool bRecallBVT_AtBegin = false; // recall become view target at begin play
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<USceneComponent> FpsPivot;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UCameraComponent> CameraFps;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<USkeletalMeshComponent> MeshFps;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<USceneCaptureComponent2D> ViewmodelCap;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UCameraComponent> CameraTps;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<USpringArmComponent> CameraBoom;
 public:
-    ABaseCharacter();
+	ABaseCharacter();
 
-    UPROPERTY(BlueprintReadWrite, Category = "State")
-    bool bCloseToWall = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bReloading = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bEquipped = false;
-
-    UPROPERTY(BlueprintReadWrite, Category = "State")
-    bool bIsFPS = false;
-
-    UPROPERTY(ReplicatedUsing = OnRep_IsAiming, BlueprintReadOnly, Category = "State")
-    bool bAiming = false;
-
-    UPROPERTY()
-    bool bHoldingShift = false;
-
-	bool bIsBot = false;
-
-
-    UPROPERTY(BlueprintReadOnly, Category = "Data")
-    FVector2D moveInput;
-    UPROPERTY(BlueprintReadWrite, Category = "State")
-    float AimSensitivity = 1.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Init|Animation")
-    UAnimMontage* FireMeleeMontage;
-
-    USplineComponent* ThrowSpline;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PostProcess")
-    UMaterialParameterCollection* FlashCollection;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PostProcess")
-    UCurveFloat* StunCurve;
-
-    FTimeline StunTimeline;
-	float BaseStunDuration = 0.f;
-
-	UTextureRenderTarget2D* ViewmodelRenderTarget;
-
-    // Timeline callback
-    UFUNCTION()
-    void OnStunTimelineUpdate(float Value);
-
-    // Optional: called when timeline finishes
-    UFUNCTION()
-    void OnStunTimelineFinished();
-
-
+protected:
+    //  ===== Lifecycle =====
+    virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    virtual void OnRep_PlayerState() override;
+    virtual void Landed(const FHitResult& Hit) override;
     virtual void Tick(float DeltaTime) override;
-    static constexpr float MAX_WALK_SPEED = 600.f;
-    static constexpr float NORMAL_WALK_SPEED = 400.f;
-    static constexpr float MELEE_WALK_SPEED = 500.f;
-    static constexpr float CROUCH_WALK_SPEED = 200.f;
-	static constexpr float AIM_WALK_SPEED = 250.f;
-	static constexpr float SLOW_WALK_SPEED = 200.f;
-    static constexpr float DEFAULT_FPS_FOV = 103.f;
-    void AddWeapon(AWeaponBase* weapon);
-    FORCEINLINE UPickupComponent* GetPickupComponent() const {
-        return PickupComponent;
-    }
-    FORCEINLINE UInventoryComponent* GetInventoryComponent() const {
-        return InventoryComp;
-    }
-    FORCEINLINE UWeaponComponent* GetWeaponComponent() const {
-        return WeaponComp;
-    }
-    UFUNCTION()
-    USkeletalMeshComponent* GetCurrentMesh();
-
-    virtual void ClickAim();
-    bool IsRunning();
-	bool IsFpsViewMode() const { return bIsFPS; }
-    void PlayEquipWeaponAnimation(EWeaponTypes WeaponType);
-    float GetSpeedWalkRatio();
-	void HandleUpdateSpeedWalkCurrently();
     virtual float TakeDamage(
         float DamageAmount,
         struct FDamageEvent const& DamageEvent,
         class AController* EventInstigator,
         class AActor* DamageCauser
     ) override;
-
-	void PlayThrowNadeMontage();
-	void PlayHoldNadeMontage();
-	void PlayMontage(UAnimMontage* MontageToPlay);
-	bool IsCloseToWall() const { return false; }
-    FVector GetThrowableLocation() const {
-        return ThrowableLocation->GetComponentLocation();
-	}
-	void PlayMeleeAttackAnimation(int32 AttackIndex);
-
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Decal")
-    UMaterialInterface* MeleeHitDecal;
-
-	void HandleDeath();
-
-    UFUNCTION(NetMulticast, Reliable)
-    void Multicast_HandleDeath();
-
-    UFUNCTION(Server, Reliable) void ServerRevive();
-    UFUNCTION(NetMulticast, Reliable) void Multicast_ReviveFX();
-
-    virtual void PlayReloadMontage(UWeaponData* WeaponConf);
-
-    UFUNCTION(Client, UnReliable)
-    void ClientPlayHitEffect();
-
-	FOnHit OnHit;
-
-    void PlayBloodFx(const FVector& HitLocation);
-	void PlayStunEffect(const float& Strength);
-
-    void SetPosViewmodelCaptureForGun();
-    FVector3d ViewmodelCaptureDefaultPos;
-	FRotator ViewmodelCaptureDefaultRot;
-
-    void PlayFireRifleMontage(FVector TargetPoint);
-    void PlayFirePistolMontage(FVector TargetPoint);
-    void StartAiming();
-    void StopAiming();
     virtual void Jump() override;
     virtual void StopJumping() override;
-    void Input_Crouch();
-	void Input_UnCrouch();
+    virtual void Destroyed() override;
+    virtual void BecomeViewTarget(APlayerController* PC) override;
+    virtual void EndViewTarget(APlayerController* PC) override;
+    virtual void PossessedBy(AController* NewController) override;
+    virtual void OnRep_Controller() override;
+
+protected:
+	// Components
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UPickupComponent> PickupComponent;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UInventoryComponent> InventoryComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UInteractComponent> InteractComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UWeaponComponent> WeaponComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UHealthComponent> HealthComp;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UAnimationComponent> AnimationComp;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    TObjectPtr<USceneComponent> FpsPivot;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UCameraComponent> CameraFps;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<USkeletalMeshComponent> MeshFps;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<USceneCaptureComponent2D> ViewmodelCap;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UCameraComponent> CameraTps;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<USpringArmComponent> CameraBoom;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UAIPerceptionStimuliSourceComponent> StimuliSource;
+
+	// ===== Init Data =====
+
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Crouch")
+    TObjectPtr<UCurveFloat> CrouchCurve;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Viewmodel")
+    TObjectPtr<UMaterial> MaterialOverlayBase;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Init|FX")
+    TObjectPtr<UNiagaraSystem> BloodFx;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Sound")
+    FCharacterSoundSet Sounds;
+
+    UPROPERTY(EditDefaultsOnly, Category =  "Init|Camera")
+    TSubclassOf<AActor> DeathCameraProxyClass;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Flash")
+    TObjectPtr<UMaterialParameterCollection> FlashCollection;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Flash")
+    TObjectPtr<UCurveFloat> StunCurve;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Decal")
+    TObjectPtr<UMaterialInterface> MeleeHitDecal;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Init|AI")
+    TObjectPtr<UBehaviorTree> BehaviorTree;
+
+
+protected:
+    // ===== Runtime State =====
+    bool bLastHitWasHeadshot;
+    bool bAppliedTeamMesh;
+    bool bHasBeginPlayRun;
+    bool bRecallBVT_AtBegin;
+    bool bIsFPS;
+    bool bHoldingShift;
+    bool bIsBot;
+    float LastFootstepTime;
+    float TargetFOV;
+    float BaseStunDuration;
+
+    UPROPERTY()
+    TObjectPtr<UAudioComponent> DefuseSpikeAudioComp;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UAudioComponent> PlantSpikeAudioComp;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInstanceDynamic> MaterialOverlayMID;
+
+    UPROPERTY()
+    TWeakObjectPtr<AController> LastHitByController;
+
+    UPROPERTY()
+    TWeakObjectPtr<UWeaponData> LastDamageCauser;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UTextureRenderTarget2D> ViewmodelRenderTarget;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<USceneComponent> ThrowableLocation;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<USplineComponent> ThrowSpline;
+
+protected:
+	// ===== Replicated Properties =====
+	UPROPERTY(Replicated)
+    float AimSensitivity = 1.0f;
+    UPROPERTY(ReplicatedUsing = OnRep_IsAiming)
+    bool bAiming = false;
+    UPROPERTY(ReplicatedUsing = OnRep_IsCrouching)
+    bool bIsCrouching = false;
+    UPROPERTY(ReplicatedUsing = OnRep_CurrentMovementState)
+    EMovementState CurrentMovementState = EMovementState::Normal;
+
+protected:
+    // ===== Timelines =====
+    FTimeline CrouchTimeline;
+	FTimeline StunTimeline;
+
+protected:
+    // ===== Internal Functions =====
+    void StartRunning();
+    void StopRunning();
+    void CustomCrouch();
+    void CustomUnCrouch();
+    void UpdateAimingState();
+    void OnMeleeNotify();
+    void PlayFootstepSound();
+    void UpdateFootstepSound(float DeltaTime);
+    void PlayLandingSound();
+    void UpdateAttachLocationWeapon();
+    void DropWeapon();
+    void ApplyTeamMesh();
+    void SetFpsView(bool bNewIsFPS);
+
+    UFUNCTION(BlueprintPure)
+    EWeaponTypes GetWeaponType() const;
+    UFUNCTION(BlueprintPure)
+	EWeaponSubTypes GetWeaponSubType() const;
+
+    // ===== Networking RPC =====
+    UFUNCTION(Server, Unreliable)
+    void ServerSetAiming(bool bNewAiming);
+    UFUNCTION(Server, Reliable) 
+    void ServerRevive();
+    UFUNCTION(Server, Unreliable)
+    void ServerSetIsSlow(bool bNewIsSlow); 
+    UFUNCTION(Server, Unreliable)
+    void ServerSetCrouching(bool bNewCrouching);
+
+    // ===== Networking Multicast =====
+    UFUNCTION(NetMulticast, Unreliable)
+    void MulticastReviveFX();
+    UFUNCTION(NetMulticast, Unreliable)
+    void MulticastHandleDeath();
+
+	// ===== Networking OnRep =====
+    UFUNCTION()
+    void OnRep_IsAiming();
+    UFUNCTION()
+    void OnRep_CurrentMovementState();
+    UFUNCTION()
+    void OnRep_IsCrouching();
+	UFUNCTION()
+	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+
+	// ===== Client RPC =====
+    UFUNCTION(Client, Unreliable)
+    void ClientPlayHitEffect();
+
+	// ===== Other UFUNCTIONS =====
+    UFUNCTION()
+    void HandleCrouchProgress(float Value);
+    UFUNCTION()
+    void OnStunTimelineFinished();
+    UFUNCTION()
+    void OnStunTimelineUpdate(float Value);
+  
+public:
+    // ===== Public API =====
+    void ClickAim();
+	void HandleUpdateSpeedWalkCurrently();
+	void HandleDeath();
+    void PlayBloodFx(const FVector& HitLocation);
+	void PlayStunEffect(const float& Strength);
+    void SetPosViewmodelCaptureForGun();
+    void StartAiming();
+    void StopAiming();   
     void ChangeView();
-    float GetAimSensitivity();
-
-    UPROPERTY(EditAnywhere, Category = "Init|AI")
-    UBehaviorTree* BehaviorTree;
-
-    void SetMeshBaseOnTeam();
 	void PlayPlantSpikeEffect();
 	void StopPlantSpikeEffect();
     void PlayDefuseSpikeEffect();
 	void StopDefuseSpikeEffect();
-	void Destroyed() override;
-
-    UFUNCTION(Server, Reliable)
-    void ServerSetIsSlow(bool bNewIsSlow);
-   
-	UFUNCTION(BlueprintCallable)
-	EMovementState GetCurrentMovementState() const { return CurrentMovementState; }
-	bool IsAlive() const;
-
-    UFUNCTION(Server, Reliable)
-    void ServerSetCrouching(bool bNewCrouching);
-    FTimeline CrouchTimeline;
+    void UpdateView();
+    void ApplyRotationMode(bool bIsPlayer);
+    void RequestCrouch();
+    void RequestUnCrouch();
+    void RequestSlowMovement(bool bEnable);
+	void RequestJump();
+    float GetSpeedWalkRatio();
+    float GetAimSensitivity();
+    bool IsAlive() const;
+    bool IsFpsViewMode() const;
+    FVector GetThrowableLocation() const;
+    USceneCaptureComponent2D* GetViewmodelCapture() const;
+    UBehaviorTree* GetBehaviorTree() const;
+	USplineComponent* GetThrowSpline() const;
+    UPickupComponent* GetPickupComponent() const;
+    UInventoryComponent* GetInventoryComponent() const;
+	UHealthComponent* GetHealthComponent() const;
+	UInteractComponent* GetInteractComponent() const;
+	UAnimationComponent* GetAnimationComponent() const;
+    UWeaponComponent* GetWeaponComponent() const;
+    USkeletalMeshComponent* GetCurrentMesh() const;
 
     UFUNCTION(BlueprintCallable)
-    void UpdateView();
-    void SetFpsView(bool bNewIsFPS);
-	void BecomeViewTarget(APlayerController* PC) override;
-	void EndViewTarget(APlayerController* PC) override;
+    EMovementState GetCurrentMovementState() const;
 
-    void ApplyRotationMode(bool bIsPlayer);
-	void PossessedBy(AController* NewController) override;
-	void OnRep_Controller() override;
-    USceneCaptureComponent2D* GetViewmodelCapture() const
-    {
-        return ViewmodelCap.Get();
-    }
+	// ===== Delegates =====
+    FOnHit OnHit;
+
+	// ===== Constants =====
+    static constexpr float MAX_WALK_SPEED = 600.f;
+    static constexpr float NORMAL_WALK_SPEED = 400.f;
+    static constexpr float MELEE_WALK_SPEED = 500.f;
+    static constexpr float CROUCH_WALK_SPEED = 200.f;
+    static constexpr float AIM_WALK_SPEED = 250.f;
+    static constexpr float SLOW_WALK_SPEED = 200.f;
+    static constexpr float DEFAULT_FPS_FOV = 103.f;
 };

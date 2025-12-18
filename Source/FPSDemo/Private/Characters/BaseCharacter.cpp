@@ -22,6 +22,30 @@
 #include "Perception/AISense_Damage.h"
 #include "Controllers/BotAIController.h"
 #include "Weapons/WeaponState.h"
+#include "GameFramework/Character.h"
+#include "Weapons/WeaponTypes.h"
+#include "Weapons/WeaponBase.h"
+#include "Net/UnrealNetwork.h"
+#include "InputActionValue.h"
+#include "Camera/CameraComponent.h"
+#include "Components/TimelineComponent.h"
+#include "Components/InteractComponent.h"
+#include "Components/HealthComponent.h"     
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
+#include "Components/PostProcessComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/Material.h"
+#include "BehaviorTree/BehaviorTree.h"
+#include "Perception/AISense_Sight.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Components/AudioComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Components/PickupComponent.h"
+#include "Components/InventoryComponent.h"
+#include "Components/WeaponComponent.h"
+#include "Components/AnimationComponent.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -54,18 +78,18 @@ ABaseCharacter::ABaseCharacter()
     ViewmodelCap->bCaptureEveryFrame = true;
     ViewmodelCap->bCaptureOnMovement = true;
 
-    bCloseToWall = false;
-    bReloading = false;
-    bEquipped = false;
-
     PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
     InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
     WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
     InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+	AnimationComp = CreateDefaultSubobject<UAnimationComponent>(TEXT("AnimationComponent"));
 
     ThrowSpline = CreateDefaultSubobject<USplineComponent>(TEXT("SplineThrow"));
     ThrowSpline->SetupAttachment(RootComponent);
+
+	ThrowableLocation = CreateDefaultSubobject<USceneComponent>(TEXT("ThrowableLocation"));
+	ThrowableLocation->SetupAttachment(RootComponent);
 
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter constructor called"));
 
@@ -79,6 +103,8 @@ ABaseCharacter::ABaseCharacter()
     StimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSource"));
     StimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
     StimuliSource->RegisterWithPerceptionSystem();
+
+    TargetFOV = DEFAULT_FPS_FOV;
 }
 
 // Called when the game starts or when spawned
@@ -163,11 +189,11 @@ void ABaseCharacter::OnRep_PlayerState() {
     // Set mesh based on team
     if (!bAppliedTeamMesh) {
         bAppliedTeamMesh = true;
-        SetMeshBaseOnTeam();
+        ApplyTeamMesh();
 	}
 }
 
-void ABaseCharacter::SetMeshBaseOnTeam()
+void ABaseCharacter::ApplyTeamMesh()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Setting mesh based on team"));
     UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
@@ -277,53 +303,6 @@ void ABaseCharacter::UpdateAimingState()
     }
 }
 
-void ABaseCharacter::PlayFireRifleMontage(FVector TargetPoint)
-{
-    // Implement firing animation logic here
-    UE_LOG(LogTemp, Warning, TEXT("Playing Fire Rifle Montage"));
-
-    if (FireRifleMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
-    {
-        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FireRifleMontage);
-    }
-}
-
-void ABaseCharacter::PlayFirePistolMontage(FVector TargetPoint)
-{
-    // Implement firing animation logic here
-    UE_LOG(LogTemp, Warning, TEXT("Playing Fire Pistol Montage"));
-    if (FirePistolMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
-    {
-        GetCurrentMesh()->GetAnimInstance()->Montage_Play(FirePistolMontage);
-    }
-
-    float CurrentFOV = CameraFps->FieldOfView;
-    UE_LOG(LogTemp, Warning, TEXT("Current FOV before recoil: %f"), CurrentFOV);
-}
-
-void ABaseCharacter::PlayReloadMontage(UWeaponData* WeaponConf)
-{
-    if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
-        if (ReloadMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
-        {
-            GetCurrentMesh()->GetAnimInstance()->Montage_Play(ReloadMontage);
-        }
-        UE_LOG(LogTemp, Warning, TEXT("Playing Reload Rifle Montage"));
-    }
-    else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
-        UE_LOG(LogTemp, Warning, TEXT("Playing Reload Pistol Montage"));
-        if (ReloadPistolMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
-        {
-            GetCurrentMesh()->GetAnimInstance()->Montage_Play(ReloadPistolMontage);
-        }
-    }
-}
-
-// Called to bind functionality to input
-void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-    Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
 
 void ABaseCharacter::StartRunning()
 {
@@ -347,12 +326,6 @@ void ABaseCharacter::Jump()
 	}
     Super::Jump();
 }
-
-bool ABaseCharacter::IsRunning()
-{
-    return false;
-}
-
 
 
 void ABaseCharacter::StopJumping()
@@ -412,7 +385,7 @@ void ABaseCharacter::HandleCrouchProgress(float Value) {
 }
 
 
-void ABaseCharacter::Input_Crouch()
+void ABaseCharacter::RequestCrouch()
 {
     if (GetCharacterMovement()->IsFalling()) {
         return;
@@ -421,18 +394,12 @@ void ABaseCharacter::Input_Crouch()
     CustomCrouch();
 }
 
-void ABaseCharacter::Input_UnCrouch()
+void ABaseCharacter::RequestUnCrouch()
 {
     CustomUnCrouch();
 }
 
-
-void ABaseCharacter::AddWeapon(AWeaponBase* NewWeapon)
-{
-	
-}
-                                                                                                                          
-
+                                                                                                                         
 void ABaseCharacter::ChangeView()
 {
 	bIsFPS = !bIsFPS;
@@ -449,8 +416,7 @@ void ABaseCharacter::UpdateView()
     if (bIsFPS)
     {
         CameraFps->SetActive(true);
-        CurrentCamera = CameraFps;
-
+     
         CameraTps->SetActive(false);
         GetMesh()->SetOwnerNoSee(true);
         if (MeshFps)
@@ -473,7 +439,6 @@ void ABaseCharacter::UpdateView()
         if (CameraTps)
         {
             CameraTps->SetActive(true);
-            CurrentCamera = CameraTps;
         }
         GetMesh()->SetOwnerNoSee(false);
         if (MeshFps)
@@ -494,7 +459,7 @@ void ABaseCharacter::UpdateView()
 }
 
 
-USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh()
+USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh() const
 {
     if (bIsFPS)
     {
@@ -519,7 +484,7 @@ void ABaseCharacter::DropWeapon()
 	WeaponComp->DropWeapon();
 }
 
-EWeaponTypes ABaseCharacter::GetWeaponType()
+EWeaponTypes ABaseCharacter::GetWeaponType() const
 {
     if (WeaponComp) {
         return WeaponComp->GetCurrentWeaponType();
@@ -527,7 +492,7 @@ EWeaponTypes ABaseCharacter::GetWeaponType()
 	return EWeaponTypes::Unarmed;
 }
 
-EWeaponSubTypes ABaseCharacter::GetWeaponSubType()
+EWeaponSubTypes ABaseCharacter::GetWeaponSubType() const
 {
     if (WeaponComp) {
         return WeaponComp->GetCurrentWeaponSubType();
@@ -571,14 +536,6 @@ void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
 }
 
 
-void ABaseCharacter::PlayEquipWeaponAnimation(EWeaponTypes WeaponType)
-{
-    if (EquipMontage && GetCurrentMesh() && GetCurrentMesh()->GetAnimInstance())
-    {
-        GetCurrentMesh()->GetAnimInstance()->Montage_Play(EquipMontage);
-    }
-}
-
 float ABaseCharacter::GetSpeedWalkRatio()
 {
 	EWeaponTypes WeaponType = WeaponComp->GetCurrentWeaponType();
@@ -607,11 +564,6 @@ void ABaseCharacter::HandleUpdateSpeedWalkCurrently() {
     else {
         GetCharacterMovement()->MaxWalkSpeed = NORMAL_WALK_SPEED * GetSpeedWalkRatio();
     }
-}
-
-void ABaseCharacter::OnRepSpeedWalkCurrently()
-{
-    HandleUpdateSpeedWalkCurrently();
 }
 
 float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
@@ -684,62 +636,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
     return ActualDamage;
 }
 
-void ABaseCharacter::PlayThrowNadeMontage()
-{
-    if (!ThrowNadeMontage)
-    {
-        UE_LOG(LogTemp, Error, TEXT("ThrowNadeMontage is null"));
-        return;
-    }
 
-	PlayMontage(ThrowNadeMontage);
-}
-
-void ABaseCharacter::PlayHoldNadeMontage()
-{
-    if (!HoldNadeMontage)
-    {
-        UE_LOG(LogTemp, Error, TEXT("HoldNadeMontage is null"));
-        return;
-    }
-	PlayMontage(HoldNadeMontage);
-}
-
-void ABaseCharacter::PlayMontage(UAnimMontage* MontageToPlay)
-{
-    if (!MontageToPlay)
-    {
-        UE_LOG(LogTemp, Error, TEXT("MontageToPlay is null"));
-        return;
-    }
-    USkeletalMeshComponent* MeshComp = GetCurrentMesh();
-    if (!MeshComp)
-    {
-        UE_LOG(LogTemp, Error, TEXT("GetCurrentMesh() returned null"));
-        return;
-    }
-    UAnimInstance* AnimInst = MeshComp->GetAnimInstance();
-    if (!AnimInst)
-    {
-        UE_LOG(LogTemp, Error, TEXT("AnimInstance is null"));
-        return;
-    }
-    AnimInst->Montage_Play(MontageToPlay);
-}
-
-void ABaseCharacter::PlayMeleeAttackAnimation(int32 AttackIndex) {
-	UE_LOG(LogTemp, Warning, TEXT("PlayMeleeAttackAnimation called with AttackIndex: %d"), AttackIndex);
-    if (AttackIndex == 0) {
-        if (KnifeAttack1Montage) {
-			PlayMontage(KnifeAttack1Montage);
-        }
-    }
-    else if (AttackIndex == 1) {
-        if (KnifeAttack2Montage) {
-            PlayMontage(KnifeAttack2Montage);
-        }
-    }
-}
 void ABaseCharacter::OnMeleeNotify()
 {
     if (WeaponComp)
@@ -785,23 +682,17 @@ void ABaseCharacter::HandleDeath()
         // get game mode and notify
         if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
         {
-            GM->NotifyPlayerKilled(LastHitByController, GetController(), LastDamageCauser, bLastHitWasHeadshot);
+            GM->NotifyPlayerKilled(LastHitByController.Get(), GetController(), LastDamageCauser.Get(), bLastHitWasHeadshot);
         }
-        if (LastHitByController)
-        {
-			LastHitByController = nullptr; // reset after use
-		}
-        if (LastDamageCauser)
-		{
-			LastDamageCauser = nullptr; // reset after use
-		}
+        LastHitByController = nullptr; // reset after use
+        LastDamageCauser = nullptr; // reset after use
 
         GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         GetMesh()->SetSimulatePhysics(true);
         GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
 
  
-        Multicast_HandleDeath();
+        MulticastHandleDeath();
 
         AAIController* AI = Cast<AAIController>(GetController());
         if (AI)
@@ -818,7 +709,7 @@ void ABaseCharacter::HandleDeath()
     }
 }
 
-void ABaseCharacter::Multicast_HandleDeath_Implementation()
+void ABaseCharacter::MulticastHandleDeath_Implementation()
 {
 	// if local player, show death UI, etc.
     // change to tps mmode
@@ -886,10 +777,10 @@ void ABaseCharacter::ServerRevive_Implementation()
     GetMesh()->SetSimulatePhysics(false);
     GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
 
-    Multicast_ReviveFX(); // optional visuals for all
+    MulticastReviveFX(); // optional visuals for all
 }
 
-void ABaseCharacter::Multicast_ReviveFX_Implementation()
+void ABaseCharacter::MulticastReviveFX_Implementation()
 {
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     GetMesh()->SetSimulatePhysics(false);
@@ -975,11 +866,11 @@ float ABaseCharacter::GetAimSensitivity() {
 
 void ABaseCharacter::PlayPlantSpikeEffect() {
     // play sound
-    if (PlantingSpikeSound) {
+    if (Sounds.PlantingSpike) {
         if (PlantSpikeAudioComp && PlantSpikeAudioComp->IsPlaying())
             return;
         PlantSpikeAudioComp = UGameplayStatics::SpawnSoundAttached(
-            PlantingSpikeSound,
+            Sounds.PlantingSpike,
             RootComponent
         );
 	}
@@ -995,11 +886,11 @@ void ABaseCharacter::StopPlantSpikeEffect() {
 
 void ABaseCharacter::PlayDefuseSpikeEffect() {
     // play sound
-    if (DefusingSpikeSound) {
+    if (Sounds.DefusingSpike) {
         if (DefuseSpikeAudioComp && DefuseSpikeAudioComp->IsPlaying())
             return;
         DefuseSpikeAudioComp = UGameplayStatics::SpawnSoundAttached(
-            DefusingSpikeSound,
+            Sounds.DefusingSpike,
             RootComponent
         );
     }
@@ -1038,7 +929,7 @@ void ABaseCharacter::OnRep_CurrentMovementState()
 
 void ABaseCharacter::PlayFootstepSound()
 {
-    if (!FootstepCue)
+    if (!Sounds.Footstep)
         return;
 
     const float Speed = GetVelocity().Size2D();
@@ -1054,7 +945,7 @@ void ABaseCharacter::PlayFootstepSound()
     // Play at actor's feet
     UGameplayStatics::PlaySoundAtLocation(
         this,
-        FootstepCue,
+        Sounds.Footstep,
         GetActorLocation()
     );
 }
@@ -1077,11 +968,11 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 
 void ABaseCharacter::PlayLandingSound()
 {
-    if (!LandingSound)
+    if (!Sounds.Landing)
         return;
     UGameplayStatics::PlaySoundAtLocation(
         this,
-        LandingSound,
+        Sounds.Landing,
         GetActorLocation()
     );
 }
@@ -1233,4 +1124,63 @@ void ABaseCharacter::OnRep_Controller()
 {
     Super::OnRep_Controller();
     ApplyRotationMode(Cast<APlayerController>(Controller) != nullptr);
+}
+
+FVector ABaseCharacter::GetThrowableLocation() const {
+    return ThrowableLocation
+        ? ThrowableLocation->GetComponentLocation()
+        : GetActorLocation();
+}
+
+USceneCaptureComponent2D* ABaseCharacter::GetViewmodelCapture() const {
+    return ViewmodelCap;
+}
+
+UBehaviorTree* ABaseCharacter::GetBehaviorTree() const {
+    return BehaviorTree;
+}
+
+EMovementState ABaseCharacter::GetCurrentMovementState() const {
+    return CurrentMovementState;
+}
+
+bool ABaseCharacter::IsFpsViewMode() const {
+    return bIsFPS;
+}
+
+UPickupComponent* ABaseCharacter::GetPickupComponent() const {
+	return PickupComponent.Get();
+}
+
+UInventoryComponent* ABaseCharacter::GetInventoryComponent() const {
+    return InventoryComp.Get();
+}
+
+UWeaponComponent* ABaseCharacter::GetWeaponComponent() const {
+    return WeaponComp.Get();
+}
+
+UInteractComponent* ABaseCharacter::GetInteractComponent() const {
+    return InteractComp.Get();
+}
+
+UHealthComponent* ABaseCharacter::GetHealthComponent() const {
+    return HealthComp.Get();
+}
+
+UAnimationComponent* ABaseCharacter::GetAnimationComponent() const {
+    return AnimationComp.Get();
+}
+
+USplineComponent* ABaseCharacter::GetThrowSpline() const {
+    return ThrowSpline;
+}
+
+void ABaseCharacter::RequestSlowMovement(bool bNewIsSlow)
+{
+    ServerSetIsSlow(bNewIsSlow);
+}
+
+void ABaseCharacter::RequestJump() {
+	Jump();
 }

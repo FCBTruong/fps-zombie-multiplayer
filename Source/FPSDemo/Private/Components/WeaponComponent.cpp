@@ -27,6 +27,9 @@
 #include "Components/BoxComponent.h"
 #include <Kismet/KismetMathLibrary.h>
 #include "Components/CapsuleComponent.h"
+#include "Components/PickupComponent.h"
+#include "Components/InventoryComponent.h"
+#include "Components/AnimationComponent.h"
 
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
@@ -354,10 +357,6 @@ bool UWeaponComponent::CanShoot() {
     {
         return false;
     }
-
-    if (Character->IsRunning()) {
-		return false;
-    }
     if (bIsReloading) {
         return false;
     }
@@ -529,7 +528,13 @@ void UWeaponComponent::MulticastThrowAction_Implementation(FVector LaunchVelocit
         TrajectoryPreviewRef = nullptr;
     }
     ABaseCharacter* Character = GetCharacter();
-    Character->PlayThrowNadeMontage();
+    if (!Character) {
+        return;
+	}
+    UAnimationComponent* AnimComp = Character->GetAnimationComponent();
+    if (AnimComp) {
+		AnimComp->PlayThrowNadeMontage();
+    }
     GetOwner()->GetWorldTimerManager().ClearTimer(ThrowProjectileTimer);
 }
 
@@ -597,7 +602,10 @@ void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
 
 void UWeaponComponent::MulticastDoMeleeAttack_Implementation(int AttackIdx) {
     ABaseCharacter* Character = GetCharacter();
-    Character->PlayMeleeAttackAnimation(AttackIdx);
+	UAnimationComponent* AnimComp = Character->GetAnimationComponent();
+    if (AnimComp) {
+		AnimComp->PlayMeleeAttackAnimation(AttackIdx);
+    }
 }
 
 
@@ -760,20 +768,24 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
 	UWeaponData* WeaponConf = CurrentWeapon->GetWeaponData();
     
     if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
-        ABaseCharacter* Player = Cast<ABaseCharacter>(GetOwner());
+        ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+
+        if (!Character) {
+            return;
+        }
+        UAnimationComponent* AnimComp = Character->GetAnimationComponent();
 
         if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
-            Player->PlayFireRifleMontage(TargetPoint);
+            AnimComp->PlayFireRifleMontage(TargetPoint);
         }
         else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
-            Player->PlayFirePistolMontage(TargetPoint);
+            AnimComp->PlayFirePistolMontage(TargetPoint);
 		}
 
         if (IsLocalControl()) {
             // Get view point
             FVector CameraLocation;
             FRotator CameraRotation;
-            ABaseCharacter* Character = GetCharacter();
             Character->Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
 
             CurrentWeapon->OnFire(TargetPoint);
@@ -926,16 +938,16 @@ void UWeaponComponent::DrawProjectileCurve()
         FRotator::ZeroRotator
     );
     ABaseCharacter* Character = GetCharacter();
-    if (!Character->ThrowSpline) {
+    if (!Character->GetThrowSpline()) {
 		UE_LOG(LogTemp, Warning, TEXT("DrawProjectileCurve: SplineRef is invalid"));
     }
-    TrajectoryPreviewRef->SplineRef = Character->ThrowSpline;
+    TrajectoryPreviewRef->SplineRef = Character->GetThrowSpline();
 }
 
 void UWeaponComponent::UpdateProjectileCurve()
 {
     ABaseCharacter* Character = GetCharacter();
-    if (!Character || !Character->ThrowSpline)
+    if (!Character || !Character->GetThrowSpline())
     {
         return;
 	}
@@ -958,11 +970,11 @@ void UWeaponComponent::UpdateProjectileCurve()
     FPredictProjectilePathResult Result;
     UGameplayStatics::PredictProjectilePath(this, Params, Result);
 
-    Character->ThrowSpline->ClearSplinePoints();
+    Character->GetThrowSpline()->ClearSplinePoints();
 
     for (const FPredictProjectilePathPointData& Point : Result.PathData)
     {
-        Character->ThrowSpline->AddSplinePoint(Point.Location, ESplineCoordinateSpace::World);
+        Character->GetThrowSpline()->AddSplinePoint(Point.Location, ESplineCoordinateSpace::World);
     }
 }
 
@@ -988,9 +1000,15 @@ void UWeaponComponent::OnRep_IsPriming()
     if (bIsPriming)
     {
         ABaseCharacter* Character = GetCharacter();
+        if (!Character) {
+            return;
+        }
         // Start priming effects
         UE_LOG(LogTemp, Warning, TEXT("OnRep_IsPriming: Started priming"));
-		Character->PlayHoldNadeMontage();
+        UAnimationComponent* AnimComp = Character->GetAnimationComponent();
+        if (AnimComp) {
+            AnimComp->PlayThrowNadeMontage();
+        }
     }
     else
     {
@@ -1120,20 +1138,20 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
         if (AActor* Target = Hit.GetActor())
         {
 			UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack: Hit actor %s"), *Target->GetName());
-            if (Character->MeleeHitDecal) {
-				UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack: Spawning decal at hit location"));
-                FVector SpawnLoc = Hit.ImpactPoint + Hit.ImpactNormal * 2.0f;
-                FRotator DecalRot = Hit.ImpactNormal.Rotation();
-                UGameplayStatics::SpawnDecalAtLocation(
-                    GetWorld(),
-                    Character->MeleeHitDecal,
-                    FVector(10.f, 10.f, 10.f), // XYZ = size, not just X
-                    SpawnLoc,
-                    DecalRot,
-                    10.0f
-                );
+    //        if (Character->MeleeHitDecal) {
+				//UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack: Spawning decal at hit location"));
+    //            FVector SpawnLoc = Hit.ImpactPoint + Hit.ImpactNormal * 2.0f;
+    //            FRotator DecalRot = Hit.ImpactNormal.Rotation();
+    //            UGameplayStatics::SpawnDecalAtLocation(
+    //                GetWorld(),
+    //                Character->MeleeHitDecal,
+    //                FVector(10.f, 10.f, 10.f), // XYZ = size, not just X
+    //                SpawnLoc,
+    //                DecalRot,
+    //                10.0f
+    //            );
 
-            }
+    //        }
 			
             FMyPointDamageEvent DamageEvent;
             DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
@@ -1183,9 +1201,13 @@ void UWeaponComponent::OnRep_CurrentWeapon()
    
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon: Spawned weapon %s"), *CurrentWeapon->GetName());
     ABaseCharacter* Character = GetCharacter();
-    if (Character) {
-        CurrentWeapon->SetViewCapture(Character->GetViewmodelCapture());
+    if (!Character) {
+        UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon: No character found"));
+        return;
     }
+   
+    CurrentWeapon->SetViewCapture(Character->GetViewmodelCapture());
+
 	CurrentWeapon->SetOwner(GetOwner());
 	CurrentWeapon->SetInstigator(Cast<APawn>(GetOwner()));
 	CurrentWeapon->InitFromData(WeaponConf);
@@ -1194,9 +1216,11 @@ void UWeaponComponent::OnRep_CurrentWeapon()
 	// Play equip animation
     if (Character) {
         EWeaponTypes WeaType = CurrentWeapon->GetWeaponType();
-        Character->PlayEquipWeaponAnimation(WeaType);
 
-        // update speed
+		UAnimationComponent* AnimComp = Character->GetAnimationComponent();
+        if (AnimComp) {
+            AnimComp->PlayEquip(WeaType);
+        }
         Character->HandleUpdateSpeedWalkCurrently();
 	}
 
@@ -1247,10 +1271,16 @@ void UWeaponComponent::MulticastReload_Implementation()
 	UE_LOG(LogTemp, Warning, TEXT("MulticastReload called"));
     if (CurrentWeapon) {
         ABaseCharacter* Character = GetCharacter();
-        if (Character) {
-            Character->PlayReloadMontage(CurrentWeapon->GetWeaponData());
+
+        if (!Character) {
+            return;
         }
 
+        UAnimationComponent* AnimComp = Character->GetAnimationComponent();
+        if (AnimComp) {
+            AnimComp->PlayReloadMontage();
+        }
+       
         if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
         {
             Firearm->PlayReloadSound();
@@ -1561,7 +1591,7 @@ void UWeaponComponent::ServerStartPlantSpike_Implementation() {
 
 	bIsPlantingSpike = true;
     ABaseCharacter* Character = GetCharacter();
-    Character->ServerSetCrouching(true);
+    Character->RequestCrouch();
 
     GetWorld()->GetTimerManager().SetTimer(
         SpikePlantTimerHandle,
@@ -1641,7 +1671,7 @@ void UWeaponComponent::ServerStartDefuseSpike_Implementation() {
 
 	bIsDefusingSpike = true;
     SpikeActor->StartDefuse(this);
-    Character->ServerSetCrouching(true);
+	Character->RequestCrouch();
 }
 
 void UWeaponComponent::FinishDefuseSpike() {
@@ -1649,7 +1679,7 @@ void UWeaponComponent::FinishDefuseSpike() {
 	bIsDefusingSpike = false;
     // check spike is planted in game mode
     UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike called"));
-    Character->ServerSetCrouching(false);
+	Character->RequestUnCrouch();
 }
 
 void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
@@ -1658,8 +1688,7 @@ void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
     }
     ABaseCharacter* Character = GetCharacter();
 	bIsDefusingSpike = false;
-    Character->ServerSetCrouching(false);
-
+    Character->RequestUnCrouch();
 	ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
     ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
     if (SpikeActor) {
@@ -1785,7 +1814,7 @@ void UWeaponComponent::FinishPlantSpike() {
 
 	UE_LOG(LogTemp, Warning, TEXT("FinishPlantSpike called"));
     
-    Character->ServerSetCrouching(false);
+    Character->RequestCrouch();
 	// change player equipment
     AutoEquipBestWeapon();
 }
