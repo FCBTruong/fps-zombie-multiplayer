@@ -1780,12 +1780,12 @@ void UWeaponComponent::OnRep_IsPlantingSpike() {
     // play sound
     if (bIsPlantingSpike) {
         if (Character) {
-            Character->PlayPlantSpikeEffect();
+            Character->OnPlantSpikeStarted();
         }
     }
     else {
         if (Character) {
-            Character->StopPlantSpikeEffect();
+            Character->OnPlantSpikeStopped();
         }
 	}
 }
@@ -1833,15 +1833,18 @@ void UWeaponComponent::OnInput_StopDefuseSpike() {
 
 void UWeaponComponent::OnRep_IsDefusingSpike() {
     ABaseCharacter* Character = GetCharacter();
+    if (!Character) {
+        return;
+	}
     OnUpdateDefuseSpikeState.Broadcast(bIsDefusingSpike);
     if (bIsDefusingSpike) {
         if (Character) {
-            Character->PlayDefuseSpikeEffect();
+            Character->OnDefuseSpikeStarted();
         }
     }
     else {
         if (Character) {
-            Character->StopDefuseSpikeEffect();
+            Character->OnDefuseSpikeStopped();
         }
 	}
 }
@@ -1877,6 +1880,7 @@ void UWeaponComponent::AutoEquipBestWeapon()
     }
 }
 
+// Server function called when owner dies
 void UWeaponComponent::OnOwnerDeath() {
     if (bIsPlantingSpike) {
         ServerStopPlantSpike();
@@ -1887,6 +1891,11 @@ void UWeaponComponent::OnOwnerDeath() {
 
 	CurrentWeaponId = EItemId::NONE;
     ABaseCharacter* Character = GetCharacter();
+
+    if (!Character) {
+        return;
+	}
+
     // drop all weapons
     FVector DropPoint = GetOwner()->GetActorLocation() + Character->GetActorForwardVector() * 30;
     if (bHasSpike) {

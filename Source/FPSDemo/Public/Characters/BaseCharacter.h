@@ -33,6 +33,8 @@ class UWeaponData;
 class UAudioComponent;
 class USplineComponent;
 class UAnimationComponent;
+class UCharAudioComponent;
+class UCharCameraComponent;
 
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -41,20 +43,7 @@ UENUM(BlueprintType)
 enum class EMovementState : uint8
 {
     Normal,
-	Slow,
-	Crouch
-};
-
-
-USTRUCT(BlueprintType)
-struct FCharacterSoundSet
-{
-    GENERATED_BODY()
-
-    UPROPERTY(EditDefaultsOnly, Category = "Sound") TObjectPtr<USoundBase> PlantingSpike = nullptr;
-    UPROPERTY(EditDefaultsOnly, Category = "Sound") TObjectPtr<USoundBase> DefusingSpike = nullptr;
-    UPROPERTY(EditDefaultsOnly, Category = "Sound") TObjectPtr<USoundBase> Landing = nullptr;
-    UPROPERTY(EditDefaultsOnly, Category = "Sound") TObjectPtr<USoundBase> Footstep = nullptr;
+	Slow
 };
 
 UCLASS()
@@ -86,6 +75,8 @@ protected:
     virtual void EndViewTarget(APlayerController* PC) override;
     virtual void PossessedBy(AController* NewController) override;
     virtual void OnRep_Controller() override;
+    virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+    virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
 protected:
 	// Components
@@ -106,6 +97,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UAnimationComponent> AnimationComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UCharAudioComponent> AudioComp;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UCharCameraComponent> CameraComp;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     TObjectPtr<USceneComponent> FpsPivot;
@@ -130,17 +127,8 @@ protected:
 
 	// ===== Init Data =====
 
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Crouch")
-    TObjectPtr<UCurveFloat> CrouchCurve;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Viewmodel")
-    TObjectPtr<UMaterial> MaterialOverlayBase;
-
     UPROPERTY(EditDefaultsOnly, Category = "Init|FX")
     TObjectPtr<UNiagaraSystem> BloodFx;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Sound")
-    FCharacterSoundSet Sounds;
 
     UPROPERTY(EditDefaultsOnly, Category =  "Init|Camera")
     TSubclassOf<AActor> DeathCameraProxyClass;
@@ -157,6 +145,8 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Init|AI")
     TObjectPtr<UBehaviorTree> BehaviorTree;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Init|Crouch")
+    UCurveFloat* CrouchCurve = nullptr;
 
 protected:
     // ===== Runtime State =====
@@ -164,12 +154,14 @@ protected:
     bool bAppliedTeamMesh;
     bool bHasBeginPlayRun;
     bool bRecallBVT_AtBegin;
-    bool bIsFPS;
     bool bHoldingShift;
     bool bIsBot;
     float LastFootstepTime;
-    float TargetFOV;
     float BaseStunDuration;
+    float BasePivotFpsZ = 0.f;
+    float CurrentCrouchCompZ = 0.f;
+    float CrouchFromZ = 0.f;
+    float CrouchToZ = 0.f;
 
     UPROPERTY()
     TObjectPtr<UAudioComponent> DefuseSpikeAudioComp;
@@ -201,23 +193,18 @@ protected:
     float AimSensitivity = 1.0f;
     UPROPERTY(ReplicatedUsing = OnRep_IsAiming)
     bool bAiming = false;
-    UPROPERTY(ReplicatedUsing = OnRep_IsCrouching)
-    bool bIsCrouching = false;
     UPROPERTY(ReplicatedUsing = OnRep_CurrentMovementState)
     EMovementState CurrentMovementState = EMovementState::Normal;
 
 protected:
     // ===== Timelines =====
-    FTimeline CrouchTimeline;
 	FTimeline StunTimeline;
-
+    FTimeline CrouchTimeline;
 protected:
     // ===== Internal Functions =====
     void StartRunning();
     void StopRunning();
-    void CustomCrouch();
-    void CustomUnCrouch();
-    void UpdateAimingState();
+    void ApplyAimingVisual();
     void OnMeleeNotify();
     void PlayFootstepSound();
     void UpdateFootstepSound(float DeltaTime);
@@ -225,7 +212,10 @@ protected:
     void UpdateAttachLocationWeapon();
     void DropWeapon();
     void ApplyTeamMesh();
-    void SetFpsView(bool bNewIsFPS);
+	bool CanPlayFootstep() const;
+
+    UFUNCTION()
+    void HandleCrouchProgress(float Alpha);
 
     UFUNCTION(BlueprintPure)
     EWeaponTypes GetWeaponType() const;
@@ -239,8 +229,6 @@ protected:
     void ServerRevive();
     UFUNCTION(Server, Unreliable)
     void ServerSetIsSlow(bool bNewIsSlow); 
-    UFUNCTION(Server, Unreliable)
-    void ServerSetCrouching(bool bNewCrouching);
 
     // ===== Networking Multicast =====
     UFUNCTION(NetMulticast, Unreliable)
@@ -253,8 +241,6 @@ protected:
     void OnRep_IsAiming();
     UFUNCTION()
     void OnRep_CurrentMovementState();
-    UFUNCTION()
-    void OnRep_IsCrouching();
 	UFUNCTION()
 	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 
@@ -264,35 +250,32 @@ protected:
 
 	// ===== Other UFUNCTIONS =====
     UFUNCTION()
-    void HandleCrouchProgress(float Value);
-    UFUNCTION()
     void OnStunTimelineFinished();
     UFUNCTION()
     void OnStunTimelineUpdate(float Value);
   
 public:
     // ===== Public API =====
-    void ClickAim();
+    void RequestStartAiming();
+	void RequestStopAiming();
 	void HandleUpdateSpeedWalkCurrently();
 	void HandleDeath();
     void PlayBloodFx(const FVector& HitLocation);
 	void PlayStunEffect(const float& Strength);
-    void SetPosViewmodelCaptureForGun();
     void StartAiming();
     void StopAiming();   
     void ChangeView();
-	void PlayPlantSpikeEffect();
-	void StopPlantSpikeEffect();
-    void PlayDefuseSpikeEffect();
-	void StopDefuseSpikeEffect();
-    void UpdateView();
+	void OnPlantSpikeStarted();
+	void OnPlantSpikeStopped();
+    void OnDefuseSpikeStarted();
+	void OnDefuseSpikeStopped();
     void ApplyRotationMode(bool bIsPlayer);
     void RequestCrouch();
     void RequestUnCrouch();
     void RequestSlowMovement(bool bEnable);
 	void RequestJump();
-    float GetSpeedWalkRatio();
-    float GetAimSensitivity();
+    float GetSpeedWalkRatio() const;
+    float GetAimSensitivity() const;
     bool IsAlive() const;
     bool IsFpsViewMode() const;
     FVector GetThrowableLocation() const;
@@ -320,5 +303,4 @@ public:
     static constexpr float CROUCH_WALK_SPEED = 200.f;
     static constexpr float AIM_WALK_SPEED = 250.f;
     static constexpr float SLOW_WALK_SPEED = 200.f;
-    static constexpr float DEFAULT_FPS_FOV = 103.f;
 };

@@ -109,6 +109,7 @@ public:
 	void StopCrouch();
     void Look(const FInputActionValue& Value);
     void ClickAim();
+	void StopAim();
 	void StartReload();
 	void Pickup();
 	void EquipSlot(const int32 SlotIndex);

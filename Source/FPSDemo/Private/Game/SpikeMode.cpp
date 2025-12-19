@@ -20,13 +20,13 @@ void ASpikeMode::StartPlay()
 	FName AttackerTeam = (FMath::RandBool()) ? FName("A") : FName("B");
 	AttackerTeam = "A"; // for testing
 	GS->SetAttackerTeam(AttackerTeam);
-	SpawnBot("B");
-	SpawnBot("B");
+	/*SpawnBot("B");
+	SpawnBot("B");*/
 	//SpawnBot("B");
 	//SpawnBot("B");
 	//SpawnBot("A");
 	//SpawnBot("A");
-	SpawnBot("A");
+	//SpawnBot("A");
 
 	StartRound();
 }

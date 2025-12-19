@@ -218,6 +218,7 @@ void AMyPlayerController::SetupInputComponent()
         if (IA_AIM)
         {
             EnhancedInput->BindAction(IA_AIM, ETriggerEvent::Started, this, &AMyPlayerController::ClickAim);
+			EnhancedInput->BindAction(IA_AIM, ETriggerEvent::Completed, this, &AMyPlayerController::StopAim);
         }
         if (IA_RELOAD)
         {
@@ -465,7 +466,16 @@ void AMyPlayerController::ClickAim() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        MyChar->ClickAim();
+        MyChar->RequestStartAiming();
+    }
+}
+
+void AMyPlayerController::StopAim() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        MyChar->RequestStopAiming();
     }
 }
 

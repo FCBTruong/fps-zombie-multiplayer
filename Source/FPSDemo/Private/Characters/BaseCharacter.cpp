@@ -26,7 +26,6 @@
 #include "Weapons/WeaponTypes.h"
 #include "Weapons/WeaponBase.h"
 #include "Net/UnrealNetwork.h"
-#include "InputActionValue.h"
 #include "Camera/CameraComponent.h"
 #include "Components/TimelineComponent.h"
 #include "Components/InteractComponent.h"
@@ -46,6 +45,8 @@
 #include "Components/InventoryComponent.h"
 #include "Components/WeaponComponent.h"
 #include "Components/AnimationComponent.h"
+#include "Components/CharAudioComponent.h"
+#include "Components/CharCameraComponent.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -78,13 +79,6 @@ ABaseCharacter::ABaseCharacter()
     ViewmodelCap->bCaptureEveryFrame = true;
     ViewmodelCap->bCaptureOnMovement = true;
 
-    PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
-    InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
-    WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
-    InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
-	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
-	AnimationComp = CreateDefaultSubobject<UAnimationComponent>(TEXT("AnimationComponent"));
-
     ThrowSpline = CreateDefaultSubobject<USplineComponent>(TEXT("SplineThrow"));
     ThrowSpline->SetupAttachment(RootComponent);
 
@@ -93,18 +87,25 @@ ABaseCharacter::ABaseCharacter()
 
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter constructor called"));
 
-    if (!WeaponComp)
-    {
-        UE_LOG(LogTemp, Error, TEXT("WeaponComp is null in ABaseCharacter constructor"));
-	}
-
-    UE_LOG(LogTemp, Warning, TEXT("Binding OnTakeAnyDamage in ABaseCharacter"));
-
     StimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSource"));
-    StimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
-    StimuliSource->RegisterWithPerceptionSystem();
 
-    TargetFOV = DEFAULT_FPS_FOV;
+    PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
+    InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+    WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
+    InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
+    HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+    AnimationComp = CreateDefaultSubobject<UAnimationComponent>(TEXT("AnimationComponent"));
+    AudioComp = CreateDefaultSubobject<UCharAudioComponent>(TEXT("AudioComponent"));
+    CameraComp = CreateDefaultSubobject<UCharCameraComponent>(TEXT("CharCameraComponent"));
+
+    CameraComp->Initialize(
+        CameraFps,
+        CameraTps,
+        CameraBoom,
+        ViewmodelCap,
+        MeshFps,
+        GetMesh()
+    );
 }
 
 // Called when the game starts or when spawned
@@ -114,15 +115,18 @@ void ABaseCharacter::BeginPlay()
 
 	UGameManager::Get(GetWorld())->RegisterPlayer(this);
 
-    ThrowableLocation = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("ThrowableLocation")));
+    BasePivotFpsZ = FpsPivot->GetRelativeLocation().Z;
 
     if (CrouchCurve)
     {
-        FOnTimelineFloat ProgressFunction;
-        ProgressFunction.BindUFunction(this, FName("HandleCrouchProgress"));
-        CrouchTimeline.AddInterpFloat(CrouchCurve, ProgressFunction);
+        FOnTimelineFloat Update;
+        Update.BindUFunction(this, FName("HandleCrouchProgress"));
+        CrouchTimeline.AddInterpFloat(CrouchCurve, Update);
+
+        CrouchTimeline.SetLooping(false);
     }
 
+    ThrowableLocation = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("ThrowableLocation")));
 
     if (MeshFps) {
         if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
@@ -182,6 +186,12 @@ void ABaseCharacter::BeginPlay()
         }
 		bRecallBVT_AtBegin = false;
     }
+
+    if (StimuliSource)
+    {
+        StimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
+        StimuliSource->RegisterWithPerceptionSystem();
+	}
 }
 
 
@@ -230,16 +240,13 @@ void ABaseCharacter::ApplyTeamMesh()
 void ABaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    CrouchTimeline.TickTimeline(DeltaTime);
-    StunTimeline.TickTimeline(DeltaTime);
-
-    if (CameraFps)
-    {
-        float CurrentFOV = CameraFps->FieldOfView;
-        float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f); // 10 = speed
-        CameraFps->SetFieldOfView(NewFOV);
+   
+    if (StunTimeline.IsPlaying()) {
+        StunTimeline.TickTimeline(DeltaTime);
     }
-
+    if (CrouchTimeline.IsPlaying()) {
+        CrouchTimeline.TickTimeline(DeltaTime);
+	}
     // logic sound
     UpdateFootstepSound(DeltaTime);
 }
@@ -248,9 +255,9 @@ void ABaseCharacter::UpdateFootstepSound(float DeltaTime) {
     const float Speed = GetVelocity().Size2D();
     const bool bGrounded = !GetCharacterMovement()->IsFalling();
 
-    // stop footstep when slow
-    if (Speed < 300.f || !bGrounded)
+    if (!CanPlayFootstep()) {
         return;
+    }
 
     const float CurrentTime = GetWorld()->GetTimeSeconds();
 
@@ -268,38 +275,51 @@ void ABaseCharacter::UpdateFootstepSound(float DeltaTime) {
     }
 }
 
-
-void ABaseCharacter::UpdateAimingState()
+bool ABaseCharacter::CanPlayFootstep() const
 {
-    if (IsLocallyControlled()) {
-        UE_LOG(LogTemp, Warning, TEXT("Updating Aiming State: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
-        // Get Player controller and show scope widget
-        AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
+    return GetVelocity().Size2D() > 300.f &&
+        !GetCharacterMovement()->IsFalling();
+}
 
-        if (!PC) {
-            UE_LOG(LogTemp, Warning, TEXT("PlayerController is null in UpdateAimingState"));
-            return;
-        }
-        if (bAiming)
-        {
-            if (WeaponComp->IsScopeEquipped()) {
-                TargetFOV = 20.f;
-                AimSensitivity = 0.2f;
+void ABaseCharacter::ApplyAimingVisual()
+{
+    UE_LOG(LogTemp, Warning, TEXT("Updating Aiming State: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
+    // Get Player controller and show scope widget
+    AMyPlayerController* PC = Cast<AMyPlayerController>(UGameplayStatics::GetPlayerController(this, 0));
+    if (!PC || !PC->IsLocalController())
+        return;
 
-                PC->ShowScope();
+    if (PC->GetViewTarget() != this)
+        return;
 
+    if (!PC) {
+        UE_LOG(LogTemp, Warning, TEXT("PlayerController is null in UpdateAimingState"));
+        return;
+    }
+    if (!CameraComp) {
+        UE_LOG(LogTemp, Warning, TEXT("CameraComp is null in UpdateAimingState"));
+        return;
+	}
 
-                // update speed
-                GetCharacterMovement()->MaxWalkSpeed = ABaseCharacter::AIM_WALK_SPEED;
+    if (!WeaponComp) {
+        UE_LOG(LogTemp, Warning, TEXT("WeaponComp is null in UpdateAimingState"));
+        return;
+	}
+    if (bAiming)
+    {
+        if (WeaponComp->IsScopeEquipped()) {
+            if (CameraComp) {
+                CameraComp->SetTargetFOV(20.f);
             }
+            AimSensitivity = 0.2f;
+            PC->ShowScope();
         }
-        else
-        {
-            TargetFOV = ABaseCharacter::DEFAULT_FPS_FOV;
-            AimSensitivity = 1.0f;
-            PC->HideScope();
-            HandleUpdateSpeedWalkCurrently();
-        }
+    }
+    else
+    {
+        CameraComp->ResetFOV();
+        AimSensitivity = 1.0f;
+        PC->HideScope();
     }
 }
 
@@ -319,9 +339,8 @@ void ABaseCharacter::Jump()
     if (GetCharacterMovement()->IsFalling()) {
         return;
 	}
-    if (CurrentMovementState == EMovementState::Crouch)
+    if (IsCrouched())
     {
-        CustomUnCrouch();
         return;
 	}
     Super::Jump();
@@ -333,135 +352,78 @@ void ABaseCharacter::StopJumping()
     Super::StopJumping();
 }
 
-void ABaseCharacter::CustomCrouch()
-{
-    UE_LOG(LogTemp, Warning, TEXT("Crouch"));
-	if (CurrentMovementState == EMovementState::Crouch) return;
-
-    // Tell server to update state
-    ServerSetCrouching(true);
-}
-
-void ABaseCharacter::CustomUnCrouch()
-{
-    if (CurrentMovementState != EMovementState::Crouch)
-    {
-        return;
-    }
-    UE_LOG(LogTemp, Warning, TEXT("UnCrouch"));
-	ServerSetCrouching(false);
-}
-
-void ABaseCharacter::ServerSetCrouching_Implementation(bool bNewCrouching)
-{
-    if (bNewCrouching) {
-		if (CurrentMovementState == EMovementState::Crouch) return;
-
-        CurrentMovementState = EMovementState::Crouch;
-    }
-    else {
-        if (CurrentMovementState != EMovementState::Crouch) return;
-		CurrentMovementState = EMovementState::Normal;
-	}
-	bIsCrouching = bNewCrouching;
-	
-
-    if (CurrentMovementState == EMovementState::Crouch)
-    {
-        CrouchTimeline.PlayFromStart();
-    }
-    else
-    {
-        CrouchTimeline.Reverse();
-    }
-
-	HandleUpdateSpeedWalkCurrently();
-}
-
-void ABaseCharacter::HandleCrouchProgress(float Value) {
-    GetCapsuleComponent()->SetCapsuleHalfHeight(Value);
-    BaseTranslationOffset.Z = -GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-	GetMesh()->SetRelativeLocation(BaseTranslationOffset);
-}
-
-
 void ABaseCharacter::RequestCrouch()
 {
     if (GetCharacterMovement()->IsFalling()) {
         return;
     }
-	
-    CustomCrouch();
+    Crouch();
 }
 
 void ABaseCharacter::RequestUnCrouch()
 {
-    CustomUnCrouch();
+    UnCrouch();
+}
+
+void ABaseCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+    Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+
+    // Cancel the instant camera drop caused by capsule shrinking
+    CurrentCrouchCompZ += HalfHeightAdjust;
+
+    CrouchFromZ = CurrentCrouchCompZ;
+    CrouchToZ = 0.f;
+
+    // Snap to the compensated position (no pop), then smooth toward target
+    FVector Loc = FpsPivot->GetRelativeLocation();
+    Loc.Z = BasePivotFpsZ + CurrentCrouchCompZ;
+    FpsPivot->SetRelativeLocation(Loc);
+
+    CrouchTimeline.PlayFromStart();
+}
+
+void ABaseCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+    Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+
+    // Cancel the instant camera rise caused by capsule expanding
+    CurrentCrouchCompZ -= HalfHeightAdjust;
+
+    CrouchFromZ = CurrentCrouchCompZ;
+    CrouchToZ = 0.f;
+
+    FVector Loc = FpsPivot->GetRelativeLocation();
+    Loc.Z = BasePivotFpsZ + CurrentCrouchCompZ;
+    FpsPivot->SetRelativeLocation(Loc);
+
+    CrouchTimeline.PlayFromStart(); // forward again (not Reverse)
+}
+
+void ABaseCharacter::HandleCrouchProgress(float Alpha)
+{
+    CurrentCrouchCompZ = FMath::Lerp(CrouchFromZ, CrouchToZ, Alpha);
+
+    FVector Loc = FpsPivot->GetRelativeLocation();
+    Loc.Z = BasePivotFpsZ + CurrentCrouchCompZ;
+    FpsPivot->SetRelativeLocation(Loc);
 }
 
                                                                                                                          
 void ABaseCharacter::ChangeView()
 {
-	bIsFPS = !bIsFPS;
-
-    UpdateView();
-}
-
-void ABaseCharacter::UpdateView()
-{
-    if (!IsValid(this)) return;
-    if (!WeaponComp || IsActorBeingDestroyed()) return;
-	UE_LOG(LogTemp, Warning, TEXT("Updating View: %s"), bIsFPS ? TEXT("First Person") : TEXT("Third Person"));
-
-    if (bIsFPS)
-    {
-        CameraFps->SetActive(true);
-     
-        CameraTps->SetActive(false);
-        GetMesh()->SetOwnerNoSee(true);
-        if (MeshFps)
-        {
-            //MeshFps->SetOwnerNoSee(true);
-		}
-       
-        ViewmodelCap->ShowOnlyComponents.Empty();
-        ViewmodelCap->ShowOnlyComponents.AddUnique(MeshFps);
-        ViewmodelCap->Activate();
-
-        AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
-        if (PC && PC->IsLocalController()) {
-            PC->UpdateViewmodelCapture(true);
-        }
-    }
-    else
-    {      
-        CameraFps->SetActive(false);
-        if (CameraTps)
-        {
-            CameraTps->SetActive(true);
-        }
-        GetMesh()->SetOwnerNoSee(false);
-        if (MeshFps)
-        {
-			//MeshFps->SetOwnerNoSee(true);
-		}
-
-        ViewmodelCap->ShowOnlyComponents.Empty();
-        ViewmodelCap->Deactivate();
-
-		// get controller and update viewmodel
-		AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
-        if (PC && PC->IsLocalController()) {
-            PC->UpdateViewmodelCapture(false);
-        }
-    }
-    WeaponComp->UpdateAttachLocationWeapon();
+	if (CameraComp) {
+        CameraComp->ToggleView();
+	}
 }
 
 
 USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh() const
 {
-    if (bIsFPS)
+    if (!CameraComp) {
+		return GetMesh();
+    }
+    if (CameraComp->IsFPS())
     {
         return MeshFps;
     }
@@ -476,7 +438,6 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ABaseCharacter, bAiming);
 	DOREPLIFETIME(ABaseCharacter, CurrentMovementState);
-	DOREPLIFETIME(ABaseCharacter, bIsCrouching);
 }
 
 void ABaseCharacter::DropWeapon()
@@ -501,23 +462,37 @@ EWeaponSubTypes ABaseCharacter::GetWeaponSubType() const
 }
 
 
-void ABaseCharacter::ClickAim()
+void ABaseCharacter::RequestStartAiming()
 {
     if (!WeaponComp->CanWeaponAim()) {
         return;
     }
     if (bAiming) {
-        ServerSetAiming(false);
+        return;
     }
-    else {
-        ServerSetAiming(true);
-    }
-	bAiming = !bAiming; // force update for current client
-
+    
 	// if is locally controlled, update immediately
     if (IsLocallyControlled()) {
-        UpdateAimingState();
+		// Predictive update
+		bAiming = true;
+        ApplyAimingVisual();
 	}
+
+    ServerSetAiming(true);
+}
+
+void ABaseCharacter::RequestStopAiming()
+{
+    if (!bAiming) {
+        return;
+    }
+  
+    // if is locally controlled, update immediately
+    if (IsLocallyControlled()) {
+		bAiming = false;
+        ApplyAimingVisual();
+    }
+    ServerSetAiming(false);
 }
 
 void ABaseCharacter::OnRep_IsAiming()
@@ -526,17 +501,16 @@ void ABaseCharacter::OnRep_IsAiming()
 		return; // already handled locally
 	}
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_IsAiming: %s"), bAiming ? TEXT("true") : TEXT("false"));
-    UpdateAimingState();
+    ApplyAimingVisual();
 }
 
 void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
 {
     bAiming = bNewAiming;
-    OnRep_IsAiming();
 }
 
 
-float ABaseCharacter::GetSpeedWalkRatio()
+float ABaseCharacter::GetSpeedWalkRatio() const
 {
 	EWeaponTypes WeaponType = WeaponComp->GetCurrentWeaponType();
     if (WeaponType == EWeaponTypes::Firearm) {
@@ -555,7 +529,7 @@ float ABaseCharacter::GetSpeedWalkRatio()
 }
 
 void ABaseCharacter::HandleUpdateSpeedWalkCurrently() {
-    if (CurrentMovementState == EMovementState::Crouch) {
+    if (IsCrouched()) {
         GetCharacterMovement()->MaxWalkSpeed = CROUCH_WALK_SPEED;
     }
     else if (CurrentMovementState == EMovementState::Slow) {
@@ -629,9 +603,10 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         bIsBot = true;
     }
     if (bIsBot) {
-       /* ABotAIController* AICon = Cast<ABotAIController>(GetController());*/
-		ABotAIController* AICon = Cast<ABotAIController>(GetController());
-        AICon->SetFocus(EventInstigator);
+        if (ABotAIController* AICon = Cast<ABotAIController>(GetController()))
+        {
+            AICon->SetFocus(EventInstigator);
+        }
     }
     return ActualDamage;
 }
@@ -721,7 +696,7 @@ void ABaseCharacter::MulticastHandleDeath_Implementation()
         PC->SetIgnoreLookInput(true);
         PC->SetIgnoreMoveInput(true);
         
-        if (bIsFPS) {
+        if (CameraComp->IsFPS()) {
             ChangeView(); // switch to tps view
         }
         if (!DeathCameraProxyClass) return;
@@ -853,54 +828,32 @@ void ABaseCharacter::OnStunTimelineFinished()
     }
 }
 
-void ABaseCharacter::SetPosViewmodelCaptureForGun() {
-   /* if (ViewmodelCapture) {
-		ViewmodelCapture->SetRelativeLocation(ViewmodelCaptureDefaultPos);
-		ViewmodelCapture->SetRelativeRotation(ViewmodelCaptureDefaultRot);
-	}*/
-}
-
-float ABaseCharacter::GetAimSensitivity() {
+float ABaseCharacter::GetAimSensitivity() const {
     return AimSensitivity;
 }
 
-void ABaseCharacter::PlayPlantSpikeEffect() {
+void ABaseCharacter::OnPlantSpikeStarted() {
     // play sound
-    if (Sounds.PlantingSpike) {
-        if (PlantSpikeAudioComp && PlantSpikeAudioComp->IsPlaying())
-            return;
-        PlantSpikeAudioComp = UGameplayStatics::SpawnSoundAttached(
-            Sounds.PlantingSpike,
-            RootComponent
-        );
+    if (AudioComp) {
+        AudioComp->PlayPlantSpike();
+    }
+}
+
+void ABaseCharacter::OnPlantSpikeStopped() {
+    if (AudioComp) {
+        AudioComp->StopPlantSpike();
 	}
 }
 
-void ABaseCharacter::StopPlantSpikeEffect() {
-    if (PlantSpikeAudioComp)
-    {
-        PlantSpikeAudioComp->Stop();
-        PlantSpikeAudioComp = nullptr;
-    }
+void ABaseCharacter::OnDefuseSpikeStarted() {
+    if (AudioComp) {
+        AudioComp->PlayDefuseSpike();
+	}
 }
 
-void ABaseCharacter::PlayDefuseSpikeEffect() {
-    // play sound
-    if (Sounds.DefusingSpike) {
-        if (DefuseSpikeAudioComp && DefuseSpikeAudioComp->IsPlaying())
-            return;
-        DefuseSpikeAudioComp = UGameplayStatics::SpawnSoundAttached(
-            Sounds.DefusingSpike,
-            RootComponent
-        );
-    }
-}
-
-void ABaseCharacter::StopDefuseSpikeEffect() {
-    if (DefuseSpikeAudioComp)
-    {
-        DefuseSpikeAudioComp->Stop();
-        DefuseSpikeAudioComp = nullptr;
+void ABaseCharacter::OnDefuseSpikeStopped() {
+    if (AudioComp) {
+        AudioComp->StopDefuseSpike();
     }
 }
 
@@ -929,8 +882,10 @@ void ABaseCharacter::OnRep_CurrentMovementState()
 
 void ABaseCharacter::PlayFootstepSound()
 {
-    if (!Sounds.Footstep)
+    if (!AudioComp) {
+        UE_LOG(LogTemp, Warning, TEXT("AudioComp is null in PlayFootstepSound"));
         return;
+    }
 
     const float Speed = GetVelocity().Size2D();
     const bool bGrounded = !GetCharacterMovement()->IsFalling();
@@ -943,11 +898,7 @@ void ABaseCharacter::PlayFootstepSound()
         return;
 
     // Play at actor's feet
-    UGameplayStatics::PlaySoundAtLocation(
-        this,
-        Sounds.Footstep,
-        GetActorLocation()
-    );
+	AudioComp->PlayFootstep();
 }
 
 bool ABaseCharacter::IsAlive() const
@@ -968,13 +919,10 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 
 void ABaseCharacter::PlayLandingSound()
 {
-    if (!Sounds.Landing)
+    if (AudioComp) {
+        AudioComp->PlayLanding();
         return;
-    UGameplayStatics::PlaySoundAtLocation(
-        this,
-        Sounds.Landing,
-        GetActorLocation()
-    );
+    }
 }
 
 void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -984,48 +932,14 @@ void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	UGameManager::Get(GetWorld())->UnregisterPlayer(this);
 }
 
-void ABaseCharacter::OnRep_IsCrouching()
-{
-    if (bIsCrouching) {
-        CrouchTimeline.PlayFromStart();
-    }
-    else {
-        CrouchTimeline.Reverse();
-    }
-}
-
-void ABaseCharacter::SetFpsView(bool bNewIsFps)
-{
-    bIsFPS = bNewIsFps;
-    UpdateView();
-}
-
-
 void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
 {
     Super::BecomeViewTarget(PC);
-    /* if (true) {
-         return;
-     }*/
-
+  
     if (!bHasBeginPlayRun)
     {
         bRecallBVT_AtBegin = true;
         // will be called again at BeginPlay
-        return;
-    }
-
-    UE_LOG(LogTemp, Warning,
-        TEXT("BecomeViewTarget: World=%s NetMode=%d PC=%s Local=%d Pawn=%s"),
-        *GetWorld()->GetName(),
-        (int32)GetWorld()->GetNetMode(),
-        *PC->GetPathName(),
-        PC->IsLocalController(),
-        *GetPathName()
-    );
-    UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called"));
-    if (!PC) {
-        UE_LOG(LogTemp, Error, TEXT("PC is null in BecomeViewTarget"));
         return;
     }
 
@@ -1041,42 +955,15 @@ void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
         return;
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("ViewmodelCapture is valid in ABaseCharacter"));
+    UE_LOG(LogTemp, Warning, TEXT("DEUBGGGG: ABaseCharacter : BecomeViewTarget"));
 
-    if (!ViewmodelRenderTarget)
-    {
-        ViewmodelRenderTarget = NewObject<UTextureRenderTarget2D>(this);
-        ViewmodelRenderTarget->ClearColor = FLinearColor::Transparent;
-
-        int32 SizeX = 0;
-        int32 SizeY = 0;
-        PC->GetViewportSize(SizeX, SizeY);
-
-        // Fallback safety
-        SizeX = FMath::Max(SizeX, 1);
-        SizeY = FMath::Max(SizeY, 1);
-
-        ViewmodelRenderTarget->InitAutoFormat(SizeX, SizeY);
+    if (IsValid(CameraComp)) {
+		UE_LOG(LogTemp, Warning, TEXT("DEUBGGGG: CameraComp is valid in BecomeViewTarget"));
+        CameraComp->OnBecomeViewTarget(MyPC);
     }
-    ViewmodelCap->TextureTarget = ViewmodelRenderTarget;
-    ViewmodelCap->Activate();
-    if (MaterialOverlayBase && !MaterialOverlayMID)
-    {
-        MaterialOverlayMID = UMaterialInstanceDynamic::Create(MaterialOverlayBase, this);
-        MaterialOverlayMID->SetTextureParameterValue(
-            TEXT("ViewmodelTexture"),
-            ViewmodelRenderTarget
-        );
-    }
-    if (MaterialOverlayMID)
-    {
-        MyPC->SetViewmodelOverlay(MaterialOverlayMID);
-        MyPC->UpdateViewmodelCapture(true);
-    }
-
-    bIsFPS = true;
-
-    UpdateView();
+    else {
+        UE_LOG(LogTemp, Warning, TEXT("DEUBGGGG: CameraComp is null in BecomeViewTarget"));
+	}
 }
 
 void ABaseCharacter::EndViewTarget(APlayerController* PC)
@@ -1085,10 +972,11 @@ void ABaseCharacter::EndViewTarget(APlayerController* PC)
 
     if (!IsLocallyControlled() && PC && PC->IsLocalController())
     {
-		SetFpsView(false);
+		//SetFpsView(false);
     }
-    ViewmodelCap->ShowOnlyComponents.Empty();
-    ViewmodelCap->Deactivate();
+    if (CameraComp) {
+        CameraComp->OnEndViewTarget(PC);
+	}
 }
 
 void ABaseCharacter::ApplyRotationMode(bool bIsPlayer)
@@ -1145,7 +1033,10 @@ EMovementState ABaseCharacter::GetCurrentMovementState() const {
 }
 
 bool ABaseCharacter::IsFpsViewMode() const {
-    return bIsFPS;
+    if (CameraComp) {
+        return CameraComp->IsFPS();
+	}
+	return false;
 }
 
 UPickupComponent* ABaseCharacter::GetPickupComponent() const {
