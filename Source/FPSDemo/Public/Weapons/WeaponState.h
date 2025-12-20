@@ -17,9 +17,6 @@ public:
     int32 AmmoReserve = 0;
 
     UPROPERTY()
-    bool bIsReloading = false;
-
-    UPROPERTY()
     bool bIsEquipped = false;
 
     UPROPERTY()
@@ -28,7 +25,7 @@ public:
 
 
 USTRUCT(BlueprintType)
-struct FPSDEMO_API FProofState
+struct FPSDEMO_API FArmorState
 {
     GENERATED_BODY()
 

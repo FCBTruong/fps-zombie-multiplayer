@@ -28,8 +28,8 @@
 #include <Kismet/KismetMathLibrary.h>
 #include "Components/CapsuleComponent.h"
 #include "Components/PickupComponent.h"
-#include "Components/InventoryComponent.h"
 #include "Components/AnimationComponent.h"
+#include "Weapons/WeaponActionState.h"
 
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
@@ -46,8 +46,7 @@ void UWeaponComponent::BeginPlay()
 {
     UE_LOG(LogTemp, Warning, TEXT("WeaponComponent: BeginPlay"));
 	Super::BeginPlay();
-	InventoryComp = GetOwner()->FindComponentByClass<UInventoryComponent>();
-
+	
 	bIsInitialized = true;
 
     GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
@@ -162,7 +161,7 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
 
 	// update speed based on weapon
     if (Character) {
-        Character->HandleUpdateSpeedWalkCurrently();
+        Character->UpdateMaxWalkSpeed();
 	}
 
     if (bIsAiming) {
@@ -305,42 +304,41 @@ void UWeaponComponent::RefreshOverlapPickupActors() {
 
 void UWeaponComponent::StartReload() {
     ABaseCharacter* Character = GetCharacter();
-    if (!Character->IsAlive()) return;
+    if (!Character || !Character->IsAlive()) return;
     if (!CanReload()) {
         return;
     }
 
-    if (!bIsReloading) {
-        if (CurrentWeaponId == EItemId::NONE) {
-            UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon equipped"));
-            return;
-		}
+ 
+    if (CurrentWeaponId == EItemId::NONE) {
+        UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon equipped"));
+        return;
+	}
 
-		FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
-        if (!WeaponState) {
-            UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon state found for %d"), (int32)CurrentWeaponId);
-			return;
-		}
+	FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
+    if (!WeaponState) {
+        UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon state found for %d"), (int32)CurrentWeaponId);
+		return;
+	}
 
-		// if full clip, no need to reload
-		UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
-        if (!WeaponConf) {
-            UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon data found for %d"), (int32)CurrentWeaponId);
-			return;
-		}
+	// if full clip, no need to reload
+	UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
+    if (!WeaponConf) {
+        UE_LOG(LogTemp, Warning, TEXT("StartReload: No weapon data found for %d"), (int32)CurrentWeaponId);
+		return;
+	}
 
-        if (WeaponState->AmmoInClip >= WeaponConf->MaxAmmoInClip) {
-            UE_LOG(LogTemp, Warning, TEXT("StartReload: Clip is already full for %d"), (int32)CurrentWeaponId);
-			return;
-		}
+    if (WeaponState->AmmoInClip >= WeaponConf->MaxAmmoInClip) {
+        UE_LOG(LogTemp, Warning, TEXT("StartReload: Clip is already full for %d"), (int32)CurrentWeaponId);
+		return;
+	}
 
-        if (GetOwner()->GetLocalRole() < ROLE_Authority) {
-            ServerReload();
-        }
-        else {
-            HandleReload();
-		}
+    if (GetOwner()->GetLocalRole() < ROLE_Authority) {
+        ServerReload();
     }
+    else {
+        HandleReload();
+	}
 }
 
 void UWeaponComponent::StartAiming() {
@@ -357,12 +355,8 @@ bool UWeaponComponent::CanShoot() {
     {
         return false;
     }
-    if (bIsReloading) {
-        return false;
-    }
-    if (bIsPlantingSpike || bIsDefusingSpike) {
-        return false;
-	}
+    
+  
     if (CurrentWeaponId == EItemId::NONE) {
         return false;
     }
@@ -402,11 +396,11 @@ void UWeaponComponent::OnInput_StartAttack() {
 
     if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
         if (CanShoot()) {
-            bIsFiring = true;
+            //bIsFiring = true;
             float timeBetweenShots = 0.1f; // Example value, adjust as needed
 
-            OnFire();
-            GetOwner()->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UWeaponComponent::OnFire, timeBetweenShots, true);
+           // OnFire();
+           // GetOwner()->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UWeaponComponent::OnFire, timeBetweenShots, true);
         }
 
 		FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
@@ -421,51 +415,46 @@ void UWeaponComponent::OnInput_StartAttack() {
          ServerDoMeleeAttack(0);
     }
     else if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
-        if (!bIsPriming) {
-            //DrawProjectileCurve();
-            ServerSetIsPriming(true);
-        }
+       
 	}
 }
 
 void UWeaponComponent::OnInput_StopAttack() {
-    if (bIsFiring) {
-        GetOwner()->GetWorldTimerManager().ClearTimer(FireTimerHandle);
-        bIsFiring = false;
-	}
+ //   if (bIsFiring) {
+ //       GetOwner()->GetWorldTimerManager().ClearTimer(FireTimerHandle);
+ //       bIsFiring = false;
+	//}
 
-    UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
-    if (!WeaponConf) {
-        return;
-    }
-    if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
-        // Throw the grenade
-        if (!bIsPriming) {
-            return; // not priming, ignore
-        }
-        
-        ServerThrow(GetVelocityGrenade());
-	}
+ //   UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
+ //   if (!WeaponConf) {
+ //       return;
+ //   }
+ //   if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
+ //       // Throw the grenade
+ //       if (!bIsPriming) {
+ //           return; // not priming, ignore
+ //       }
+ //       
+ //       ServerThrow(GetVelocityGrenade());
+	//}
 }
 
 void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
-	if (!bIsPriming) {
-		return; // not priming, ignore
+    if (CurrentWeaponId == EItemId::NONE) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerThrow: No weapon equipped"));
+        return;
+    }
+    if (!ThrowablesArray.Contains(CurrentWeaponId)) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerThrow: Current weapon is not in throwables array"));
+        return;
+    }
+    if (ActionState != EWeaponActionState::Idle) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerThrow: Cannot throw while in action state %d"), (int32)ActionState);
+        return;
 	}
 
-    if (bIsThrowing) {
-		return; // already throwing
-    }
-	ThrowablesArray.Remove(CurrentWeaponId);
-	bIsThrowing = true;
-    // Logic throw, move object, and explode
-    // Because on server, there's no current weapon, so we need to handle this
-	// gen object throwable
     ABaseCharacter* Character = GetCharacter();
     FVector StartPos = Character->GetThrowableLocation();
-    //StartPos += Character->GetActorForwardVector() * 10.f; // avoid collision                       // raise a bit if needed
-    
-
     AThrownProjectile* ThrownProj = nullptr;
     
 	UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
@@ -500,7 +489,7 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
         ThrownProj->LaunchProjectile(LaunchVelocity, Character);
 	}
 
-    bIsPriming = false;
+ 
     FTimerHandle TimerHandle_FinishThrow;
     GetWorld()->GetTimerManager().SetTimer(
         TimerHandle_FinishThrow,
@@ -517,7 +506,6 @@ void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
 }
 
 void UWeaponComponent::OnFinishedThrow() {
-	bIsThrowing = false;
 	EquipSlot(FGameConstants::SLOT_MELEE);
 }
 
@@ -586,9 +574,7 @@ void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
     ABaseCharacter* Character = GetCharacter();
     if (!Character->IsAlive()) return;
 
-    if (bIsMeleeAttacking) {
-        return; // already attacking
-	}
+
 	// Check if can attack
     if (!Character) {
         return;
@@ -596,7 +582,7 @@ void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
    /* if (Character->IsCloseToWall()) {
         return;
     }*/
-	bIsMeleeAttacking = true;
+
 	MulticastDoMeleeAttack(AttackIdx);
 }
 
@@ -630,23 +616,13 @@ void UWeaponComponent::HandleOnFire(const FVector& StartPos, const FVector& Targ
         UE_LOG(LogTemp, Warning, TEXT("OnFire: Server hit bone: %s"), *HitBoneName.ToString());
 
 		// decrease ammo
-		bool NeedUpdateAmmo = false;
         if (CurrentWeaponId == RifleState.ItemId) {
 			RifleState.AmmoInClip = FMath::Max(0, RifleState.AmmoInClip - 1);
-            if (RifleState.AmmoInClip == 0) {
-                NeedUpdateAmmo = true;
-            }
         }
         else if (CurrentWeaponId == PistolState.ItemId) {
             PistolState.AmmoInClip = FMath::Max(0, PistolState.AmmoInClip - 1);
-            if (PistolState.AmmoInClip == 0) {
-                NeedUpdateAmmo = true;
-			}
         }
-        if (NeedUpdateAmmo) {
-            HandleReload();
-		}
-
+       
 		// validate, prevent cheating
         FVector ServerEye = Character->GetPawnViewLocation();
 
@@ -836,13 +812,13 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UWeaponComponent, bIsPriming);
 	DOREPLIFETIME(UWeaponComponent, CurrentWeaponId);
 	DOREPLIFETIME(UWeaponComponent, RifleState);
 	DOREPLIFETIME(UWeaponComponent, PistolState);
 	DOREPLIFETIME(UWeaponComponent, MeleeState);
 	DOREPLIFETIME(UWeaponComponent, ThrowablesArray);
-	DOREPLIFETIME(UWeaponComponent, ProofState);
+	DOREPLIFETIME(UWeaponComponent, ArmorState);
+    DOREPLIFETIME(UWeaponComponent, ActionState);
     //DOREPLIFETIME(UWeaponComponent, ThrowablesArray);
 }
 
@@ -850,16 +826,14 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UWeaponComponent::EquipSlot(int32 SlotIndex)
 {
     ABaseCharacter* Character = GetCharacter();
-	if (!Character->IsAlive()) return;
-    if (bIsPlantingSpike || bIsDefusingSpike) {
-        return; // can not change weapon while planting or defusing spike
+    if (!Character || !Character->IsAlive()) return;
+    
+    if (ActionState != EWeaponActionState::Idle) {
+        return; // can not change weapon while in action
     }
 
 	UE_LOG(LogTemp, Warning, TEXT("EquipSlot called for slot %d"), SlotIndex);
-    if (bIsPriming) {
-        return; // can not change weapon while priming
-    }
-  
+   
     if (SlotIndex == FGameConstants::SLOT_THROWABLE) {
 		UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Equipping throwable"));
 		EItemId Id = EItemId::NONE;
@@ -993,39 +967,15 @@ FVector UWeaponComponent::GetVelocityGrenade() const
     return Forward * GrenadeInitSpeed;
 }
 
-
-void UWeaponComponent::OnRep_IsPriming()
-{
-    // Handle changes when bIsPriming is replicated
-    if (bIsPriming)
-    {
-        ABaseCharacter* Character = GetCharacter();
-        if (!Character) {
-            return;
-        }
-        // Start priming effects
-        UE_LOG(LogTemp, Warning, TEXT("OnRep_IsPriming: Started priming"));
-        UAnimationComponent* AnimComp = Character->GetAnimationComponent();
-        if (AnimComp) {
-            AnimComp->PlayThrowNadeMontage();
-        }
-    }
-    else
-    {
-        // Stop priming effects
-        UE_LOG(LogTemp, Warning, TEXT("OnRep_IsPriming: Stopped priming"));
-    }
-}
-
-
 void UWeaponComponent::ServerSetIsPriming_Implementation(bool bNewIsPriming)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ServerSetIsPriming called with %s"), bIsPriming ? TEXT("true") : TEXT("false"));
-    if (bIsPriming == bNewIsPriming) {
-        return; // no change
+	// change to state: Preparing to throw
+    if (bNewIsPriming) {
+        
+    }
+    else {
+        ActionState = EWeaponActionState::Idle;
 	}
-    bIsPriming = bNewIsPriming;
-    OnRep_IsPriming();
 }
 
 void UWeaponComponent::UpdateAttachLocationWeapon() {
@@ -1115,6 +1065,7 @@ bool UWeaponComponent::CanWeaponAim() {
 
 void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
 {
+    // TODO later
 	UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack called"));
     ABaseCharacter* Character = GetCharacter();
     if (!Character) return;
@@ -1130,7 +1081,7 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
     Params.AddIgnoredActor(Character);
 
 	if (Character->HasAuthority()) {
-		bIsMeleeAttacking = false;
+		
 	}
 
     if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, Params))
@@ -1138,20 +1089,7 @@ void UWeaponComponent::PerformMeleeAttack(int AttackIdx)
         if (AActor* Target = Hit.GetActor())
         {
 			UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack: Hit actor %s"), *Target->GetName());
-    //        if (Character->MeleeHitDecal) {
-				//UE_LOG(LogTemp, Warning, TEXT("PerformMeleeAttack: Spawning decal at hit location"));
-    //            FVector SpawnLoc = Hit.ImpactPoint + Hit.ImpactNormal * 2.0f;
-    //            FRotator DecalRot = Hit.ImpactNormal.Rotation();
-    //            UGameplayStatics::SpawnDecalAtLocation(
-    //                GetWorld(),
-    //                Character->MeleeHitDecal,
-    //                FVector(10.f, 10.f, 10.f), // XYZ = size, not just X
-    //                SpawnLoc,
-    //                DecalRot,
-    //                10.0f
-    //            );
-
-    //        }
+  
 			
             FMyPointDamageEvent DamageEvent;
             DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
@@ -1221,7 +1159,7 @@ void UWeaponComponent::OnRep_CurrentWeapon()
         if (AnimComp) {
             AnimComp->PlayEquip(WeaType);
         }
-        Character->HandleUpdateSpeedWalkCurrently();
+        Character->UpdateMaxWalkSpeed();
 	}
 
     OnUpdateCurrentWeapon.Broadcast(CurrentWeaponId);
@@ -1235,13 +1173,14 @@ void UWeaponComponent::ServerReload_Implementation()
 void UWeaponComponent::HandleReload()
 {
     ABaseCharacter* Character = GetCharacter();
-    if (!Character->IsAlive()) return;
+    if (!Character || !Character->IsAlive()) return;
     if (!CanReload()) {
         return;
     }
     UE_LOG(LogTemp, Warning, TEXT("OnEquipWeaponFinished called"));
-    if (bIsReloading) {
-        return; // already reloading
+    
+    if (ActionState != EWeaponActionState::Idle) {
+        return; // can not reload while in action
     }
     // check can reload
 	UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
@@ -1253,8 +1192,8 @@ void UWeaponComponent::HandleReload()
 		return; // only firearm can reload
 	}
 
-    bIsReloading = true;
-    
+	ActionState = EWeaponActionState::Reloading;
+
 	MulticastReload();
     FTimerHandle TimerHandle_FinishReload;
     GetWorld()->GetTimerManager().SetTimer(
@@ -1291,27 +1230,28 @@ void UWeaponComponent::MulticastReload_Implementation()
 void UWeaponComponent::OnFinishedReload()
 {
     ABaseCharacter* Character = GetCharacter();
-    if (!Character->IsAlive()) return;
-    if (GetOwner()->HasAuthority()) // only server makes changes
-    {
-        bIsReloading = false;
-		UE_LOG(LogTemp, Warning, TEXT("OnFinishedReload called"));
-		UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
-		FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
+    if (!Character || !Character->IsAlive()) return;
+    if (!GetOwner()->HasAuthority()) {
+        return;
+    }
+	ActionState = EWeaponActionState::Idle;
+    
+	UE_LOG(LogTemp, Warning, TEXT("OnFinishedReload called"));
+	UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
+	FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
 
-		if (!WeaponConf || !WeaponState) {
-			return;
-		}
-
-		int AmmoNeeded = WeaponConf->MaxAmmoInClip - WeaponState->AmmoInClip;
-		if (AmmoNeeded <= 0) {
-			return; // clip is full
-		}
-
-		int AmmoToReload = FMath::Min(AmmoNeeded, WeaponState->AmmoReserve);
-		WeaponState->AmmoReserve = FMath::Max(0, WeaponState->AmmoReserve - AmmoToReload);
-		WeaponState->AmmoInClip += AmmoToReload;
+	if (!WeaponConf || !WeaponState) {
+		return;
 	}
+
+	int AmmoNeeded = WeaponConf->MaxAmmoInClip - WeaponState->AmmoInClip;
+	if (AmmoNeeded <= 0) {
+		return; // clip is full
+	}
+
+	int AmmoToReload = FMath::Min(AmmoNeeded, WeaponState->AmmoReserve);
+	WeaponState->AmmoReserve = FMath::Max(0, WeaponState->AmmoReserve - AmmoToReload);
+	WeaponState->AmmoInClip += AmmoToReload;
 }
 
 void UWeaponComponent::OnNotifyGrabMag() {
@@ -1478,15 +1418,15 @@ bool UWeaponComponent::AddNewWeapon(FPickupData PickupData)
     else if (WeaponConf->WeaponType == EWeaponTypes::Equipment) {
         // hard code for test
         if (ItemId == EItemId::KEVLAR_VEST) {
-            ProofState.ArmorPoints = 100;
-			ProofState.ArmorEfficiency = 0.4f; 
-			ProofState.ArmorRatio = 0.3f;
+            ArmorState.ArmorPoints = 100;
+			ArmorState.ArmorEfficiency = 0.4f; 
+			ArmorState.ArmorRatio = 0.3f;
         }
         else {
             // level 2
-            ProofState.ArmorPoints = 100;
-			ProofState.ArmorEfficiency = 0.3f; 
-			ProofState.ArmorRatio = 0.5f;
+            ArmorState.ArmorPoints = 100;
+			ArmorState.ArmorEfficiency = 0.3f; 
+			ArmorState.ArmorRatio = 0.5f;
         }
     }
     return true;
@@ -1563,22 +1503,26 @@ int UWeaponComponent::GetCurrentAmmoInClip() {
     return 0;
 }
 
-bool UWeaponComponent::CanReload() {
+bool UWeaponComponent::CanReload()
+{
     FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
-    if (WeaponState) {
-        return WeaponState->AmmoReserve > 0;
-    }
-    return false;
+    if (!WeaponState) return false;
+
+    UWeaponData* Data = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
+    if (!Data) return false;
+
+    return WeaponState->AmmoReserve > 0 &&
+        WeaponState->AmmoInClip < Data->MaxAmmoInClip;
 }
 
+
 void UWeaponComponent::ServerStartPlantSpike_Implementation() {
+    // Refactor this later
     if (bHasSpike == false) {
         return; // no spike to plant
     }
    
-    if (bIsPlantingSpike) {
-        return;
-	}
+
     if (CurrentWeaponId != EItemId::SPIKE) {
 		return; // not equipping spike
 	}
@@ -1589,7 +1533,6 @@ void UWeaponComponent::ServerStartPlantSpike_Implementation() {
     }
 	UE_LOG(LogTemp, Warning, TEXT("ServerStartPlantSpike called"));
 
-	bIsPlantingSpike = true;
     ABaseCharacter* Character = GetCharacter();
     Character->RequestCrouch();
 
@@ -1603,15 +1546,16 @@ void UWeaponComponent::ServerStartPlantSpike_Implementation() {
 }
 
 void UWeaponComponent::ServerStopPlantSpike_Implementation() {
+	// Need refactor
 	UE_LOG(LogTemp, Warning, TEXT("ServerStopPlantSpike called"));
     if (bHasSpike == false) {
         return; // no spike to plant
     }
 
-    if (!bIsPlantingSpike) {
+    /*if (!bIsPlantingSpike) {
 		return;
-    }
-	bIsPlantingSpike = false;
+    }*/
+	//bIsPlantingSpike = false;
     GetWorld()->GetTimerManager().ClearTimer(SpikePlantTimerHandle);
 }
 
@@ -1669,25 +1613,26 @@ void UWeaponComponent::ServerStartDefuseSpike_Implementation() {
         return; // attackers cannot defuse
 	}
 
-	bIsDefusingSpike = true;
+	//bIsDefusingSpike = true;
     SpikeActor->StartDefuse(this);
 	Character->RequestCrouch();
 }
 
 void UWeaponComponent::FinishDefuseSpike() {
     ABaseCharacter* Character = GetCharacter();
-	bIsDefusingSpike = false;
+	//bIsDefusingSpike = false;
     // check spike is planted in game mode
     UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike called"));
 	Character->RequestUnCrouch();
 }
 
 void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
-    if (!bIsDefusingSpike) {
+	// Need refactor
+  /*  if (!bIsDefusingSpike) {
         return;
-    }
+    }*/
     ABaseCharacter* Character = GetCharacter();
-	bIsDefusingSpike = false;
+	//bIsDefusingSpike = false;
     Character->RequestUnCrouch();
 	ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
     ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
@@ -1699,18 +1644,19 @@ void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
 }
 
 void UWeaponComponent::OnInput_StartPlantSpike() {
-	UE_LOG(LogTemp, Warning, TEXT("OnInput_StartPlantSpike called"));
-    if (bHasSpike == false) {
-        return; // no spike to plant
-    }
-    if (bIsPlantingSpike) {
-        return;
-    }
-    if (!CanPlantSpikeAtCurrentLocation()) {
-        UE_LOG(LogTemp, Warning, TEXT("OnInput_StartPlantSpike: Cannot plant spike at current location"));
-        return;
-	}
-	ServerStartPlantSpike();
+	// Refactor this later
+	//UE_LOG(LogTemp, Warning, TEXT("OnInput_StartPlantSpike called"));
+ //   if (bHasSpike == false) {
+ //       return; // no spike to plant
+ //   }
+ //   if (bIsPlantingSpike) {
+ //       return;
+ //   }
+ //   if (!CanPlantSpikeAtCurrentLocation()) {
+ //       UE_LOG(LogTemp, Warning, TEXT("OnInput_StartPlantSpike: Cannot plant spike at current location"));
+ //       return;
+	//}
+	//ServerStartPlantSpike();
 }
 
 bool UWeaponComponent::CanPlantSpikeAtCurrentLocation() {
@@ -1764,39 +1710,40 @@ bool UWeaponComponent::CanPlantSpikeAtCurrentLocation() {
 }
 
 void UWeaponComponent::OnInput_StopPlantSpike() {
-    if (bHasSpike == false) {
-        return; // no spike to plant
-    }
-    if (!bIsPlantingSpike) {
-        return;
-	}
-    ServerStopPlantSpike();
+ //   if (bHasSpike == false) {
+ //       return; // no spike to plant
+ //   }
+ //   if (!bIsPlantingSpike) {
+ //       return;
+	//}
+ //   ServerStopPlantSpike();
 }
 
-void UWeaponComponent::OnRep_IsPlantingSpike() {
-    OnUpdatePlantSpikeState.Broadcast(bIsPlantingSpike);
-    ABaseCharacter* Character = GetCharacter();
-
-    // play sound
-    if (bIsPlantingSpike) {
-        if (Character) {
-            Character->OnPlantSpikeStarted();
-        }
-    }
-    else {
-        if (Character) {
-            Character->OnPlantSpikeStopped();
-        }
-	}
-}
+//void UWeaponComponent::OnRep_IsPlantingSpike() {
+//    OnUpdatePlantSpikeState.Broadcast(bIsPlantingSpike);
+//    ABaseCharacter* Character = GetCharacter();
+//
+//    // play sound
+//    if (bIsPlantingSpike) {
+//        if (Character) {
+//            Character->OnPlantSpikeStarted();
+//        }
+//    }
+//    else {
+//        if (Character) {
+//            Character->OnPlantSpikeStopped();
+//        }
+//	}
+//}
 
 void UWeaponComponent::FinishPlantSpike() {
+	// Refactor this later
     if (bHasSpike == false) {
         return;
     }
-    if (!bIsPlantingSpike) {
+    /*if (!bIsPlantingSpike) {
         return;
-    }
+    }*/
 
     // get spike game mode
 	ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
@@ -1809,7 +1756,7 @@ void UWeaponComponent::FinishPlantSpike() {
     FVector SpikeLocation = Character->GetActorLocation()
         + Character->GetActorForwardVector() * 50.f;
 	SpikeGM->PlantSpike(SpikeLocation, Character->GetController());
-    bIsPlantingSpike = false;
+    //bIsPlantingSpike = false;
 	bHasSpike = false;
 
 	UE_LOG(LogTemp, Warning, TEXT("FinishPlantSpike called"));
@@ -1831,23 +1778,23 @@ void UWeaponComponent::OnInput_StopDefuseSpike() {
     ServerStopDefuseSpike();
 }
 
-void UWeaponComponent::OnRep_IsDefusingSpike() {
-    ABaseCharacter* Character = GetCharacter();
-    if (!Character) {
-        return;
-	}
-    OnUpdateDefuseSpikeState.Broadcast(bIsDefusingSpike);
-    if (bIsDefusingSpike) {
-        if (Character) {
-            Character->OnDefuseSpikeStarted();
-        }
-    }
-    else {
-        if (Character) {
-            Character->OnDefuseSpikeStopped();
-        }
-	}
-}
+//void UWeaponComponent::OnRep_IsDefusingSpike() {
+//    ABaseCharacter* Character = GetCharacter();
+//    if (!Character) {
+//        return;
+//	}
+//    OnUpdateDefuseSpikeState.Broadcast(bIsDefusingSpike);
+//    if (bIsDefusingSpike) {
+//        if (Character) {
+//            Character->OnDefuseSpikeStarted();
+//        }
+//    }
+//    else {
+//        if (Character) {
+//            Character->OnDefuseSpikeStopped();
+//        }
+//	}
+//}
 
 void UWeaponComponent::OnRep_HasSpike() {
     ABaseCharacter* Character = GetCharacter();
@@ -1882,12 +1829,13 @@ void UWeaponComponent::AutoEquipBestWeapon()
 
 // Server function called when owner dies
 void UWeaponComponent::OnOwnerDeath() {
-    if (bIsPlantingSpike) {
+	// Refactor this later
+   /* if (bIsPlantingSpike) {
         ServerStopPlantSpike();
 	}
     if (bIsDefusingSpike) {
         ServerStopDefuseSpike();
-	}
+	}*/
 
 	CurrentWeaponId = EItemId::NONE;
     ABaseCharacter* Character = GetCharacter();
@@ -1938,10 +1886,89 @@ void UWeaponComponent::OnOwnerDeath() {
 	}
 }
 
-void UWeaponComponent::OnRep_ProofState() {
-    OnUpdateAmmor.Broadcast(ProofState.ArmorPoints);
+void UWeaponComponent::OnRep_ArmorState() {
+    OnUpdateArmor.Broadcast(ArmorState.ArmorPoints);
 }
 
 ABaseCharacter* UWeaponComponent::GetCharacter() const{
     return Cast<ABaseCharacter>(GetOwner());
+}
+
+bool UWeaponComponent::SetActionState(EWeaponActionState NewState)
+{
+    if (!GetOwner() || !GetOwner()->HasAuthority())
+        return false;
+
+    if (!CanTransition(ActionState, NewState))
+        return false;
+
+    const EWeaponActionState OldState = ActionState;
+    ActionState = NewState;
+
+    OnActionStateChanged(OldState, NewState);
+    return true;
+}
+
+bool UWeaponComponent::CanTransition(
+    EWeaponActionState From,
+    EWeaponActionState To
+) const
+{
+    if (From == EWeaponActionState::Reloading && To == EWeaponActionState::Firing)
+        return false;
+
+    if (From == EWeaponActionState::Planting && To != EWeaponActionState::Idle)
+        return false;
+
+    if (From == EWeaponActionState::Defusing && To != EWeaponActionState::Idle)
+        return false;
+
+    return true;
+}
+
+void UWeaponComponent::OnActionStateChanged(
+    EWeaponActionState OldState,
+    EWeaponActionState NewState
+)
+{
+    // Cancel previous action
+    switch (OldState)
+    {
+    case EWeaponActionState::Reloading:
+        //GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+        break;
+
+    case EWeaponActionState::Throwing:
+        //GetWorld()->GetTimerManager().ClearTimer(ThrowProjectileTimer);
+        break;
+
+    default:
+        break;
+    }
+
+    // Start new action
+    switch (NewState)
+    {
+    case EWeaponActionState::Reloading:
+        //StartReload_Internal();
+        break;
+
+    case EWeaponActionState::Firing:
+        //StartFire_Internal();
+        break;
+
+    default:
+        break;
+    }
+}
+
+void UWeaponComponent::OnRep_ActionState(EWeaponActionState OldState)
+{
+    OnActionStateChanged(OldState, ActionState);
+}
+
+bool UWeaponComponent::HasAmmoInClip() 
+{
+    FWeaponState* State = GetWeaponStateByItemId(CurrentWeaponId);
+    return State && State->AmmoInClip > 0;
 }

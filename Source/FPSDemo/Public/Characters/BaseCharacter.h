@@ -38,6 +38,7 @@ class UCharCameraComponent;
 
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAimingChanged, bool);
 
 UENUM(BlueprintType)
 enum class EMovementState : uint8
@@ -146,16 +147,13 @@ protected:
     TObjectPtr<UBehaviorTree> BehaviorTree;
 
     UPROPERTY(EditDefaultsOnly, Category = "Init|Crouch")
-    UCurveFloat* CrouchCurve = nullptr;
+    TObjectPtr<UCurveFloat> CrouchCurve = nullptr;
 
 protected:
     // ===== Runtime State =====
     bool bLastHitWasHeadshot;
     bool bAppliedTeamMesh;
     bool bHasBeginPlayRun;
-    bool bRecallBVT_AtBegin;
-    bool bHoldingShift;
-    bool bIsBot;
     float LastFootstepTime;
     float BaseStunDuration;
     float BasePivotFpsZ = 0.f;
@@ -189,10 +187,9 @@ protected:
 
 protected:
 	// ===== Replicated Properties =====
-	UPROPERTY(Replicated)
     float AimSensitivity = 1.0f;
     UPROPERTY(ReplicatedUsing = OnRep_IsAiming)
-    bool bAiming = false;
+    bool bIsAiming = false;
     UPROPERTY(ReplicatedUsing = OnRep_CurrentMovementState)
     EMovementState CurrentMovementState = EMovementState::Normal;
 
@@ -202,9 +199,7 @@ protected:
     FTimeline CrouchTimeline;
 protected:
     // ===== Internal Functions =====
-    void StartRunning();
-    void StopRunning();
-    void ApplyAimingVisual();
+    void ApplyAimingVisuals();
     void OnMeleeNotify();
     void PlayFootstepSound();
     void UpdateFootstepSound(float DeltaTime);
@@ -212,7 +207,9 @@ protected:
     void UpdateAttachLocationWeapon();
     void DropWeapon();
     void ApplyTeamMesh();
+    void HandleDeath();
 	bool CanPlayFootstep() const;
+	bool IsBot() const;
 
     UFUNCTION()
     void HandleCrouchProgress(float Alpha);
@@ -223,17 +220,17 @@ protected:
 	EWeaponSubTypes GetWeaponSubType() const;
 
     // ===== Networking RPC =====
-    UFUNCTION(Server, Unreliable)
+    UFUNCTION(Server, Reliable)
     void ServerSetAiming(bool bNewAiming);
     UFUNCTION(Server, Reliable) 
     void ServerRevive();
-    UFUNCTION(Server, Unreliable)
+    UFUNCTION(Server, Reliable)
     void ServerSetIsSlow(bool bNewIsSlow); 
 
     // ===== Networking Multicast =====
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastReviveFX();
-    UFUNCTION(NetMulticast, Unreliable)
+    UFUNCTION(NetMulticast, Reliable)
     void MulticastHandleDeath();
 
 	// ===== Networking OnRep =====
@@ -241,11 +238,9 @@ protected:
     void OnRep_IsAiming();
     UFUNCTION()
     void OnRep_CurrentMovementState();
-	UFUNCTION()
-	void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
 
 	// ===== Client RPC =====
-    UFUNCTION(Client, Unreliable)
+    UFUNCTION(Client, Reliable)
     void ClientPlayHitEffect();
 
 	// ===== Other UFUNCTIONS =====
@@ -253,13 +248,15 @@ protected:
     void OnStunTimelineFinished();
     UFUNCTION()
     void OnStunTimelineUpdate(float Value);
+    UFUNCTION()
+    void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
+
   
 public:
     // ===== Public API =====
     void RequestStartAiming();
 	void RequestStopAiming();
-	void HandleUpdateSpeedWalkCurrently();
-	void HandleDeath();
+	void UpdateMaxWalkSpeed();
     void PlayBloodFx(const FVector& HitLocation);
 	void PlayStunEffect(const float& Strength);
     void StartAiming();
@@ -295,12 +292,13 @@ public:
 
 	// ===== Delegates =====
     FOnHit OnHit;
+    FOnAimingChanged OnAimingChanged;
 
 	// ===== Constants =====
     static constexpr float MAX_WALK_SPEED = 600.f;
     static constexpr float NORMAL_WALK_SPEED = 400.f;
     static constexpr float MELEE_WALK_SPEED = 500.f;
     static constexpr float CROUCH_WALK_SPEED = 200.f;
-    static constexpr float AIM_WALK_SPEED = 250.f;
     static constexpr float SLOW_WALK_SPEED = 200.f;
+    static constexpr float FOOTSTEP_SPEED_MIN = 300.f;
 };

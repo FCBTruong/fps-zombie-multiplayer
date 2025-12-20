@@ -16,9 +16,9 @@
 #include "Weapons/WeaponMelee.h"
 #include "Weapons/WeaponThrowable.h"
 #include "Weapons/WeaponState.h"
+#include "Weapons/WeaponActionState.h"
 #include "WeaponComponent.generated.h"
 
-class UInventoryComponent;
 class ABaseCharacter;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateAmmoState, int, int);
@@ -28,7 +28,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRifleWeapon, const EItemId&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePistolWeapon, const EItemId&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePlantSpikeState, bool);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateDefuseSpikeState, bool);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateAmmor, int);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateArmor, int);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponComponent : public UActorComponent
@@ -40,66 +40,23 @@ public:
 	UWeaponComponent();
 
 protected:
-	UPROPERTY(Replicated)
-	bool bIsReloading;
-
-	UPROPERTY(Replicated)
-	bool bIsAiming;
-
-	UPROPERTY(Replicated)
-	bool bIsFiring;
-
-	UPROPERTY(ReplicatedUsing = OnRep_IsPlantingSpike)
-	bool bIsPlantingSpike;
-
-	UPROPERTY(ReplicatedUsing = OnRep_IsDefusingSpike)
-	bool bIsDefusingSpike;
-	UFUNCTION() void OnRep_IsDefusingSpike();
-
-	bool bIsScopeEquipped;
-	bool bIsMeleeAttacking;
-
-	UPROPERTY(ReplicatedUsing = OnRep_IsPriming) 
-	bool bIsPriming;
-	UFUNCTION(Server, Unreliable) void ServerSetIsPriming(bool bNewIsPriming);
-
-	UFUNCTION() void OnRep_IsPriming();
-	UFUNCTION() void OnRep_IsPlantingSpike();
-	bool bIsThrowing;
-
-
-	FTimerHandle FireTimerHandle;
-
-	void PlayEffectFire(FVector TargetPoint);
-	// Called when the game starts
+	// ==== Component Overrides =====
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void BeginPlay() override;
 
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastThrowAction(FVector LaunchVelocity);
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastDoMeleeAttack(int AttackIdx);
-
-	UInventoryComponent* InventoryComp;
-
-	bool bIsInitialized = false;
-
-	UPROPERTY()
-	ATrajectoryPreview* TrajectoryPreviewRef;
-	UPROPERTY()
-	FTimerHandle ThrowProjectileTimer;
-	
+protected:
 	float ThrowAngle = 10.f;
 	float GrenadeInitSpeed = 1400.f;
+	bool bIsInitialized = false;
 
+	// ===== Replicated Properties =====
+	UPROPERTY(ReplicatedUsing = OnRep_ActionState)
+	EWeaponActionState ActionState = EWeaponActionState::Idle;
+	UPROPERTY(Replicated)
+	bool bIsAiming;
 	UPROPERTY(ReplicatedUsing = OnRep_HasSpike)
 	bool bHasSpike = false;
-
-	UFUNCTION()
-	void OnRep_HasSpike();
-
-	void InitState();
-	void OnFinishedReload();
-
 	UPROPERTY(ReplicatedUsing = OnRep_RifleState)
 	FWeaponState RifleState;
 	UPROPERTY(ReplicatedUsing = OnRep_PistolState)
@@ -108,14 +65,40 @@ protected:
 	FWeaponState MeleeState;
 	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
 	TArray<EItemId> ThrowablesArray;
-	UPROPERTY(ReplicatedUsing = OnRep_ProofState)
-	FProofState ProofState;
-
+	UPROPERTY(ReplicatedUsing = OnRep_ArmorState)
+	FArmorState ArmorState;
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
 	EItemId CurrentWeaponId;
+	UPROPERTY()
+	TObjectPtr<AWeaponBase> CurrentWeapon; // For client prediction
+	UPROPERTY()
+	TObjectPtr<ATrajectoryPreview> TrajectoryPreviewRef;
+	UPROPERTY()
+	FTimerHandle ThrowProjectileTimer;
+	FTimerHandle FireTimerHandle;
+	FTimerHandle SpikePlantTimerHandle;
 
-	// This variable is use for client side only
-	AWeaponBase* CurrentWeapon;
+protected:
+	// ===== Protected API =====
+	void PlayEffectFire(FVector TargetPoint);
+	bool SetActionState(EWeaponActionState NewState);
+	bool CanTransition(EWeaponActionState From, EWeaponActionState To) const;
+	void OnActionStateChanged(EWeaponActionState OldState, EWeaponActionState NewState);
+	void UpdateStateCurrentWeapon();
+	void FinishPlantSpike();
+	void InitState();
+	void OnFinishedReload();
+	bool HasAmmoInClip();
+
+	// ===== Replication Notifies =====
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastThrowAction(FVector LaunchVelocity);
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastDoMeleeAttack(int AttackIdx);
+	UFUNCTION(Server, Reliable)
+	void ServerSetIsPriming(bool bNewIsPriming);
+	UFUNCTION()
+	void OnRep_HasSpike();
 	UFUNCTION()
 	void OnRep_CurrentWeapon();
 	UFUNCTION()
@@ -125,21 +108,15 @@ protected:
 	UFUNCTION()
 	void OnRep_MeleeState();
 	UFUNCTION()
-	void OnRep_ProofState();
-
-	void UpdateStateCurrentWeapon();
+	void OnRep_ArmorState();
+	UFUNCTION()
+	void OnRep_ActionState(EWeaponActionState OldState);
 	UFUNCTION()
 	void OnRep_Grenades();
-	FTimerHandle SpikePlantTimerHandle;
-	void FinishPlantSpike();
-
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastSpikePlanted();
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	// ===== Public API =====
 	void EquipWeapon(EItemId ItemId);
 	void OnNewItemPickup(int32 NewInventoryId);
 	EWeaponTypes GetCurrentWeaponType();
@@ -229,21 +206,15 @@ public:
 	FOnUpdateRifleWeapon OnUpdateRifleWeapon;
 	FOnUpdatePistolWeapon OnUpdatePistolWeapon;
 	int GetCurrentAmmoInClip();
-
 	void TriggerUpdateUI();
-	bool IsReloading() const { return bIsReloading; }
 	bool CanReload();
 	void OnInput_StartPlantSpike();
 	void OnInput_StopPlantSpike();
 	void OnInput_StartDefuseSpike();
 	void OnInput_StopDefuseSpike();
-
 	FOnUpdatePlantSpikeState OnUpdatePlantSpikeState;
 	FOnUpdateDefuseSpikeState OnUpdateDefuseSpikeState;
-	FOnUpdateAmmor OnUpdateAmmor;
-	bool IsPlantingSpike() const {
-		return bIsPlantingSpike;
-	}
+	FOnUpdateArmor OnUpdateArmor;
 	void FinishDefuseSpike();
 	bool CanPlantSpikeAtCurrentLocation();
 	void RefreshOverlapPickupActors();
@@ -255,8 +226,8 @@ public:
 	FWeaponState* GetPistolState() {
 		return &PistolState;
 	}
-	FProofState* GetArmorState() {
-		return &ProofState;
+	FArmorState* GetArmorState() {
+		return &ArmorState;
 	}
 	ABaseCharacter* GetCharacter() const;
 };

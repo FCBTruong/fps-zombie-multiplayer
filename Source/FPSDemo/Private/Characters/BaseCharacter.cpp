@@ -113,7 +113,10 @@ void ABaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-	UGameManager::Get(GetWorld())->RegisterPlayer(this);
+    if (UGameManager* GM = UGameManager::Get(GetWorld()))
+    {
+        GM->RegisterPlayer(this);
+    }
 
     BasePivotFpsZ = FpsPivot->GetRelativeLocation().Z;
 
@@ -126,8 +129,6 @@ void ABaseCharacter::BeginPlay()
         CrouchTimeline.SetLooping(false);
     }
 
-    ThrowableLocation = Cast<USceneComponent>(GetDefaultSubobjectByName(TEXT("ThrowableLocation")));
-
     if (MeshFps) {
         if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
         {
@@ -135,10 +136,11 @@ void ABaseCharacter::BeginPlay()
             FPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
         }
     }
-
-    if (UAnimInstance* TPSAnim = GetMesh()->GetAnimInstance())
-    {
-        TPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+    if (GetMesh()) {
+        if (UAnimInstance* TPSAnim = GetMesh()->GetAnimInstance())
+        {
+            TPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+        }
     }
 
 
@@ -174,18 +176,6 @@ void ABaseCharacter::BeginPlay()
     }
 
 	bHasBeginPlayRun = true;
-    if (bRecallBVT_AtBegin)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Warning: ABaseCharacter::BeginPlay called before becoming view target"));
-
-        // trigger manually
-        APlayerController* PC = Cast<APlayerController>(GetController());
-        if (PC)
-        {
-            BecomeViewTarget(PC); 
-        }
-		bRecallBVT_AtBegin = false;
-    }
 
     if (StimuliSource)
     {
@@ -196,6 +186,7 @@ void ABaseCharacter::BeginPlay()
 
 
 void ABaseCharacter::OnRep_PlayerState() {
+    Super::OnRep_PlayerState();
     // Set mesh based on team
     if (!bAppliedTeamMesh) {
         bAppliedTeamMesh = true;
@@ -212,6 +203,10 @@ void ABaseCharacter::ApplyTeamMesh()
         // get player state
         AMyPlayerState* MyPS = Cast<AMyPlayerState>(GetPlayerState());
 		AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+		if (!GS) {
+			UE_LOG(LogTemp, Warning, TEXT("GS is null in SetMeshBaseOnTeam"));
+			return;
+		}
         if (MyPS) {
             USkeletalMesh* NewMesh = nullptr;
 
@@ -253,8 +248,7 @@ void ABaseCharacter::Tick(float DeltaTime)
 
 void ABaseCharacter::UpdateFootstepSound(float DeltaTime) {
     const float Speed = GetVelocity().Size2D();
-    const bool bGrounded = !GetCharacterMovement()->IsFalling();
-
+   
     if (!CanPlayFootstep()) {
         return;
     }
@@ -277,13 +271,13 @@ void ABaseCharacter::UpdateFootstepSound(float DeltaTime) {
 
 bool ABaseCharacter::CanPlayFootstep() const
 {
-    return GetVelocity().Size2D() > 300.f &&
+    return GetVelocity().Size2D() > ABaseCharacter::FOOTSTEP_SPEED_MIN &&
         !GetCharacterMovement()->IsFalling();
 }
 
-void ABaseCharacter::ApplyAimingVisual()
+void ABaseCharacter::ApplyAimingVisuals()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Updating Aiming State: %s"), bAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
+    UE_LOG(LogTemp, Warning, TEXT("Updating Aiming State: %s"), bIsAiming ? TEXT("Aiming") : TEXT("Not Aiming"));
     // Get Player controller and show scope widget
     AMyPlayerController* PC = Cast<AMyPlayerController>(UGameplayStatics::GetPlayerController(this, 0));
     if (!PC || !PC->IsLocalController())
@@ -305,42 +299,31 @@ void ABaseCharacter::ApplyAimingVisual()
         UE_LOG(LogTemp, Warning, TEXT("WeaponComp is null in UpdateAimingState"));
         return;
 	}
-    if (bAiming)
+    if (bIsAiming)
     {
         if (WeaponComp->IsScopeEquipped()) {
             if (CameraComp) {
                 CameraComp->SetTargetFOV(20.f);
             }
             AimSensitivity = 0.2f;
-            PC->ShowScope();
+			OnAimingChanged.Broadcast(true);
         }
     }
     else
     {
         CameraComp->ResetFOV();
         AimSensitivity = 1.0f;
-        PC->HideScope();
+		OnAimingChanged.Broadcast(false);
     }
-}
-
-
-void ABaseCharacter::StartRunning()
-{
-	//bHoldingShift = true;
-}
-
-void ABaseCharacter::StopRunning()
-{
-	bHoldingShift = false;
 }
 
 void ABaseCharacter::Jump()
 {
-    if (GetCharacterMovement()->IsFalling()) {
+    if (GetCharacterMovement()->IsCrouching()) {
+        UnCrouch();
         return;
 	}
-    if (IsCrouched())
-    {
+    if (GetCharacterMovement()->IsFalling()) {
         return;
 	}
     Super::Jump();
@@ -436,12 +419,19 @@ USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh() const
 void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(ABaseCharacter, bAiming);
-	DOREPLIFETIME(ABaseCharacter, CurrentMovementState);
+    DOREPLIFETIME(ABaseCharacter, bIsAiming);
+    DOREPLIFETIME_CONDITION(
+        ABaseCharacter,
+        CurrentMovementState,
+        COND_SkipOwner
+    );
 }
 
 void ABaseCharacter::DropWeapon()
 {
+    if (!WeaponComp) {
+        return;
+	}
 	WeaponComp->DropWeapon();
 }
 
@@ -467,15 +457,16 @@ void ABaseCharacter::RequestStartAiming()
     if (!WeaponComp->CanWeaponAim()) {
         return;
     }
-    if (bAiming) {
+    if (bIsAiming) {
         return;
     }
     
 	// if is locally controlled, update immediately
     if (IsLocallyControlled()) {
 		// Predictive update
-		bAiming = true;
-        ApplyAimingVisual();
+		bIsAiming = true;
+        ApplyAimingVisuals();
+        UpdateMaxWalkSpeed();
 	}
 
     ServerSetAiming(true);
@@ -483,52 +474,94 @@ void ABaseCharacter::RequestStartAiming()
 
 void ABaseCharacter::RequestStopAiming()
 {
-    if (!bAiming) {
+    if (!bIsAiming) {
         return;
     }
   
     // if is locally controlled, update immediately
     if (IsLocallyControlled()) {
-		bAiming = false;
-        ApplyAimingVisual();
+        bIsAiming = false;
+        ApplyAimingVisuals();
+        UpdateMaxWalkSpeed();
     }
     ServerSetAiming(false);
 }
+
 
 void ABaseCharacter::OnRep_IsAiming()
 {
     if (IsLocallyControlled()) {
 		return; // already handled locally
 	}
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_IsAiming: %s"), bAiming ? TEXT("true") : TEXT("false"));
-    ApplyAimingVisual();
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_IsAiming: %s"), bIsAiming ? TEXT("true") : TEXT("false"));
+    ApplyAimingVisuals();
 }
 
 void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
 {
-    bAiming = bNewAiming;
+    if (!IsAlive()) {
+        return;
+    }
+
+    if (!WeaponComp) {
+        return;
+    }
+    if (bNewAiming && !WeaponComp->CanWeaponAim()) {
+        return;
+	}
+
+    if (bIsAiming == bNewAiming) {
+        return; // no change
+    }
+
+    if (bIsAiming) {
+        if (WeaponComp->CanWeaponAim()) {
+			AimSensitivity = 0.2f;
+        }
+    }
+    else {
+        AimSensitivity = 1.0f;
+	}
+
+    bIsAiming = bNewAiming;
+    UpdateMaxWalkSpeed();
 }
 
 
 float ABaseCharacter::GetSpeedWalkRatio() const
 {
-	EWeaponTypes WeaponType = WeaponComp->GetCurrentWeaponType();
-    if (WeaponType == EWeaponTypes::Firearm) {
-        return 1;
+    float Ratio = 1.0f;
+
+    if (WeaponComp)
+    {
+        const EWeaponTypes WeaponType = WeaponComp->GetCurrentWeaponType();
+
+        switch (WeaponType)
+        {
+        case EWeaponTypes::Melee:
+        case EWeaponTypes::Throwable:
+        case EWeaponTypes::Spike:
+            Ratio = 1.5f;
+            break;
+
+        case EWeaponTypes::Firearm:
+        default:
+            Ratio = 1.0f;
+            break;
+        }
     }
-    else if (WeaponType == EWeaponTypes::Melee) {
-        return 1.5f;
+
+    // Aiming penalty
+    if (bIsAiming)
+    {
+        Ratio *= 0.2f;
     }
-    else if (WeaponType == EWeaponTypes::Throwable) {
-        return 1.5f;
-	}
-    else if (WeaponType == EWeaponTypes::Spike) {
-        return 1.5f;
-    }
-    return 1.0f;
+
+    return Ratio;
 }
 
-void ABaseCharacter::HandleUpdateSpeedWalkCurrently() {
+
+void ABaseCharacter::UpdateMaxWalkSpeed() {
     if (IsCrouched()) {
         GetCharacterMovement()->MaxWalkSpeed = CROUCH_WALK_SPEED;
     }
@@ -549,7 +582,11 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	}
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     // calculate with Armor
-    FProofState* Armor = WeaponComp->GetArmorState();
+    if (!WeaponComp) {
+        UE_LOG(LogTemp, Warning, TEXT("WeaponComp is null in TakeDamage"));
+        return ActualDamage;
+    }
+    FArmorState* Armor = WeaponComp->GetArmorState();
     if (Armor)
     {
         if (Armor->ArmorPoints > 0)
@@ -594,15 +631,16 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 			LastDamageCauser = Projectile->GetWeaponData();
         }
     }
+    if (!HealthComp) {
+        UE_LOG(LogTemp, Warning, TEXT("HealthComp is null in TakeDamage"));
+		return ActualDamage;
+	}
 
     HealthComp->ApplyDamage(ActualDamage);
     ClientPlayHitEffect();
 
 	// if bot, notify AI perception
-    if (GetController() && GetController()->IsA<AAIController>()) {
-        bIsBot = true;
-    }
-    if (bIsBot) {
+    if (IsBot()) {
         if (ABotAIController* AICon = Cast<ABotAIController>(GetController()))
         {
             AICon->SetFocus(EventInstigator);
@@ -679,8 +717,10 @@ void ABaseCharacter::HandleDeath()
             }
         }
 
-		WeaponComp->OnOwnerDeath();
-		SetLifeSpan(3.f); // auto destroy after 3 seconds
+        if (WeaponComp) {
+            WeaponComp->OnOwnerDeath();
+        }
+		SetLifeSpan(10.f); // auto destroy after 5 seconds
     }
 }
 
@@ -738,7 +778,7 @@ void ABaseCharacter::MulticastHandleDeath_Implementation()
         );
     }
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    GetMesh()->SetSimulatePhysics(true);
+    //GetMesh()->SetSimulatePhysics(true);
     GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
 }
 
@@ -869,15 +909,22 @@ void ABaseCharacter::Destroyed()
 
 void ABaseCharacter::ServerSetIsSlow_Implementation(bool bNewIsSlow)
 {
+    if (!IsAlive())
+    {
+        return;
+    }
 	UE_LOG(LogTemp, Warning, TEXT("ServerSetIsSlow called with bNewIsSlow: %s"), bNewIsSlow ? TEXT("true") : TEXT("false"));
 	CurrentMovementState = bNewIsSlow ? EMovementState::Slow : EMovementState::Normal;
 	
-	HandleUpdateSpeedWalkCurrently();
+    UpdateMaxWalkSpeed();
 }
 
 void ABaseCharacter::OnRep_CurrentMovementState()
 {
-    HandleUpdateSpeedWalkCurrently();
+    if (IsLocallyControlled()) {
+		return; // already handled locally
+    }
+    UpdateMaxWalkSpeed();
 }
 
 void ABaseCharacter::PlayFootstepSound()
@@ -891,7 +938,7 @@ void ABaseCharacter::PlayFootstepSound()
     const bool bGrounded = !GetCharacterMovement()->IsFalling();
 
     // OFF when slow
-    if (Speed < 300.f)
+    if (Speed < ABaseCharacter::FOOTSTEP_SPEED_MIN)
         return;
 
     if (!bGrounded)
@@ -929,19 +976,15 @@ void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
     
-	UGameManager::Get(GetWorld())->UnregisterPlayer(this);
+    if (UGameManager* GM = UGameManager::Get(GetWorld()))
+    {
+        GM->UnregisterPlayer(this);
+    }
 }
 
 void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
 {
     Super::BecomeViewTarget(PC);
-  
-    if (!bHasBeginPlayRun)
-    {
-        bRecallBVT_AtBegin = true;
-        // will be called again at BeginPlay
-        return;
-    }
 
     if (!PC->IsLocalController()) {
         UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called - NO LOCAL"));
@@ -1070,8 +1113,27 @@ USplineComponent* ABaseCharacter::GetThrowSpline() const {
 void ABaseCharacter::RequestSlowMovement(bool bNewIsSlow)
 {
     ServerSetIsSlow(bNewIsSlow);
+
+    if (IsLocallyControlled())
+    {
+        CurrentMovementState = bNewIsSlow
+            ? EMovementState::Slow
+            : EMovementState::Normal;
+
+        UpdateMaxWalkSpeed();
+    }
 }
 
 void ABaseCharacter::RequestJump() {
+    if (GetCharacterMovement()->IsFalling())
+    {
+        return;
+    }
+
 	Jump();
+}
+
+bool ABaseCharacter::IsBot() const
+{
+    return Controller && Controller->IsA<AAIController>();
 }

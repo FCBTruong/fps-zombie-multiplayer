@@ -27,6 +27,7 @@ public:
 	void BeginPlay() override;
 	UPlayerUI* PlayerUI;
 	void OnPossess(APawn* InPawn) override;
+	void OnUnPossess() override;
 	void BindingUI();
 	virtual void OnRep_Pawn() override;
 	void ApplyFlash(const float& Strength);
@@ -100,6 +101,7 @@ public:
 	void SetViewmodelOverlay(UMaterialInstanceDynamic* MID);
 	void ShowScope();
 	void HideScope();
+	void HandleAimingChanged(bool bIsAiming);
 
 	void Move(const FInputActionValue& Value);
     void OnLeftClickStart();

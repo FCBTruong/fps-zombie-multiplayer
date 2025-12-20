@@ -52,6 +52,17 @@ void AMyPlayerController::OnPossess(APawn* InPawn)
 	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: OnPossess called"));
 }
 
+
+void AMyPlayerController::OnUnPossess()
+{
+    if (ABaseCharacter* Char = Cast<ABaseCharacter>(GetPawn()))
+    {
+        Char->OnAimingChanged.RemoveAll(this);
+    }
+    Super::OnUnPossess();
+}
+
+
 void AMyPlayerController::OnRep_Pawn()
 {
     Super::OnRep_Pawn();
@@ -96,13 +107,18 @@ void AMyPlayerController::BindingUI()
             WC->OnUpdatePistolWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdatePistol);
 			WC->OnUpdatePlantSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdatePlantSpikeState);
 			WC->OnUpdateDefuseSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdateDefuseSpikeState);
-			WC->OnUpdateAmmor.AddUObject(PlayerUI, &UPlayerUI::UpdateArmor);
+			WC->OnUpdateArmor.AddUObject(PlayerUI, &UPlayerUI::UpdateArmor);
             PlayerUI->UpdateArmor(0);
 			
             WC->TriggerUpdateUI();
 		}
 
         Char->OnHit.AddUObject(PlayerUI, &UPlayerUI::OnHit);
+
+        Char->OnAimingChanged.AddUObject(
+            this,
+            &AMyPlayerController::HandleAimingChanged
+        );
     }
 
 	// get game state and bind to score updates
@@ -358,9 +374,9 @@ void AMyPlayerController::Move(const FInputActionValue& Value)
 	if (!MyChar) return;
 	UWeaponComponent* WeaponComp = MyChar->GetWeaponComponent();
     if (WeaponComp) {
-        if (WeaponComp->IsPlantingSpike()) {
-            return; // cannot move while planting spike
-        }
+        //if (WeaponComp->IsPlantingSpike()) {
+        //    return; // cannot move while planting spike
+        //}
     }
 
     FVector2D MoveInput = Value.Get<FVector2D>();
@@ -784,4 +800,19 @@ void AMyPlayerController::UpdateViewmodelCapture(bool bEnable)
     {
 		PlayerUI->ViewmodelOverlay->SetVisibility(bEnable ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
+}
+
+void AMyPlayerController::HandleAimingChanged(bool bIsAiming)
+{
+    if (PlayerUI)
+    {
+        if (bIsAiming)
+        {
+            PlayerUI->ShowScope();
+        }
+        else
+        {
+            PlayerUI->ShowScope();
+		}
+    }
 }
