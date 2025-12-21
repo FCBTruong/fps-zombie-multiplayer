@@ -75,8 +75,12 @@ protected:
 	TObjectPtr<ATrajectoryPreview> TrajectoryPreviewRef;
 	UPROPERTY()
 	FTimerHandle ThrowProjectileTimer;
+	UPROPERTY()
 	FTimerHandle FireTimerHandle;
+	UPROPERTY()
 	FTimerHandle SpikePlantTimerHandle;
+	UPROPERTY()
+	FTimerHandle FireTimer;
 
 protected:
 	// ===== Protected API =====
@@ -89,6 +93,8 @@ protected:
 	void InitState();
 	void OnFinishedReload();
 	bool HasAmmoInClip();
+	void FireOnce();
+	void GetAim(FVector& OutStart, FVector& OutDir) const;
 
 	// ===== Replication Notifies =====
 	UFUNCTION(NetMulticast, Unreliable)
@@ -115,6 +121,10 @@ protected:
 	void OnRep_Grenades();
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastSpikePlanted();
+	UFUNCTION(Server, Reliable)
+	void ServerStartFire();
+	UFUNCTION(Server, Reliable)
+	void ServerStopFire();
 public:	
 	// ===== Public API =====
 	void EquipWeapon(EItemId ItemId);
@@ -145,6 +155,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerStopDefuseSpike();
 
+	void RequestStartFire();
+	void RequestStopFire();
 	void OnInput_StartAttack();
 	void OnInput_StopAttack();
 	void OnFire();

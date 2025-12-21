@@ -411,6 +411,9 @@ void AMyPlayerController::OnLeftClickStart()
             if (WC->GetCurrentWeaponType() == EWeaponTypes::Spike) {
 				WC->OnInput_StartPlantSpike();
             }
+            else if (WC->GetCurrentWeaponType() == EWeaponTypes::Firearm) {
+                WC->RequestStartFire();
+			}
             else {
                 WC->OnInput_StartAttack();
             }
@@ -429,6 +432,9 @@ void AMyPlayerController::OnLeftClickRelease()
         {
             if (WC->GetCurrentWeaponType() == EWeaponTypes::Spike) {
                 WC->OnInput_StopPlantSpike();
+            }
+            else if (WC->GetCurrentWeaponType() == EWeaponTypes::Firearm) {
+                WC->RequestStopFire();
             }
             else {
                 WC->OnInput_StopAttack();

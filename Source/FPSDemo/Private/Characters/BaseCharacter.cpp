@@ -106,11 +106,64 @@ ABaseCharacter::ABaseCharacter()
         MeshFps,
         GetMesh()
     );
+
+    if (WeaponComp) {
+		UE_LOG(LogTemp, Warning, TEXT("DEBUGGG:: WeaponComp is valid in ABaseCharacter constructor"));
+    }
+
+    if (GetMesh()) {
+        GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -88.f));
+        GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+
+        static ConstructorHelpers::FClassFinder<UAnimInstance> AnimBPClass(
+            TEXT("/Game/Main/ABP_Character_TPS.ABP_Character_TPS_C"));
+
+        if (AnimBPClass.Succeeded())
+        {
+            GetMesh()->SetAnimInstanceClass(AnimBPClass.Class);
+        }
+    }
+    if (FpsPivot) {
+        // set same eye position
+        BaseEyeHeight = 70;
+		FpsPivot->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
+    }
+    if (MeshFps)
+    {
+        MeshFps->SetRelativeLocation(FVector(0.f, 0.f, -170.f));
+        MeshFps->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+
+        static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshFinder(
+            TEXT("/Game/Main/Core/Mannequins/Meshes/SK_FP_Manny_Simple.SK_FP_Manny_Simple")
+        );
+
+        if (MeshFinder.Succeeded())
+        {
+            MeshFps->SetSkeletalMesh(MeshFinder.Object);
+        }
+        MeshFps->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+
+        static ConstructorHelpers::FClassFinder<UAnimInstance> FpsAnimBPClass(
+            TEXT("/Game/Main/ABP_Character.ABP_Character_C")
+        );
+
+        if (FpsAnimBPClass.Succeeded())
+        {
+			UE_LOG(LogTemp, Warning, TEXT("FpsAnimBPClass succeeded"));
+            MeshFps->SetAnimInstanceClass(FpsAnimBPClass.Class);
+        }
+        else {
+			UE_LOG(LogTemp, Warning, TEXT("FpsAnimBPClass failed"));
+        }
+    }
 }
 
 // Called when the game starts or when spawned
 void ABaseCharacter::BeginPlay()
 {
+    if (!WeaponComp) {
+        UE_LOG(LogTemp, Warning, TEXT("DEBUGGG:: WeaponComp is not valid at beginplay"));
+    }
     Super::BeginPlay();
 
     if (UGameManager* GM = UGameManager::Get(GetWorld()))
@@ -242,6 +295,14 @@ void ABaseCharacter::Tick(float DeltaTime)
     if (CrouchTimeline.IsPlaying()) {
         CrouchTimeline.TickTimeline(DeltaTime);
 	}
+    if (FpsPivot && Controller) {
+        FRotator ControlRot = Controller->GetControlRotation();
+
+        // FPS rule: pitch + yaw, no roll
+        FRotator PivotRot(ControlRot.Pitch, 0.f, 0.f);
+
+        FpsPivot->SetRelativeRotation(PivotRot);
+    }
     // logic sound
     UpdateFootstepSound(DeltaTime);
 }

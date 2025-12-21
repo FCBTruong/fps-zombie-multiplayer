@@ -79,6 +79,9 @@ protected:
     virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
     virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
+private:
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UWeaponComponent> WeaponComp;
 protected:
 	// Components
     UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -89,9 +92,6 @@ protected:
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<UInteractComponent> InteractComp;
-
-    UPROPERTY(VisibleAnywhere, Category = "Components")
-    TObjectPtr<UWeaponComponent> WeaponComp;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<UHealthComponent> HealthComp;
