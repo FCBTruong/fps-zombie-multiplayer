@@ -55,12 +55,10 @@ ABaseCharacter::ABaseCharacter()
 
     FpsPivot = CreateDefaultSubobject<USceneComponent>(TEXT("FpsPivot"));
     FpsPivot->SetupAttachment(GetRootComponent());
-    FpsPivot->bEditableWhenInherited = true;
 
     CameraFps = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraFps"));
     CameraFps->SetupAttachment(FpsPivot);
-    CameraFps->bUsePawnControlRotation = true;
-    CameraFps->bEditableWhenInherited = true;
+    CameraFps->bUsePawnControlRotation = false;
 
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBloom"));
     CameraBoom->SetupAttachment(RootComponent);
@@ -71,13 +69,13 @@ ABaseCharacter::ABaseCharacter()
 
     MeshFps = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshFps"));
     MeshFps->SetupAttachment(FpsPivot);
-    MeshFps->bEditableWhenInherited = true;
 
     ViewmodelCap = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("ViewmodelCap"));
     ViewmodelCap->SetupAttachment(CameraFps);
-    ViewmodelCap->bEditableWhenInherited = true;
     ViewmodelCap->bCaptureEveryFrame = true;
     ViewmodelCap->bCaptureOnMovement = true;
+    ViewmodelCap->PrimitiveRenderMode =
+        ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 
     ThrowSpline = CreateDefaultSubobject<USplineComponent>(TEXT("SplineThrow"));
     ThrowSpline->SetupAttachment(RootComponent);
@@ -228,13 +226,18 @@ void ABaseCharacter::BeginPlay()
         }
     }
 
-	bHasBeginPlayRun = true;
-
     if (StimuliSource)
     {
         StimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
         StimuliSource->RegisterWithPerceptionSystem();
 	}
+
+    CameraComp->OnViewModeChanged.AddUObject(
+        WeaponComp,
+        &UWeaponComponent::OnViewModeChanged
+    );
+
+    bHasBeginPlayRun = true;
 }
 
 
@@ -486,14 +489,6 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
         CurrentMovementState,
         COND_SkipOwner
     );
-}
-
-void ABaseCharacter::DropWeapon()
-{
-    if (!WeaponComp) {
-        return;
-	}
-	WeaponComp->DropWeapon();
 }
 
 EWeaponTypes ABaseCharacter::GetWeaponType() const

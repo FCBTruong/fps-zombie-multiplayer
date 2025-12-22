@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Characters/BaseCharacter.h"
 #include "NiagaraComponent.h"
+#include "Game/GameManager.h"
 
 // Sets default values
 ABulletBase::ABulletBase()
@@ -12,8 +13,8 @@ ABulletBase::ABulletBase()
     PrimaryActorTick.bCanEverTick = true;
 
     CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
-    CollisionComp->InitSphereRadius(25.f);
-	CollisionComp->SetHiddenInGame(false);
+    CollisionComp->InitSphereRadius(1.f);
+	CollisionComp->SetHiddenInGame(true);
 	CollisionComp->SetGenerateOverlapEvents(false);
     CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
    
@@ -28,14 +29,14 @@ ABulletBase::ABulletBase()
 
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
     ProjectileMovement->UpdatedComponent = CollisionComp;
-    ProjectileMovement->InitialSpeed = 10.f;
-    ProjectileMovement->MaxSpeed = 10.f;
+    ProjectileMovement->InitialSpeed = 30000.f;
+    ProjectileMovement->MaxSpeed = 30000.f;
     ProjectileMovement->bRotationFollowsVelocity = true;
     ProjectileMovement->bShouldBounce = false;
     ProjectileMovement->bAutoActivate = false;
     ProjectileMovement->ProjectileGravityScale = 0.0f;
 
-    InitialLifeSpan = 10.0f;
+    InitialLifeSpan = 2.0f;
 
     static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Engine/EditorMeshes/ArcadeEditorSphere.ArcadeEditorSphere"));
     if (MeshAsset.Succeeded())

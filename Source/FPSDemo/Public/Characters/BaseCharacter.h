@@ -79,11 +79,11 @@ protected:
     virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
     virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
-private:
-    UPROPERTY(VisibleAnywhere, Category = "Components")
-    TObjectPtr<UWeaponComponent> WeaponComp;
 protected:
 	// Components
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UWeaponComponent> WeaponComp;
+
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<UPickupComponent> PickupComponent;
 
@@ -204,8 +204,6 @@ protected:
     void PlayFootstepSound();
     void UpdateFootstepSound(float DeltaTime);
     void PlayLandingSound();
-    void UpdateAttachLocationWeapon();
-    void DropWeapon();
     void ApplyTeamMesh();
     void HandleDeath();
 	bool CanPlayFootstep() const;

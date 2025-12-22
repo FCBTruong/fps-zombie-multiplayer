@@ -22,8 +22,16 @@ class FPSDEMO_API AMyPlayerController : public APlayerController
 private:
 	bool bIsShopOpen = false;
 	UGameManager* GMR;
+
+protected:
+    UPROPERTY(Transient)
+    TObjectPtr<UMaterialInstanceDynamic> PendingViewmodelOverlay;
+
+	void ApplyViewmodelOverlay();
 public:
 	AMyPlayerController();
+
+    void NotifyViewmodelOverlayReady(UMaterialInstanceDynamic* OverlayMID);
 	void BeginPlay() override;
 	UPlayerUI* PlayerUI;
 	void OnPossess(APawn* InPawn) override;
@@ -98,7 +106,6 @@ public:
 	void OnRep_PlayerState() override;
 
 	void CloseShopIfOpen();
-	void SetViewmodelOverlay(UMaterialInstanceDynamic* MID);
 	void ShowScope();
 	void HideScope();
 	void HandleAimingChanged(bool bIsAiming);

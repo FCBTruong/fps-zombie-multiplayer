@@ -76,13 +76,13 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		StartPointBullet = StartPoint;
 	}
 
-	/*ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
+	ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
 		ABulletBase::StaticClass(),
 		StartPointBullet,
 		FRotator::ZeroRotator,
 		SpawnParams
 	);
-	Bullet->InitFromData(Data->BulletData, TargetPoint, ViewmodelCapture);*/
+	Bullet->InitFromData(Data->BulletData, TargetPoint, ViewmodelCapture);
 
 	if (bIsFpsView) {
 		UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();

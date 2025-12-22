@@ -88,18 +88,9 @@ void UBTTask_Shoot::TickTask(
     // === Random spread ===
     TargetPoint += FMath::VRand() * AimError;
 
-    // === Hit bone ===
-    FName HitBoneName = TEXT("spine_03");
 
     // === Fire ===
-    WC->ServerOnFire(CameraLocation, TargetPoint, HitBoneName);
+    WC->RequestStartFire();
 
     LastTimeFire = CurrentTime;
-
-    UE_LOG(LogTemp, Log,
-        TEXT("UBTTask_Shoot: Fired at %s | Point: %s | Bone: %s"),
-        *Target->GetName(),
-        *TargetPoint.ToString(),
-        *HitBoneName.ToString()
-    );
 }

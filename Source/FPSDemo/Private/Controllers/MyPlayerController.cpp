@@ -14,6 +14,7 @@
 #include "Game/SpikeMode.h"
 #include "Components/HealthComponent.h"
 #include "Components/InteractComponent.h"
+#include "Components/CanvasPanelSlot.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -26,6 +27,7 @@ void AMyPlayerController::BeginPlay()
     GMR = GetGameInstance()->GetSubsystem<UGameManager>();
     if (!GMR)
     {
+		UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: GameManager subsystem not found"));
         return;
     }
 
@@ -41,8 +43,14 @@ void AMyPlayerController::BeginPlay()
         PlayerUI->AddToViewport(5);
 		PlayerUI->CloseShop();
 		bIsShopOpen = false;
+
+        if (PendingViewmodelOverlay)
+        {
+            ApplyViewmodelOverlay();
+        }
+
+        BindingUI();
     }
-	BindingUI();
 }
 
 
@@ -341,13 +349,6 @@ void AMyPlayerController::CloseShopIfOpen()
     }
 }
 
-void AMyPlayerController::SetViewmodelOverlay(UMaterialInstanceDynamic* MID)
-{
-    if (PlayerUI)
-    {
-		PlayerUI->ViewmodelOverlay->SetBrushFromMaterial(MID);
-    }
-}
 
 void AMyPlayerController::ShowScope()
 {
@@ -415,7 +416,7 @@ void AMyPlayerController::OnLeftClickStart()
                 WC->RequestStartFire();
 			}
             else {
-                WC->OnInput_StartAttack();
+				// TODO: handle melee attack
             }
         }
     }
@@ -437,7 +438,7 @@ void AMyPlayerController::OnLeftClickRelease()
                 WC->RequestStopFire();
             }
             else {
-                WC->OnInput_StopAttack();
+                //WC->OnInput_StopAttack();
             }
         }
     }
@@ -508,7 +509,7 @@ void AMyPlayerController::StartReload() {
     {
         if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
         {
-            WC->StartReload();
+            WC->RequestReload();
         }
     }
 }
@@ -544,7 +545,7 @@ void AMyPlayerController::DropWeapon() {
     {
         if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
         {
-            WC->DropWeapon();
+            WC->RequestDropWeapon();
         }
     }
 }
@@ -802,7 +803,7 @@ void AMyPlayerController::HideScoreboard()
 
 void AMyPlayerController::UpdateViewmodelCapture(bool bEnable)
 {
-    if (PlayerUI)
+    if (PlayerUI && PlayerUI->ViewmodelOverlay)
     {
 		PlayerUI->ViewmodelOverlay->SetVisibility(bEnable ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
@@ -821,4 +822,37 @@ void AMyPlayerController::HandleAimingChanged(bool bIsAiming)
             PlayerUI->ShowScope();
 		}
     }
+}
+
+void AMyPlayerController::NotifyViewmodelOverlayReady(
+    UMaterialInstanceDynamic* OverlayMID)
+{
+    if (!IsLocalController())
+    {
+        return;
+    }
+
+    PendingViewmodelOverlay = OverlayMID;
+
+    if (!PlayerUI)
+    {
+        return; // UI not ready yet
+    }
+
+    ApplyViewmodelOverlay();
+}
+
+void AMyPlayerController::ApplyViewmodelOverlay()
+{
+    if (!PlayerUI || !PendingViewmodelOverlay)
+    {
+        return;
+    }
+
+    if (PlayerUI->ViewmodelOverlay)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Setting viewmodel overlay material"));
+        PlayerUI->ViewmodelOverlay->SetBrushFromMaterial(PendingViewmodelOverlay);
+    }
+    UpdateViewmodelCapture(true);
 }

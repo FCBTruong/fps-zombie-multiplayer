@@ -18,6 +18,14 @@
 UCharCameraComponent::UCharCameraComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
+    ConstructorHelpers::FObjectFinder<UMaterial> MaterialFinder(
+        TEXT("/Game/Main/M_ViewmodelOverlay.M_ViewmodelOverlay")
+    );
+
+    if (MaterialFinder.Succeeded())
+    {
+        MaterialOverlayBase = MaterialFinder.Object;
+    }
 }
 
 void UCharCameraComponent::Initialize(
@@ -53,6 +61,18 @@ void UCharCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
     CameraFps->SetFieldOfView(NewFOV);
 }
 
+void UCharCameraComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    
+    if (ViewmodelCap) {
+        ViewmodelCap->FOVAngle = (DefaultFpsFov);
+    }
+    if (MeshFps) {
+		MeshFps->bVisibleInSceneCaptureOnly = true;
+    }
+}
+
 bool UCharCameraComponent::IsFPS() const
 {
     return bIsFPS;
@@ -81,30 +101,37 @@ void UCharCameraComponent::ApplyView()
     {
         return;
     }
+    APawn* Pawn = Cast<APawn>(GetOwner());
+    if (!Pawn)
+    {
+        return;
+    }
+
+    AMyPlayerController* PC = Cast<AMyPlayerController>(Pawn->GetController());
+    if (!PC)
+    {
+        return;
+    }
 
     if (bIsFPS)
     {
         CameraFps->SetActive(true);
         CameraTps->SetActive(false);
 
-        MeshTps->SetOwnerNoSee(true);
+		MeshTps->SetVisibility(false);
+		MeshFps->SetVisibility(true);
 
-        ViewmodelCap->ShowOnlyComponents.Empty();
-        if (MeshFps)
+        if (PC->IsLocalController())
         {
-            ViewmodelCap->ShowOnlyComponents.AddUnique(MeshFps);
-        }
-        ViewmodelCap->Activate();
-
-        if (APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController()))
-        {
-            if (AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC))
+            ViewmodelCap->ShowOnlyComponents.Empty();
+            if (MeshFps)
             {
-                if (MyPC->IsLocalController())
-                {
-                    MyPC->UpdateViewmodelCapture(true);
-                }
+                ViewmodelCap->ShowOnlyComponents.AddUnique(MeshFps);
             }
+            ViewmodelCap->Activate();
+
+			UE_LOG(LogTemp, Warning, TEXT("UCharCameraComponent::ApplyView - Updating viewmodel capture for FPS"));
+            PC->UpdateViewmodelCapture(true);
         }
     }
     else
@@ -112,22 +139,18 @@ void UCharCameraComponent::ApplyView()
         CameraFps->SetActive(false);
         CameraTps->SetActive(true);
 
-        MeshTps->SetOwnerNoSee(false);
+        MeshTps->SetVisibility(true);
+		MeshFps->SetVisibility(false);
 
-        ViewmodelCap->ShowOnlyComponents.Empty();
-        ViewmodelCap->Deactivate();
-
-        if (APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController()))
+        if (PC->IsLocalController())
         {
-            if (AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC))
-            {
-                if (MyPC->IsLocalController())
-                {
-                    MyPC->UpdateViewmodelCapture(false);
-                }
-            }
+            ViewmodelCap->ShowOnlyComponents.Empty();
+            ViewmodelCap->Deactivate();
+            PC->UpdateViewmodelCapture(false);      
         }
     }
+
+    OnViewModeChanged.Broadcast(bIsFPS);
 }
 
 void UCharCameraComponent::OnBecomeViewTarget(APlayerController* PC)
@@ -143,13 +166,7 @@ void UCharCameraComponent::OnBecomeViewTarget(APlayerController* PC)
     {
         ViewmodelRenderTarget = NewObject<UTextureRenderTarget2D>(this);
         ViewmodelRenderTarget->ClearColor = FLinearColor::Transparent;
-
-        int32 SizeX = 0, SizeY = 0;
-        PC->GetViewportSize(SizeX, SizeY);
-        SizeX = FMath::Max(SizeX, 1);
-        SizeY = FMath::Max(SizeY, 1);
-
-        ViewmodelRenderTarget->InitAutoFormat(SizeX, SizeY);
+		ViewmodelRenderTarget->InitAutoFormat(1920, 1080); // default size 16:9
     }
 
     if (ViewmodelCap)
@@ -162,15 +179,20 @@ void UCharCameraComponent::OnBecomeViewTarget(APlayerController* PC)
     {
         OverlayMID = UMaterialInstanceDynamic::Create(MaterialOverlayBase, this);
         OverlayMID->SetTextureParameterValue(TEXT("ViewmodelTexture"), ViewmodelRenderTarget);
+        UE_LOG(LogTemp, Warning, TEXT("OverlayMID created and texture parameter set"));
     }
 
     if (AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC))
     {
+		UE_LOG(LogTemp, Warning, TEXT("UCharCameraComponent::OnBecomeViewTarget - Setting viewmodel overlay")); 
         if (OverlayMID)
         {
-            MyPC->SetViewmodelOverlay(OverlayMID);
-            MyPC->UpdateViewmodelCapture(true);
+            MyPC->NotifyViewmodelOverlayReady(OverlayMID);
         }
+        else 
+        {
+            UE_LOG(LogTemp, Warning, TEXT("OverlayMID is null in OnBecomeViewTarget"));
+		}
     }
 
     bIsFPS = true;

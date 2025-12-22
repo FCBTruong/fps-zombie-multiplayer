@@ -11,6 +11,8 @@ class USpringArmComponent;
 class USceneCaptureComponent2D;
 class USkeletalMeshComponent;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnViewModeChanged, bool /*bIsFPS*/);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UCharCameraComponent : public UActorComponent
 {
@@ -37,8 +39,11 @@ public:
     void OnEndViewTarget(APlayerController* PC);
 
     USceneCaptureComponent2D* GetViewmodelCapture() const;
-    virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+    FOnViewModeChanged OnViewModeChanged;
 
+protected:
+    virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+    virtual void BeginPlay() override;
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "Init|Viewmodel")
     TObjectPtr<UMaterial> MaterialOverlayBase;

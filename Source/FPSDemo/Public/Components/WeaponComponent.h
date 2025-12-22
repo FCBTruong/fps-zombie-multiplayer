@@ -30,6 +30,44 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePlantSpikeState, bool);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateDefuseSpikeState, bool);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateArmor, int);
 
+
+UENUM(BlueprintType)
+enum class EShootState : uint8
+{
+	OK   UMETA(DisplayName = "Can Shoot"),
+	OutOfAmmo  UMETA(DisplayName = "Out Of Ammo"),
+	PlayerDead UMETA(DisplayName = "Player Dead"),
+	CannotFire UMETA(DisplayName = "Cannot Fire"),
+};
+
+USTRUCT(BlueprintType)
+struct FSpreadTuning
+{
+	GENERATED_BODY()
+
+	// Base accuracy (deg)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float BaseDeg = 0.2f;
+
+	// Movement contribution (deg)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MoveAddDeg = 3.0f;
+
+	// Airborne penalty (deg)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float AirAddDeg = 4.0f;
+
+	// Burst (continuous fire) contribution (deg)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float PerShotAddDeg = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MaxBurstAddDeg = 8.0f;
+
+	// How fast burst spread recovers when time passes (deg/sec)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float BurstRecoverDegPerSec = 1.0f;
+
+	// Final clamp (deg)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MaxTotalDeg = 10.0f;
+
+	// Curve exponent for movement (1 = linear, 2 = smoother, 3 = even smoother)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MoveCurveExp = 2.0f;
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponComponent : public UActorComponent
 {
@@ -49,6 +87,7 @@ protected:
 	float ThrowAngle = 10.f;
 	float GrenadeInitSpeed = 1400.f;
 	bool bIsInitialized = false;
+	float FireInterval = 0.2;
 
 	// ===== Replicated Properties =====
 	UPROPERTY(ReplicatedUsing = OnRep_ActionState)
@@ -69,6 +108,19 @@ protected:
 	FArmorState ArmorState;
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
 	EItemId CurrentWeaponId;
+	UPROPERTY(EditAnywhere, Category = "Weapon|Spread")
+	FSpreadTuning Spread;
+
+	// Deterministic burst seed + server fire start time for matching ShotIndex
+	UPROPERTY(Replicated) int32 BurstSeed = 0;
+	// Use GameState server time (replicated to clients)
+	UPROPERTY(Replicated) float FireStartTimeServer = 0.0f;
+	// These are NOT replicated; both sides update deterministically using server time
+	float BurstAccDeg = 0.0f;
+	float LastShotTimeServer = 0.0f;
+	float BurstResetDelay = 0.25f;
+
+
 	UPROPERTY()
 	TObjectPtr<AWeaponBase> CurrentWeapon; // For client prediction
 	UPROPERTY()
@@ -76,11 +128,11 @@ protected:
 	UPROPERTY()
 	FTimerHandle ThrowProjectileTimer;
 	UPROPERTY()
-	FTimerHandle FireTimerHandle;
-	UPROPERTY()
 	FTimerHandle SpikePlantTimerHandle;
 	UPROPERTY()
 	FTimerHandle FireTimer;
+	UPROPERTY()
+	FTimerHandle FireTimer_Client;
 
 protected:
 	// ===== Protected API =====
@@ -93,8 +145,25 @@ protected:
 	void InitState();
 	void OnFinishedReload();
 	bool HasAmmoInClip();
-	void FireOnce();
+	void FireOnce_Authority();
+	void FireOnce_Predicted(); // for client prediction
+	void StartFire_Authority();
+	void StopFire_Authority();
 	void GetAim(FVector& OutStart, FVector& OutDir) const;
+	bool TraceShot(const AActor* IgnoredActor, const FVector& Start, const FVector& Dir, 
+		FHitResult& OutHit, FVector& OutEnd) const;
+	float GetServerTimeSeconds() const;
+	int32 ComputeShotIndex(float NowServerTime) const;
+	float GetMoveAlphaForSpread() const;
+	float GetMovementSpreadDeg() const;
+	float GetAirSpreadDeg() const;
+	void UpdateBurstSpreadOnShot(float NowServerTime);
+	float GetTotalSpreadDeg(float NowServerTime) const;
+	FVector ComputeShotDirDeterministic(
+		const FVector& AimDir,
+		float NowServerTime,
+		int32 InBurstSeed
+	) const;
 
 	// ===== Replication Notifies =====
 	UFUNCTION(NetMulticast, Unreliable)
@@ -131,9 +200,24 @@ public:
 	void OnNewItemPickup(int32 NewInventoryId);
 	EWeaponTypes GetCurrentWeaponType();
 	EWeaponSubTypes GetCurrentWeaponSubType();
-	void DropWeapon();
-	UFUNCTION(Server, Reliable)
-	void ServerOnFire(const FVector& StartPoint, const FVector& TargetPoint, FName HitBoneName);
+	void RequestStartFire();
+	void RequestStopFire();
+	void StartAiming();
+	void RequestReload();
+	EShootState CanShoot();
+	bool IsLocalControl();
+	void RequestDropWeapon();
+	bool IsScopeEquipped();
+	void HandleDropWeapon();
+	void EquipSlot(int32 SlotIndex);
+	void HandleReload();
+	void UpdateAttachLocationWeapon(bool IsFps);
+	bool CanWeaponAim();
+	void OnFinishedThrow();
+	void HandleEquipWeapon(EItemId ItemId);
+	void PerformMeleeAttack(int AttackIdx);
+	void OnViewModeChanged(bool bIsFPS);
+
 	UFUNCTION(Server, Reliable)
 	void ServerDoMeleeAttack(int AttackIdx);
 
@@ -155,36 +239,20 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerStopDefuseSpike();
 
-	void RequestStartFire();
-	void RequestStopFire();
-	void OnInput_StartAttack();
-	void OnInput_StopAttack();
-	void OnFire();
-	void HandleOnFire(const FVector& StartPos, const FVector& TargetPoint, FName HitBoneName);
-	void StartAiming();
-	void StartReload();
-	bool CanShoot();
-	bool IsLocalControl();
-
 	UFUNCTION(Server, Reliable) void ServerThrow(FVector LaunchVelocity);
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayFireRifle(FVector TargetPoint);
 
-	bool IsScopeEquipped();
-
 	UFUNCTION(Server, Reliable)
 	void ServerDropWeapon();
 
-	void HandleDropWeapon();
 
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
-	void HandleReload();
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipWeapon(EItemId ItemId);
-	void EquipSlot(int32 SlotIndex);
 
 	UFUNCTION()
 	void DrawProjectileCurve();
@@ -194,12 +262,6 @@ public:
 
 	UFUNCTION()
 	FVector GetVelocityGrenade() const;
-
-	void UpdateAttachLocationWeapon();
-	bool CanWeaponAim();
-	void OnFinishedThrow();
-	void HandleEquipWeapon(EItemId ItemId);
-	void PerformMeleeAttack(int AttackIdx);
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastReload();
