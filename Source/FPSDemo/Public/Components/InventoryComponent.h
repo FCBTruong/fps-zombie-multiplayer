@@ -1,34 +1,117 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// WeaponInventoryComponent.h
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Items/ItemData.h"
-#include "Structs/InventoryItem.h"
-#include "Weapons/WeaponTypes.h"
-#include "Game/GameManager.h"
+#include "Net/UnrealNetwork.h"
+#include "Items/ItemIds.h"
+#include "Weapons/WeaponState.h"
 #include "InventoryComponent.generated.h"
 
+class UWeaponData;
+class UGameManager;
+struct FPickupData;
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+DECLARE_MULTICAST_DELEGATE(FOnInventoryChanged);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAmmoChanged, int /*InClip*/, int /*Reserve*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnThrowablesChanged, const TArray<EItemId>&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnArmorChanged, int /*ArmorPoints*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSpikeChanged, bool /*bHasSpike*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSlotWeaponChanged, EItemId /*ItemId*/);
+
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class FPSDEMO_API UInventoryComponent : public UActorComponent
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-private:
-	UGameManager* GMR;
-	
-public:	
-	// Sets default values for this component's properties
-	UInventoryComponent();
+public:
+    UInventoryComponent();
+
+    // ===== Queries =====
+    const TArray<EItemId>& GetThrowables() const { return Throwables; }
+    bool HasSpike() const { return bHasSpike; }
+
+    EItemId GetRifleId() const { return RifleState.ItemId; }
+    EItemId GetPistolId() const { return PistolState.ItemId; }
+    EItemId GetMeleeId() const { return MeleeState.ItemId; }
+
+    const FWeaponState& GetRifleState() const { return RifleState; }
+    const FWeaponState& GetPistolState() const { return PistolState; }
+    const FWeaponState& GetMeleeState() const { return MeleeState; }
+    const FArmorState& GetArmorState() const { return ArmorState; }
+
+    FWeaponState* GetWeaponStateByItemId(EItemId ItemId);
+    const FWeaponState* GetWeaponStateByItemId(EItemId ItemId) const;
+
+    // ===== Mutations (Authority only) =====
+    // Add item to inventory from pickup data (server only)
+    bool AddItemFromPickup(const FPickupData& PickupData);
+
+    // Remove throwable after throw/drop (server only)
+    bool RemoveThrowable(EItemId ItemId);
+
+    // Spike possession (server only)
+    void SetHasSpike(bool bNewHasSpike);
+
+    // Armor (server only)
+    void ApplyArmorItem(EItemId ArmorItemId);
+
+    // Ammo operations (server only)
+    bool ConsumeAmmo(EItemId WeaponId, int32 Amount);
+    int32 ReloadAmmo(EItemId WeaponId, int32 MaxAmmoInClip);
+
+    // Drop rules (pure query)
+    bool CanDrop(EItemId ItemId);
+
+public:
+    // ===== Events (fire on server + clients via OnRep) =====
+    FOnInventoryChanged OnInventoryChanged;
+    FOnThrowablesChanged OnThrowablesChanged;
+    FOnArmorChanged OnArmorChanged;
+    FOnSpikeChanged OnSpikeChanged;
+    FOnSlotWeaponChanged OnRifleChanged;
+    FOnSlotWeaponChanged OnPistolChanged;
+    FOnSlotWeaponChanged OnMeleeChanged;
 
 protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-	void InitState();
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    virtual void BeginPlay() override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+private:
+    // ===== Replicated State =====
+    UPROPERTY(ReplicatedUsing = OnRep_RifleState)
+    FWeaponState RifleState;
+
+    UPROPERTY(ReplicatedUsing = OnRep_PistolState)
+    FWeaponState PistolState;
+
+    UPROPERTY(ReplicatedUsing = OnRep_MeleeState)
+    FWeaponState MeleeState;
+
+    UPROPERTY(ReplicatedUsing = OnRep_Throwables)
+    TArray<EItemId> Throwables;
+
+    UPROPERTY(ReplicatedUsing = OnRep_ArmorState)
+    FArmorState ArmorState;
+
+    UPROPERTY(ReplicatedUsing = OnRep_HasSpike)
+    bool bHasSpike = false;
+
+private:
+    // Optional cache
+    UPROPERTY() TObjectPtr<UGameManager> CachedGM = nullptr;
+
+private:
+    // Helpers
+    const UWeaponData* GetWeaponData(EItemId ItemId);
+    void SortThrowables();
+
+    // OnRep
+    UFUNCTION() void OnRep_RifleState();
+    UFUNCTION() void OnRep_PistolState();
+    UFUNCTION() void OnRep_MeleeState();
+    UFUNCTION() void OnRep_Throwables();
+    UFUNCTION() void OnRep_ArmorState();
+    UFUNCTION() void OnRep_HasSpike();
 };

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapons/WeaponBase.h"
 #include "Items/ItemIds.h"
 #include "Components/ActorComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -12,14 +11,14 @@
 #include "GameConstants.h"
 #include "Components/SplineComponent.h"
 #include "Projectiles/TrajectoryPreview.h"
-#include "Weapons/WeaponFirearm.h"
-#include "Weapons/WeaponMelee.h"
-#include "Weapons/WeaponThrowable.h"
 #include "Weapons/WeaponState.h"
 #include "Weapons/WeaponActionState.h"
 #include "WeaponComponent.generated.h"
 
 class ABaseCharacter;
+class AWeaponBase;
+class ATrajectoryPreview;
+class UWeaponData;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateAmmoState, int, int);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGrenades, const TArray<EItemId>&);
@@ -204,8 +203,9 @@ public:
 	void RequestStopFire();
 	void StartAiming();
 	void RequestReload();
-	EShootState CanShoot();
-	bool IsLocalControl();
+	EShootState CanShoot() const;
+	bool IsOwningClient() const;
+	bool CanAct() const;
 	void RequestDropWeapon();
 	bool IsScopeEquipped();
 	void HandleDropWeapon();

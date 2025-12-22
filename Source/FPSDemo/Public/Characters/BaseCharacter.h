@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
+#include "Items/ItemIds.h"
 #include "BaseCharacter.generated.h"
 
 class UPickupComponent;
@@ -208,6 +209,7 @@ protected:
     void HandleDeath();
 	bool CanPlayFootstep() const;
 	bool IsBot() const;
+    void UpdateCurrentWeapon(const EItemId& CurrentWeaponId);
 
     UFUNCTION()
     void HandleCrouchProgress(float Alpha);
@@ -295,8 +297,8 @@ public:
 	// ===== Constants =====
     static constexpr float MAX_WALK_SPEED = 600.f;
     static constexpr float NORMAL_WALK_SPEED = 400.f;
-    static constexpr float MELEE_WALK_SPEED = 500.f;
+    static constexpr float MELEE_WALK_SPEED = 450.f;
     static constexpr float CROUCH_WALK_SPEED = 200.f;
-    static constexpr float SLOW_WALK_SPEED = 200.f;
+    static constexpr float SLOW_WALK_SPEED = 180.f;
     static constexpr float FOOTSTEP_SPEED_MIN = 300.f;
 };

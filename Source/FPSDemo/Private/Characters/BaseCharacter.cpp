@@ -6,7 +6,6 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Weapons/WeaponKnifeBasic.h"
 #include "Kismet/GameplayStatics.h"
 #include "Structs/InventoryItem.h"
 #include "Game/ShooterGameMode.h"
@@ -105,8 +104,30 @@ ABaseCharacter::ABaseCharacter()
         GetMesh()
     );
 
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+    if (MoveComp) 
+    {
+        MoveComp->NavAgentProps.bCanCrouch = true;
+        MoveComp->MaxWalkSpeedCrouched = CROUCH_WALK_SPEED;
+	}
+
+    /*UCapsuleComponent* Capsule = GetCapsuleComponent();
+    if (Capsule)
+    {
+        Capsule->SetHiddenInGame(false);
+        Capsule->SetVisibility(true);
+    }*/
+
     if (WeaponComp) {
 		UE_LOG(LogTemp, Warning, TEXT("DEBUGGG:: WeaponComp is valid in ABaseCharacter constructor"));
+    }
+    static ConstructorHelpers::FObjectFinder<UCurveFloat> CrouchCurveFinder(
+        TEXT("/Game/Main/Data/CrouchCurve.CrouchCurve")
+    );
+
+    if (CrouchCurveFinder.Succeeded())
+    {
+        CrouchCurve = CrouchCurveFinder.Object;
     }
 
     if (GetMesh()) {
@@ -124,6 +145,7 @@ ABaseCharacter::ABaseCharacter()
     if (FpsPivot) {
         // set same eye position
         BaseEyeHeight = 70;
+        CrouchedEyeHeight = 70;
 		FpsPivot->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
     }
     if (MeshFps)
@@ -237,7 +259,27 @@ void ABaseCharacter::BeginPlay()
         &UWeaponComponent::OnViewModeChanged
     );
 
+    if (WeaponComp) {
+        WeaponComp->OnUpdateCurrentWeapon.AddUObject(this, &ABaseCharacter::UpdateCurrentWeapon);
+    }
+
     bHasBeginPlayRun = true;
+}
+
+void ABaseCharacter::UpdateCurrentWeapon(const EItemId& NewWeaponId)
+{
+	auto GMR = UGameManager::Get(GetWorld());
+    if (!GMR) {
+        UE_LOG(LogTemp, Warning, TEXT("GMR is null in UpdateCurrentWeapon"));
+        return;
+    }
+	UWeaponData* NewWeaponData = GMR->GetWeaponDataById(NewWeaponId);
+    if (NewWeaponData->WeaponType == EWeaponTypes::Firearm) {
+		MeshFps->SetRelativeLocation(FVector(0.f, 10.f, -170.f));
+    }
+    else {
+        MeshFps->SetRelativeLocation(FVector(0.f, 0.f, -170.f));
+    }
 }
 
 
@@ -404,6 +446,7 @@ void ABaseCharacter::RequestCrouch()
     if (GetCharacterMovement()->IsFalling()) {
         return;
     }
+	UE_LOG(LogTemp, Warning, TEXT("RequestCrouch called"));
     Crouch();
 }
 
@@ -415,6 +458,13 @@ void ABaseCharacter::RequestUnCrouch()
 void ABaseCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
     Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+    
+    // log data
+    UE_LOG(LogTemp, Warning,
+        TEXT("OnStartCrouch: HalfHeightAdjust = %f, ScaledHalfHeightAdjust = %f"),
+        HalfHeightAdjust,
+        ScaledHalfHeightAdjust
+	);
 
     // Cancel the instant camera drop caused by capsule shrinking
     CurrentCrouchCompZ += HalfHeightAdjust;

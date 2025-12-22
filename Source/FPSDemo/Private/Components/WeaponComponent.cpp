@@ -30,6 +30,10 @@
 #include "Components/PickupComponent.h"
 #include "Components/AnimationComponent.h"
 #include "Weapons/WeaponActionState.h"
+#include "Weapons/WeaponFirearm.h"
+#include "Weapons/WeaponMelee.h"
+#include "Weapons/WeaponThrowable.h"
+#include "Weapons/WeaponBase.h"
 
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
@@ -78,8 +82,10 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UWeaponComponent::EquipWeapon(EItemId ItemId)
 {
-    ABaseCharacter* Character = GetCharacter();
-    if (Character && !Character->IsAlive()) return;
+    if (!CanAct()) {
+        UE_LOG(LogTemp, Warning, TEXT("EquipWeapon: Cannot act now"));
+        return;
+	}
 
     if (GetOwner()->GetLocalRole() < ROLE_Authority) {
         // Client
@@ -104,9 +110,12 @@ void UWeaponComponent::HandleEquipWeapon(EItemId ItemId) {
         UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Invalid ItemId NONE"));
         return;
     }
+    if (!CanAct()) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleEquipWeapon: Cannot act now"));
+        return;
+	}
 
     ABaseCharacter* Character = GetCharacter();
-    if (!Character || !Character->IsAlive()) return;
 
     if (CurrentWeaponId == ItemId)
     {
@@ -346,7 +355,7 @@ void UWeaponComponent::StartAiming() {
 }
 
 // This function only apply for firearms
-EShootState UWeaponComponent::CanShoot() {
+EShootState UWeaponComponent::CanShoot() const{
     ABaseCharacter* Character = GetCharacter();
     if (!Character) {
         return EShootState::CannotFire; // update return value to EShootState
@@ -511,7 +520,7 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
             AnimComp->PlayFirePistolMontage(TargetPoint);
         }
 
-        if (IsLocalControl()) {
+        if (IsOwningClient()) {
             // Get view point
             FVector CameraLocation;
             FRotator CameraRotation;
@@ -528,13 +537,13 @@ void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
 void UWeaponComponent::MulticastPlayFireRifle_Implementation(FVector TargetPoint) {
     if (IsNetMode(NM_DedicatedServer)) return;
 
-    if (IsLocalControl()) {
+    if (IsOwningClient()) {
         return; // skip local player
     }
     PlayEffectFire(TargetPoint);
 }
 
-bool UWeaponComponent::IsLocalControl() {
+bool UWeaponComponent::IsOwningClient() const{
     ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
     if (!OwnerChar) return false;
 
@@ -580,8 +589,9 @@ void UWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 // Clients press 1, 2, 3 to equip weapon in that slot
 void UWeaponComponent::EquipSlot(int32 SlotIndex)
 {
-    ABaseCharacter* Character = GetCharacter();
-    if (!Character || !Character->IsAlive()) return;
+    if (!CanAct()) {
+        return;
+    }
 
     if (ActionState != EWeaponActionState::Idle) {
         return; // can not change weapon while in action
@@ -730,7 +740,7 @@ void UWeaponComponent::ServerSetIsPriming_Implementation(bool bNewIsPriming)
 
     }
     else {
-        ActionState = EWeaponActionState::Idle;
+		SetActionState(EWeaponActionState::Idle);
     }
 }
 
@@ -915,8 +925,10 @@ void UWeaponComponent::ServerReload_Implementation()
 
 void UWeaponComponent::HandleReload()
 {
-    ABaseCharacter* Character = GetCharacter();
-    if (!Character || !Character->IsAlive()) return;
+    if (!CanAct()) {
+        return;
+	}
+    
     if (!CanReload()) {
         return;
     }
@@ -934,9 +946,7 @@ void UWeaponComponent::HandleReload()
     if (WeaponConf->WeaponType != EWeaponTypes::Firearm) {
         return; // only firearm can reload
     }
-
-    ActionState = EWeaponActionState::Reloading;
-
+	SetActionState(EWeaponActionState::Reloading);
     MulticastReload();
     FTimerHandle TimerHandle_FinishReload;
     GetWorld()->GetTimerManager().SetTimer(
@@ -977,7 +987,7 @@ void UWeaponComponent::OnFinishedReload()
     if (!GetOwner()->HasAuthority()) {
         return;
     }
-    ActionState = EWeaponActionState::Idle;
+	SetActionState(EWeaponActionState::Idle);
 
     UE_LOG(LogTemp, Warning, TEXT("OnFinishedReload called"));
     UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
@@ -1177,9 +1187,10 @@ bool UWeaponComponent::AddNewWeapon(FPickupData PickupData)
 
 bool UWeaponComponent::CanDropWeapon(EItemId Id)
 {
-    ABaseCharacter* Character = GetCharacter();
-    if (!Character || !Character->IsAlive()) return false;
-
+    if (!CanAct()) {
+        return false;
+	}
+    
     UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(Id);
     if (!WeaponConf) {
         return false;
@@ -1248,6 +1259,16 @@ int UWeaponComponent::GetCurrentAmmoInClip() {
 
 bool UWeaponComponent::CanReload()
 {
+    if (CurrentWeaponId == EItemId::NONE) {
+        return false;
+	}
+    if (ActionState == EWeaponActionState::Reloading) {
+        return false; // already reloading
+    }
+    if (!CanTransition(ActionState, EWeaponActionState::Reloading)) {
+        return false; // already reloading
+	}
+
     FWeaponState* WeaponState = GetWeaponStateByItemId(CurrentWeaponId);
     if (!WeaponState) return false;
 
@@ -1728,7 +1749,7 @@ void UWeaponComponent::RequestStartFire()
     UE_LOG(LogTemp, Warning, TEXT("RequestStartFire called"));
     if (!GetOwner()->HasAuthority())
     {
-        if (IsLocalControl()) {
+        if (IsOwningClient()) {
 			auto ShootState = CanShoot();
             if (ShootState != EShootState::OK)
             {
@@ -1746,8 +1767,9 @@ void UWeaponComponent::RequestStartFire()
             {
                 BurstAccDeg = 0.f;
             }
-
+#if !UE_SERVER
             FireOnce_Predicted();
+#endif
             GetWorld()->GetTimerManager().SetTimer(FireTimer_Client, this, &UWeaponComponent::FireOnce_Predicted, FireInterval, true);
         }
     }
@@ -1766,7 +1788,7 @@ void UWeaponComponent::RequestStopFire()
 {
     if (!GetOwner()->HasAuthority())
     {
-        if (IsLocalControl()) {
+        if (IsOwningClient()) {
             GetWorld()->GetTimerManager().ClearTimer(FireTimer_Client);
         }
     }
@@ -1907,7 +1929,7 @@ void UWeaponComponent::StartFire_Authority()
         BurstAccDeg = 0.f;
     }
 
-	LastShotTimeServer = 0.0f;
+	LastShotTimeServer = GetServerTimeSeconds();
     BurstSeed = FMath::Rand();
 
     // Immediate authoritative shot, then loop with interval delay
@@ -2084,4 +2106,11 @@ FVector UWeaponComponent::ComputeShotDirDeterministic(
     const float SpreadRad = FMath::DegreesToRadians(SpreadDeg);
 
     return Stream.VRandCone(AimDir, SpreadRad, SpreadRad).GetSafeNormal();
+}
+
+bool UWeaponComponent::CanAct() const
+{
+    ABaseCharacter* Character = GetCharacter();
+    if (!Character || !Character->IsAlive()) return false;
+    return true;
 }

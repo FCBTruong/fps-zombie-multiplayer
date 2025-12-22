@@ -45,6 +45,10 @@ void UCharCameraComponent::Initialize(
     MeshTps = InMeshTps;
     TargetFOV = DefaultFpsFov;
     bIsFPS = true;
+
+    if (MeshFps) {
+        MeshFps->bVisibleInSceneCaptureOnly = true;
+    }
 }
 
 void UCharCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -67,9 +71,6 @@ void UCharCameraComponent::BeginPlay()
     
     if (ViewmodelCap) {
         ViewmodelCap->FOVAngle = (DefaultFpsFov);
-    }
-    if (MeshFps) {
-		MeshFps->bVisibleInSceneCaptureOnly = true;
     }
 }
 
@@ -119,7 +120,6 @@ void UCharCameraComponent::ApplyView()
         CameraTps->SetActive(false);
 
 		MeshTps->SetVisibility(false);
-		MeshFps->SetVisibility(true);
 
         if (PC->IsLocalController())
         {
@@ -140,7 +140,6 @@ void UCharCameraComponent::ApplyView()
         CameraTps->SetActive(true);
 
         MeshTps->SetVisibility(true);
-		MeshFps->SetVisibility(false);
 
         if (PC->IsLocalController())
         {
