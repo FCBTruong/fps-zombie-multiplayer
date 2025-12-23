@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
 #include "Items/ItemIds.h"
+#include "Types/EquippedAnimState.h"
 #include "BaseCharacter.generated.h"
 
 class UPickupComponent;
@@ -15,6 +16,7 @@ class UInteractComponent;
 class UWeaponComponent;
 class UHealthComponent;
 class UCameraComponent;
+class UEquipComponent;
 class USpringArmComponent;
 class USceneCaptureComponent2D;
 class USkeletalMeshComponent;
@@ -36,6 +38,9 @@ class USplineComponent;
 class UAnimationComponent;
 class UCharAudioComponent;
 class UCharCameraComponent;
+class UActionStateComponent;
+class UItemVisualComponent;
+class UWeaponFireComponent;
 
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -105,6 +110,18 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UCharCameraComponent> CameraComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UEquipComponent> EquipComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UItemVisualComponent> ItemVisualComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UActionStateComponent> ActionStateComp;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UWeaponFireComponent> WeaponFireComp;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     TObjectPtr<USceneComponent> FpsPivot;
@@ -209,7 +226,10 @@ protected:
     void HandleDeath();
 	bool CanPlayFootstep() const;
 	bool IsBot() const;
-    void UpdateCurrentWeapon(const EItemId& CurrentWeaponId);
+    void UpdateCurrentWeapon(EItemId CurrentWeaponId);
+
+    UFUNCTION(BlueprintPure)
+    EEquippedAnimState GetEquippedAnimState() const;
 
     UFUNCTION()
     void HandleCrouchProgress(float Alpha);
@@ -286,6 +306,8 @@ public:
 	UAnimationComponent* GetAnimationComponent() const;
     UWeaponComponent* GetWeaponComponent() const;
     USkeletalMeshComponent* GetCurrentMesh() const;
+	UEquipComponent* GetEquipComponent() const;
+	UWeaponFireComponent* GetWeaponFireComponent() const;
 
     UFUNCTION(BlueprintCallable)
     EMovementState GetCurrentMovementState() const;
@@ -297,7 +319,6 @@ public:
 	// ===== Constants =====
     static constexpr float MAX_WALK_SPEED = 600.f;
     static constexpr float NORMAL_WALK_SPEED = 400.f;
-    static constexpr float MELEE_WALK_SPEED = 450.f;
     static constexpr float CROUCH_WALK_SPEED = 200.f;
     static constexpr float SLOW_WALK_SPEED = 180.f;
     static constexpr float FOOTSTEP_SPEED_MIN = 300.f;

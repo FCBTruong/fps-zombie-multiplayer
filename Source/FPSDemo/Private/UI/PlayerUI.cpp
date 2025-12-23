@@ -281,7 +281,7 @@ void UPlayerUI::UpdateRifle(const EItemId& ItemId) {
     }
 }
 
-void UPlayerUI::UpdateCurrentWeapon(const EItemId& CurrentWeaponId) {
+void UPlayerUI::UpdateCurrentWeapon(EItemId CurrentWeaponId) {
     GrenadeTitle->SetText(FText::GetEmpty());
     WBP_Crosshair->SetVisibility(ESlateVisibility::Visible);
 

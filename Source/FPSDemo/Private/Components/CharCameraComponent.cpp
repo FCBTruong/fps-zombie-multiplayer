@@ -44,7 +44,7 @@ void UCharCameraComponent::Initialize(
     MeshFps = InMeshFps;
     MeshTps = InMeshTps;
     TargetFOV = DefaultFpsFov;
-    bIsFPS = true;
+    bIsFPS = false;
 
     if (MeshFps) {
         MeshFps->bVisibleInSceneCaptureOnly = true;
@@ -72,6 +72,7 @@ void UCharCameraComponent::BeginPlay()
     if (ViewmodelCap) {
         ViewmodelCap->FOVAngle = (DefaultFpsFov);
     }
+	CameraBoom->bInheritYaw = false;
 }
 
 bool UCharCameraComponent::IsFPS() const

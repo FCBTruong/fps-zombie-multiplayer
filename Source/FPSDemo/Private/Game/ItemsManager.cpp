@@ -1,0 +1,54 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Game/ItemsManager.h"
+#include "Items/ItemConfig.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+
+UItemConfig* UItemsManager::GetItemById(EItemId Id) const
+{
+    if (ItemConfigMap.Contains(Id)) {
+        return ItemConfigMap[Id];
+    }
+    return nullptr;
+}
+
+
+void UItemsManager::Initialize(FSubsystemCollectionBase& Collection)
+{
+    Super::Initialize(Collection);
+
+
+    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+    TArray<FAssetData> AssetList;
+    AssetRegistryModule.Get().GetAssetsByPath(FName("/Game/Main/Data/Items"), AssetList, true);
+
+    for (const FAssetData& Asset : AssetList)
+    {
+        if (UItemConfig* Data = Cast<UItemConfig>(Asset.GetAsset()))
+        {
+            ItemList.Add(Data);
+            ItemConfigMap.Add(Data->Id, Data);
+        }
+    }
+
+
+    UE_LOG(LogTemp, Log, TEXT("UItemsManager loaded %d weapon assets"), ItemList.Num());
+}
+
+UItemsManager* UItemsManager::Get(UWorld* WorldContextObject)
+{
+    if (!WorldContextObject)
+    {
+        return nullptr;
+    }
+
+    UGameInstance* GameInstance = WorldContextObject->GetGameInstance();
+    if (!GameInstance)
+    {
+        return nullptr;
+    }
+
+    return GameInstance->GetSubsystem<UItemsManager>();
+}

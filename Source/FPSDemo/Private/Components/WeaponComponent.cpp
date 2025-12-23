@@ -973,10 +973,10 @@ void UWeaponComponent::MulticastReload_Implementation()
             AnimComp->PlayReloadMontage();
         }
 
-        if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+       /* if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
         {
             Firearm->PlayReloadSound();
-        }
+        }*/
     }
 }
 
@@ -1010,42 +1010,42 @@ void UWeaponComponent::OnFinishedReload()
 void UWeaponComponent::OnNotifyGrabMag() {
     UE_LOG(LogTemp, Warning, TEXT("OnNotifyGrabMag called"));
     if (CurrentWeapon) {
-        if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
-        {
-            if (Firearm->MagMesh == nullptr) {
-                UE_LOG(LogTemp, Warning, TEXT("OnNotifyInsertMag: MagMesh is null"));
-                return;
-            }
-            /* Firearm->PlayGrabMagSound();*/
-            UE_LOG(LogTemp, Warning, TEXT("OnNotifyGrabMag: Attaching mag to hand_r"));
-            Firearm->MagMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-            ABaseCharacter* Character = GetCharacter();
-            if (Character->IsFpsViewMode()) {
-                Firearm->MagMesh->AttachToComponent(
-                    Character->GetCurrentMesh(),
-                    FAttachmentTransformRules::KeepWorldTransform,
-                    FName("hand_l")
-                );
-            }
-            else {
-                Firearm->MagMesh->AttachToComponent(
-                    Character->GetCurrentMesh(),
-                    FAttachmentTransformRules::KeepRelativeTransform,
-                    FName("hand_l")
-                );
+        //if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+        //{
+        //    if (Firearm->MagMesh == nullptr) {
+        //        UE_LOG(LogTemp, Warning, TEXT("OnNotifyInsertMag: MagMesh is null"));
+        //        return;
+        //    }
+        //    /* Firearm->PlayGrabMagSound();*/
+        //    UE_LOG(LogTemp, Warning, TEXT("OnNotifyGrabMag: Attaching mag to hand_r"));
+        //    Firearm->MagMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+        //    ABaseCharacter* Character = GetCharacter();
+        //    if (Character->IsFpsViewMode()) {
+        //        Firearm->MagMesh->AttachToComponent(
+        //            Character->GetCurrentMesh(),
+        //            FAttachmentTransformRules::KeepWorldTransform,
+        //            FName("hand_l")
+        //        );
+        //    }
+        //    else {
+        //        Firearm->MagMesh->AttachToComponent(
+        //            Character->GetCurrentMesh(),
+        //            FAttachmentTransformRules::KeepRelativeTransform,
+        //            FName("hand_l")
+        //        );
 
-                // Snap position only
-                FVector TargetLoc = Character->GetCurrentMesh()->GetSocketLocation("hand_l");
-                Firearm->MagMesh->SetWorldLocation(TargetLoc);
-            }
-        }
+        //        // Snap position only
+        //        FVector TargetLoc = Character->GetCurrentMesh()->GetSocketLocation("hand_l");
+        //        Firearm->MagMesh->SetWorldLocation(TargetLoc);
+        //    }
+        //}
     }
 }
 
 void UWeaponComponent::OnNotifyInsertMag() {
     UE_LOG(LogTemp, Warning, TEXT("OnNotifyInsertMag called"));
     if (CurrentWeapon) {
-        if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+        /*if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
         {
             if (Firearm->MagMesh == nullptr) {
                 UE_LOG(LogTemp, Warning, TEXT("OnNotifyInsertMag: MagMesh is null"));
@@ -1053,7 +1053,7 @@ void UWeaponComponent::OnNotifyInsertMag() {
             }
             Firearm->MagMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
             Firearm->AttachMagToDefault();
-        }
+        }*/
     }
 }
 
@@ -1075,11 +1075,11 @@ AWeaponBase* UWeaponComponent::SpawnWeaponByItemId(EItemId ItemId)
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     AWeaponBase* NewWeapon = nullptr;
     if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
-        NewWeapon = GetWorld()->SpawnActor<AWeaponFirearm>(
+       /* NewWeapon = GetWorld()->SpawnActor<AWeaponFirearm>(
             FVector::ZeroVector,
             FRotator::ZeroRotator,
             Params
-        );
+        );*/
     }
     else if (WeaponConf->WeaponType == EWeaponTypes::Melee) {
         NewWeapon = GetWorld()->SpawnActor<AWeaponMelee>(
@@ -1747,7 +1747,7 @@ bool UWeaponComponent::HasAmmoInClip()
 void UWeaponComponent::RequestStartFire()
 {
     UE_LOG(LogTemp, Warning, TEXT("RequestStartFire called"));
-    if (!GetOwner()->HasAuthority())
+    /*if (!GetOwner()->HasAuthority())
     {
         if (IsOwningClient()) {
 			auto ShootState = CanShoot();
@@ -1781,7 +1781,7 @@ void UWeaponComponent::RequestStartFire()
     else
     {
         ServerStartFire();
-    }
+    }*/
 }
 
 void UWeaponComponent::RequestStopFire()
@@ -2040,54 +2040,27 @@ int32 UWeaponComponent::ComputeShotIndex(float NowServerTime) const
 
 float UWeaponComponent::GetMoveAlphaForSpread() const
 {
-    // Use movement input magnitude for better client/server match.
-    // This exists on owning client and on server (server receives movement input).
-    const ABaseCharacter* C = GetCharacter();
-    if (!C) return 0.0f;
-
-    const float Speed2D = C->GetVelocity().Size2D();
-	const float Alpha = FMath::Clamp(Speed2D / 600, 0.0f, 1.0f); // 600 is max walk speed
-
-    // Apply curve
-    const float Exp = FMath::Max(0.1f, Spread.MoveCurveExp);
-    return FMath::Pow(Alpha, Exp);
+	return 0.f;
 }
 
 float UWeaponComponent::GetMovementSpreadDeg() const
 {
-    return Spread.MoveAddDeg * GetMoveAlphaForSpread();
+    return 0.f;
 }
 
 float UWeaponComponent::GetAirSpreadDeg() const
 {
-    const ABaseCharacter* C = GetCharacter();
-    if (!C) return 0.0f;
-
-    const UCharacterMovementComponent* Move = C->GetCharacterMovement();
-    if (!Move) return 0.0f;
-
-    return Move->IsFalling() ? Spread.AirAddDeg : 0.0f;
+	return 0.f;
 }
 
 void UWeaponComponent::UpdateBurstSpreadOnShot(float NowServerTime)
 {
-    // Deterministic recovery based on time gap since last shot
-    if (LastShotTimeServer > 0.0f)
-    {
-        const float Dt = FMath::Max(0.0f, NowServerTime - LastShotTimeServer);
-        BurstAccDeg = FMath::Max(0.0f, BurstAccDeg - Spread.BurstRecoverDegPerSec * Dt);
-    }
-
-    // Add per-shot burst spread
-    BurstAccDeg = FMath::Min(BurstAccDeg + Spread.PerShotAddDeg, Spread.MaxBurstAddDeg);
-    LastShotTimeServer = NowServerTime;
+    
 }
 
 float UWeaponComponent::GetTotalSpreadDeg(float NowServerTime) const
 {
-    // NOTE: BurstAccDeg should already be updated at the moment of firing on both sides.
-    const float Total = Spread.BaseDeg + GetMovementSpreadDeg() + GetAirSpreadDeg() + BurstAccDeg;
-    return FMath::Min(Total, Spread.MaxTotalDeg);
+    return .0f; 
 }
 
 FVector UWeaponComponent::ComputeShotDirDeterministic(

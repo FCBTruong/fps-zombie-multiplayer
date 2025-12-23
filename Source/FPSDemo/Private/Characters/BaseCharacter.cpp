@@ -46,6 +46,11 @@
 #include "Components/AnimationComponent.h"
 #include "Components/CharAudioComponent.h"
 #include "Components/CharCameraComponent.h"
+#include "Components/EquipComponent.h"
+#include "Components/ActionStateComponent.h"
+#include "Components/ItemVisualComponent.h"
+#include "Components/WeaponFireComponent.h"
+#include "Game/ItemsManager.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -88,12 +93,16 @@ ABaseCharacter::ABaseCharacter()
 
     PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
     InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
-    WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
+    //WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
     InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
     HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
     AnimationComp = CreateDefaultSubobject<UAnimationComponent>(TEXT("AnimationComponent"));
     AudioComp = CreateDefaultSubobject<UCharAudioComponent>(TEXT("AudioComponent"));
     CameraComp = CreateDefaultSubobject<UCharCameraComponent>(TEXT("CharCameraComponent"));
+	EquipComp = CreateDefaultSubobject<UEquipComponent>(TEXT("EquipComponent"));
+	ActionStateComp = CreateDefaultSubobject<UActionStateComponent>(TEXT("ActionStateComponent"));
+	ItemVisualComp = CreateDefaultSubobject<UItemVisualComponent>(TEXT("ItemVisualComponent"));
+	WeaponFireComp = CreateDefaultSubobject<UWeaponFireComponent>(TEXT("WeaponFireComponent"));
 
     CameraComp->Initialize(
         CameraFps,
@@ -121,6 +130,19 @@ ABaseCharacter::ABaseCharacter()
     if (WeaponComp) {
 		UE_LOG(LogTemp, Warning, TEXT("DEBUGGG:: WeaponComp is valid in ABaseCharacter constructor"));
     }
+
+	// Initialize components dependencies
+    if (EquipComp) {
+        EquipComp->Initialize(InventoryComp, ActionStateComp);
+	}
+    if (ItemVisualComp) {
+        ItemVisualComp->Initialize(EquipComp, CameraComp);
+    }
+    if (WeaponFireComp) {
+		WeaponFireComp->Initialize(EquipComp, InventoryComp, ActionStateComp, ItemVisualComp);
+    }
+
+
     static ConstructorHelpers::FObjectFinder<UCurveFloat> CrouchCurveFinder(
         TEXT("/Game/Main/Data/CrouchCurve.CrouchCurve")
     );
@@ -262,24 +284,51 @@ void ABaseCharacter::BeginPlay()
     if (WeaponComp) {
         WeaponComp->OnUpdateCurrentWeapon.AddUObject(this, &ABaseCharacter::UpdateCurrentWeapon);
     }
+    
+    if (EquipComp) {
+        EquipComp->OnActiveItemChanged.AddUObject(
+            this,
+            &ABaseCharacter::UpdateCurrentWeapon
+        );
+		this->UpdateCurrentWeapon(EquipComp->GetActiveItemId());
+	}
+
+	// add pistol to inventory at begin play
+    if (HasAuthority()) {
+        if (InventoryComp) {
+            InventoryComp->Test();
+		}
+		EquipComp->AutoSelectBestWeapon();
+    }
+	
 
     bHasBeginPlayRun = true;
 }
 
-void ABaseCharacter::UpdateCurrentWeapon(const EItemId& NewWeaponId)
+void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
 {
-	auto GMR = UGameManager::Get(GetWorld());
-    if (!GMR) {
-        UE_LOG(LogTemp, Warning, TEXT("GMR is null in UpdateCurrentWeapon"));
-        return;
-    }
-	UWeaponData* NewWeaponData = GMR->GetWeaponDataById(NewWeaponId);
-    if (NewWeaponData->WeaponType == EWeaponTypes::Firearm) {
+    UE_LOG(
+        LogTemp,
+        Warning,
+        TEXT("[%s] Updating current weapon to ItemId: %d"),
+        HasAuthority() ? TEXT("Server") : TEXT("Client"),
+        static_cast<uint8>(NewWeaponId)
+    );
+	auto ItemsMgr = UItemsManager::Get(GetWorld());
+	
+	UItemConfig* ItemConfig = ItemsMgr->GetItemById(NewWeaponId);
+    if (!ItemConfig) {
+        UE_LOG(LogTemp, Warning, TEXT("ItemConfig is null in UpdateCurrentWeapon"));
+		return;
+	}
+
+    if (ItemConfig->GetItemType() == EItemType::Firearm) {
 		MeshFps->SetRelativeLocation(FVector(0.f, 10.f, -170.f));
     }
     else {
         MeshFps->SetRelativeLocation(FVector(0.f, 0.f, -170.f));
     }
+    UpdateMaxWalkSpeed();
 }
 
 
@@ -560,6 +609,9 @@ EWeaponSubTypes ABaseCharacter::GetWeaponSubType() const
 
 void ABaseCharacter::RequestStartAiming()
 {
+    if (!WeaponComp) {
+        return;
+	}
     if (!WeaponComp->CanWeaponAim()) {
         return;
     }
@@ -638,24 +690,20 @@ float ABaseCharacter::GetSpeedWalkRatio() const
 {
     float Ratio = 1.0f;
 
-    if (WeaponComp)
-    {
-        const EWeaponTypes WeaponType = WeaponComp->GetCurrentWeaponType();
-
-        switch (WeaponType)
-        {
-        case EWeaponTypes::Melee:
-        case EWeaponTypes::Throwable:
-        case EWeaponTypes::Spike:
-            Ratio = 1.5f;
-            break;
-
-        case EWeaponTypes::Firearm:
-        default:
-            Ratio = 1.0f;
-            break;
-        }
+    if (!EquipComp) {
+		return Ratio;
     }
+    // get active weapon data
+	const UItemConfig* Config = EquipComp->GetActiveItemConfig();
+    if (!Config) {
+        return Ratio;
+    }
+
+	// Weight penalty
+	float Weight = Config->Weight;
+	Ratio = Ratio / Weight;
+
+	UE_LOG(LogTemp, Warning, TEXT("GetSpeedWalkRatio: Weight = %f, Ratio = %f"), Weight, Ratio);
 
     // Aiming penalty
     if (bIsAiming)
@@ -668,6 +716,7 @@ float ABaseCharacter::GetSpeedWalkRatio() const
 
 
 void ABaseCharacter::UpdateMaxWalkSpeed() {
+	UE_LOG(LogTemp, Warning, TEXT("UpdateMaxWalkSpeed called"));
     if (IsCrouched()) {
         GetCharacterMovement()->MaxWalkSpeed = CROUCH_WALK_SPEED;
     }
@@ -1212,8 +1261,16 @@ UAnimationComponent* ABaseCharacter::GetAnimationComponent() const {
     return AnimationComp.Get();
 }
 
+UEquipComponent* ABaseCharacter::GetEquipComponent() const {
+    return EquipComp.Get();
+}
+
 USplineComponent* ABaseCharacter::GetThrowSpline() const {
     return ThrowSpline;
+}
+
+UWeaponFireComponent* ABaseCharacter::GetWeaponFireComponent() const {
+    return WeaponFireComp.Get();
 }
 
 void ABaseCharacter::RequestSlowMovement(bool bNewIsSlow)
@@ -1242,4 +1299,13 @@ void ABaseCharacter::RequestJump() {
 bool ABaseCharacter::IsBot() const
 {
     return Controller && Controller->IsA<AAIController>();
+}
+
+EEquippedAnimState ABaseCharacter::GetEquippedAnimState() const
+{
+    if (EquipComp) {
+		return EquipComp->GetEquippedAnimState();
+	}
+
+    return EEquippedAnimState::Unarmed;
 }

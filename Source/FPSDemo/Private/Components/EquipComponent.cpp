@@ -3,12 +3,18 @@
 #include "Components/EquipComponent.h"
 #include "Game/GameManager.h"
 #include "Components/ActionStateComponent.h"
-#include "Weapons/WeaponDataManager.h" // or where UWeaponData is declared
 #include "Components/InventoryComponent.h"
+#include "Game/ItemsManager.h"
+#include "Items/ItemConfig.h"
 
 UEquipComponent::UEquipComponent()
 {
     SetIsReplicatedByDefault(true);
+}
+
+void UEquipComponent::Initialize(UInventoryComponent* InInventoryComp, UActionStateComponent* InActionStateComp) {
+    InventoryComp = InInventoryComp;
+    ActionStateComp = InActionStateComp;
 }
 
 void UEquipComponent::BeginPlay()
@@ -32,20 +38,9 @@ void UEquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 void UEquipComponent::OnRep_ActiveItemId()
 {
+    RefreshCachedState();
+	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::OnRep_ActiveItemId: New ActiveItemId = %d"), static_cast<int32>(ActiveItemId));
     OnActiveItemChanged.Broadcast(ActiveItemId);
-}
-
-const UWeaponData* UEquipComponent::GetWeaponData(EItemId ItemId)
-{
-    if (ItemId == EItemId::NONE) return nullptr;
-
-    if (!CachedGM)
-    {
-        CachedGM = UGameManager::Get(GetWorld());
-    }
-
-    // Your project stores weapon data by item id
-    return CachedGM ? CachedGM->GetWeaponDataById(ItemId) : nullptr;
 }
 
 bool UEquipComponent::CanSelectNow() const
@@ -60,28 +55,26 @@ bool UEquipComponent::CanSelectItem(EItemId ItemId)
     if (!InventoryComp) return false;
     if (ItemId == EItemId::NONE) return false;
 
-    const UWeaponData* Data = GetWeaponData(ItemId);
+    const UItemConfig* Data = GetItemConfig(ItemId);
     if (!Data) return false;
 
-    switch (Data->WeaponType)
+    if (Data->Id == EItemId::SPIKE) {
+        return InventoryComp->HasSpike();
+	}
+
+    if (Data->GetItemType() == EItemType::Firearm)
     {
-    case EWeaponTypes::Throwable:
-        return InventoryComp->GetThrowables().Contains(ItemId);
-
-    case EWeaponTypes::Spike:
-        // Spike is active item only if player possesses it
-        return InventoryComp->HasSpike() && ItemId == EItemId::SPIKE;
-
-    case EWeaponTypes::Firearm:
-    case EWeaponTypes::Melee:
-        // Slot-bound weapons: only selectable if owned
         return (InventoryComp->GetRifleId() == ItemId) ||
-            (InventoryComp->GetPistolId() == ItemId) ||
-            (InventoryComp->GetMeleeId() == ItemId);
-
-    default:
-        return false;
+            (InventoryComp->GetPistolId() == ItemId);
     }
+    else if (Data->GetItemType() == EItemType::Melee) {
+		return (InventoryComp->GetMeleeId() == ItemId);
+    }
+	else if (Data->GetItemType() == EItemType::Throwable) {
+		return InventoryComp->GetThrowables().Contains(ItemId);
+	}
+  
+    return false;
 }
 
 void UEquipComponent::Select_Internal(EItemId ItemId)
@@ -102,14 +95,14 @@ void UEquipComponent::RequestSelectActiveItem(EItemId ItemId)
 {
     if (!GetOwner()) return;
 
+    if (!CanSelectNow()) return;
+    if (!CanSelectItem(ItemId)) return;
+
     if (!GetOwner()->HasAuthority())
     {
         ServerRequestSelectActiveItem(ItemId);
         return;
     }
-
-    if (!CanSelectNow()) return;
-    if (!CanSelectItem(ItemId)) return;
 
     Select_Internal(ItemId);
 }
@@ -129,11 +122,12 @@ EItemId UEquipComponent::ChooseThrowableToSelect()
     const TArray<EItemId>& Throwables = InventoryComp->GetThrowables();
     if (Throwables.Num() == 0) return EItemId::NONE;
 
-    const UWeaponData* CurrentData = GetWeaponData(ActiveItemId);
-    if (!CurrentData || CurrentData->WeaponType != EWeaponTypes::Throwable)
+    const UItemConfig* CurrentData = GetActiveItemConfig();
+    // TODO fix later
+   /* if (!CurrentData || CurrentData->ItemType != EItemTypes::Throwable)
     {
         return Throwables[0];
-    }
+    }*/
 
     const int32 CurrentIndex = Throwables.IndexOfByKey(ActiveItemId);
     if (CurrentIndex == INDEX_NONE)
@@ -209,4 +203,23 @@ void UEquipComponent::AutoSelectBestWeapon()
 
     // If no weapons, keep NONE
     RequestSelectActiveItem(EItemId::NONE);
+}
+
+
+const UItemConfig* UEquipComponent::GetItemConfig(EItemId ItemId) const
+{
+    if (ItemId == EItemId::NONE) return nullptr;
+    return UItemsManager::Get(GetWorld())->GetItemById(ItemId);
+}
+
+
+const UItemConfig* UEquipComponent::GetActiveItemConfig() const
+{
+    return GetItemConfig(ActiveItemId);
+}
+
+void UEquipComponent::RefreshCachedState()
+{
+    const UItemConfig* Cfg = GetActiveItemConfig();
+    CachedAnimState = Cfg ? Cfg->AnimationState : EEquippedAnimState::Unarmed;
 }

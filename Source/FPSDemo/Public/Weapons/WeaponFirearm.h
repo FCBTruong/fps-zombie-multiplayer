@@ -3,26 +3,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "WeaponBase.h"
+#include "Items/EquippedItem.h"
 #include "WeaponFirearm.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FPSDEMO_API AWeaponFirearm : public AWeaponBase
+class FPSDEMO_API AWeaponFirearm : public AEquippedItem
 {
 	GENERATED_BODY()
 
 protected:
-	void ApplyWeaponData() override;
+	void ApplyConfig() override;
 	virtual void BeginPlay() override;
 public:
 	AWeaponFirearm();
 	virtual bool CanFire() {
 		return true;
 	};
-	virtual void OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint) override;
+	virtual void OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint);
 	void PlayOutOfAmmoSound();
 	void PlayReloadSound();
 	UStaticMeshComponent* MagMesh;

@@ -15,6 +15,9 @@
 #include "Components/HealthComponent.h"
 #include "Components/InteractComponent.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/EquipComponent.h"
+#include "Items/ItemConfig.h"
+#include "Components/WeaponFireComponent.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -407,16 +410,13 @@ void AMyPlayerController::OnLeftClickStart()
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        if (UEquipComponent* EC = MyChar->GetEquipComponent())
         {
-            if (WC->GetCurrentWeaponType() == EWeaponTypes::Spike) {
-				WC->OnInput_StartPlantSpike();
-            }
-            else if (WC->GetCurrentWeaponType() == EWeaponTypes::Firearm) {
-                WC->RequestStartFire();
-			}
-            else {
-				// TODO: handle melee attack
+            const UItemConfig* ActiveItemConfig = EC->GetActiveItemConfig();
+            if (ActiveItemConfig && ActiveItemConfig->GetItemType() == EItemType::Firearm) {
+                if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
+					WFC->RequestStartFire();
+                }
             }
         }
     }
@@ -429,16 +429,13 @@ void AMyPlayerController::OnLeftClickRelease()
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        if (UEquipComponent* EC = MyChar->GetEquipComponent())
         {
-            if (WC->GetCurrentWeaponType() == EWeaponTypes::Spike) {
-                WC->OnInput_StopPlantSpike();
-            }
-            else if (WC->GetCurrentWeaponType() == EWeaponTypes::Firearm) {
-                WC->RequestStopFire();
-            }
-            else {
-                //WC->OnInput_StopAttack();
+            const UItemConfig* ActiveItemConfig = EC->GetActiveItemConfig();
+            if (ActiveItemConfig && ActiveItemConfig->GetItemType() == EItemType::Firearm) {
+                if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
+                    WFC->RequestStopFire();
+                }
             }
         }
     }
@@ -531,9 +528,9 @@ void AMyPlayerController::EquipSlot(const int32 SlotIndex) {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        if (UEquipComponent* EC = MyChar->GetEquipComponent())
         {
-            WC->EquipSlot(SlotIndex);
+			EC->SelectSlot(SlotIndex);
         }
     }
 }

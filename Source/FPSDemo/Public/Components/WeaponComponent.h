@@ -22,7 +22,7 @@ class UWeaponData;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateAmmoState, int, int);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGrenades, const TArray<EItemId>&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateCurrentWeapon, const EItemId&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateCurrentWeapon, EItemId);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRifleWeapon, const EItemId&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePistolWeapon, const EItemId&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePlantSpikeState, bool);
@@ -39,33 +39,6 @@ enum class EShootState : uint8
 	CannotFire UMETA(DisplayName = "Cannot Fire"),
 };
 
-USTRUCT(BlueprintType)
-struct FSpreadTuning
-{
-	GENERATED_BODY()
-
-	// Base accuracy (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float BaseDeg = 0.2f;
-
-	// Movement contribution (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MoveAddDeg = 3.0f;
-
-	// Airborne penalty (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float AirAddDeg = 4.0f;
-
-	// Burst (continuous fire) contribution (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float PerShotAddDeg = 1.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MaxBurstAddDeg = 8.0f;
-
-	// How fast burst spread recovers when time passes (deg/sec)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float BurstRecoverDegPerSec = 1.0f;
-
-	// Final clamp (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MaxTotalDeg = 10.0f;
-
-	// Curve exponent for movement (1 = linear, 2 = smoother, 3 = even smoother)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MoveCurveExp = 2.0f;
-};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponComponent : public UActorComponent
@@ -107,8 +80,6 @@ protected:
 	FArmorState ArmorState;
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon)
 	EItemId CurrentWeaponId;
-	UPROPERTY(EditAnywhere, Category = "Weapon|Spread")
-	FSpreadTuning Spread;
 
 	// Deterministic burst seed + server fire start time for matching ShotIndex
 	UPROPERTY(Replicated) int32 BurstSeed = 0;

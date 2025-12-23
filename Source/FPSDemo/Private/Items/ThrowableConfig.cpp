@@ -1,12 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Team/Team.h"
+#include "Items/ThrowableConfig.h"
 
-Team::Team()
-{
-}
-
-Team::~Team()
-{
-}

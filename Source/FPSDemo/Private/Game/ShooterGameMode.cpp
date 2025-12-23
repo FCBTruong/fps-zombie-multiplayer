@@ -5,6 +5,7 @@
 #include "Game/GameManager.h"
 #include "Weapons/WeaponState.h"
 #include "Characters/BaseCharacter.h"
+#include "Components/WeaponComponent.h"
 
 void AShooterGameMode::StartPlay()
 {
@@ -270,7 +271,9 @@ void AShooterGameMode::SavePlayersGunsForNextRound()
             if (!Pawn) continue;
             ABaseCharacter* MyChar = Cast<ABaseCharacter>(Pawn);
             if (!MyChar) continue;
-            FWeaponState* W = MyChar->GetWeaponComponent()->GetRifleState();
+			UWeaponComponent* WeaponComp = MyChar->GetWeaponComponent();
+			if (!WeaponComp) continue;
+            FWeaponState* W = WeaponComp->GetRifleState();
             if (W) {
                 MyPS->AddOwnedWeapon(W->ItemId);
             }

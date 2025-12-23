@@ -4,12 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Net/UnrealNetwork.h"
 #include "Items/ItemIds.h"
 #include "Weapons/WeaponState.h"
 #include "InventoryComponent.generated.h"
 
-class UWeaponData;
+class UItemConfig;
 class UGameManager;
 struct FPickupData;
 
@@ -47,6 +46,8 @@ public:
     // ===== Mutations (Authority only) =====
     // Add item to inventory from pickup data (server only)
     bool AddItemFromPickup(const FPickupData& PickupData);
+
+	void Test(); // remove later
 
     // Remove throwable after throw/drop (server only)
     bool RemoveThrowable(EItemId ItemId);
@@ -104,7 +105,7 @@ private:
 
 private:
     // Helpers
-    const UWeaponData* GetWeaponData(EItemId ItemId);
+    const UItemConfig* GetItemConfig(EItemId ItemId);
     void SortThrowables();
 
     // OnRep

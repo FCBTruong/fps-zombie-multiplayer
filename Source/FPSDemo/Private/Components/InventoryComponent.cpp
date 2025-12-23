@@ -2,10 +2,13 @@
 
 #include "Components/InventoryComponent.h"
 #include "Game/GameManager.h"
-#include "Weapons/WeaponDataManager.h" 
 #include "Weapons/WeaponState.h"       
 #include "Structs/WeaponRuntimeData.h" 
 #include "Pickup/PickupData.h"
+#include "Game/ItemsManager.h"
+#include "Items/ItemConfig.h"
+#include "Items/FirearmConfig.h"
+#include "Net/UnrealNetwork.h"
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -21,6 +24,23 @@ void UInventoryComponent::BeginPlay()
     CachedGM = UGameManager::Get(GetWorld());
 }
 
+void UInventoryComponent::Test()
+{
+    // Test function to be removed later
+    MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
+    PistolState.ItemId = EItemId::PISTOL_PL_14;
+	RifleState.ItemId = EItemId::RIFLE_AK_47;
+
+    UWeaponData* PistolData = UGameManager::Get(GetWorld())->GetWeaponDataById(EItemId::PISTOL_PL_14);
+    PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
+    PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
+
+	UWeaponData* RifleData = UGameManager::Get(GetWorld())->GetWeaponDataById(EItemId::RIFLE_AK_47);
+	RifleState.AmmoInClip = 10200;
+    RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 3 : 0;
+}
+
+
 void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -33,15 +53,11 @@ void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
     DOREPLIFETIME(UInventoryComponent, bHasSpike);
 }
 
-const UWeaponData* UInventoryComponent::GetWeaponData(EItemId ItemId)
+const UItemConfig* UInventoryComponent::GetItemConfig(EItemId ItemId)
 {
     if (ItemId == EItemId::NONE) return nullptr;
 
-    if (!CachedGM)
-    {
-        CachedGM = UGameManager::Get(GetWorld());
-    }
-    return CachedGM ? CachedGM->GetWeaponDataById(ItemId) : nullptr;
+	return UItemsManager::Get(GetWorld())->GetItemById(ItemId);
 }
 
 void UInventoryComponent::SortThrowables()
@@ -70,8 +86,8 @@ const FWeaponState* UInventoryComponent::GetWeaponStateByItemId(EItemId ItemId) 
 
 bool UInventoryComponent::CanDrop(EItemId ItemId)
 {
-    const UWeaponData* Data = GetWeaponData(ItemId);
-    return Data ? Data->CanDrop : false;
+    const UItemConfig* Data = GetItemConfig(ItemId);
+    return Data ? Data->bIsDroppable : false;
 }
 
 bool UInventoryComponent::AddItemFromPickup(const FPickupData& PickupData)
@@ -80,65 +96,63 @@ bool UInventoryComponent::AddItemFromPickup(const FPickupData& PickupData)
         return false;
 
     const EItemId ItemId = PickupData.ItemId;
-    const UWeaponData* Data = GetWeaponData(ItemId);
+    const UItemConfig* Data = GetItemConfig(ItemId);
     if (!Data) return false;
 
-    switch (Data->WeaponType)
+    EItemType ItemType = Data->GetItemType();
+    switch (ItemType)
     {
-    case EWeaponTypes::Firearm:
-    {
-        if (Data->WeaponSubType == EWeaponSubTypes::Rifle)
+        case EItemType::Firearm:
         {
-            if (RifleState.ItemId != EItemId::NONE) return false;
-            RifleState.ItemId = ItemId;
-            RifleState.AmmoInClip = PickupData.AmmoInClip;
-            RifleState.AmmoReserve = PickupData.AmmoReserve;
-            OnRep_RifleState();
+			const UFirearmConfig* FirearmData = Cast<UFirearmConfig>(Data);
+            
+            if (FirearmData->FirearmType == EFirearmType::Rifle)
+            {
+                if (RifleState.ItemId != EItemId::NONE) return false;
+                RifleState.ItemId = ItemId;
+                RifleState.AmmoInClip = PickupData.AmmoInClip;
+                RifleState.AmmoReserve = PickupData.AmmoReserve;
+                OnRep_RifleState();
+                return true;
+            }
+            else 
+            {
+                if (PistolState.ItemId != EItemId::NONE) return false;
+                PistolState.ItemId = ItemId;
+                PistolState.AmmoInClip = PickupData.AmmoInClip;
+                PistolState.AmmoReserve = PickupData.AmmoReserve;
+                OnRep_PistolState();
+                return true;
+            }
+        }
+        case EItemType::Melee:
+        {
+            if (MeleeState.ItemId != EItemId::NONE) return false;
+            MeleeState.ItemId = ItemId;
+            // Melee ammo typically unused
+            OnRep_MeleeState();
             return true;
         }
-        if (Data->WeaponSubType == EWeaponSubTypes::Pistol)
+        case EItemType::Throwable:
         {
-            if (PistolState.ItemId != EItemId::NONE) return false;
-            PistolState.ItemId = ItemId;
-            PistolState.AmmoInClip = PickupData.AmmoInClip;
-            PistolState.AmmoReserve = PickupData.AmmoReserve;
-            OnRep_PistolState();
+            Throwables.Add(ItemId);
+            SortThrowables();
+            OnRep_Throwables();
             return true;
         }
-        return false;
-    }
+        case EItemType::Spike:
+        {
+            SetHasSpike(true);
+            return true;
+        }
+        case EItemType::Armor:
+        {
+            ApplyArmorItem(ItemId);
+            return true;
+        }
 
-    case EWeaponTypes::Melee:
-    {
-        if (MeleeState.ItemId != EItemId::NONE) return false;
-        MeleeState.ItemId = ItemId;
-        // Melee ammo typically unused
-        OnRep_MeleeState();
-        return true;
-    }
-
-    case EWeaponTypes::Throwable:
-    {
-        Throwables.Add(ItemId);
-        SortThrowables();
-        OnRep_Throwables();
-        return true;
-    }
-
-    case EWeaponTypes::Spike:
-    {
-        SetHasSpike(true);
-        return true;
-    }
-
-    case EWeaponTypes::Equipment:
-    {
-        ApplyArmorItem(ItemId);
-        return true;
-    }
-
-    default:
-        return false;
+        default:
+            return false;
     }
 }
 

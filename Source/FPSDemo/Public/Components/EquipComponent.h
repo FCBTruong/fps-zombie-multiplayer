@@ -7,11 +7,12 @@
 #include "Net/UnrealNetwork.h"
 #include "Items/ItemIds.h"
 #include "GameConstants.h"
+#include "Types/EquippedAnimState.h"
 #include "EquipComponent.generated.h"
 
 class UInventoryComponent;
 class UActionStateComponent;
-class UWeaponData;
+class UItemConfig;
 class UGameManager;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnActiveItemChanged, EItemId);
@@ -23,11 +24,13 @@ class FPSDEMO_API UEquipComponent : public UActorComponent
 
 public:
     UEquipComponent();
-
+	void Initialize(UInventoryComponent* InInventoryComp, UActionStateComponent* InActionStateComp);
     // Input-facing API
     void RequestSelectActiveItem(EItemId ItemId);
     void SelectSlot(int32 SlotIndex);
     void AutoSelectBestWeapon();
+    const UItemConfig* GetActiveItemConfig() const;
+    EEquippedAnimState GetEquippedAnimState() const { return CachedAnimState; }
 
     EItemId GetActiveItemId() const { return ActiveItemId; }
 
@@ -42,6 +45,9 @@ private:
     // Replicated active item id (in hands)
     UPROPERTY(ReplicatedUsing = OnRep_ActiveItemId)
     EItemId ActiveItemId = EItemId::NONE;
+
+    UPROPERTY()
+    EEquippedAnimState CachedAnimState = EEquippedAnimState::Unarmed;
 
     UFUNCTION()
     void OnRep_ActiveItemId();
@@ -62,11 +68,12 @@ private:
     // Helpers
     bool CanSelectNow() const;
     bool CanSelectItem(EItemId ItemId);
-    const UWeaponData* GetWeaponData(EItemId ItemId);
+    const UItemConfig* GetItemConfig(EItemId ItemId) const;
 
     // Authority-only
     void Select_Internal(EItemId ItemId);
 
     // Slot helpers
     EItemId ChooseThrowableToSelect();
+    void RefreshCachedState();
 };

@@ -10,6 +10,8 @@
 #include "GameFramework/Character.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "Items/ItemConfig.h"
+#include "Items/FirearmConfig.h"
 
 AWeaponFirearm::AWeaponFirearm()
 {
@@ -27,9 +29,13 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 {
 	// Implement firing logic here
 	UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
-	if (Data->MuzzleFX) {
+	const UFirearmConfig* FC = Cast<UFirearmConfig>(Config);
+	if (!FC) {
+		return;
+	}
+	if (FC->MuzzleFX) {
 		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAttached(
-			Data->MuzzleFX,                 // particle system
+			FC->MuzzleFX,                 // particle system
 			WeaponMesh,                   // attach to this component
 			TEXT("Muzzle"),        // socket name
 			FVector::ZeroVector,         // location offset
@@ -40,17 +46,13 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 
 		if (PSC)
 		{
-			// ... rest of your code remains unchanged ...
 			UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));
 			PSC->SetWorldScale3D(FVector(0.15f));
-
 
 			if (bIsFpsView) {
 				if (USceneCaptureComponent2D* Capture = ViewmodelCapture.Get()) // ViewmodelCapture is TWeakObjectPtr
 				{
 					Capture->ShowOnlyComponent(PSC);
-					// If needed:
-					// Capture->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 				}
 
 				PSC->SetOwnerNoSee(true);
@@ -82,7 +84,7 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		FRotator::ZeroRotator,
 		SpawnParams
 	);
-	Bullet->InitFromData(Data->BulletData, TargetPoint, ViewmodelCapture);
+	Bullet->InitFromData(FC->BulletData, TargetPoint, ViewmodelCapture);
 
 	if (bIsFpsView) {
 		UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
@@ -111,16 +113,16 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 	}
 
 	// Play sound
-	if (Data->FireSFX)
+	if (FC->FireSFX)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, Data->FireSFX, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, FC->FireSFX, GetActorLocation());
 	}
 
 
-	//if (Data && Data->MuzzleFlashFX && WeaponMesh)
+	//if (Data && FC->MuzzleFlashFX && WeaponMesh)
 	//{
 	//	UNiagaraComponent* Niagara = UNiagaraFunctionLibrary::SpawnSystemAttached(
-	//		Data->MuzzleFlashFX,
+	//		FC->MuzzleFlashFX,
 	//		WeaponMesh,
 	//		FName(TEXT("Muzzle")),
 	//		FVector::ZeroVector,
@@ -137,31 +139,44 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 
 void AWeaponFirearm::PlayOutOfAmmoSound()
 {
-	if (Data->OutOfAmmoSFX)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, Data->OutOfAmmoSFX, GetActorLocation());
+	const UFirearmConfig* FC = Cast<UFirearmConfig>(Config);
+	if (!FC) {
+		return;
 	}
+	/*if (FC->OutOfAmmoSFX)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FC->OutOfAmmoSFX, GetActorLocation());
+	}*/
 }
 
 void AWeaponFirearm::PlayReloadSound()
 {
-	if (Data->ReloadSFX)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, Data->ReloadSFX, GetActorLocation());
+	const UFirearmConfig* FC = Cast<UFirearmConfig>(Config);
+	if (!FC) {
+		return;
 	}
+	/*if (FC->ReloadSFX)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FC->ReloadSFX, GetActorLocation());
+	}*/
 }
 
-void AWeaponFirearm::ApplyWeaponData()
+void AWeaponFirearm::ApplyConfig()
 {
-	Super::ApplyWeaponData();
+	Super::ApplyConfig();
+	const UFirearmConfig* FC = Cast<UFirearmConfig>(Config);
+	if (!FC) {
+		return;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("Applying Weapon Data in Firearm"));
 	if (WeaponMesh) {
 		WeaponMesh->HideBoneByName(FName("b_gun_mag"), EPhysBodyOp::PBO_None);
 	}
 	// Get Mag Mesh
-	if (MagMesh && Data && Data->MagMesh)
+	if (MagMesh && Config && FC->MagMesh)
 	{
-		MagMesh->SetStaticMesh(Data->MagMesh);
+		MagMesh->SetStaticMesh(FC->MagMesh);
 
 		ACharacter* Character = Cast<ACharacter>(GetOwner());
 		if (Character && Character->IsLocallyControlled()) {
@@ -184,7 +199,11 @@ void AWeaponFirearm::AttachMagToDefault()
 
 int32 AWeaponFirearm::GetMaxAmmo() const
 {
-	return Data->MaxAmmoInClip;
+	const UFirearmConfig* FC = Cast<UFirearmConfig>(Config);
+	if (!FC) {
+		return 0;
+	}
+	return FC->MaxAmmoInClip;
 }
 
 void AWeaponFirearm::Destroyed()

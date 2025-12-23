@@ -3,6 +3,8 @@
 
 #include "Controllers/MyPlayerState.h"
 #include "Characters/BaseCharacter.h"
+#include "Pickup/PickupData.h"
+#include "Components/WeaponComponent.h"
 
 
 AMyPlayerState::AMyPlayerState()

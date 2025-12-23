@@ -158,7 +158,7 @@ public:
 	void ShowIconGrenade(EItemId ItemId, bool bShow);
 	void CreateGrenadeNodes();
 	void UpdateGrenades(const TArray<EItemId>& GrenadeIds);
-	void UpdateCurrentWeapon(const EItemId& CurrentWeaponId);
+	void UpdateCurrentWeapon(EItemId CurrentWeaponId);
 	void ShowWeaponGuide();
 	void ShowScope();
 	void HideScope();

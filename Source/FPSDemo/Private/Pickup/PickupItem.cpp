@@ -5,6 +5,8 @@
 #include "Weapons/WeaponDataManager.h"
 #include "Characters/BaseCharacter.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Components/PickupComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 APickupItem::APickupItem()
