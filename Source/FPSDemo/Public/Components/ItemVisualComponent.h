@@ -13,6 +13,7 @@ class UGameManager;
 class ABaseCharacter;
 class AEquippedItem;
 class UCharCameraComponent;
+class UAnimationComponent;
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -31,7 +32,7 @@ protected:
 
 public:	
 	void OnViewModeChanged(bool bIsFPS);
-    void Initialize(UEquipComponent* InEquipComp, UCharCameraComponent* InCameraComp);
+    void Initialize(UEquipComponent* InEquipComp, UCharCameraComponent* InCameraComp, UAnimationComponent* InAnimComp);
     void PlayFireFX(FVector TargetPoint);
 
 private:
@@ -39,6 +40,8 @@ private:
     TObjectPtr<UEquipComponent> EquipComp = nullptr;
     UPROPERTY(Transient)
     TObjectPtr<UCharCameraComponent> CameraComp;
+    UPROPERTY(Transient)
+	TObjectPtr<UAnimationComponent> AnimComp = nullptr;
     UPROPERTY(Transient) 
     TObjectPtr<UGameManager> CachedGM = nullptr;
 

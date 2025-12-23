@@ -11,6 +11,8 @@
 #include "Items/EquippedItem.h"
 #include "Game/ItemsManager.h"
 #include "Components/CharCameraComponent.h"
+#include "Items/FirearmConfig.h"
+#include "Components/AnimationComponent.h"
 
 // Sets default values for this component's properties
 UItemVisualComponent::UItemVisualComponent()
@@ -19,11 +21,13 @@ UItemVisualComponent::UItemVisualComponent()
 	SetIsReplicatedByDefault(false);
 }
 
-void UItemVisualComponent::Initialize(UEquipComponent* InEquipComp, UCharCameraComponent* InCameraComp)
+void UItemVisualComponent::Initialize(UEquipComponent* InEquipComp, UCharCameraComponent* InCameraComp, UAnimationComponent* InAnimComp)
 {
 	if (!InEquipComp || !InCameraComp)
         return;
     EquipComp = InEquipComp;
+
+	AnimComp = InAnimComp;
     
     EquipComp->OnActiveItemChanged.AddUObject(
         this,
@@ -278,4 +282,22 @@ void UItemVisualComponent::PlayFireFX(FVector TargetPoint)
     {
         Firearm->OnFire(TargetPoint, false, FVector::ZeroVector);
     }
+    // fire montage
+	ABaseCharacter* Character = GetCharacter();
+    if (Character && AnimComp)
+    {
+		const UItemConfig* Data = EquippedActor->GetItemConfig();
+        // cast to firearm
+		const UFirearmConfig* FirearmData = Cast<UFirearmConfig>(Data);
+        if (FirearmData) {
+            if (FirearmData->FirearmType == EFirearmType::Rifle) {
+				AnimComp->PlayFireRifleMontage(TargetPoint);
+                return;
+			}
+            else {
+				AnimComp->PlayFirePistolMontage(TargetPoint);
+				return;
+            }
+        }
+	}
 }

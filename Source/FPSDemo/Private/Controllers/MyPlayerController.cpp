@@ -504,9 +504,8 @@ void AMyPlayerController::StartReload() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
-        {
-            WC->RequestReload();
+        if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
+            WFC->RequestReload();
         }
     }
 }

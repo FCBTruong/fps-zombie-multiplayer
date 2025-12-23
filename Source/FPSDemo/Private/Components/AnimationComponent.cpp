@@ -3,11 +3,15 @@
 
 #include "Components/AnimationComponent.h"
 #include "Characters/BaseCharacter.h"
+#include "Game/GameManager.h"
 
 // Sets default values for this component's properties
 UAnimationComponent::UAnimationComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+
+    // load animations
+
 }
 
 
@@ -15,15 +19,26 @@ UAnimationComponent::UAnimationComponent()
 void UAnimationComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+    UGameManager* GameManager = UGameManager::Get(GetWorld());
+	CachedCharacterAsset = GameManager->CharacterAsset.Get();
 }
 
 void UAnimationComponent::PlayEquip(EWeaponTypes WeaponType)
 {
 	ABaseCharacter* Owner = Cast<ABaseCharacter>(GetOwner());
-	if (Montages.Equip && Owner) {
+    if (!Owner) {
+        UE_LOG(LogTemp, Error, TEXT("PlayEquip: Owner is null"));
+        return;
+	}
+    if (!CachedCharacterAsset) {
+        UE_LOG(LogTemp, Error, TEXT("PlayEquip: CachedCharacterAsset is null"));
+        return;
+	}
+	if (CachedCharacterAsset->AnimMontage_Equip) {
 
 		UE_LOG(LogTemp, Warning, TEXT("Playing Equip Montage for Rifle"));
-		Owner->GetCurrentMesh()->GetAnimInstance()->Montage_Play(Montages.Equip);
+		Owner->GetCurrentMesh()->GetAnimInstance()->Montage_Play(CachedCharacterAsset->AnimMontage_Equip);
 	}
 }
 
@@ -53,30 +68,55 @@ void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
 }
 
 void UAnimationComponent::PlayFireRifleMontage(FVector TargetPoint) {
-	PlayMontage(Montages.FireRifle);
+    if (!CachedCharacterAsset) {
+		return;
+	}
+	PlayMontage(CachedCharacterAsset->AnimMontage_FireRifle);
 }
 
 void UAnimationComponent::PlayFirePistolMontage(FVector TargetPoint) {
-    PlayMontage(Montages.FirePistol);
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlayMontage(CachedCharacterAsset->AnimMontage_FirePistol);
 }
 
 void UAnimationComponent::PlayMeleeAttackAnimation(int32 AttackIndex) {
+    if (!CachedCharacterAsset) {
+        return;
+	}
     if (AttackIndex == 0) {
-        PlayMontage(Montages.KnifeAttack1);
+        PlayMontage(CachedCharacterAsset->AnimMontage_KnifeAttack1);
     }
     else if (AttackIndex == 1) {
-        PlayMontage(Montages.KnifeAttack2);
+        PlayMontage(CachedCharacterAsset->AnimMontage_KnifeAttack2);
     }
 }
 
-void UAnimationComponent::PlayReloadMontage() {
-    PlayMontage(Montages.ReloadRifle);
+void UAnimationComponent::PlayReloadRifleMontage() {
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlayMontage(CachedCharacterAsset->AnimMontage_ReloadRifle);
+}
+
+void UAnimationComponent::PlayReloadPistolMontage() {
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlayMontage(CachedCharacterAsset->AnimMontage_ReloadPistol);
 }
 
 void UAnimationComponent::PlayThrowNadeMontage() {
-    PlayMontage(Montages.ThrowNade);
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlayMontage(CachedCharacterAsset->AnimMontage_ThrowNade);
 }
 
 void UAnimationComponent::PlayHoldNadeMontage() {
-    PlayMontage(Montages.HoldNade);
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlayMontage(CachedCharacterAsset->AnimMontage_HoldNade);
 }

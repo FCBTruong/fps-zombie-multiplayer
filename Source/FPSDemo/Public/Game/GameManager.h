@@ -9,6 +9,7 @@
 #include "Game/GlobalDataAsset.h"
 #include "Weapons/WeaponDataManager.h"
 #include "Pickup/PickupItem.h"
+#include "Asset/CharacterAsset.h"
 #include "GameManager.generated.h"
 
 /**
@@ -45,4 +46,7 @@ public:
 	TArray<ABaseCharacter*> GetRegisteredPlayers() const { return RegisteredPlayers; }
 	void ClearRegisteredPlayers() { RegisteredPlayers.Empty(); }
 	TWeakObjectPtr<APickupItem> PickupSpike;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Global")
+	TSoftObjectPtr<UCharacterAsset> CharacterAsset;
 };

@@ -34,10 +34,12 @@ void UInventoryComponent::Test()
     UWeaponData* PistolData = UGameManager::Get(GetWorld())->GetWeaponDataById(EItemId::PISTOL_PL_14);
     PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
     PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
+	PistolState.MaxAmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
 
 	UWeaponData* RifleData = UGameManager::Get(GetWorld())->GetWeaponDataById(EItemId::RIFLE_AK_47);
-	RifleState.AmmoInClip = 10200;
+	RifleState.AmmoInClip = 2;
     RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 3 : 0;
+	RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
 }
 
 
@@ -272,4 +274,23 @@ void UInventoryComponent::OnRep_HasSpike()
 {
     OnSpikeChanged.Broadcast(bHasSpike);
     OnInventoryChanged.Broadcast();
+}
+
+void UInventoryComponent::ReloadWeapon(EItemId Id) {
+    FWeaponState* State = this->GetWeaponStateByItemId(Id);
+    if (!State) {
+        return;
+    }
+    if (!State) {
+        return;
+    }
+
+    int AmmoNeeded = State->MaxAmmoInClip - State->AmmoInClip;
+    if (AmmoNeeded <= 0) {
+        return; // clip is full
+    }
+
+    int AmmoToReload = FMath::Min(AmmoNeeded, State->AmmoReserve);
+    State->AmmoReserve = FMath::Max(0, State->AmmoReserve - AmmoToReload);
+    State->AmmoInClip += AmmoToReload;
 }

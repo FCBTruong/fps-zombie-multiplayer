@@ -16,20 +16,6 @@ void UActionStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 
 bool UActionStateComponent::CanTransition(EActionState From, EActionState To) const
 {
-    // Keep the rules centralized here.
-    // Adjust based on your existing enum values.
-
-    // Example rules from your current code:
-    if (From == EActionState::Reloading && To == EActionState::Firing)
-        return false;
-
-    if (From == EActionState::Planting && To != EActionState::Idle)
-        return false;
-
-    if (From == EActionState::Defusing && To != EActionState::Idle)
-        return false;
-
-    // Common-sense blocks (optional but recommended):
     // If already doing an action, disallow starting another unless going back to Idle.
     if (From != EActionState::Idle && To != EActionState::Idle)
         return false;
@@ -78,4 +64,11 @@ void UActionStateComponent::HandleStateChanged(EActionState OldState, EActionSta
 {
     OnStateChanged.Broadcast(OldState, NewState);
 
+}
+
+bool UActionStateComponent::CanReloadNow() const
+{
+    if (State == EActionState::Reloading)
+		return false;
+    return CanTransition(State, EActionState::Reloading);
 }

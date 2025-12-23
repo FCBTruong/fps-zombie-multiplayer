@@ -19,6 +19,16 @@ void UGameManager::Initialize(FSubsystemCollectionBase& Collection)
     ).LoadSynchronous();
 
 	WeaponDataManager = GetWeaponDataManager();
+
+    CharacterAsset = TSoftObjectPtr<UCharacterAsset>(
+        FSoftObjectPath(TEXT("/Game/Main/CharacterAsset.CharacterAsset"))
+    ).LoadSynchronous();
+    
+
+    if (!CharacterAsset.IsValid())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("CharacterAsset is not valid!"));
+    }
 }
 
 

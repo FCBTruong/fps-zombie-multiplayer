@@ -17,6 +17,9 @@ public:
     int32 AmmoReserve = 0;
 
     UPROPERTY()
+	int32 MaxAmmoInClip = 0;
+
+    UPROPERTY()
     bool bIsEquipped = false;
 
     UPROPERTY()

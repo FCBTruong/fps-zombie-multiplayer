@@ -47,6 +47,7 @@ protected:
 	virtual void ApplyConfig();
 public:	
 	virtual void InitFromConfig(UItemConfig* InConfig);
+	const UItemConfig* GetItemConfig() const { return Config; }
 
 	UMeshComponent* GetMainMesh() const;
 

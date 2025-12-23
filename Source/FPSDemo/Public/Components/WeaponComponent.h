@@ -7,7 +7,6 @@
 #include "Components/ActorComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Game/GameManager.h"
-#include "Structs/WeaponRuntimeData.h"
 #include "GameConstants.h"
 #include "Components/SplineComponent.h"
 #include "Projectiles/TrajectoryPreview.h"

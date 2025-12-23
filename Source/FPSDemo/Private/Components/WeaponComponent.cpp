@@ -970,7 +970,7 @@ void UWeaponComponent::MulticastReload_Implementation()
 
         UAnimationComponent* AnimComp = Character->GetAnimationComponent();
         if (AnimComp) {
-            AnimComp->PlayReloadMontage();
+            //AnimComp->PlayReloadMontage();
         }
 
        /* if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))

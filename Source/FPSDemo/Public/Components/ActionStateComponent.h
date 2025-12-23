@@ -50,7 +50,7 @@ public:
 
     // Useful gates
     bool CanEquipNow() const { return IsIdle(); }
-    bool CanReloadNow() const { return CanTransition(State, EActionState::Reloading); }
+    bool CanReloadNow() const;
     bool CanFireNow() const { return CanTransition(State, EActionState::Firing); }
     bool CanThrowNow() const { return CanTransition(State, EActionState::Throwing); }
 protected:

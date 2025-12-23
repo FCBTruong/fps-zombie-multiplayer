@@ -60,6 +60,7 @@ public:
 	// Input-facing
 	void RequestStartFire();
 	void RequestStopFire();
+	void RequestReload();
 
 protected:
 	virtual void BeginPlay() override;
@@ -75,6 +76,9 @@ private:
 	float GetAirSpreadDeg() const;
 	float GetMovementSpreadDeg() const;
 	float GetMoveAlphaForSpread() const;
+	bool CanReload() const;
+	void HandleReload();
+	void OnFinishedReload();
 
 #if !UE_SERVER
 	// Owning client prediction (visuals only)
@@ -106,6 +110,10 @@ private:
 	UFUNCTION()
 	void OnActiveItemChanged(EItemId NewId);
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastReload();
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
 private:
 	// Dependencies
 	UPROPERTY(Transient) TObjectPtr<UEquipComponent> EquipComp = nullptr;

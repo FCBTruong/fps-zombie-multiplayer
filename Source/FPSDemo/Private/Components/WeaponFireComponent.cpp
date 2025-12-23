@@ -11,6 +11,8 @@
 #include "Damage/MyDamageType.h"
 #include "Damage/MyPointDamageEvent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Items/FirearmConfig.h"
+#include "Components/AnimationComponent.h"
 
 UWeaponFireComponent::UWeaponFireComponent()
 {
@@ -45,7 +47,6 @@ void UWeaponFireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UWeaponFireComponent, FireStartTimeServer);
-	DOREPLIFETIME(UWeaponFireComponent, BurstSeed);
 }
 
 void UWeaponFireComponent::Initialize(
@@ -419,4 +420,135 @@ void UWeaponFireComponent::UpdateBurstSpreadOnShot(float NowServerTime)
 	// Add per-shot burst spread
 	BurstAccDeg = FMath::Min(BurstAccDeg + Spread.PerShotAddDeg, Spread.MaxBurstAddDeg);
 	LastShotTime = NowServerTime;
+}
+
+void UWeaponFireComponent::RequestReload() {
+	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent: Reload called"));
+	if (!Character || !Character->IsAlive()) return;
+	if (!CanReload()) {
+		UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent: Cannot Reload"));
+		return;
+	}
+
+	if (GetOwner()->HasAuthority()) {
+		HandleReload();
+	}
+	else
+	{
+		ServerReload();
+	}
+}
+
+void UWeaponFireComponent::ServerReload_Implementation()
+{
+	HandleReload();
+}
+
+bool UWeaponFireComponent::CanReload() const {
+	if (!Character || !Character->IsAlive()) {
+		return false;
+	}
+	if (!EquipComp || !InventoryComp) {
+		return false;
+	}
+	if (!ActionStateComp) {
+		return false;
+	}
+	if (EquipComp->GetActiveItemId() == EItemId::NONE) {
+		return false;
+	}
+
+	const UItemConfig* ItemConf = EquipComp->GetActiveItemConfig();
+	
+	if (ItemConf->GetItemType() != EItemType::Firearm) {
+		return false;
+	}
+	// check action state
+	if (!ActionStateComp->CanReloadNow()) {
+		return false;
+	}
+
+	// check ammo availability
+	const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(EquipComp->GetActiveItemId());
+	if (!State) {
+		return false;
+	}
+	if (State->AmmoInClip >= State->MaxAmmoInClip) {
+		return false;
+	}
+
+	if (!State || State->AmmoReserve <= 0) {
+		return false;
+	}
+
+	return true;
+}
+
+// Server function
+void UWeaponFireComponent::HandleReload()
+{
+	if (!CanReload()) {
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("OnEquipWeaponFinished called"));
+	ActionStateComp->TrySetState(EActionState::Reloading);
+
+	MulticastReload();
+	FTimerHandle TimerHandle_FinishReload;
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle_FinishReload,
+		this,
+		&UWeaponFireComponent::OnFinishedReload,
+		2.0f,
+		false
+	);
+}
+
+void UWeaponFireComponent::MulticastReload_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("MulticastReload called"));
+	if (!Character) {
+		return;
+	}
+	if (!EquipComp) {
+		return;
+	}
+
+	UAnimationComponent* AnimComp = Character->GetAnimationComponent();
+	if (AnimComp) {
+		// get item config to determine reload animation
+		const UItemConfig* ItemConf = EquipComp->GetActiveItemConfig();
+		const UFirearmConfig* FirearmConf = Cast<UFirearmConfig>(ItemConf);
+		if (FirearmConf)
+		{
+			if (FirearmConf->FirearmType == EFirearmType::Pistol)
+			{
+				AnimComp->PlayReloadPistolMontage();
+				return;
+			}
+			else {
+				AnimComp->PlayReloadRifleMontage();
+			}
+		}
+	}
+
+	/* if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
+		{
+			Firearm->PlayReloadSound();
+		}*/
+}
+
+void UWeaponFireComponent::OnFinishedReload()
+{
+	if (!Character || !Character->IsAlive()) return;
+	if (!GetOwner()->HasAuthority()) {
+		return;
+	}
+	ActionStateComp->TrySetState(EActionState::Idle);
+
+	UE_LOG(LogTemp, Warning, TEXT("OnFinishedReload called"));
+	if (!EquipComp) {
+		return;
+	}
+	InventoryComp->ReloadWeapon(EquipComp->GetActiveItemId());
 }

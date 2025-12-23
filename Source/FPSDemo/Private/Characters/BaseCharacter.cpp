@@ -7,7 +7,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Structs/InventoryItem.h"
 #include "Game/ShooterGameMode.h"
 #include "Projectiles/ThrownProjectile.h"
 #include "Materials/MaterialParameterCollectionInstance.h"
@@ -60,10 +59,6 @@ ABaseCharacter::ABaseCharacter()
     FpsPivot = CreateDefaultSubobject<USceneComponent>(TEXT("FpsPivot"));
     FpsPivot->SetupAttachment(GetRootComponent());
 
-    CameraFps = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraFps"));
-    CameraFps->SetupAttachment(FpsPivot);
-    CameraFps->bUsePawnControlRotation = false;
-
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBloom"));
     CameraBoom->SetupAttachment(RootComponent);
 
@@ -73,6 +68,9 @@ ABaseCharacter::ABaseCharacter()
 
     MeshFps = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshFps"));
     MeshFps->SetupAttachment(FpsPivot);
+
+    CameraFps = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraFps"));
+    CameraFps->bUsePawnControlRotation = false;
 
     ViewmodelCap = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("ViewmodelCap"));
     ViewmodelCap->SetupAttachment(CameraFps);
@@ -136,7 +134,7 @@ ABaseCharacter::ABaseCharacter()
         EquipComp->Initialize(InventoryComp, ActionStateComp);
 	}
     if (ItemVisualComp) {
-        ItemVisualComp->Initialize(EquipComp, CameraComp);
+        ItemVisualComp->Initialize(EquipComp, CameraComp, AnimationComp);
     }
     if (WeaponFireComp) {
 		WeaponFireComp->Initialize(EquipComp, InventoryComp, ActionStateComp, ItemVisualComp);
@@ -185,6 +183,9 @@ ABaseCharacter::ABaseCharacter()
         }
         MeshFps->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 
+        // update attach camera to head
+
+
         static ConstructorHelpers::FClassFinder<UAnimInstance> FpsAnimBPClass(
             TEXT("/Game/Main/ABP_Character.ABP_Character_C")
         );
@@ -197,6 +198,8 @@ ABaseCharacter::ABaseCharacter()
         else {
 			UE_LOG(LogTemp, Warning, TEXT("FpsAnimBPClass failed"));
         }
+
+        CameraFps->SetupAttachment(FpsPivot);
     }
 }
 
@@ -301,6 +304,14 @@ void ABaseCharacter::BeginPlay()
 		EquipComp->AutoSelectBestWeapon();
     }
 	
+    // if attach to head socket
+    /*CameraFps->AttachToComponent(
+        MeshFps,
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        TEXT("head")
+    );
+    CameraFps->SetRelativeLocation(FVector(0.f, 0, 0.f));
+    CameraFps->SetRelativeLocation(FVector(-90.f, 0, 90.f));*/
 
     bHasBeginPlayRun = true;
 }

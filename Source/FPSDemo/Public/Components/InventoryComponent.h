@@ -64,6 +64,7 @@ public:
 
     // Drop rules (pure query)
     bool CanDrop(EItemId ItemId);
+    void ReloadWeapon(EItemId Id); // reload current weapon
 
 public:
     // ===== Events (fire on server + clients via OnRep) =====
