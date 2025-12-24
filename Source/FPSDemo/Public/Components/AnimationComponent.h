@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Weapons/WeaponTypes.h"
 #include "Asset/CharacterAsset.h"
 #include "AnimationComponent.generated.h"
 
@@ -23,10 +22,10 @@ protected:
 	TObjectPtr<UCharacterAsset> CachedCharacterAsset;
 
 public:	
-	void PlayEquip(EWeaponTypes WeaponType);
+	void PlayEquipMontage();
 	void PlayFireRifleMontage(FVector TargetPoint);
 	void PlayFirePistolMontage(FVector TargetPoint);
-	void PlayMeleeAttackAnimation(int32 AttackIndex);
+	void PlayMeleeAttackMontage(int32 AttackIndex);
 	void PlayMontage(UAnimMontage* MontageToPlay);
 	void PlayReloadRifleMontage();
 	void PlayReloadPistolMontage();

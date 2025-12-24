@@ -41,6 +41,7 @@ class UCharCameraComponent;
 class UActionStateComponent;
 class UItemVisualComponent;
 class UWeaponFireComponent;
+class UWeaponMeleeComponent;
 
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -122,6 +123,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UWeaponFireComponent> WeaponFireComp;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UWeaponMeleeComponent> WeaponMeleeComp;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     TObjectPtr<USceneComponent> FpsPivot;
@@ -308,6 +312,7 @@ public:
     USkeletalMeshComponent* GetCurrentMesh() const;
 	UEquipComponent* GetEquipComponent() const;
 	UWeaponFireComponent* GetWeaponFireComponent() const;
+	UWeaponMeleeComponent* GetWeaponMeleeComponent() const;
 
     UFUNCTION(BlueprintCallable)
     EMovementState GetCurrentMovementState() const;

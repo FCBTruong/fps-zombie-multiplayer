@@ -24,21 +24,15 @@ void UAnimationComponent::BeginPlay()
 	CachedCharacterAsset = GameManager->CharacterAsset.Get();
 }
 
-void UAnimationComponent::PlayEquip(EWeaponTypes WeaponType)
+void UAnimationComponent::PlayEquipMontage()
 {
-	ABaseCharacter* Owner = Cast<ABaseCharacter>(GetOwner());
-    if (!Owner) {
-        UE_LOG(LogTemp, Error, TEXT("PlayEquip: Owner is null"));
-        return;
-	}
     if (!CachedCharacterAsset) {
         UE_LOG(LogTemp, Error, TEXT("PlayEquip: CachedCharacterAsset is null"));
         return;
 	}
 	if (CachedCharacterAsset->AnimMontage_Equip) {
 
-		UE_LOG(LogTemp, Warning, TEXT("Playing Equip Montage for Rifle"));
-		Owner->GetCurrentMesh()->GetAnimInstance()->Montage_Play(CachedCharacterAsset->AnimMontage_Equip);
+		PlayMontage(CachedCharacterAsset->AnimMontage_Equip);
 	}
 }
 
@@ -81,7 +75,7 @@ void UAnimationComponent::PlayFirePistolMontage(FVector TargetPoint) {
     PlayMontage(CachedCharacterAsset->AnimMontage_FirePistol);
 }
 
-void UAnimationComponent::PlayMeleeAttackAnimation(int32 AttackIndex) {
+void UAnimationComponent::PlayMeleeAttackMontage(int32 AttackIndex) {
     if (!CachedCharacterAsset) {
         return;
 	}

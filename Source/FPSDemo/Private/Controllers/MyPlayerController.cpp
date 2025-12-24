@@ -18,6 +18,7 @@
 #include "Components/EquipComponent.h"
 #include "Items/ItemConfig.h"
 #include "Components/WeaponFireComponent.h"
+#include "Components/WeaponMeleeComponent.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -26,6 +27,13 @@ AMyPlayerController::AMyPlayerController() {
 void AMyPlayerController::BeginPlay()
 {
     Super::BeginPlay();
+
+    APlayerCameraManager* PCM = this->PlayerCameraManager;
+    if (PCM)
+    {
+        PCM->ViewPitchMin = -60.f;
+        PCM->ViewPitchMax = 60.f;
+    }
 
     GMR = GetGameInstance()->GetSubsystem<UGameManager>();
     if (!GMR)
@@ -418,6 +426,11 @@ void AMyPlayerController::OnLeftClickStart()
 					WFC->RequestStartFire();
                 }
             }
+            else if (ActiveItemConfig && ActiveItemConfig->GetItemType() == EItemType::Melee) {
+                if (UWeaponMeleeComponent* WMC = MyChar->GetWeaponMeleeComponent()) {
+					WMC->RequestMeleeAttack();
+                }
+			}
         }
     }
 }

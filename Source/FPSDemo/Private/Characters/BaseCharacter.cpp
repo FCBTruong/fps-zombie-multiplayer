@@ -49,6 +49,7 @@
 #include "Components/ActionStateComponent.h"
 #include "Components/ItemVisualComponent.h"
 #include "Components/WeaponFireComponent.h"
+#include "Components/WeaponMeleeComponent.h"
 #include "Game/ItemsManager.h"
 
 // Sets default values
@@ -101,6 +102,7 @@ ABaseCharacter::ABaseCharacter()
 	ActionStateComp = CreateDefaultSubobject<UActionStateComponent>(TEXT("ActionStateComponent"));
 	ItemVisualComp = CreateDefaultSubobject<UItemVisualComponent>(TEXT("ItemVisualComponent"));
 	WeaponFireComp = CreateDefaultSubobject<UWeaponFireComponent>(TEXT("WeaponFireComponent"));
+	WeaponMeleeComp = CreateDefaultSubobject<UWeaponMeleeComponent>(TEXT("WeaponMeleeComponent"));
 
     CameraComp->Initialize(
         CameraFps,
@@ -138,6 +140,9 @@ ABaseCharacter::ABaseCharacter()
     }
     if (WeaponFireComp) {
 		WeaponFireComp->Initialize(EquipComp, InventoryComp, ActionStateComp, ItemVisualComp);
+    }
+    if (WeaponMeleeComp) {
+        WeaponMeleeComp->Initialize(EquipComp, ActionStateComp, ItemVisualComp);
     }
 
 
@@ -1274,6 +1279,10 @@ UAnimationComponent* ABaseCharacter::GetAnimationComponent() const {
 
 UEquipComponent* ABaseCharacter::GetEquipComponent() const {
     return EquipComp.Get();
+}
+
+UWeaponMeleeComponent* ABaseCharacter::GetWeaponMeleeComponent() const {
+    return WeaponMeleeComp.Get();
 }
 
 USplineComponent* ABaseCharacter::GetThrowSpline() const {

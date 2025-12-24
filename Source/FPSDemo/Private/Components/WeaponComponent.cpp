@@ -489,11 +489,7 @@ void UWeaponComponent::ServerDoMeleeAttack_Implementation(int AttackIdx) {
 }
 
 void UWeaponComponent::MulticastDoMeleeAttack_Implementation(int AttackIdx) {
-    ABaseCharacter* Character = GetCharacter();
-    UAnimationComponent* AnimComp = Character->GetAnimationComponent();
-    if (AnimComp) {
-        AnimComp->PlayMeleeAttackAnimation(AttackIdx);
-    }
+ 
 }
 
 void UWeaponComponent::PlayEffectFire(FVector TargetPoint) {
@@ -911,7 +907,7 @@ void UWeaponComponent::OnRep_CurrentWeapon()
 
     UAnimationComponent* AnimComp = Character->GetAnimationComponent();
     if (AnimComp) {
-        AnimComp->PlayEquip(WeaType);
+        //AnimComp->PlayEquip(WeaType);
     }
     Character->UpdateMaxWalkSpeed();
 

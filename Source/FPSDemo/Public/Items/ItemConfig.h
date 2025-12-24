@@ -43,7 +43,10 @@ public:
 	UStaticMesh* StaticMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
-	FVector ScaleOnHand = FVector(1.0f, 1.0f, 1.0f);
+	float ScaleOnHand = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
+	float ScaleOnHandTps = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
 	FName SocketNameFps = FName("ik_hand_gun");

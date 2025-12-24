@@ -70,6 +70,12 @@ void UItemVisualComponent::HandleActiveItemChanged(EItemId NewItemId)
 {
 	UE_LOG(LogTemp, Log, TEXT("UItemVisualComponent::HandleActiveItemChanged called with ItemId: %d"), static_cast<uint8>(NewItemId));
     RefreshVisual(NewItemId);
+
+	// play equip animation
+    if (AnimComp) {
+        // get 
+        AnimComp->PlayEquipMontage();
+    }
 }
 
 void UItemVisualComponent::DestroyVisual()
@@ -300,4 +306,13 @@ void UItemVisualComponent::PlayFireFX(FVector TargetPoint)
             }
         }
 	}
+}
+
+void UItemVisualComponent::PlayMeleeAttack(int32 AttackIndex)
+{
+    ABaseCharacter* Character = GetCharacter();
+    if (Character && AnimComp)
+    {
+        AnimComp->PlayMeleeAttackMontage(AttackIndex);
+    }
 }

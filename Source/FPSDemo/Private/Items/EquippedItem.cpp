@@ -113,12 +113,6 @@ void AEquippedItem::ApplyConfig()
         ActiveMesh = EActiveMesh::None;
         return;
     }
-
-    // Apply scale to stable root (one place, consistent)
-    if (RootComponent)
-    {
-        RootComponent->SetWorldScale3D(Config->ScaleOnHand);
-    }
 }
 
 void AEquippedItem::SetViewFps(bool bIsFps)
@@ -134,6 +128,16 @@ void AEquippedItem::SetViewFps(bool bIsFps)
     {
         WeaponStaticMesh->bVisibleInSceneCaptureOnly = bIsFps;
         WeaponStaticMesh->MarkRenderStateDirty();
+    }
+
+    // Apply scale to stable root (one place, consistent)
+    if (RootComponent)
+    {
+        if (bIsFps)
+            RootComponent->SetWorldScale3D(FVector(Config->ScaleOnHand));
+        else {
+            RootComponent->SetWorldScale3D(FVector(Config->ScaleOnHandTps));
+        }
     }
     bIsFpsView = bIsFps;
 }
