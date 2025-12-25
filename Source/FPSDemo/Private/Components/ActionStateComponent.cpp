@@ -16,6 +16,9 @@ void UActionStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 
 bool UActionStateComponent::CanTransition(EActionState From, EActionState To) const
 {
+    if (From == EActionState::Disabled) {
+		return false; // cannot transition out of Disabled
+    }
     // If already doing an action, disallow starting another unless going back to Idle.
     if (From != EActionState::Idle && To != EActionState::Idle)
         return false;

@@ -386,69 +386,7 @@ EShootState UWeaponComponent::CanShoot() const{
 }
 
 void UWeaponComponent::ServerThrow_Implementation(FVector LaunchVelocity) {
-    if (CurrentWeaponId == EItemId::NONE) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerThrow: No weapon equipped"));
-        return;
-    }
-    if (!ThrowablesArray.Contains(CurrentWeaponId)) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerThrow: Current weapon is not in throwables array"));
-        return;
-    }
-    if (ActionState != EWeaponActionState::Idle) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerThrow: Cannot throw while in action state %d"), (int32)ActionState);
-        return;
-    }
-
-    ABaseCharacter* Character = GetCharacter();
-    FVector StartPos = Character->GetThrowableLocation();
-    AThrownProjectile* ThrownProj = nullptr;
-
-    UWeaponData* WeaponConf = UGameManager::Get(GetWorld())->GetWeaponDataById(CurrentWeaponId);
-    if (WeaponConf->WeaponSubType == EWeaponSubTypes::Smoke) {
-        ThrownProj = GetWorld()->SpawnActor<AThrownProjectileSmoke>(
-            AThrownProjectileSmoke::StaticClass(),
-            StartPos,
-            FRotator::ZeroRotator);
-    }
-    else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Stun) {
-        ThrownProj = GetWorld()->SpawnActor<AThrownProjectileStun>(
-            AThrownProjectileStun::StaticClass(),
-            StartPos,
-            FRotator::ZeroRotator);
-    }
-    else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Incendiary) {
-        ThrownProj = GetWorld()->SpawnActor<AThrownProjectileIncendiary>(
-            AThrownProjectileIncendiary::StaticClass(),
-            StartPos,
-            FRotator::ZeroRotator);
-    }
-    else {
-        ThrownProj = GetWorld()->SpawnActor<AThrownProjectile>(
-            AThrownProjectileFrag::StaticClass(),
-            StartPos,
-            FRotator::ZeroRotator);
-    }
-    if (ThrownProj) {
-        ThrownProj->SetOwner(GetOwner());
-        ThrownProj->SetInstigator(Cast<APawn>(GetOwner()));
-        ThrownProj->InitFromData(WeaponConf);
-        ThrownProj->LaunchProjectile(LaunchVelocity, Character);
-    }
-
-
-    FTimerHandle TimerHandle_FinishThrow;
-    GetWorld()->GetTimerManager().SetTimer(
-        TimerHandle_FinishThrow,
-        this,
-        &UWeaponComponent::OnFinishedThrow,
-        0.5f,
-        false
-    );
-
-    // destroy current weapon and also remove it from array
-    ThrowablesArray.Remove(CurrentWeaponId);
-
-    MulticastThrowAction(LaunchVelocity);
+  
 }
 
 void UWeaponComponent::OnFinishedThrow() {

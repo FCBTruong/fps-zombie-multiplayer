@@ -26,7 +26,7 @@ enum class EActionState : uint8
     Planting,
     Defusing,
 
-    Disabled
+	Disabled // can use when dead, stunned, etc.
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )

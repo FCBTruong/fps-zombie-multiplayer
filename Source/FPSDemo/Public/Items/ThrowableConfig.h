@@ -25,15 +25,25 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Effects")
     USoundBase* ExplosionSFX = nullptr;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Effects")
+    USoundBase* AffectSFX;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Decal")
     UMaterialInterface* DecalMat = nullptr;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Decal")
     float DecalLife = 10.f;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable|Decal")
+	FVector DecalSize = FVector(16.f, 32.f, 32.f);
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable")
     float ExplosionRadius = 300.f;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwable")
+    float Damage = 300.f;
+
 public:
 	virtual EItemType GetItemType() const override { return EItemType::Throwable; }
+
 };

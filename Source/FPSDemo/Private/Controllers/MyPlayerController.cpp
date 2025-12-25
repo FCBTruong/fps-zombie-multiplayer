@@ -19,6 +19,7 @@
 #include "Items/ItemConfig.h"
 #include "Components/WeaponFireComponent.h"
 #include "Components/WeaponMeleeComponent.h"
+#include "Components/ThrowableComponent.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -431,6 +432,11 @@ void AMyPlayerController::OnLeftClickStart()
 					WMC->RequestMeleeAttack();
                 }
 			}
+            else if (ActiveItemConfig && ActiveItemConfig->GetItemType() == EItemType::Throwable) {
+                if (UThrowableComponent* ThrowableComp = MyChar->GetThrowableComponent()) {
+                    ThrowableComp->RequestStartThrow();
+                }
+            }
         }
     }
 }

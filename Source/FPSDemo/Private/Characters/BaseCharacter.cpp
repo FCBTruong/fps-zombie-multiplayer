@@ -50,12 +50,14 @@
 #include "Components/ItemVisualComponent.h"
 #include "Components/WeaponFireComponent.h"
 #include "Components/WeaponMeleeComponent.h"
+#include "Components/ThrowableComponent.h"
 #include "Game/ItemsManager.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
     FpsPivot = CreateDefaultSubobject<USceneComponent>(TEXT("FpsPivot"));
     FpsPivot->SetupAttachment(GetRootComponent());
@@ -92,7 +94,6 @@ ABaseCharacter::ABaseCharacter()
 
     PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
     InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
-    //WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
     InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
     HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
     AnimationComp = CreateDefaultSubobject<UAnimationComponent>(TEXT("AnimationComponent"));
@@ -103,6 +104,7 @@ ABaseCharacter::ABaseCharacter()
 	ItemVisualComp = CreateDefaultSubobject<UItemVisualComponent>(TEXT("ItemVisualComponent"));
 	WeaponFireComp = CreateDefaultSubobject<UWeaponFireComponent>(TEXT("WeaponFireComponent"));
 	WeaponMeleeComp = CreateDefaultSubobject<UWeaponMeleeComponent>(TEXT("WeaponMeleeComponent"));
+	ThrowableComp = CreateDefaultSubobject<UThrowableComponent>(TEXT("ThrowableComponent"));
 
     CameraComp->Initialize(
         CameraFps,
@@ -799,7 +801,8 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
     else if (DamageCauser) {
 		AThrownProjectile* Projectile = Cast<AThrownProjectile>(DamageCauser);
         if (Projectile) {
-			LastDamageCauser = Projectile->GetWeaponData();
+            // TODO later
+			//LastDamageCauser = Projectile->GetWeaponData();
         }
     }
     if (!HealthComp) {
@@ -1285,6 +1288,10 @@ UWeaponMeleeComponent* ABaseCharacter::GetWeaponMeleeComponent() const {
     return WeaponMeleeComp.Get();
 }
 
+UActionStateComponent* ABaseCharacter::GetActionStateComponent() const {
+    return ActionStateComp.Get();
+}
+
 USplineComponent* ABaseCharacter::GetThrowSpline() const {
     return ThrowSpline;
 }
@@ -1328,4 +1335,8 @@ EEquippedAnimState ABaseCharacter::GetEquippedAnimState() const
 	}
 
     return EEquippedAnimState::Unarmed;
+}
+
+UThrowableComponent* ABaseCharacter::GetThrowableComponent() const {
+    return ThrowableComp.Get();
 }

@@ -5,6 +5,8 @@
 #include "Sound/SoundBase.h"
 #include "Game/GameManager.h"
 #include "Particles/ParticleSystem.h"
+#include "Items/ThrowableConfig.h"
+#include "Game/ItemsManager.h"
 
 // Sets default values
 AThrownProjectile::AThrownProjectile()
@@ -53,7 +55,7 @@ void AThrownProjectile::OnProjectileHit(
 	UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::OnProjectileHit"));
 }
 
-void AThrownProjectile::InitFromData(UWeaponData* InData)
+void AThrownProjectile::InitFromData(const UThrowableConfig* InData)
 {
     Data = InData;
     if (!HasAuthority()) {
@@ -67,12 +69,12 @@ void AThrownProjectile::InitFromData(UWeaponData* InData)
 
 void AThrownProjectile::MulticastInitData_Implementation(EItemId ItemId)
 {
-    // Load Data from ItemId
-    UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-
     if (!Data)   
     {
-        Data = Cast<UWeaponData>(GMR->GetItemDataById(ItemId));
+		auto Item = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
+        if (Item) {
+            Data = Cast<UThrowableConfig>(Item);
+		}
     }
     UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::MulticastInitData_Implementation - ItemId %d"), static_cast<int32>(ItemId));
    

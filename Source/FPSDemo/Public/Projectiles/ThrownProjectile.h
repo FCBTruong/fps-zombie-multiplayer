@@ -7,6 +7,7 @@
 #include "Weapons/WeaponData.h"
 #include "ThrownProjectile.generated.h"
 
+class UThrowableConfig;
 UCLASS()
 class FPSDEMO_API AThrownProjectile : public AActor
 {
@@ -23,7 +24,7 @@ protected:
 	UPROPERTY() USphereComponent* Collision;
 	UPROPERTY() UProjectileMovementComponent* Projectile;
 	UPROPERTY() UStaticMeshComponent* WeaponMesh;
-	UWeaponData* Data;
+	const UThrowableConfig* Data;
 	bool bIsExploded = false;
 
 	UFUNCTION()
@@ -36,10 +37,10 @@ protected:
 	virtual void OnExplode();
 	
 public:	
-	void InitFromData(UWeaponData* InData);
+	void InitFromData(const UThrowableConfig* InData);
 	void LaunchProjectile(FVector LaunchVelocity, AActor* InstigatorActor);
 	UFUNCTION(NetMulticast, Unreliable) virtual void MulticastExplode(const FVector& Location);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION(NetMulticast, Unreliable) void MulticastInitData(EItemId ItemId);
-	UWeaponData* GetWeaponData() { return Data; }
+	const UThrowableConfig* GetWeaponData() { return Data; }
 };

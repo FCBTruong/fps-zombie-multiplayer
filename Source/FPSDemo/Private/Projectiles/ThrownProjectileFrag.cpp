@@ -3,6 +3,7 @@
 
 #include "Projectiles/ThrownProjectileFrag.h"
 #include "Kismet/GameplayStatics.h"
+#include "Items/ThrowableConfig.h"
 
 void AThrownProjectileFrag::OnExplode ()
 {

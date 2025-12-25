@@ -4,6 +4,7 @@
 #include "Projectiles/ThrownProjectileIncendiary.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Items/ThrowableConfig.h"
 
 
 void AThrownProjectileIncendiary::OnExplode()

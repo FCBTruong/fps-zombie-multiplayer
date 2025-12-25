@@ -13,9 +13,6 @@
 UInventoryComponent::UInventoryComponent()
 {
     SetIsReplicatedByDefault(true);
-
-    // Default melee can be set by owner component that initializes loadout,
-    // or here if you want fixed defaults.
 }
 
 void UInventoryComponent::BeginPlay()
@@ -40,6 +37,12 @@ void UInventoryComponent::Test()
 	RifleState.AmmoInClip = 2;
     RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 3 : 0;
 	RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
+
+    Throwables.Add(EItemId::GRENADE_FRAG_BASIC);
+    Throwables.Add(EItemId::GRENADE_SMOKE);
+             
+    // log size throwables
+	UE_LOG(LogTemp, Log, TEXT("InventoryComponent Test: Throwables count = %d"), Throwables.Num());
 }
 
 

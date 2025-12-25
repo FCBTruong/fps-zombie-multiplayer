@@ -21,12 +21,6 @@ void UEquipComponent::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (AActor* Owner = GetOwner())
-    {
-        InventoryComp = Owner->FindComponentByClass<UInventoryComponent>();
-        ActionStateComp = Owner->FindComponentByClass<UActionStateComponent>();
-    }
-
     CachedGM = UGameManager::Get(GetWorld());
 }
 
@@ -95,8 +89,16 @@ void UEquipComponent::RequestSelectActiveItem(EItemId ItemId)
 {
     if (!GetOwner()) return;
 
-    if (!CanSelectNow()) return;
-    if (!CanSelectItem(ItemId)) return;
+    if (!CanSelectNow()) {
+        // log debug
+		UE_LOG(LogTemp, Warning, TEXT("UEquipComponent::RequestSelectActiveItem: Cannot select item now."));
+        return;
+    }
+    if (!CanSelectItem(ItemId)) {
+		// log debug
+		UE_LOG(LogTemp, Warning, TEXT("UEquipComponent::RequestSelectActiveItem: Cannot select item %d."), static_cast<int32>(ItemId));
+        return;
+    }
 
     if (!GetOwner()->HasAuthority())
     {
@@ -117,17 +119,18 @@ void UEquipComponent::ServerRequestSelectActiveItem_Implementation(EItemId ItemI
 
 EItemId UEquipComponent::ChooseThrowableToSelect()
 {
+	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::ChooseThrowableToSelect called"));
     if (!InventoryComp) return EItemId::NONE;
 
     const TArray<EItemId>& Throwables = InventoryComp->GetThrowables();
+
     if (Throwables.Num() == 0) return EItemId::NONE;
 
     const UItemConfig* CurrentData = GetActiveItemConfig();
-    // TODO fix later
-   /* if (!CurrentData || CurrentData->ItemType != EItemTypes::Throwable)
+    if (!CurrentData || CurrentData->GetItemType() != EItemType::Throwable)
     {
         return Throwables[0];
-    }*/
+    }
 
     const int32 CurrentIndex = Throwables.IndexOfByKey(ActiveItemId);
     if (CurrentIndex == INDEX_NONE)

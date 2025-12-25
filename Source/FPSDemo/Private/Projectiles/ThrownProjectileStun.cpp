@@ -6,6 +6,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Controllers/MyPlayerController.h"
 #include "Characters/BaseCharacter.h"
+#include "Items/ThrowableConfig.h"
 
 void AThrownProjectileStun::OnExplode()
 {
@@ -89,9 +90,9 @@ void AThrownProjectileStun::MulticastExplode_Implementation(const FVector& Impac
     float Strength = 1.f - (Dist / MaxFlashRange);
     Strength = FMath::Clamp(Strength, 0.f, 1.f);
 
-    if (Data && Data->StunSFX)
+    if (Data && Data->AffectSFX)
     {
-        UGameplayStatics::PlaySound2D(this, Data->StunSFX);
+        UGameplayStatics::PlaySound2D(this, Data->AffectSFX);
     }
 
 	// Get CharacterBase to apply flash effect
