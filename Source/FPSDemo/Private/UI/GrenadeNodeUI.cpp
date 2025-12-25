@@ -3,7 +3,8 @@
 
 #include "UI/GrenadeNodeUI.h"
 #include "Weapons/WeaponData.h"
-#include "Game/GameManager.h"
+#include "Game/ItemsManager.h"
+#include "Items/ItemConfig.h"
 
 void UGrenadeNodeUI::UpdateIcon(EItemId ItemId)
 {
@@ -18,12 +19,14 @@ void UGrenadeNodeUI::UpdateIcon(EItemId ItemId)
 		Dot->SetVisibility(ESlateVisibility::Hidden);
 		Icon->SetVisibility(ESlateVisibility::Visible);
 
-		UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-		UWeaponData* WeaponConf = GMR->GetWeaponDataById(ItemId); 
-		if (WeaponConf)
+		const UItemConfig* ItemConf = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
+		if (ItemConf)
 		{
-
-			Icon->SetBrushFromTexture(WeaponConf->Icon);
+			if (!ItemConf->ItemIcon.IsValid())
+			{
+				return;
+			}
+			Icon->SetBrushFromTexture(ItemConf->ItemIcon.Get());
 		}
 	}
 }

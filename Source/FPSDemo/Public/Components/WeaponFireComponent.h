@@ -13,6 +13,7 @@ class UEquipComponent;
 class UInventoryComponent;
 class UActionStateComponent;
 class UItemVisualComponent;
+class UCharAudioComponent;
 
 USTRUCT(BlueprintType)
 struct FSpreadTuning
@@ -120,6 +121,8 @@ private:
 	UPROPERTY(Transient) TObjectPtr<UInventoryComponent> InventoryComp = nullptr;
 	UPROPERTY(Transient) TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
 	UPROPERTY(Transient) TObjectPtr<UItemVisualComponent> VisualComp = nullptr;
+
+	UPROPERTY(Transient) TObjectPtr<UCharAudioComponent> AudioComp = nullptr;
 
 	UPROPERTY(Transient) TObjectPtr<ABaseCharacter> Character = nullptr;
 

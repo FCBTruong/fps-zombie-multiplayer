@@ -6,6 +6,11 @@
 #include "Components/InventoryComponent.h"
 #include "Game/ItemsManager.h"
 #include "Items/ItemConfig.h"
+#include "Characters/BaseCharacter.h"
+#include <Kismet/GameplayStatics.h>
+#include "Game/SpikeMode.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/PickupComponent.h"
 
 UEquipComponent::UEquipComponent()
 {
@@ -225,4 +230,107 @@ void UEquipComponent::RefreshCachedState()
 {
     const UItemConfig* Cfg = GetActiveItemConfig();
     CachedAnimState = Cfg ? Cfg->AnimationState : EEquippedAnimState::Unarmed;
+}
+
+bool UEquipComponent::CanDropItem() const {
+    const UItemConfig* ItemConfig = GetActiveItemConfig();
+    if (!ItemConfig) {
+        return false;
+    }
+    if (!ItemConfig->bIsDroppable) {
+        UE_LOG(LogTemp, Warning, TEXT("CanDropItem: Current item is not droppable"));
+        return false;
+    }
+    return true;
+}
+
+void UEquipComponent::RequestDropItem() {
+    UE_LOG(LogTemp, Warning, TEXT("DropItem called"));
+    if (CanDropItem()) {
+        if (!GetOwner()->HasAuthority()) {
+            ServerDropItem();
+        }
+        else {
+            HandleDropItem();
+        }
+    }
+}
+
+void UEquipComponent::ServerDropItem_Implementation() {
+    HandleDropItem();
+}
+
+
+// Server function
+void UEquipComponent::HandleDropItem() {
+    if (!CanDropItem()) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleDropItem: Current item can not be dropped"));
+        return;
+    }
+	const UItemConfig* ItemConf = GetActiveItemConfig();
+
+    // spawn new pickup item on map
+	ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (!Character) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: Owner is not ABaseCharacter"));
+        return;
+	}
+    FVector DropPoint = GetOwner()->GetActorLocation() + FVector(0.f, 0.f, 60.f) + Character->GetActorForwardVector() * 30;
+    FPickupData Data;
+    Data.Location = DropPoint;
+    Data.Amount = 1;
+    Data.ItemId = ActiveItemId;
+    Data.Id = UGameManager::Get(GetWorld())->GetNextItemOnMapId();
+
+    FVector LookDir = Character->GetControlRotation().Vector();
+    FVector LaunchVelocity = LookDir * 600.f;
+
+    // Spawn Pickup item
+    APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
+
+    if (Pickup && Pickup->GetItemMesh())
+    {
+        Pickup->PlayerDropInfo(Character);
+        Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
+    }
+
+    if (!InventoryComp) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: No InventoryComp found"));
+        return;
+	}
+	InventoryComp->RemoveItem(ActiveItemId);
+
+    if (Data.ItemId == EItemId::SPIKE) {
+        ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+
+        if (SpikeGM) {
+            SpikeGM->NotifyPlayerSpikeState(Character, false);
+        }
+    }
+ 
+    // refresh overlapping actors
+    RefreshOverlapPickupActors();
+
+    AutoSelectBestWeapon();
+}
+
+void UEquipComponent::RefreshOverlapPickupActors() {
+	ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+	if (!Character) return;
+    UCapsuleComponent* Cap = Character->GetCapsuleComponent();
+    TArray<AActor*> OverlappingActors;
+    Cap->GetOverlappingActors(OverlappingActors);
+    for (AActor* A : OverlappingActors)
+    {
+        APickupItem* Item = Cast<APickupItem>(A);
+        if (Item && !Item->IsJustDropped(Character))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Overlapping PickupItem: %s"), *Item->GetName());
+            // call pickup component to manually trigger overlap
+            UPickupComponent* PickupComp = Character->GetPickupComponent();
+            if (PickupComp) {
+                PickupComp->PickupItem(Item);
+            }
+        }
+    }
 }

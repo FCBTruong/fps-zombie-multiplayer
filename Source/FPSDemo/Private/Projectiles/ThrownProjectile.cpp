@@ -31,13 +31,22 @@ AThrownProjectile::AThrownProjectile()
     Projectile->bShouldBounce = true;
     Projectile->Bounciness = 0.5f;
     Projectile->Friction = 0.6f;
-    Projectile->BounceVelocityStopSimulatingThreshold = 100.f;
+    //Projectile->BounceVelocityStopSimulatingThreshold = 100.f;
     Projectile->ProjectileGravityScale = 1.0f;
     Projectile->bForceSubStepping = true;
     Projectile->UpdatedComponent = Collision;
 
+    PrimaryActorTick.bCanEverTick = true;
     bReplicates = true;
     SetReplicateMovement(true);
+}
+
+void AThrownProjectile::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+    if (!bDidHit) {
+        WeaponMesh->AddLocalRotation(FRotator(360.f * DeltaSeconds, 360.f * DeltaSeconds, 0));
+    }
 }
 
 // Called when the game starts or when spawned
@@ -53,6 +62,11 @@ void AThrownProjectile::OnProjectileHit(
     const FHitResult& Hit)
 {
 	UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::OnProjectileHit"));
+    if (bDidHit || bIsExploded)
+    {
+        return;
+    }
+    bDidHit = true;
 }
 
 void AThrownProjectile::InitFromData(const UThrowableConfig* InData)
@@ -96,7 +110,7 @@ void AThrownProjectile::LaunchProjectile(FVector LaunchVelocity, AActor* Instiga
                 TimerHandle_Explode,
                 this,
                 &AThrownProjectile::ExplodeNow,
-                5.0f,
+                3.5f,
                 false
             );
         }

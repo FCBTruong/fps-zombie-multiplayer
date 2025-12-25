@@ -52,6 +52,9 @@
 #include "Components/WeaponMeleeComponent.h"
 #include "Components/ThrowableComponent.h"
 #include "Game/ItemsManager.h"
+#include "Asset/CharacterAsset.h"
+#include "Components/PostProcessComponent.h"
+#include "Materials/MaterialInterface.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -208,15 +211,33 @@ ABaseCharacter::ABaseCharacter()
 
         CameraFps->SetupAttachment(FpsPivot);
     }
+
+    FlashPP = CreateDefaultSubobject<UPostProcessComponent>(TEXT("FlashPP"));
+    FlashPP->SetupAttachment(CameraFps);
+    FlashPP->bUnbound = false;
+    FlashPP->BlendWeight = 1.0f;
+
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> MatFinder(
+        TEXT("/Game/Main/Art/Vfx/FlashBang/M_FlashBang.M_FlashBang")
+    );
+
+    if (MatFinder.Succeeded())
+    {
+        FlashPP->Settings.AddBlendable(MatFinder.Object, 1.0f);
+    }
 }
 
 // Called when the game starts or when spawned
 void ABaseCharacter::BeginPlay()
 {
+    Super::BeginPlay();
+
     if (!WeaponComp) {
         UE_LOG(LogTemp, Warning, TEXT("DEBUGGG:: WeaponComp is not valid at beginplay"));
     }
-    Super::BeginPlay();
+
+    UGameManager* GameManager = UGameManager::Get(GetWorld());
+    CachedCharacterAsset = GameManager->CharacterAsset.Get();
 
     if (UGameManager* GM = UGameManager::Get(GetWorld()))
     {
@@ -254,12 +275,12 @@ void ABaseCharacter::BeginPlay()
         HealthComp->OnDeath.AddUObject(this, &ABaseCharacter::HandleDeath);
     }
 
-    if (StunCurve)
+    if (CachedCharacterAsset && CachedCharacterAsset->StunCurve)
     {
         // Bind update function
         FOnTimelineFloat UpdateFunction;
         UpdateFunction.BindUFunction(this, FName("OnStunTimelineUpdate"));
-        StunTimeline.AddInterpFloat(StunCurve, UpdateFunction);
+        StunTimeline.AddInterpFloat(CachedCharacterAsset->StunCurve, UpdateFunction);
 
         // Bind finished function (optional)
         FOnTimelineEvent FinishedFunction;
@@ -271,10 +292,10 @@ void ABaseCharacter::BeginPlay()
     }
 
    
-    if (FlashCollection)
+    if (CachedCharacterAsset && CachedCharacterAsset->FlashCollection)
     {
         if (UMaterialParameterCollectionInstance* MPC =
-            GetWorld()->GetParameterCollectionInstance(FlashCollection))
+            GetWorld()->GetParameterCollectionInstance(CachedCharacterAsset->FlashCollection))
         {
             MPC->SetScalarParameterValue("Intensity", 0.0f);
         }
@@ -432,7 +453,7 @@ void ABaseCharacter::UpdateFootstepSound(float DeltaTime) {
     if (Speed > 500.f) {
         FootstepInterval = 0.25f;
     }
-    else if (Speed > 450.f) {
+    else if (Speed > 410.f) {
         FootstepInterval = 0.3f;
 	}
     if (CurrentTime - LastFootstepTime >= FootstepInterval)
@@ -842,16 +863,16 @@ void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotify
     }
     else if (NotifyName == "Notify_GrabMag")
     {
-        if (WeaponComp)
+        if (ItemVisualComp)
         {
-            WeaponComp->OnNotifyGrabMag();
+            ItemVisualComp->OnNotifyGrabMag();
         }
 	}
     else if (NotifyName == "Notify_InsertMag")
     {
-        if (WeaponComp)
+        if (ItemVisualComp)
         {
-            WeaponComp->OnNotifyInsertMag();
+            ItemVisualComp->OnNotifyInsertMag();
         }
 	}
 }
@@ -999,7 +1020,10 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation)
 
 void ABaseCharacter::PlayStunEffect(const float& Strength) 
 {
-    if (StunCurve && FlashCollection)
+    if (!CachedCharacterAsset) {
+        return;
+	}
+    if (CachedCharacterAsset->StunCurve && CachedCharacterAsset->FlashCollection)
     {
         float NewDuration = BaseStunDuration * Strength;
         // Restart the timeline from the beginning
@@ -1011,14 +1035,14 @@ void ABaseCharacter::PlayStunEffect(const float& Strength)
 void ABaseCharacter::OnStunTimelineUpdate(float Value)
 {
     // Value comes from StunCurve (e.g. 1 -> 0 over time)
-    if (FlashCollection)
+    if (CachedCharacterAsset->FlashCollection)
     {
         UWorld* World = GetWorld();
         if (!World) {
             return;
         }
 
-        UMaterialParameterCollectionInstance* MPCInstance = World->GetParameterCollectionInstance(FlashCollection);
+        UMaterialParameterCollectionInstance* MPCInstance = World->GetParameterCollectionInstance(CachedCharacterAsset->FlashCollection);
         if (MPCInstance)
         {
             // Multiply by StunStrength if you want stronger/weaker stun
@@ -1033,9 +1057,9 @@ void ABaseCharacter::OnStunTimelineUpdate(float Value)
 void ABaseCharacter::OnStunTimelineFinished()
 {
     // Ensure intensity is fully reset to 0 at the end
-    if (FlashCollection)
+    if (CachedCharacterAsset->FlashCollection)
     {
-        if (UMaterialParameterCollectionInstance* MPCInstance = GetWorld()->GetParameterCollectionInstance(FlashCollection))
+        if (UMaterialParameterCollectionInstance* MPCInstance = GetWorld()->GetParameterCollectionInstance(CachedCharacterAsset->FlashCollection))
         {
             MPCInstance->SetScalarParameterValue(FName("Intensity"), 0.0f);
         }
@@ -1231,10 +1255,15 @@ void ABaseCharacter::OnRep_Controller()
     ApplyRotationMode(Cast<APlayerController>(Controller) != nullptr);
 }
 
-FVector ABaseCharacter::GetThrowableLocation() const {
-    return ThrowableLocation
-        ? ThrowableLocation->GetComponentLocation()
-        : GetActorLocation();
+FVector ABaseCharacter::GetThrowableLocation() const
+{
+    FVector EyeLoc;
+    FRotator EyeRot;
+    GetActorEyesViewPoint(EyeLoc, EyeRot);
+
+    return EyeLoc
+        + GetActorRightVector() * 10.f
+        + FVector(0.f, 0.f, 30.f);
 }
 
 USceneCaptureComponent2D* ABaseCharacter::GetViewmodelCapture() const {
@@ -1290,6 +1319,10 @@ UWeaponMeleeComponent* ABaseCharacter::GetWeaponMeleeComponent() const {
 
 UActionStateComponent* ABaseCharacter::GetActionStateComponent() const {
     return ActionStateComp.Get();
+}
+
+UCharAudioComponent* ABaseCharacter::GetAudioComponent() const {
+    return AudioComp.Get();
 }
 
 USplineComponent* ABaseCharacter::GetThrowSpline() const {

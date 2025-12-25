@@ -65,6 +65,7 @@ public:
     // Drop rules (pure query)
     bool CanDrop(EItemId ItemId);
     void ReloadWeapon(EItemId Id); // reload current weapon
+	void RemoveItem(EItemId ItemId); // remove item from inventory (server only)
 
 public:
     // ===== Events (fire on server + clients via OnRep) =====
@@ -75,6 +76,7 @@ public:
     FOnSlotWeaponChanged OnRifleChanged;
     FOnSlotWeaponChanged OnPistolChanged;
     FOnSlotWeaponChanged OnMeleeChanged;
+	FOnAmmoChanged OnAmmoChanged;
 
 protected:
     virtual void BeginPlay() override;

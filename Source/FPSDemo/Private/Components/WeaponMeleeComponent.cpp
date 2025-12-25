@@ -37,6 +37,14 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 	if (!Character || !Character->IsAlive())
 		return;
 
+	if (IsOwningClient() && VisualComp)
+	{
+		if (!CanMeleeNow())
+			return;
+		ActionStateComp->TrySetState(EActionState::Melee);
+		VisualComp->PlayMeleeAttack(AttackIndex);
+	}
+
 	if (Character->HasAuthority())
 	{
 		StartMelee_ServerAuth(AttackIndex);
@@ -57,8 +65,27 @@ void UWeaponMeleeComponent::StartMelee_ServerAuth(int32 AttackIndex)
 	if (!CanMeleeNow())
 		return;
 
+	// Set server state once
+	ActionStateComp->TrySetState(EActionState::Melee);
+
+	// Play montage for everyone (you can skip owning client here if you want)
 	MulticastPlayMelee(AttackIndex);
-	PerformMeleeTrace(AttackIndex);
+
+	// Delay the trace by 1 second (hit timing)
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(MeleeTraceTimer);
+
+		FTimerDelegate Delegate;
+		Delegate.BindUObject(this, &UWeaponMeleeComponent::PerformMeleeTrace, AttackIndex);
+
+		World->GetTimerManager().SetTimer(
+			MeleeTraceTimer,
+			Delegate,
+			1.0f,
+			false
+		);
+	}
 }
 
 void UWeaponMeleeComponent::MulticastPlayMelee_Implementation(int32 AttackIndex)
@@ -75,8 +102,7 @@ void UWeaponMeleeComponent::MulticastPlayMelee_Implementation(int32 AttackIndex)
 
 void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 {
-	if (!Character || !Character->HasAuthority())
-		return;
+	UE_LOG(LogTemp, Log, TEXT("PerformMeleeTrace called for AttackIndex: %d"), AttackIndex);
 
 	FVector Start;
 	FRotator ViewRot;
@@ -114,6 +140,7 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 			);*/
 		}
 	}
+	ActionStateComp->TrySetState(EActionState::Idle);
 }
 
 

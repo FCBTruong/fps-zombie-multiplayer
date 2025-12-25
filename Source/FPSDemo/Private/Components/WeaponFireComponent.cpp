@@ -13,6 +13,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Items/FirearmConfig.h"
 #include "Components/AnimationComponent.h"
+#include "Components/CharAudioComponent.h"
 
 UWeaponFireComponent::UWeaponFireComponent()
 {
@@ -24,6 +25,9 @@ void UWeaponFireComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	Character = Cast<ABaseCharacter>(GetOwner());
+	if (Character) {
+		AudioComp = Character ? Character->GetAudioComponent() : nullptr;
+	}
 }
 
 void UWeaponFireComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -82,13 +86,12 @@ bool UWeaponFireComponent::CanFireNow() const
 	if (!EquipComp || !InventoryComp || !ActionStateComp)
 		return false;
 
+	if (!ActionStateComp->CanFireNow())
+		return false;
+
 	const EItemId WeaponId = EquipComp->GetActiveItemId();
 	if (WeaponId == EItemId::NONE)
 		return false;
-
-	// Gate by action state (adjust to your actual API)
-	// Example: require Idle or allow Firing continuation.
-	// if (ActionStateComp->GetState() != EWeaponActionState::Idle) return false;
 
 	// Ammo check (only firearms should pass)
 	const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(WeaponId);
@@ -110,7 +113,26 @@ void UWeaponFireComponent::RequestStartFire()
 {
 	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::RequestStartFire called"));
 	if (!CanFireNow())
+	{
+		// if reason is bullet ammo empty, could trigger a "dry fire" sound/animation here
+		if (InventoryComp && EquipComp) {
+			const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(EquipComp->GetActiveItemId());
+			if (State) {
+				if (State->AmmoInClip <= 0) {
+					const UItemConfig* ItemConfig = EquipComp->GetActiveItemConfig();
+					if (ItemConfig && ItemConfig->IsA(UFirearmConfig::StaticClass())) {
+						// play sound
+						const UFirearmConfig* FirearmConfig = Cast<UFirearmConfig>(ItemConfig);
+						if (AudioComp) {
+							AudioComp->PlaySound3D(FirearmConfig->DryFireSound);
+						}
+					}
+					UE_LOG(LogTemp, Log, TEXT("Cannot fire: No ammo in clip"));
+				}
+			}
+		}
 		return;
+	}
 
 	BurstSeed = FMath::Rand();
 #if !UE_SERVER
@@ -518,6 +540,9 @@ void UWeaponFireComponent::MulticastReload_Implementation()
 	if (AnimComp) {
 		// get item config to determine reload animation
 		const UItemConfig* ItemConf = EquipComp->GetActiveItemConfig();
+		if (!ItemConf) {
+			return;
+		}
 		const UFirearmConfig* FirearmConf = Cast<UFirearmConfig>(ItemConf);
 		if (FirearmConf)
 		{

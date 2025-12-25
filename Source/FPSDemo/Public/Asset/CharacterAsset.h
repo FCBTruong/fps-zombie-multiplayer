@@ -42,7 +42,23 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	TObjectPtr<UAnimMontage> AnimMontage_ReloadPistol = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Animation")
-	TObjectPtr<UAnimMontage> AnimMontage_FireMelee = nullptr;
+	UPROPERTY(EditDefaultsOnly, Category = "Flash")
+	TObjectPtr<UMaterialParameterCollection> FlashCollection = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Flash")
+	TObjectPtr<UCurveFloat> StunCurve = nullptr;
+
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_Footstep = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_Landing = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_PlantSpike = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_DefuseSpike = nullptr;
 };
 

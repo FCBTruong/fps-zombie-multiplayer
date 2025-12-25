@@ -9,24 +9,7 @@
 
 class UAudioComponent;
 class USoundBase;
-
-USTRUCT(BlueprintType)
-struct FCharacterSoundSet
-{
-    GENERATED_BODY()
-
-    UPROPERTY(EditDefaultsOnly, Category = "Audio")
-    TObjectPtr<USoundBase> Footstep = nullptr;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Audio")
-    TObjectPtr<USoundBase> Landing = nullptr;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Audio")
-    TObjectPtr<USoundBase> PlantSpike = nullptr;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Audio")
-    TObjectPtr<USoundBase> DefuseSpike = nullptr;
-};
+class UCharacterAsset;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UCharAudioComponent : public UActorComponent
@@ -44,14 +27,15 @@ public:
     void StopPlantSpike();
 	void PlayDefuseSpike();
 	void StopDefuseSpike();
+	void PlaySound3D(USoundBase* Sound); // at actor location
 
 protected:
     virtual void BeginPlay() override;
 
 private:
     // Sounds
-    UPROPERTY(EditDefaultsOnly, Category = "Audio")
-    FCharacterSoundSet Sounds;
+    UPROPERTY(Transient)
+    TObjectPtr<UCharacterAsset> CachedCharacterAsset;
 
     // Internal audio components
     UPROPERTY(Transient)

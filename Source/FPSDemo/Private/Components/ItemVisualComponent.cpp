@@ -231,7 +231,7 @@ void UItemVisualComponent::AddToViewmodelCapture(ABaseCharacter* Character)
 
 void UItemVisualComponent::OnNotifyGrabMag()
 {
-   /* if (!EquippedActor) return;
+    if (!EquippedActor) return;
 
     if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(EquippedActor))
     {
@@ -257,19 +257,19 @@ void UItemVisualComponent::OnNotifyGrabMag()
             const FVector TargetLoc = Character->GetCurrentMesh()->GetSocketLocation("hand_l");
             Firearm->MagMesh->SetWorldLocation(TargetLoc);
         }
-    }*/
+    }
 }
 
 void UItemVisualComponent::OnNotifyInsertMag()
 {
-   /* if (!EquippedActor) return;
+    if (!EquippedActor) return;
 
     if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(EquippedActor))
     {
         if (!Firearm->MagMesh) return;
         Firearm->MagMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
         Firearm->AttachMagToDefault();
-    }*/
+    }
 }
 
 const UItemConfig* UItemVisualComponent::GetItemConfig(EItemId ItemId) const

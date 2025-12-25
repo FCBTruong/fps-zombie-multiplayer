@@ -118,23 +118,24 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		UGameplayStatics::PlaySoundAtLocation(this, FC->FireSFX, GetActorLocation());
 	}
 
+	if (FC->CasingClass)
+	{
+		// current weapon location
+		FVector CasingEjectLocation = WeaponMesh->GetSocketLocation("CasingEject");
+		FRotator CasingEjectRotation = WeaponMesh->GetSocketRotation("CasingEject");
 
-	//if (Data && FC->MuzzleFlashFX && WeaponMesh)
-	//{
-	//	UNiagaraComponent* Niagara = UNiagaraFunctionLibrary::SpawnSystemAttached(
-	//		FC->MuzzleFlashFX,
-	//		WeaponMesh,
-	//		FName(TEXT("Muzzle")),
-	//		FVector::ZeroVector,
-	//		FRotator::ZeroRotator,
-	//		FVector(1.f),
-	//		EAttachLocation::SnapToTarget,
-	//		/*bAutoDestroy*/   true,
-	//		/*PoolingMethod*/  ENCPoolMethod::None,
-	//		/*bAutoActivate*/  true,
-	//		/*bPreCullCheck*/  true
-	//	);
-	//}
+		CasingEjectRotation.Pitch += FMath::RandRange(-10.f, 10.f);
+		CasingEjectRotation.Yaw += FMath::RandRange(-15.f, 15.f);
+		CasingEjectRotation.Roll += FMath::RandRange(-30.f, 30.f);
+		GetWorld()->SpawnActor<AActor>(
+			FC->CasingClass,
+			CasingEjectLocation,
+			CasingEjectRotation,
+			SpawnParams
+		);
+	}
+
+
 }
 
 void AWeaponFirearm::PlayOutOfAmmoSound()
@@ -177,11 +178,6 @@ void AWeaponFirearm::ApplyConfig()
 	if (MagMesh && Config && FC->MagMesh)
 	{
 		MagMesh->SetStaticMesh(FC->MagMesh);
-
-		ACharacter* Character = Cast<ACharacter>(GetOwner());
-		if (Character && Character->IsLocallyControlled()) {
-			MagMesh->SetCastShadow(false);
-		}
 	}
 }
 
@@ -226,10 +222,12 @@ void AWeaponFirearm::SetViewFps(bool bFps)
 				return;
 			}
 			ViewmodelCapture->ShowOnlyComponents.AddUnique(MagMesh);
-			MagMesh->SetOwnerNoSee(true);
+			MagMesh->SetOwnerNoSee(true);		
+			MagMesh->SetCastShadow(false);
 		}
 		else {
 			MagMesh->SetOwnerNoSee(false);
+			MagMesh->SetCastShadow(true);
 		}
 	}
 }

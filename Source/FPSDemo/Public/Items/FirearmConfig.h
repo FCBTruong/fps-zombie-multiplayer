@@ -63,6 +63,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|FX")
     UNiagaraSystem* MuzzleFlashFX = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Sound")
+	USoundBase* DryFireSound = nullptr;
+
 	// ===== Recoil =====
 	// Base accuracy (deg)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Recoil")
@@ -93,6 +96,9 @@ public:
 	// Curve exponent for movement (1 = linear, 2 = smoother, 3 = even smoother)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Recoil")
 	float MoveCurveExp = 2.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Casing")
+	TSubclassOf<AActor> CasingClass = nullptr;
 
 public:
 	virtual EItemType GetItemType() const override { return EItemType::Firearm; }

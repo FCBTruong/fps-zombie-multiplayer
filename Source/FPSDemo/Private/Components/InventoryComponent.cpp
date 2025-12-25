@@ -40,6 +40,8 @@ void UInventoryComponent::Test()
 
     Throwables.Add(EItemId::GRENADE_FRAG_BASIC);
     Throwables.Add(EItemId::GRENADE_SMOKE);
+    Throwables.Add(EItemId::GRENADE_INCENDIARY);
+    Throwables.Add(EItemId::GRENADE_STUN);
              
     // log size throwables
 	UE_LOG(LogTemp, Log, TEXT("InventoryComponent Test: Throwables count = %d"), Throwables.Num());
@@ -296,4 +298,43 @@ void UInventoryComponent::ReloadWeapon(EItemId Id) {
     int AmmoToReload = FMath::Min(AmmoNeeded, State->AmmoReserve);
     State->AmmoReserve = FMath::Max(0, State->AmmoReserve - AmmoToReload);
     State->AmmoInClip += AmmoToReload;
+}
+
+void UInventoryComponent::RemoveItem(EItemId ItemId) {
+    if (!GetOwner() || !GetOwner()->HasAuthority())
+        return;
+    // Check and remove from weapon slots
+    if (RifleState.ItemId == ItemId) {
+        RifleState = FWeaponState(); // reset state
+        OnRep_RifleState();
+        return;
+    }
+    if (PistolState.ItemId == ItemId) {
+        PistolState = FWeaponState(); // reset state
+        OnRep_PistolState();
+        return;
+    }
+    if (MeleeState.ItemId == ItemId) {
+        MeleeState = FWeaponState(); // reset state
+        OnRep_MeleeState();
+        return;
+    }
+    // Check and remove from throwables
+    int32 Removed = Throwables.Remove(ItemId);
+    if (Removed > 0) {
+        OnRep_Throwables();
+        return;
+    }
+    // Check spike
+    if (ItemId == EItemId::SPIKE && bHasSpike) {
+        SetHasSpike(false);
+        return;
+    }
+    // Check armor
+    const UItemConfig* Data = GetItemConfig(ItemId);
+    if (Data && Data->GetItemType() == EItemType::Armor) {
+        ArmorState = FArmorState(); // reset armor state
+        OnRep_ArmorState();
+        return;
+    }
 }

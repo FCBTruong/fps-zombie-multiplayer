@@ -18,7 +18,7 @@ void AThrownProjectileStun::OnExplode()
 
 void AThrownProjectileStun::MulticastExplode_Implementation(const FVector& ImpactPoint)
 {
-	// Play effect explosion FX
+    // FX / SFX for everyone
     if (Data && Data->SmokeFX)
     {
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(
@@ -32,75 +32,100 @@ void AThrownProjectileStun::MulticastExplode_Implementation(const FVector& Impac
     {
         UGameplayStatics::PlaySoundAtLocation(this, Data->ExplosionSFX, ImpactPoint);
     }
-    // Get the local player controller
+
+    // Local-only flash effect check (per client)
     AMyPlayerController* PC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
-    if (!PC) {
-        return;
-    }
+    if (!PC) return;
 
-    // Get the local pawn (player character)
     APawn* Pawn = PC->GetPawn();
-    if (!Pawn) {
-        return;
-    }
+    if (!Pawn) return;
 
-    // Get camera (eyes) position of the local player
+    // Eye/camera position + view rotation
     FVector EyeLoc;
     FRotator EyeRot;
     PC->GetPlayerViewPoint(EyeLoc, EyeRot);
 
     // Distance check
-    const float MaxFlashRange = 2000.f;
-    float Dist = FVector::Dist(ImpactPoint, EyeLoc);
+    constexpr float MaxFlashRange = 2000.f;
+    const float Dist = FVector::Dist(ImpactPoint, EyeLoc);
     if (Dist > MaxFlashRange)
     {
-        return; 
+        return;
     }
 
+    // Line of sight check: from flash -> eye
     FHitResult Hit;
-    FCollisionQueryParams Params;
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(FlashTrace), true);
     Params.AddIgnoredActor(this);
     Params.AddIgnoredActor(Pawn);
 
-    bool bHit = GetWorld()->LineTraceSingleByChannel(
+    const bool bHit = GetWorld()->LineTraceSingleByChannel(
         Hit,
         ImpactPoint,
         EyeLoc,
         ECC_Visibility,
         Params
-    );
+    ); 
 
     bool bCanSeeFlash = false;
-
     if (!bHit)
     {
-        bCanSeeFlash = true;
+        bCanSeeFlash = true; // nothing blocks it
     }
     else if (Hit.GetActor() == Pawn)
     {
-        bCanSeeFlash = true;
+        bCanSeeFlash = true; // directly hit the pawn
     }
 
     if (!bCanSeeFlash)
     {
-        return; 
+		UE_LOG(LogTemp, Log, TEXT("Flash blocked by %s"), *Hit.GetActor()->GetName());
+        return;
     }
 
-    // Compute flash strength (distance falloff 0–1)
+    // Look direction check (must be looking at flash within cone)
+    const FVector ViewDir = EyeRot.Vector().GetSafeNormal();
+    const FVector ToFlashDir = (ImpactPoint - EyeLoc).GetSafeNormal();
+
+    // 0.7 = 45 degrees cone. Adjust as needed.
+    constexpr float LookThreshold = 0.7f;
+
+    const float LookDot = FVector::DotProduct(ViewDir, ToFlashDir);
+	bool bIsLookingAtFlash = (LookDot >= LookThreshold);
+
+     // Strength: distance falloff * angle factor
     float Strength = 1.f - (Dist / MaxFlashRange);
     Strength = FMath::Clamp(Strength, 0.f, 1.f);
 
+
+    if (!bIsLookingAtFlash)
+    {
+		Strength *= 0.3f; // reduce strength if not directly looking
+	}
+    else {
+        const float AngleFactor = FMath::Clamp(
+            (LookDot - LookThreshold) / (1.f - LookThreshold),
+            0.f,
+            1.f
+        );
+
+        Strength *= AngleFactor;
+    }
+    
+    if (Strength <= 0.f)
+    {
+        return;
+    }
+
+    // Local affect sound
     if (Data && Data->AffectSFX)
     {
         UGameplayStatics::PlaySound2D(this, Data->AffectSFX);
     }
 
-	// Get CharacterBase to apply flash effect
-	ABaseCharacter* Character = Cast<ABaseCharacter>(Pawn);
-    if (Character) {
-		Character->PlayStunEffect(Strength);
+    // Apply stun/flash effect on local player's character
+    if (ABaseCharacter* Character = Cast<ABaseCharacter>(Pawn))
+    {
+        Character->PlayStunEffect(Strength);
     }
-
-    // Apply flash on the local client (UI, audio, camera effect)
-    //PC->ApplyFlash(Strength);
 }

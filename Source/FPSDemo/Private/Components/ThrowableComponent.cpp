@@ -61,21 +61,18 @@ bool UThrowableComponent::CanStartThrow() const
 
 void UThrowableComponent::RequestStartThrow()
 {
+	if (CharacterOwner && CharacterOwner->IsLocallyControlled())
+	{
+		if (!CanStartThrow()) return;
+		if (AnimComp) AnimComp->PlayThrowNadeMontage(); // predictive play
+	}
+
 	if (GetOwner()->HasAuthority())
 	{
 		HandleThrow();
 	}
 	else
 	{
-		if (!CanStartThrow())
-		{
-			return;
-		}
-		// play throw prep montage
-		if (AnimComp)
-		{
-			AnimComp->PlayThrowNadeMontage();
-		}
 		ServerThrow();
 	}
 }
@@ -88,11 +85,38 @@ void UThrowableComponent::HandleThrow()
 		return;
 	}
 
+	ActionStateComp->TrySetState(EActionState::Throwing);
+
+	GetWorld()->GetTimerManager().SetTimer(
+		TimerHandle_FinishThrow,
+		this,
+		&UThrowableComponent::FinishThrow,
+		1.2f,
+		false
+	);
+
+
+	MulticastThrowAction();
+}
+
+void UThrowableComponent::FinishThrow()
+{
+	// check if state is still throwing
+	if (ActionStateComp->GetState() != EActionState::Throwing)
+	{
+		return;
+	}
+	ActionStateComp->TrySetState(EActionState::Idle);
+
 	// compute launch velocity
 	FVector LaunchVelocity = ComputeThrowVelocity();
 
 
 	ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+	if (!Character)
+	{
+		return;
+	}
 
 	FVector StartPos = Character->GetThrowableLocation();
 	AThrownProjectile* ThrownProj = nullptr;
@@ -134,21 +158,20 @@ void UThrowableComponent::HandleThrow()
 		ThrownProj->InitFromData(ThrowableConfig);
 		ThrownProj->LaunchProjectile(LaunchVelocity, Character);
 	}
+}
 
+void UThrowableComponent::MulticastThrowAction_Implementation()
+{
+	// ignore local player
+	if (CharacterOwner && CharacterOwner->IsLocallyControlled())
+	{
+		return;
+	}
 
-	//FTimerHandle TimerHandle_FinishThrow;
-	//GetWorld()->GetTimerManager().SetTimer(
-	//	TimerHandle_FinishThrow,
-	//	this,
-	//	&UWeaponComponent::OnFinishedThrow,
-	//	0.5f,
-	//	false
-	//);
-
-	//// destroy current weapon and also remove it from array
-	//ThrowablesArray.Remove(CurrentWeaponId);
-
-	//MulticastThrowAction(LaunchVelocity);
+	if (AnimComp)
+	{
+		AnimComp->PlayThrowNadeMontage();
+	}
 }
 
 void UThrowableComponent::ServerThrow_Implementation()
@@ -158,14 +181,15 @@ void UThrowableComponent::ServerThrow_Implementation()
 
 FVector UThrowableComponent::ComputeThrowVelocity() const
 {
-	if (!CharacterOwner)
-	{
-		return FVector::ZeroVector;
-	}
-	
-	FVector ForwardVector = CharacterOwner->GetActorForwardVector();
-	FVector UpVector = CharacterOwner->GetActorUpVector();
-	FVector LaunchVelocity = ForwardVector * GrenadeInitSpeed * FMath::Cos(FMath::DegreesToRadians(ThrowAngle)) +
-		UpVector * GrenadeInitSpeed * FMath::Sin(FMath::DegreesToRadians(ThrowAngle));
-	return LaunchVelocity;
+	if (!CharacterOwner) return FVector::ZeroVector;
+
+	FVector EyeLoc;
+	FRotator EyeRot;
+	CharacterOwner->GetActorEyesViewPoint(EyeLoc, EyeRot);
+
+	// 30 degrees upward
+	EyeRot.Pitch += 30.0f;  // if it goes downward, change to += 30.0f
+
+	const FVector Dir = EyeRot.Vector().GetSafeNormal();
+	return Dir * GrenadeInitSpeed;
 }

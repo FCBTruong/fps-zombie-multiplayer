@@ -20,6 +20,7 @@
 #include "Components/WeaponFireComponent.h"
 #include "Components/WeaponMeleeComponent.h"
 #include "Components/ThrowableComponent.h"
+#include "Components/InventoryComponent.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -118,6 +119,17 @@ void AMyPlayerController::BindingUI()
             IC->ShowPickupMessage.AddUObject(PlayerUI, &UPlayerUI::ShowPickupMessage);
 			IC->HidePickupMessage.AddUObject(PlayerUI, &UPlayerUI::HidePickupMessage);
         }
+        if (auto* EC = Char->GetEquipComponent())
+        {
+            EC->OnActiveItemChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateCurrentWeapon);
+		}
+        if (auto* IC = Char->GetInventoryComponent())
+        {
+            IC->OnThrowablesChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
+			PlayerUI->UpdateGrenades(IC->GetThrowables());
+            IC->OnAmmoChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
+        }
+      
         if (auto* WC = Char->GetWeaponComponent())
         {
             WC->OnUpdateAmmoState.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
@@ -558,10 +570,10 @@ void AMyPlayerController::DropWeapon() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        if (UEquipComponent* EC = MyChar->GetEquipComponent())
         {
-            WC->RequestDropWeapon();
-        }
+            EC->RequestDropItem();
+		}
     }
 }
 

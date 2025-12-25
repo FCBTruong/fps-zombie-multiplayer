@@ -44,4 +44,5 @@ private:
 	UPROPERTY(Transient) TObjectPtr<UItemVisualComponent> VisualComp = nullptr;
 
 	UPROPERTY(Transient) TObjectPtr<ABaseCharacter> Character = nullptr;
+	FTimerHandle MeleeTraceTimer;
 };

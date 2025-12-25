@@ -2,10 +2,12 @@
 
 
 #include "Components/CharAudioComponent.h"
-
 #include "Components/AudioComponent.h"
 #include "Sound/SoundBase.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
+#include "Asset/CharacterAsset.h"
+#include "Game/GameManager.h"
 
 UCharAudioComponent::UCharAudioComponent()
 {
@@ -18,6 +20,8 @@ void UCharAudioComponent::BeginPlay()
 
     FootstepComp = CreateAudioComp(TEXT("FootstepAudioComp"));
     LoopingComp = CreateAudioComp(TEXT("LoopingAudioComp"));
+    UGameManager* GameManager = UGameManager::Get(GetWorld());
+    CachedCharacterAsset = GameManager->CharacterAsset.Get();
 }
 
 UAudioComponent* UCharAudioComponent::CreateAudioComp(FName Name)
@@ -48,19 +52,28 @@ void UCharAudioComponent::PlayOneShot(USoundBase* Sound)
 
 void UCharAudioComponent::PlayFootstep()
 {
-    PlayOneShot(Sounds.Footstep);
+    if (!CachedCharacterAsset) {
+		return;
+    }
+    PlayOneShot(CachedCharacterAsset->Audio_Footstep);
 }
 
 void UCharAudioComponent::PlayLanding()
 {
-    PlayOneShot(Sounds.Landing);
+    if (!CachedCharacterAsset) {
+		return;
+    }
+    PlayOneShot(CachedCharacterAsset->Audio_Landing);
 }
 
 void UCharAudioComponent::PlayPlantSpike()
 {
-    if (!Sounds.PlantSpike || !LoopingComp) return;
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    if (!CachedCharacterAsset->Audio_PlantSpike || !LoopingComp) return;
 
-    LoopingComp->SetSound(Sounds.PlantSpike);
+    LoopingComp->SetSound(CachedCharacterAsset->Audio_PlantSpike);
     LoopingComp->Play();
 }
 
@@ -74,9 +87,9 @@ void UCharAudioComponent::StopPlantSpike()
 
 void UCharAudioComponent::PlayDefuseSpike()
 {
-    if (!Sounds.DefuseSpike || !LoopingComp) return;
+    if (!CachedCharacterAsset || !LoopingComp) return;
 
-    LoopingComp->SetSound(Sounds.DefuseSpike);
+    LoopingComp->SetSound(CachedCharacterAsset->Audio_DefuseSpike);
     LoopingComp->Play();
 }
 
@@ -86,4 +99,16 @@ void UCharAudioComponent::StopDefuseSpike()
     {
         LoopingComp->Stop();
     }
+}
+
+void UCharAudioComponent::PlaySound3D(USoundBase* Sound)
+{
+    if (!Sound) return;
+	AActor* Owner = GetOwner();
+	if (!Owner) return;
+    UGameplayStatics::PlaySoundAtLocation(
+        this,
+        Sound,
+		Owner->GetActorLocation()
+    );
 }

@@ -25,6 +25,8 @@ public:
 	// Sets default values for this component's properties
 	UItemVisualComponent();
 
+    void OnNotifyGrabMag();
+    void OnNotifyInsertMag();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -64,7 +66,5 @@ private:
 
     void RemoveFromViewmodelCapture(ABaseCharacter* Character);
     void AddToViewmodelCapture(ABaseCharacter* Character);
-    void OnNotifyGrabMag();
-	void OnNotifyInsertMag();
 	const UItemConfig* GetItemConfig(EItemId ItemId) const;
 };

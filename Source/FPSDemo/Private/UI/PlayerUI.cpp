@@ -5,6 +5,9 @@
 #include "Game/TeamEliminationState.h"
 #include "Game/GameManager.h"
 #include "UI/ScoreboardUI.h"
+#include "Items/ItemConfig.h"
+#include "Game/ItemsManager.h"
+#include "Items/FirearmConfig.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -296,13 +299,12 @@ void UPlayerUI::UpdateCurrentWeapon(EItemId CurrentWeaponId) {
 
     }
     else {
-        UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-        UWeaponData* WeaponConf = GMR->GetWeaponDataById(CurrentWeaponId);
-        if (WeaponConf == nullptr) {
+		const UItemConfig* ItemConf = UItemsManager::Get(GetWorld())->GetItemById(CurrentWeaponId);
+        if (ItemConf == nullptr) {
             return;
         }
-        if (WeaponConf->WeaponType == EWeaponTypes::Throwable) {
-            GrenadeTitle->SetText(WeaponConf->DisplayName);
+        if (ItemConf->GetItemType() == EItemType::Throwable) {
+            GrenadeTitle->SetText(ItemConf->DisplayName);
             for (UGrenadeNodeUI* Grenade : Grenades)
             {
                 if (Grenade && Grenade->CurItemId == CurrentWeaponId)
@@ -312,23 +314,25 @@ void UPlayerUI::UpdateCurrentWeapon(EItemId CurrentWeaponId) {
                 }
 			}
         }
-        else if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
-            if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
+        else if (ItemConf->GetItemType() == EItemType::Firearm) {
+			const UFirearmConfig* FirearmConf = Cast<UFirearmConfig>(ItemConf);
+            if (FirearmConf->FirearmType == EFirearmType::Rifle) {
                 //Rifle
                 if (RifleIcon) {
                     // set texture
-                    RifleIcon->SetBrushFromTexture(WeaponConf->Icon);
+                    if (FirearmConf->ItemIcon) {
+                        RifleIcon->SetBrushFromTexture(FirearmConf->ItemIcon.Get());
+                    }
 				}
             }
-            if (WeaponConf->HasScopeEquiped) {
-                WBP_Crosshair->SetVisibility(ESlateVisibility::Hidden);
-			}
-        }
-        else if (WeaponConf->WeaponSubType == EWeaponSubTypes::Pistol) {
-            //Pistol
-            if (PistolIcon) {
-                // set texture
-                PistolIcon->SetBrushFromTexture(WeaponConf->Icon);
+            else {
+                //Pistol
+                if (PistolIcon) {
+                    // set texture
+                    if (FirearmConf->ItemIcon) {
+                        PistolIcon->SetBrushFromTexture(FirearmConf->ItemIcon.Get());
+                    }
+                }
             }
         }
     }

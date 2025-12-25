@@ -39,13 +39,18 @@ private:
 	UPROPERTY()
 	TObjectPtr<UActionStateComponent> ActionStateComp;
 
+	FTimerHandle TimerHandle_FinishThrow;
 private:
 	void HandleThrow();
 
 	UFUNCTION(Server, Reliable)
 	void ServerThrow();
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastThrowAction();
+
 	bool CanStartThrow() const;
+	void FinishThrow();
 
 	FVector ComputeThrowVelocity() const;
 };

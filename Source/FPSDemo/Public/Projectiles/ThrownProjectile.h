@@ -18,8 +18,10 @@ public:
 	AThrownProjectile();
 
 protected:
+	bool bDidHit = false;
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 	UPROPERTY() USphereComponent* Collision;
 	UPROPERTY() UProjectileMovementComponent* Projectile;

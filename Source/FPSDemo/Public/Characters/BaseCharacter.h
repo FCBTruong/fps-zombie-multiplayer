@@ -43,6 +43,8 @@ class UItemVisualComponent;
 class UWeaponFireComponent;
 class UWeaponMeleeComponent;
 class UThrowableComponent;
+class UCharacterAsset;
+class UPostProcessComponent;
 
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -160,12 +162,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category =  "Init|Camera")
     TSubclassOf<AActor> DeathCameraProxyClass;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Flash")
-    TObjectPtr<UMaterialParameterCollection> FlashCollection;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Flash")
-    TObjectPtr<UCurveFloat> StunCurve;
-
     UPROPERTY(EditDefaultsOnly, Category = "Init|Decal")
     TObjectPtr<UMaterialInterface> MeleeHitDecal;
 
@@ -175,6 +171,11 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Init|Crouch")
     TObjectPtr<UCurveFloat> CrouchCurve = nullptr;
 
+    UPROPERTY(Transient)
+    TObjectPtr<UCharacterAsset> CachedCharacterAsset;
+
+    UPROPERTY(VisibleAnywhere)
+    UPostProcessComponent* FlashPP = nullptr;
 protected:
     // ===== Runtime State =====
     bool bLastHitWasHeadshot;
@@ -319,6 +320,7 @@ public:
 	UWeaponMeleeComponent* GetWeaponMeleeComponent() const;
 	UThrowableComponent* GetThrowableComponent() const; 
 	UActionStateComponent* GetActionStateComponent() const;
+	UCharAudioComponent* GetAudioComponent() const;
 
     UFUNCTION(BlueprintCallable)
     EMovementState GetCurrentMovementState() const;

@@ -36,7 +36,7 @@ public:
 
     // Fired on server and clients when ActiveItemId changes
     FOnActiveItemChanged OnActiveItemChanged;
-
+    void RequestDropItem();
 protected:
     virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -76,4 +76,10 @@ private:
     // Slot helpers
     EItemId ChooseThrowableToSelect();
     void RefreshCachedState();
+	bool CanDropItem() const;
+
+	UFUNCTION(Server, Reliable)
+    void ServerDropItem();
+	void HandleDropItem();
+    void RefreshOverlapPickupActors();
 };

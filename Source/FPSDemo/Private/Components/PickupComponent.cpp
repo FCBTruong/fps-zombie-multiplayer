@@ -59,15 +59,15 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem)
 		return;
 	}
 
+	UInventoryComponent* InventoryComp = OwnerCharacter->GetInventoryComponent();
 
-	UWeaponComponent* WeaponComp = GetOwner()->FindComponentByClass<UWeaponComponent>();
-	
-	if (!WeaponComp) {
+	if (!InventoryComp) {
+		UE_LOG(LogTemp, Warning, TEXT("InventoryComponent not found on character"));
 		return;
 	}
 	
 	// Check if overlap
-    bool Added = WeaponComp->AddNewWeapon(PickupItem->GetPickupData());
+    bool Added = InventoryComp->AddItemFromPickup(PickupItem->GetPickupData());
 	UE_LOG(LogTemp, Warning, TEXT("PickupItem: Added = %s"), Added ? TEXT("true") : TEXT("false"));
 	if (Added) {
 		GMR->FindAndDestroyItemNode(PickupItem->GetPickupData().Id);
