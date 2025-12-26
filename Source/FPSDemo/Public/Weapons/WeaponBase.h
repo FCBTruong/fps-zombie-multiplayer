@@ -28,9 +28,6 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void PreInitializeComponents() override;
 	virtual void ApplyWeaponData();
-
-	UPROPERTY()
-	TWeakObjectPtr<USceneCaptureComponent2D> ViewmodelCapture;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -47,5 +44,4 @@ public:
 	void OnEquipped();
 
 	EItemId GetItemId() const { return Data ? Data->Id : EItemId::NONE; }
-	void SetViewCapture(USceneCaptureComponent2D* InCapture) { ViewmodelCapture = InCapture; }
 };

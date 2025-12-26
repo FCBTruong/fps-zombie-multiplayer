@@ -24,7 +24,6 @@ public:
         UCameraComponent* InCameraFps,
         UCameraComponent* InCameraTps,
         USpringArmComponent* InCameraBoom,
-        USceneCaptureComponent2D* InViewmodelCap,
         USkeletalMeshComponent* InMeshFps,
         USkeletalMeshComponent* InMeshTps
     );
@@ -38,16 +37,12 @@ public:
     void OnBecomeViewTarget(APlayerController* PC);
     void OnEndViewTarget(APlayerController* PC);
 
-    USceneCaptureComponent2D* GetViewmodelCapture() const;
     FOnViewModeChanged OnViewModeChanged;
 
 protected:
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     virtual void BeginPlay() override;
 protected:
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Viewmodel")
-    TObjectPtr<UMaterial> MaterialOverlayBase;
-
     UPROPERTY(EditDefaultsOnly, Category = "Init|Camera")
     TSubclassOf<AActor> DeathCameraProxyClass;
 
@@ -55,13 +50,9 @@ private:
     UPROPERTY(Transient) TObjectPtr<UCameraComponent> CameraFps;
     UPROPERTY(Transient) TObjectPtr<UCameraComponent> CameraTps;
     UPROPERTY(Transient) TObjectPtr<USpringArmComponent> CameraBoom;
-    UPROPERTY(Transient) TObjectPtr<USceneCaptureComponent2D> ViewmodelCap;
 
     UPROPERTY(Transient) TObjectPtr<USkeletalMeshComponent> MeshFps;
     UPROPERTY(Transient) TObjectPtr<USkeletalMeshComponent> MeshTps;
-
-    UPROPERTY(Transient) TObjectPtr<UTextureRenderTarget2D> ViewmodelRenderTarget;
-    UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> OverlayMID;
 
     bool bIsFPS = true;
     float TargetFOV = 103.f;

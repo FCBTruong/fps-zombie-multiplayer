@@ -142,9 +142,6 @@ protected:
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<USkeletalMeshComponent> MeshFps;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-    TObjectPtr<USceneCaptureComponent2D> ViewmodelCap;
-
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<UCameraComponent> CameraTps;
 
@@ -194,17 +191,11 @@ protected:
     UPROPERTY(Transient)
     TObjectPtr<UAudioComponent> PlantSpikeAudioComp;
 
-    UPROPERTY(Transient)
-    TObjectPtr<UMaterialInstanceDynamic> MaterialOverlayMID;
-
     UPROPERTY()
     TWeakObjectPtr<AController> LastHitByController;
 
     UPROPERTY()
     TWeakObjectPtr<UWeaponData> LastDamageCauser;
-
-    UPROPERTY(Transient)
-    TObjectPtr<UTextureRenderTarget2D> ViewmodelRenderTarget;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<USceneComponent> ThrowableLocation;
@@ -306,7 +297,6 @@ public:
     bool IsFpsViewMode() const;
 	bool IsAiming() const;
     FVector GetThrowableLocation() const;
-    USceneCaptureComponent2D* GetViewmodelCapture() const;
     UBehaviorTree* GetBehaviorTree() const;
 	USplineComponent* GetThrowSpline() const;
     UPickupComponent* GetPickupComponent() const;

@@ -110,7 +110,7 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 }
 
 
-void ABulletBase::InitFromData(UBulletData* InData, FVector FireDestination, TWeakObjectPtr<USceneCaptureComponent2D> ViewmodelCapture)
+void ABulletBase::InitFromData(UBulletData* InData, FVector FireDestination)
 {
     Data = InData;
     if (Data)
@@ -125,11 +125,11 @@ void ABulletBase::InitFromData(UBulletData* InData, FVector FireDestination, TWe
         }
     }
 
-    FireTowards(FireDestination, ViewmodelCapture);
+    FireTowards(FireDestination);
 }
 
 
-void ABulletBase::FireTowards(const FVector& Target, TWeakObjectPtr<USceneCaptureComponent2D> ViewmodelCapture)
+void ABulletBase::FireTowards(const FVector& Target)
 {
     FVector Start = GetActorLocation();
     FVector Dir = (Target - Start).GetSafeNormal();
@@ -149,16 +149,5 @@ void ABulletBase::FireTowards(const FVector& Target, TWeakObjectPtr<USceneCaptur
             EAttachLocation::SnapToTarget,
             true
         );
-
-        if (Trail && ViewmodelCapture.IsValid())
-        {
-            USceneCaptureComponent2D* Capture = ViewmodelCapture.Get();
-			UE_LOG(LogTemp, Warning, TEXT("Setting up trail for viewmodel capture"));
-            Capture->ShowOnlyComponents.AddUnique(Trail);
-                
-            // If not capturing every frame:
-            // Capture->CaptureScene();
-			Trail->SetOwnerNoSee(true);
-        }
     }
 }

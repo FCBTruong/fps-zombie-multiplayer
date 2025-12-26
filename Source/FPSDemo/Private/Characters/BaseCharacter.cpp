@@ -78,13 +78,6 @@ ABaseCharacter::ABaseCharacter()
     CameraFps = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraFps"));
     CameraFps->bUsePawnControlRotation = false;
 
-    ViewmodelCap = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("ViewmodelCap"));
-    ViewmodelCap->SetupAttachment(CameraFps);
-    ViewmodelCap->bCaptureEveryFrame = true;
-    ViewmodelCap->bCaptureOnMovement = true;
-    ViewmodelCap->PrimitiveRenderMode =
-        ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
-
     ThrowSpline = CreateDefaultSubobject<USplineComponent>(TEXT("SplineThrow"));
     ThrowSpline->SetupAttachment(RootComponent);
 
@@ -113,7 +106,6 @@ ABaseCharacter::ABaseCharacter()
         CameraFps,
         CameraTps,
         CameraBoom,
-        ViewmodelCap,
         MeshFps,
         GetMesh()
     );
@@ -869,6 +861,13 @@ void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotify
             ItemVisualComp->OnNotifyInsertMag();
         }
 	}
+    else if (NotifyName == "Throw_NadeRelease")
+    {
+        if (ThrowableComp)
+        {
+            ThrowableComp->OnNadeRelease();
+        }
+	}
 }
 
 // This function called on server when health reaches zero
@@ -1258,10 +1257,6 @@ FVector ABaseCharacter::GetThrowableLocation() const
     return EyeLoc
         + GetActorRightVector() * 10.f
         + FVector(0.f, 0.f, 30.f);
-}
-
-USceneCaptureComponent2D* ABaseCharacter::GetViewmodelCapture() const {
-    return ViewmodelCap;
 }
 
 UBehaviorTree* ABaseCharacter::GetBehaviorTree() const {

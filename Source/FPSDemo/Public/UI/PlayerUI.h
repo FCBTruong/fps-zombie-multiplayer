@@ -137,9 +137,6 @@ public:
 	UShopUI* WBP_Shop;
 
 	UPROPERTY(meta = (BindWidget))
-	UImage* ViewmodelOverlay;
-
-	UPROPERTY(meta = (BindWidget))
 	UScopeUI* ScopeUI;
 
 	void NativeConstruct() override;

@@ -56,12 +56,6 @@ void AMyPlayerController::BeginPlay()
         PlayerUI->AddToViewport(5);
 		PlayerUI->CloseShop();
 		bIsShopOpen = false;
-
-        if (PendingViewmodelOverlay)
-        {
-            ApplyViewmodelOverlay();
-        }
-
         BindingUI();
     }
 }
@@ -833,14 +827,6 @@ void AMyPlayerController::HideScoreboard()
     }
 }
 
-void AMyPlayerController::UpdateViewmodelCapture(bool bEnable)
-{
-    if (PlayerUI && PlayerUI->ViewmodelOverlay)
-    {
-		PlayerUI->ViewmodelOverlay->SetVisibility(bEnable ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
-	}
-}
-
 void AMyPlayerController::HandleAimingChanged(bool bIsAiming)
 {
     if (PlayerUI)
@@ -856,36 +842,3 @@ void AMyPlayerController::HandleAimingChanged(bool bIsAiming)
     }
 }
 
-void AMyPlayerController::NotifyViewmodelOverlayReady(
-    UMaterialInstanceDynamic* OverlayMID)
-{
-    if (!IsLocalController())
-    {
-        return;
-    }
-
-    PendingViewmodelOverlay = OverlayMID;
-
-    if (!PlayerUI)
-    {
-        return; // UI not ready yet
-    }
-
-    ApplyViewmodelOverlay();
-}
-
-void AMyPlayerController::ApplyViewmodelOverlay()
-{
-    if (!PlayerUI || !PendingViewmodelOverlay)
-    {
-        return;
-    }
-
-    if (PlayerUI->ViewmodelOverlay)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Setting viewmodel overlay material"));
-		// TODO : Fix this once UImage supports SetBrushFromMaterial
-      //  PlayerUI->ViewmodelOverlay->SetBrushFromMaterial(PendingViewmodelOverlay);
-    }
-    UpdateViewmodelCapture(true);
-}

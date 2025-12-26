@@ -726,16 +726,6 @@ void UWeaponComponent::UpdateAttachLocationWeapon(bool bIsFPS) {
     USceneComponent* Root = CurrentWeapon->GetRootComponent();
 
     Root->SetRelativeLocationAndRotation(offset, FRotator::MakeFromEuler(offsetRot));
-
-    UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Update"));
-    if (Character->GetViewmodelCapture()) {
-        CurrentWeapon->SetViewFps(bIsFPS);
-
-        UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Update ViewmodelCapture"));
-        Character->GetViewmodelCapture()->ShowOnlyComponents.AddUnique(CurrentWeapon->GetWeaponMesh());
-
-        UE_LOG(LogTemp, Warning, TEXT("UpdateAttachLocationWeapon: Set OwnerNoSee to %s"), bIsFPS ? TEXT("true") : TEXT("false"));
-    }
 }
 
 bool UWeaponComponent::CanWeaponAim() {
@@ -831,8 +821,6 @@ void UWeaponComponent::OnRep_CurrentWeapon()
         UE_LOG(LogTemp, Warning, TEXT("OnRep_CurrentWeapon: No character found"));
         return;
     }
-
-    CurrentWeapon->SetViewCapture(Character->GetViewmodelCapture());
 
     CurrentWeapon->SetOwner(GetOwner());
     CurrentWeapon->SetInstigator(Cast<APawn>(GetOwner()));

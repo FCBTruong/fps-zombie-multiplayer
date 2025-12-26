@@ -23,9 +23,6 @@ public:
 
 protected:
 	bool bIsFpsView;
-	
-	UPROPERTY(Transient)
-	TWeakObjectPtr<USceneCaptureComponent2D> ViewmodelCapture;
 
 	UPROPERTY()
 	TObjectPtr<UItemConfig> Config;
@@ -52,5 +49,4 @@ public:
 	UMeshComponent* GetMainMesh() const;
 
 	virtual void SetViewFps(bool bIsFps);
-	virtual void SetViewCapture(USceneCaptureComponent2D* InCapture);
 };

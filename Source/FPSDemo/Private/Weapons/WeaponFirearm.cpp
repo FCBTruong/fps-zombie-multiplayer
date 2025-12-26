@@ -50,12 +50,7 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 			PSC->SetWorldScale3D(FVector(0.15f));
 
 			if (bIsFpsView) {
-				if (USceneCaptureComponent2D* Capture = ViewmodelCapture.Get()) // ViewmodelCapture is TWeakObjectPtr
-				{
-					Capture->ShowOnlyComponent(PSC);
-				}
-
-				PSC->SetVisibleInSceneCaptureOnly(true);
+				// TODO later
 			}
 		}
 		else {
@@ -84,7 +79,7 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		FRotator::ZeroRotator,
 		SpawnParams
 	);
-	Bullet->InitFromData(FC->BulletData, TargetPoint, ViewmodelCapture);
+	Bullet->InitFromData(FC->BulletData, TargetPoint);
 
 	if (bIsFpsView) {
 		UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
@@ -150,12 +145,7 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 			);
 		
 		if (bIsFpsView) {
-			if (USceneCaptureComponent2D* Capture = ViewmodelCapture.Get()) // ViewmodelCapture is TWeakObjectPtr
-			{
-				//Capture->ShowOnlyComponent(MuzzleFlash);
-			}
-
-			//MuzzleFlash->bVisibleInSceneCaptureOnly = true;
+			
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Spawned Niagara Muzzle Flash"));
@@ -242,16 +232,10 @@ void AWeaponFirearm::SetViewFps(bool bFps)
 	if (MagMesh)
 	{
 		if (bFps) {
-			if (!ViewmodelCapture.IsValid()) {
-				return;
-			}
-			ViewmodelCapture->ShowOnlyComponents.AddUnique(MagMesh);
-			MagMesh->SetOwnerNoSee(true);		
-			MagMesh->SetCastShadow(false);
+			MagMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 		}
 		else {
-			MagMesh->SetOwnerNoSee(false);
-			MagMesh->SetCastShadow(true);
+			MagMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
 		}
 	}
 }

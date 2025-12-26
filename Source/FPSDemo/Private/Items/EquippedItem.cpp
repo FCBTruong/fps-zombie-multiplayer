@@ -119,30 +119,25 @@ void AEquippedItem::SetViewFps(bool bIsFps)
 {
     // log display name of data
     UE_LOG(LogTemp, Warning, TEXT("WeaponBase SetOwnerNoSee called with %s for weapon %s"), bIsFps ? TEXT("true") : TEXT("false"), *GetName());
-    if (WeaponMesh)
-    {
-        WeaponMesh->bVisibleInSceneCaptureOnly = bIsFps;
-        WeaponMesh->MarkRenderStateDirty();
-    }
-    if (WeaponStaticMesh)
-    {
-        WeaponStaticMesh->bVisibleInSceneCaptureOnly = bIsFps;
-        WeaponStaticMesh->MarkRenderStateDirty();
-    }
+
 
     // Apply scale to stable root (one place, consistent)
     if (RootComponent)
     {
-        if (bIsFps)
+        if (bIsFps) {
+			WeaponMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+            if (WeaponStaticMesh) {
+                WeaponStaticMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+			}
             RootComponent->SetWorldScale3D(FVector(Config->ScaleOnHand));
+        }
         else {
+            WeaponMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
+            if (WeaponStaticMesh) {
+                WeaponStaticMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
+			}
             RootComponent->SetWorldScale3D(FVector(Config->ScaleOnHandTps));
         }
     }
     bIsFpsView = bIsFps;
-}
-
-void AEquippedItem::SetViewCapture(USceneCaptureComponent2D* InCapture)
-{
-    ViewmodelCapture = InCapture;
 }

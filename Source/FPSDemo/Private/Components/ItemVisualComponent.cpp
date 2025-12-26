@@ -83,7 +83,7 @@ void UItemVisualComponent::DestroyVisual()
     ABaseCharacter* Character = GetCharacter();
     if (Character)
     {
-        RemoveFromViewmodelCapture(Character);
+        
     }
 
     if (EquippedActor)
@@ -153,9 +153,6 @@ void UItemVisualComponent::RefreshVisual(EItemId NewItemId)
 
 	UE_LOG(LogTemp, Log, TEXT("EquippedActor spawned: %s"), *EquippedActor->GetName());
 
-    // Setup view capture (if you used it before)
-   // EquippedActor->SetViewCapture(Character->GetViewmodelCapture());
-
     AttachToHands(Data);
 }
 
@@ -193,13 +190,8 @@ void UItemVisualComponent::AttachToHands(const UItemConfig* Data)
        // Root->SetRelativeLocationAndRotation(Offset, FRotator::MakeFromEuler(OffsetRotEuler));
     }
 
-    // FPS capture visibility
-    if (Character->GetViewmodelCapture())
-    {
-        EquippedActor->SetViewFps(bIsFPS);
-		EquippedActor->SetViewCapture(Character->GetViewmodelCapture());
-        AddToViewmodelCapture(Character);
-    }
+    
+    EquippedActor->SetViewFps(bIsFPS);
 }
 
 void UItemVisualComponent::OnViewModeChanged(bool bIsFPS)
@@ -210,23 +202,6 @@ void UItemVisualComponent::OnViewModeChanged(bool bIsFPS)
 
     // Re-attach with new socket/offset
     AttachToHands(Data);
-}
-
-void UItemVisualComponent::RemoveFromViewmodelCapture(ABaseCharacter* Character)
-{
-    if (!Character || !Character->GetViewmodelCapture() || !EquippedActor)
-        return;
-
-    // Remove previous component from ShowOnly list (prevents list growth)
-    Character->GetViewmodelCapture()->ShowOnlyComponents.Remove(EquippedActor->GetMainMesh());
-}
-
-void UItemVisualComponent::AddToViewmodelCapture(ABaseCharacter* Character)
-{
-    if (!Character || !Character->GetViewmodelCapture() || !EquippedActor)
-        return;
-
-    Character->GetViewmodelCapture()->ShowOnlyComponents.AddUnique(EquippedActor->GetMainMesh());
 }
 
 void UItemVisualComponent::OnNotifyGrabMag()
@@ -314,5 +289,13 @@ void UItemVisualComponent::PlayMeleeAttack(int32 AttackIndex)
     if (Character && AnimComp)
     {
         AnimComp->PlayMeleeAttackMontage(AttackIndex);
+    }
+}
+
+void UItemVisualComponent::HideItemVisual()
+{
+    if (EquippedActor)
+    {
+        EquippedActor->SetActorHiddenInGame(true);
     }
 }

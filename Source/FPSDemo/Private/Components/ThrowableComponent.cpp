@@ -11,6 +11,7 @@
 #include "Projectiles/ThrownProjectileStun.h"
 #include "Projectiles/ThrownProjectileIncendiary.h"
 #include "Items/ThrowableConfig.h"
+#include "Components/ItemVisualComponent.h"
 
 UThrowableComponent::UThrowableComponent()
 {
@@ -158,6 +159,12 @@ void UThrowableComponent::FinishThrow()
 		ThrownProj->InitFromData(ThrowableConfig);
 		ThrownProj->LaunchProjectile(LaunchVelocity, Character);
 	}
+
+	// auto pick best weapon
+	if (EquipComp)
+	{
+		EquipComp->AutoSelectBestWeapon();
+	}
 }
 
 void UThrowableComponent::MulticastThrowAction_Implementation()
@@ -192,4 +199,13 @@ FVector UThrowableComponent::ComputeThrowVelocity() const
 
 	const FVector Dir = EyeRot.Vector().GetSafeNormal();
 	return Dir * GrenadeInitSpeed;
+}
+
+void UThrowableComponent::OnNadeRelease()
+{
+	// just for visual, force hide item currently held
+	if (UItemVisualComponent* ItemVisualComp = CharacterOwner->FindComponentByClass<UItemVisualComponent>())
+	{
+		ItemVisualComp->HideItemVisual();
+	}
 }

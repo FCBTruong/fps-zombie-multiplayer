@@ -27,6 +27,7 @@ public:
 
     void OnNotifyGrabMag();
     void OnNotifyInsertMag();
+    void HideItemVisual();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -63,8 +64,5 @@ private:
 
     void AttachToHands(const UItemConfig* Data);
     bool ShouldSpawnVisuals() const;
-
-    void RemoveFromViewmodelCapture(ABaseCharacter* Character);
-    void AddToViewmodelCapture(ABaseCharacter* Character);
 	const UItemConfig* GetItemConfig(EItemId ItemId) const;
 };
