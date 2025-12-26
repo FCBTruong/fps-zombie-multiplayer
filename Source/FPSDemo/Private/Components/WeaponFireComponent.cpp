@@ -577,3 +577,28 @@ void UWeaponFireComponent::OnFinishedReload()
 	}
 	InventoryComp->ReloadWeapon(EquipComp->GetActiveItemId());
 }
+
+bool UWeaponFireComponent::CanWeaponAim() const {
+	if (!Character || !Character->IsAlive()) {
+		return false;
+	}
+	if (!EquipComp || !InventoryComp) {
+		return false;
+	}
+	if (!ActionStateComp) {
+		return false;
+	}
+	
+	const UItemConfig* ItemConf = EquipComp->GetActiveItemConfig();
+	if (!ItemConf) {
+		return false;
+	}
+	if (ItemConf->GetItemType() != EItemType::Firearm) {
+		return false;
+	}
+	const UFirearmConfig* FirearmConf = Cast<UFirearmConfig>(ItemConf);
+	if (!FirearmConf->bHasScopeEquipped) {
+		return false;
+	}
+	return true;
+}

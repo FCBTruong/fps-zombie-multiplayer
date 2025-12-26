@@ -45,7 +45,7 @@ public:
 	float ReloadTime = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
-	bool HasScopeEquipped = false;
+	bool bHasScopeEquipped = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	UBulletData* BulletData = nullptr;

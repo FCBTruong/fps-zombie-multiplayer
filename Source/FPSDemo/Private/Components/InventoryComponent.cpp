@@ -33,7 +33,7 @@ void UInventoryComponent::Test()
     PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
 	PistolState.MaxAmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
 
-	UWeaponData* RifleData = UGameManager::Get(GetWorld())->GetWeaponDataById(EItemId::RIFLE_AK_47);
+	UWeaponData* RifleData = UGameManager::Get(GetWorld())->GetWeaponDataById(RifleState.ItemId);
 	RifleState.AmmoInClip = 2;
     RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 3 : 0;
 	RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;

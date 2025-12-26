@@ -55,7 +55,7 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 					Capture->ShowOnlyComponent(PSC);
 				}
 
-				PSC->SetOwnerNoSee(true);
+				PSC->SetVisibleInSceneCaptureOnly(true);
 			}
 		}
 		else {
@@ -135,7 +135,31 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		);
 	}
 
+	if (FC->MuzzleFlashFX)
+	{
+		UNiagaraComponent* MuzzleFlash =
+			UNiagaraFunctionLibrary::SpawnSystemAttached(
+				FC->MuzzleFlashFX,
+				WeaponMesh,
+				TEXT("Muzzle"),
+				FVector::ZeroVector,
+				FRotator(180, -90, 0),
+				EAttachLocation::SnapToTarget,
+				true,
+				true
+			);
+		
+		if (bIsFpsView) {
+			if (USceneCaptureComponent2D* Capture = ViewmodelCapture.Get()) // ViewmodelCapture is TWeakObjectPtr
+			{
+				//Capture->ShowOnlyComponent(MuzzleFlash);
+			}
 
+			//MuzzleFlash->bVisibleInSceneCaptureOnly = true;
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("Spawned Niagara Muzzle Flash"));
+	}
 }
 
 void AWeaponFirearm::PlayOutOfAmmoSound()

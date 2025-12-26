@@ -266,7 +266,6 @@ void AMyPlayerController::SetupInputComponent()
         if (IA_AIM)
         {
             EnhancedInput->BindAction(IA_AIM, ETriggerEvent::Started, this, &AMyPlayerController::ClickAim);
-			EnhancedInput->BindAction(IA_AIM, ETriggerEvent::Completed, this, &AMyPlayerController::StopAim);
         }
         if (IA_RELOAD)
         {
@@ -517,7 +516,13 @@ void AMyPlayerController::ClickAim() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        MyChar->RequestStartAiming();
+        if (MyChar->IsAiming()) {
+			MyChar->RequestStopAiming();
+            return;
+		}
+        else {
+            MyChar->RequestStartAiming();
+        }
     }
 }
 
@@ -846,7 +851,7 @@ void AMyPlayerController::HandleAimingChanged(bool bIsAiming)
         }
         else
         {
-            PlayerUI->ShowScope();
+            PlayerUI->HideScope();
 		}
     }
 }
@@ -879,7 +884,8 @@ void AMyPlayerController::ApplyViewmodelOverlay()
     if (PlayerUI->ViewmodelOverlay)
     {
         UE_LOG(LogTemp, Warning, TEXT("Setting viewmodel overlay material"));
-        PlayerUI->ViewmodelOverlay->SetBrushFromMaterial(PendingViewmodelOverlay);
+		// TODO : Fix this once UImage supports SetBrushFromMaterial
+      //  PlayerUI->ViewmodelOverlay->SetBrushFromMaterial(PendingViewmodelOverlay);
     }
     UpdateViewmodelCapture(true);
 }

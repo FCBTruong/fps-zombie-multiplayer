@@ -489,19 +489,13 @@ void ABaseCharacter::ApplyAimingVisuals()
         return;
 	}
 
-    if (!WeaponComp) {
-        UE_LOG(LogTemp, Warning, TEXT("WeaponComp is null in UpdateAimingState"));
-        return;
-	}
     if (bIsAiming)
     {
-        if (WeaponComp->IsScopeEquipped()) {
-            if (CameraComp) {
-                CameraComp->SetTargetFOV(20.f);
-            }
-            AimSensitivity = 0.2f;
-			OnAimingChanged.Broadcast(true);
+        if (CameraComp) {
+            CameraComp->SetTargetFOV(20.f);
         }
+        AimSensitivity = 0.2f;
+		OnAimingChanged.Broadcast(true);
     }
     else
     {
@@ -648,10 +642,12 @@ EWeaponSubTypes ABaseCharacter::GetWeaponSubType() const
 
 void ABaseCharacter::RequestStartAiming()
 {
-    if (!WeaponComp) {
+	UE_LOG(LogTemp, Warning, TEXT("RequestStartAiming called"));
+    if (!WeaponFireComp) {
         return;
 	}
-    if (!WeaponComp->CanWeaponAim()) {
+    if (!WeaponFireComp->CanWeaponAim()) {
+		UE_LOG(LogTemp, Warning, TEXT("Cannot aim with current weapon"));
         return;
     }
     if (bIsAiming) {
@@ -700,10 +696,10 @@ void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
         return;
     }
 
-    if (!WeaponComp) {
+    if (!WeaponFireComp) {
         return;
     }
-    if (bNewAiming && !WeaponComp->CanWeaponAim()) {
+    if (bNewAiming && !WeaponFireComp->CanWeaponAim()) {
         return;
 	}
 
@@ -712,9 +708,7 @@ void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
     }
 
     if (bIsAiming) {
-        if (WeaponComp->CanWeaponAim()) {
-			AimSensitivity = 0.2f;
-        }
+		AimSensitivity = 0.2f;
     }
     else {
         AimSensitivity = 1.0f;
@@ -1283,6 +1277,10 @@ bool ABaseCharacter::IsFpsViewMode() const {
         return CameraComp->IsFPS();
 	}
 	return false;
+}
+
+bool ABaseCharacter::IsAiming() const {
+    return bIsAiming;
 }
 
 UPickupComponent* ABaseCharacter::GetPickupComponent() const {

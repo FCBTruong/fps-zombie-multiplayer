@@ -136,13 +136,13 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     TObjectPtr<USceneComponent> FpsPivot;
 
-    UPROPERTY(VisibleAnywhere, Category = "Components")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     TObjectPtr<UCameraComponent> CameraFps;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<USkeletalMeshComponent> MeshFps;
 
-    UPROPERTY(VisibleAnywhere, Category = "Components")
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     TObjectPtr<USceneCaptureComponent2D> ViewmodelCap;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -304,6 +304,7 @@ public:
     float GetAimSensitivity() const;
     bool IsAlive() const;
     bool IsFpsViewMode() const;
+	bool IsAiming() const;
     FVector GetThrowableLocation() const;
     USceneCaptureComponent2D* GetViewmodelCapture() const;
     UBehaviorTree* GetBehaviorTree() const;
