@@ -13,7 +13,7 @@ class UGameManager;
 struct FPickupData;
 
 DECLARE_MULTICAST_DELEGATE(FOnInventoryChanged);
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAmmoChanged, int /*InClip*/, int /*Reserve*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnAmmoDataChanged, EItemId, int /*InClip*/, int /*Reserve*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnThrowablesChanged, const TArray<EItemId>&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnArmorChanged, int /*ArmorPoints*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSpikeChanged, bool /*bHasSpike*/);
@@ -42,10 +42,12 @@ public:
 
     FWeaponState* GetWeaponStateByItemId(EItemId ItemId);
     const FWeaponState* GetWeaponStateByItemId(EItemId ItemId) const;
+	bool AddItemFromShop(const FPickupData& PickupData); // add item from shop (server only)
+    bool AddItemFromPickup(const FPickupData& PickupData);
 
     // ===== Mutations (Authority only) =====
     // Add item to inventory from pickup data (server only)
-    bool AddItemFromPickup(const FPickupData& PickupData);
+    
 
 	void Test(); // remove later
 
@@ -76,7 +78,7 @@ public:
     FOnSlotWeaponChanged OnRifleChanged;
     FOnSlotWeaponChanged OnPistolChanged;
     FOnSlotWeaponChanged OnMeleeChanged;
-	FOnAmmoChanged OnAmmoChanged;
+    FOnAmmoDataChanged OnAmmoDataChanged;
 
 protected:
     virtual void BeginPlay() override;
@@ -110,6 +112,7 @@ private:
     // Helpers
     const UItemConfig* GetItemConfig(EItemId ItemId);
     void SortThrowables();
+    bool AddItemInternal(const FPickupData& PickupData);
 
     // OnRep
     UFUNCTION() void OnRep_RifleState();

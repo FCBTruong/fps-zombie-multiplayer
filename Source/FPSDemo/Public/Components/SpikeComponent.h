@@ -16,13 +16,21 @@ public:
 	// Sets default values for this component's properties
 	USpikeComponent();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+public:
+	void RequestPlantSpike();
+	void RequestStopPlantSpike();
 
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+private:
+	FTimerHandle PlantTimerHandle;
 
-		
+	UFUNCTION(Server, Reliable)
+	void ServerStartPlantSpike();
+
+	UFUNCTION(Server, Reliable)
+	void ServerStopPlantSpike();
+
+	void FinishPlantSpike();
+
+	bool CanPlantHere() const;
+	void StartPlant_Internal();
 };

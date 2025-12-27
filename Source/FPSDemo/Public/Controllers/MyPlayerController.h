@@ -147,4 +147,8 @@ public:
 	void SetPlayerSpectate();
 	void ShowScoreboard();
 	void HideScoreboard();
+
+private:
+	void HandleSpikeChanged(bool bHasSpike);
+    void NotifyItemPickedUp(EItemId ItemId);
 };

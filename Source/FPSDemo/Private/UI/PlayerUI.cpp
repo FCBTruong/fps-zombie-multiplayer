@@ -466,11 +466,11 @@ void UPlayerUI::ShowScoreboard(bool bShow) {
         }
     }
 }
-void UPlayerUI::UpdateArmor(int AmmorPoints) {
+void UPlayerUI::UpdateArmor(int ArmorPoints) {
     if (AmmorPointLb) {
-        AmmorPointLb->SetText(FText::AsNumber(AmmorPoints));
+        AmmorPointLb->SetText(FText::AsNumber(ArmorPoints));
     }
-    if (AmmorPoints <= 0) {
+    if (ArmorPoints <= 0) {
         ArmorPn->SetVisibility(ESlateVisibility::Hidden);
     }
     else {

@@ -3,6 +3,7 @@
 
 #include "UI/ShopSlotUI.h"
 #include "Controllers/MyPlayerController.h"
+#include "Items/ItemConfig.h"
 
 void UShopSlotUI::NativeConstruct()
 {
@@ -19,7 +20,7 @@ void UShopSlotUI::NativeConstruct()
 		}
 
 		if (IconImg) {
-			IconImg->SetBrushFromTexture(Data->Icon);
+			IconImg->SetBrushFromTexture(Data->ItemIcon.Get());
 		}
 
 		if (NameLb) {
@@ -36,6 +37,11 @@ void UShopSlotUI::NativeConstruct()
 
 void UShopSlotUI::OnClicked()
 {
+	if (!Data)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Clicked on shop slot %d with null Data"), SlotIndex);
+		return;
+	}
 	UE_LOG(LogTemp, Warning, TEXT("Clicked on shop slot %d"), SlotIndex);
 
 	if (!bCanBuy)

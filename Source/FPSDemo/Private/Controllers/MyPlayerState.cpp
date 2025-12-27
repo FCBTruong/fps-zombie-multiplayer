@@ -4,7 +4,10 @@
 #include "Controllers/MyPlayerState.h"
 #include "Characters/BaseCharacter.h"
 #include "Pickup/PickupData.h"
-#include "Components/WeaponComponent.h"
+#include "Components/InventoryComponent.h"
+#include "Items/ItemConfig.h"
+#include "Items/FirearmConfig.h"
+#include "Net/UnrealNetwork.h"
 
 
 AMyPlayerState::AMyPlayerState()
@@ -13,7 +16,7 @@ AMyPlayerState::AMyPlayerState()
 	SetMinNetUpdateFrequency(30.f);
 }
 
-void AMyPlayerState::ProcessBuy(const UWeaponData* Item)
+void AMyPlayerState::ProcessBuy(const UItemConfig* Item)
 {
 	if (!Item)
 	{
@@ -41,19 +44,17 @@ void AMyPlayerState::ProcessBuy(const UWeaponData* Item)
 		ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
 		if (MyChar)
 		{
-			UWeaponComponent* WepComp = MyChar->GetWeaponComponent();
-			if (!WepComp) {
-				UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem: WeaponComponent is null"));
-				return;
-			}
+			UInventoryComponent* InvComp = MyChar->GetInventoryComponent();
 			FPickupData PickupData;
 			PickupData.ItemId = Item->Id;
 
 			// for weapons, set initial ammo
-			
-			PickupData.AmmoInClip = Item->MaxAmmoInClip;
-			PickupData.AmmoReserve = Item->AmmoBonusShop;
-			WepComp->AddNewWeapon(PickupData);
+			if (Item->GetItemType() == EItemType::Firearm) {
+				const UFirearmConfig* FirearmItem = Cast<UFirearmConfig>(Item);
+				PickupData.AmmoInClip = FirearmItem->MaxAmmoInClip;
+				PickupData.AmmoReserve = FirearmItem->AmmoBonus;
+			}
+			InvComp->AddItemFromShop(PickupData);
 		}
 		double Time = FPlatformTime::Seconds();
 	}
@@ -92,7 +93,7 @@ void AMyPlayerState::OnRep_BoughtItems()
 	OnUpdateBoughtItems.Broadcast();
 }
 
-bool AMyPlayerState::CanBuyThisItem(const UItemData* Item) const
+bool AMyPlayerState::CanBuyThisItem(const UItemConfig* Item) const
 {
 	if (!Item)
 	{
@@ -102,6 +103,15 @@ bool AMyPlayerState::CanBuyThisItem(const UItemData* Item) const
 	if (BoughtItems.Contains(Item->Id))
 	{
 		return false;
+	}
+
+	if (Item->GetItemType() == EItemType::Firearm)
+	{
+		// Check if player already owns this weapon
+		if (OwnedWeapons.Contains(Item->Id))
+		{
+			return false;
+		}
 	}
 	return Money >= Item->Price;
 }
@@ -123,10 +133,10 @@ void AMyPlayerState::AutoBuy() {
 			*UEnum::GetValueAsString(Item));
 	}
 
-	TryBuySlot(EWeaponSubTypes::Rifle);
+	TryBuySlot();
 }
 
-void AMyPlayerState::TryBuySlot(EWeaponSubTypes Type)
+void AMyPlayerState::TryBuySlot()
 {
 	/*
 	// filter by type

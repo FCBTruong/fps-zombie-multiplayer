@@ -51,6 +51,7 @@
 #include "Components/WeaponFireComponent.h"
 #include "Components/WeaponMeleeComponent.h"
 #include "Components/ThrowableComponent.h"
+#include "Components/SpikeComponent.h"
 #include "Game/ItemsManager.h"
 #include "Asset/CharacterAsset.h"
 #include "Components/PostProcessComponent.h"
@@ -82,9 +83,6 @@ ABaseCharacter::ABaseCharacter()
     ThrowSpline = CreateDefaultSubobject<USplineComponent>(TEXT("SplineThrow"));
     ThrowSpline->SetupAttachment(RootComponent);
 
-	ThrowableLocation = CreateDefaultSubobject<USceneComponent>(TEXT("ThrowableLocation"));
-	ThrowableLocation->SetupAttachment(RootComponent);
-
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter constructor called"));
 
     StimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSource"));
@@ -102,6 +100,7 @@ ABaseCharacter::ABaseCharacter()
 	WeaponFireComp = CreateDefaultSubobject<UWeaponFireComponent>(TEXT("WeaponFireComponent"));
 	WeaponMeleeComp = CreateDefaultSubobject<UWeaponMeleeComponent>(TEXT("WeaponMeleeComponent"));
 	ThrowableComp = CreateDefaultSubobject<UThrowableComponent>(TEXT("ThrowableComponent"));
+	SpikeComp = CreateDefaultSubobject<USpikeComponent>(TEXT("SpikeComponent"));
 
     CameraComp->Initialize(
         CameraFps,
@@ -1362,4 +1361,8 @@ EEquippedAnimState ABaseCharacter::GetEquippedAnimState() const
 
 UThrowableComponent* ABaseCharacter::GetThrowableComponent() const {
     return ThrowableComp.Get();
+}
+
+USpikeComponent* ABaseCharacter::GetSpikeComponent() const {
+    return SpikeComp.Get();
 }

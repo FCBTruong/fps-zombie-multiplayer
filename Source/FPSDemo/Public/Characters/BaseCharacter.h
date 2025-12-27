@@ -16,6 +16,7 @@ class UInteractComponent;
 class UWeaponComponent;
 class UHealthComponent;
 class UCameraComponent;
+class USpikeComponent;
 class UEquipComponent;
 class USpringArmComponent;
 class USceneCaptureComponent2D;
@@ -119,6 +120,9 @@ protected:
     TObjectPtr<UEquipComponent> EquipComp;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<USpikeComponent> SpikeComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<UItemVisualComponent> ItemVisualComp;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -196,9 +200,6 @@ protected:
 
     UPROPERTY()
     TWeakObjectPtr<UWeaponData> LastDamageCauser;
-
-    UPROPERTY(VisibleAnywhere, Category = "Components")
-    TObjectPtr<USceneComponent> ThrowableLocation;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<USplineComponent> ThrowSpline;
@@ -310,6 +311,7 @@ public:
 	UWeaponFireComponent* GetWeaponFireComponent() const;
 	UWeaponMeleeComponent* GetWeaponMeleeComponent() const;
 	UThrowableComponent* GetThrowableComponent() const; 
+	USpikeComponent* GetSpikeComponent() const;
 	UActionStateComponent* GetActionStateComponent() const;
 	UCharAudioComponent* GetAudioComponent() const;
 

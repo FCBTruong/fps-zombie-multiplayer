@@ -21,7 +21,10 @@
 #include "Components/WeaponMeleeComponent.h"
 #include "Components/ThrowableComponent.h"
 #include "Components/InventoryComponent.h"
+#include "Components/PickupComponent.h"
 #include "Game/GlobalDataAsset.h"
+#include "Game/ItemsManager.h"
+#include "Components/SpikeComponent.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -117,13 +120,18 @@ void AMyPlayerController::BindingUI()
         }
         if (auto* EC = Char->GetEquipComponent())
         {
+            EC->OnAmmoChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
             EC->OnActiveItemChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateCurrentWeapon);
 		}
         if (auto* IC = Char->GetInventoryComponent())
         {
+            IC->OnSpikeChanged.AddUObject(
+                this, &AMyPlayerController::HandleSpikeChanged);
             IC->OnThrowablesChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
 			PlayerUI->UpdateGrenades(IC->GetThrowables());
-            IC->OnAmmoChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
+        }
+        if (auto* PC = Char->GetPickupComponent()) {
+			PC->OnNewItemPickup.AddUObject(this, &AMyPlayerController::NotifyItemPickedUp);
         }
       
         if (auto* WC = Char->GetWeaponComponent())
@@ -314,11 +322,7 @@ void AMyPlayerController::SetupInputComponent()
 
 void AMyPlayerController::ServerBuyItem_Implementation(const EItemId Itemid)
 {
-    /*if (!GMR) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called but GMR is null"));
-        return;
-	}
-	const UWeaponData* Item = GMR->GetWeaponDataById(Itemid);
+	const UItemConfig* Item = UItemsManager::Get(GetWorld())->GetItemById(Itemid);
     if (!Item) {
         UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called with null Item"));
         return;
@@ -336,7 +340,7 @@ void AMyPlayerController::ServerBuyItem_Implementation(const EItemId Itemid)
 		return;
 	}
 
-    PS->ProcessBuy(Item);*/
+    PS->ProcessBuy(Item);
 }
 
 void AMyPlayerController::OnRep_PlayerState()
@@ -429,20 +433,31 @@ void AMyPlayerController::OnLeftClickStart()
         if (UEquipComponent* EC = MyChar->GetEquipComponent())
         {
             const UItemConfig* ActiveItemConfig = EC->GetActiveItemConfig();
-            if (ActiveItemConfig && ActiveItemConfig->GetItemType() == EItemType::Firearm) {
+			if (!ActiveItemConfig) {
+				UE_LOG(LogTemp, Warning, TEXT("OnLeftClickStart: No active item equipped"));
+				return;
+			}
+            if (ActiveItemConfig->GetItemType() == EItemType::Firearm) {
                 if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
 					WFC->RequestStartFire();
                 }
             }
-            else if (ActiveItemConfig && ActiveItemConfig->GetItemType() == EItemType::Melee) {
+            else if (ActiveItemConfig->GetItemType() == EItemType::Melee) {
                 if (UWeaponMeleeComponent* WMC = MyChar->GetWeaponMeleeComponent()) {
 					WMC->RequestMeleeAttack();
                 }
 			}
-            else if (ActiveItemConfig && ActiveItemConfig->GetItemType() == EItemType::Throwable) {
+            else if (ActiveItemConfig->GetItemType() == EItemType::Throwable) {
                 if (UThrowableComponent* ThrowableComp = MyChar->GetThrowableComponent()) {
                     ThrowableComp->RequestStartThrow();
                 }
+            }
+            else {
+                if (ActiveItemConfig->Id == EItemId::SPIKE) {
+                    if (USpikeComponent* SC = MyChar->GetSpikeComponent()) {
+                        SC->RequestPlantSpike();
+                    }
+				}
             }
         }
     }
@@ -458,9 +473,19 @@ void AMyPlayerController::OnLeftClickRelease()
         if (UEquipComponent* EC = MyChar->GetEquipComponent())
         {
             const UItemConfig* ActiveItemConfig = EC->GetActiveItemConfig();
-            if (ActiveItemConfig && ActiveItemConfig->GetItemType() == EItemType::Firearm) {
+            if (!ActiveItemConfig) {
+                return;
+			}
+            if (ActiveItemConfig->GetItemType() == EItemType::Firearm) {
                 if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
                     WFC->RequestStopFire();
+                }
+            }
+            else {
+                if (ActiveItemConfig->Id == EItemId::SPIKE) {
+                    if (USpikeComponent* SC = MyChar->GetSpikeComponent()) {
+                        SC->RequestStopPlantSpike();
+                    }
                 }
             }
         }
@@ -844,3 +869,23 @@ void AMyPlayerController::HandleAimingChanged(bool bIsAiming)
     }
 }
 
+void AMyPlayerController::HandleSpikeChanged(bool bHasSpike)
+{
+    if (bHasSpike && PlayerUI)
+    {
+        PlayerUI->ShowNotiToast(
+            FText::FromString(TEXT("You picked up Photon")));
+    }
+}
+
+void AMyPlayerController::NotifyItemPickedUp(EItemId ItemId)
+{
+    if (PlayerUI)
+    {
+        const UItemConfig* Item = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
+        if (Item)
+        {
+            PlayerUI->ShowNotiToast(Item->DisplayName);
+        }
+	}
+}

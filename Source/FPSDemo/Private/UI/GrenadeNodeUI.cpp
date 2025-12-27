@@ -22,7 +22,7 @@ void UGrenadeNodeUI::UpdateIcon(EItemId ItemId)
 		const UItemConfig* ItemConf = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
 		if (ItemConf)
 		{
-			if (!ItemConf->ItemIcon.IsValid())
+			if (!ItemConf->ItemIcon)
 			{
 				return;
 			}

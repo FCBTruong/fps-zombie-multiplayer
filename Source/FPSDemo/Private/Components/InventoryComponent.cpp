@@ -100,7 +100,7 @@ bool UInventoryComponent::CanDrop(EItemId ItemId)
     return Data ? Data->bIsDroppable : false;
 }
 
-bool UInventoryComponent::AddItemFromPickup(const FPickupData& PickupData)
+bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
 {
     if (!GetOwner() || !GetOwner()->HasAuthority())
         return false;
@@ -150,11 +150,6 @@ bool UInventoryComponent::AddItemFromPickup(const FPickupData& PickupData)
             OnRep_Throwables();
             return true;
         }
-        case EItemType::Spike:
-        {
-            SetHasSpike(true);
-            return true;
-        }
         case EItemType::Armor:
         {
             ApplyArmorItem(ItemId);
@@ -162,6 +157,10 @@ bool UInventoryComponent::AddItemFromPickup(const FPickupData& PickupData)
         }
 
         default:
+            if (ItemId == EItemId::SPIKE) {
+                SetHasSpike(true);
+                return true;
+			}
             return false;
     }
 }
@@ -252,12 +251,14 @@ void UInventoryComponent::OnRep_RifleState()
 {
     OnRifleChanged.Broadcast(RifleState.ItemId);
     OnInventoryChanged.Broadcast();
+	OnAmmoDataChanged.Broadcast(RifleState.ItemId, RifleState.AmmoInClip, RifleState.AmmoReserve);
 }
 
 void UInventoryComponent::OnRep_PistolState()
 {
     OnPistolChanged.Broadcast(PistolState.ItemId);
     OnInventoryChanged.Broadcast();
+	OnAmmoDataChanged.Broadcast(PistolState.ItemId, PistolState.AmmoInClip, PistolState.AmmoReserve);
 }
 
 void UInventoryComponent::OnRep_MeleeState()
@@ -340,4 +341,14 @@ void UInventoryComponent::RemoveItem(EItemId ItemId) {
         OnRep_ArmorState();
         return;
     }
+}
+
+bool UInventoryComponent::AddItemFromPickup(const FPickupData& PickupData)
+{
+    return AddItemInternal(PickupData);
+}
+
+bool UInventoryComponent::AddItemFromShop(const FPickupData& PickupData)
+{
+    return AddItemInternal(PickupData);
 }

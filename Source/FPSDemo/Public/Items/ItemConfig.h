@@ -14,8 +14,7 @@ enum class EItemType : uint8
 	Firearm,
 	Melee,
 	Throwable,
-	Armor,
-	Spike
+	Armor
 };
 
 /**
@@ -34,7 +33,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
 	FText ItemDescription;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
-	TSoftObjectPtr<UTexture2D> ItemIcon;
+	TObjectPtr<UTexture2D> ItemIcon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	USkeletalMesh* Mesh;
@@ -61,6 +60,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
 	float Weight = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
+	int Price = 0;
 
 	virtual EItemType GetItemType() const { return EItemType::None; }
 };

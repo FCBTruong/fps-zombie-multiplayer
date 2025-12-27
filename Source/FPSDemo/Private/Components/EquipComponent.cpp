@@ -29,6 +29,8 @@ void UEquipComponent::BeginPlay()
 	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::BeginPlay called"));
 
     CachedGM = UGameManager::Get(GetWorld());
+    InventoryComp->OnAmmoDataChanged.AddUObject(
+        this, &UEquipComponent::HandleAmmoDataChanged);
 }
 
 void UEquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -41,7 +43,7 @@ void UEquipComponent::OnRep_ActiveItemId()
 {
     RefreshCachedState();
 	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::OnRep_ActiveItemId: New ActiveItemId = %d"), static_cast<int32>(ActiveItemId));
-    OnActiveItemChanged.Broadcast(ActiveItemId);
+    BroadcastActiveItemAndAmmo();
 }
 
 bool UEquipComponent::CanSelectNow() const
@@ -89,7 +91,7 @@ void UEquipComponent::Select_Internal(EItemId ItemId)
     ActiveItemId = ItemId;
 
     // Server doesn't receive OnRep
-    OnActiveItemChanged.Broadcast(ActiveItemId);
+    BroadcastActiveItemAndAmmo();
 }
 
 void UEquipComponent::RequestSelectActiveItem(EItemId ItemId)
@@ -334,5 +336,54 @@ void UEquipComponent::RefreshOverlapPickupActors() {
                 PickupComp->PickupItem(Item);
             }
         }
+    }
+}
+
+void UEquipComponent::HandleAmmoDataChanged(
+    EItemId ItemId, int32 Clip, int32 Reserve)
+{
+    if (ItemId != ActiveItemId)
+        return;
+
+    OnAmmoChanged.Broadcast(Clip, Reserve);
+}
+
+bool UEquipComponent::GetCurrentAmmo(int32& OutClip, int32& OutReserve) const
+{
+    OutClip = 0;
+    OutReserve = 0;
+
+    if (!InventoryComp)
+    {
+        return false;
+    }
+
+    if (ActiveItemId == EItemId::NONE)
+    {
+        return false;
+    }
+
+    const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(ActiveItemId);
+    if (!State)
+    {
+        return false;
+    }
+
+    OutClip = State->AmmoInClip;
+    OutReserve = State->AmmoReserve;
+    return true;
+}
+
+
+void UEquipComponent::BroadcastActiveItemAndAmmo()
+{
+    RefreshCachedState();
+    OnActiveItemChanged.Broadcast(ActiveItemId);
+
+    int32 Clip = 0;
+    int32 Reserve = 0;
+    if (GetCurrentAmmo(Clip, Reserve))
+    {
+        OnAmmoChanged.Broadcast(Clip, Reserve);
     }
 }

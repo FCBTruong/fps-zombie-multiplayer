@@ -42,6 +42,9 @@ public:
 	int32 MaxAmmoInClip = 30;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	int32 AmmoBonus = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	float ReloadTime = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")

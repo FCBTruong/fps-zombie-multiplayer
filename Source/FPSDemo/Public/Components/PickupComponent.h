@@ -8,7 +8,7 @@
 #include "Game/GameManager.h"
 #include "PickupComponent.generated.h"
 
-
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewItemPickup, EItemId /*ItemId*/);
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UPickupComponent : public UActorComponent
 {
@@ -23,9 +23,13 @@ protected:
 	virtual void BeginPlay() override;
 	UGameManager* GMR;
 
+	UFUNCTION(Client, Unreliable)
+	void ClientNotifyItemPickup(EItemId ItemId);
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void PickupItem(class APickupItem* Item);
+
+	FOnNewItemPickup OnNewItemPickup;
 };

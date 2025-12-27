@@ -71,5 +71,24 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem)
 	UE_LOG(LogTemp, Warning, TEXT("PickupItem: Added = %s"), Added ? TEXT("true") : TEXT("false"));
 	if (Added) {
 		GMR->FindAndDestroyItemNode(PickupItem->GetPickupData().Id);
+
+		// notify client
+		ClientNotifyItemPickup(PickupItem->GetPickupData().ItemId);
 	}
+}
+
+void UPickupComponent::ClientNotifyItemPickup_Implementation(
+	EItemId ItemId)
+{
+	ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
+	if (!OwnerCharacter)
+	{
+		return;
+	}
+	if (!OwnerCharacter->IsLocallyControlled())
+	{
+		return;
+	}
+	// broadcast to UI
+	OnNewItemPickup.Broadcast(ItemId);
 }

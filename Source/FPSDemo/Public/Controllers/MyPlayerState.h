@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
-#include "Weapons/WeaponData.h"
+#include "Items/ItemIds.h"
 #include "MyPlayerState.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnUpdateMoney)
-DECLARE_MULTICAST_DELEGATE(FOnUpdateBoughtItems)
+class UItemConfig;
+
+DECLARE_MULTICAST_DELEGATE(FOnUpdateMoney);
+DECLARE_MULTICAST_DELEGATE(FOnUpdateBoughtItems);
 /**
  * 
  */
@@ -58,7 +60,7 @@ public:
 	bool IsAlive() const { return bIsAlive; }
 	void SetTeamID(FName NewTeamID) { TeamID = NewTeamID; }
 	void SetIsAlive(bool bNewIsAlive) { bIsAlive = bNewIsAlive; }
-	void ProcessBuy(const UWeaponData* Item);
+	void ProcessBuy(const UItemConfig* Item);
 	int GetMoney() const { return Money; }
 	void ResetBoughtItems() { BoughtItems.Empty(); }
 	bool IsDead() const { return !bIsAlive; }
@@ -66,9 +68,9 @@ public:
 	FOnUpdateMoney OnUpdateMoney;
 	FOnUpdateBoughtItems OnUpdateBoughtItems;
 
-	bool CanBuyThisItem(const UItemData* Item) const;
+	bool CanBuyThisItem(const UItemConfig* Item) const;
 	void AutoBuy();
-	void TryBuySlot(EWeaponSubTypes Type);
+	void TryBuySlot();
 	void AddOwnedWeapon(EItemId Id) {
 		OwnedWeapons.Add(Id);
 	}

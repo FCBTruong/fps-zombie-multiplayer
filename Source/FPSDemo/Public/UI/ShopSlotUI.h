@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Weapons/WeaponData.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "ShopSlotUI.generated.h"
 
+class UItemConfig;
 /**
  * 
  */
@@ -24,7 +24,7 @@ public:
 	void NativeConstruct() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Shop")
-	UWeaponData* Data;
+	UItemConfig* Data;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* PriceLb;

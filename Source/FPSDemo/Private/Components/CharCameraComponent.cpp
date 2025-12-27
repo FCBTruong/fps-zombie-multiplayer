@@ -43,7 +43,7 @@ void UCharCameraComponent::Initialize(
     if (CameraFps) {
 		CameraFps->bEnableFirstPersonFieldOfView = true;
 		CameraFps->bEnableFirstPersonScale = true;
-        CameraFps->SetFirstPersonScale(0.5f);
+        CameraFps->SetFirstPersonScale(0.2f);
 		CameraFps->SetFirstPersonFieldOfView(DefaultFpsFov);
     }
 }

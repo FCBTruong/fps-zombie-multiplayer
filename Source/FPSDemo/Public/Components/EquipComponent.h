@@ -16,6 +16,12 @@ class UItemConfig;
 class UGameManager;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnActiveItemChanged, EItemId);
+DECLARE_MULTICAST_DELEGATE_TwoParams(
+    FOnAmmoChanged,
+    int32 /* AmmoInClip */,
+    int32 /* AmmoInReserve */
+);
+
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UEquipComponent : public UActorComponent
@@ -29,6 +35,7 @@ public:
     void RequestSelectActiveItem(EItemId ItemId);
     void SelectSlot(int32 SlotIndex);
     void AutoSelectBestWeapon();
+    bool GetCurrentAmmo(int32& OutClip, int32& OutReserve) const;
     const UItemConfig* GetActiveItemConfig() const;
     EEquippedAnimState GetEquippedAnimState() const { return CachedAnimState; }
 
@@ -36,6 +43,7 @@ public:
 
     // Fired on server and clients when ActiveItemId changes
     FOnActiveItemChanged OnActiveItemChanged;
+	FOnAmmoChanged OnAmmoChanged;
     void RequestDropItem();
 protected:
     virtual void BeginPlay() override;
@@ -82,4 +90,7 @@ private:
     void ServerDropItem();
 	void HandleDropItem();
     void RefreshOverlapPickupActors();
+    void HandleAmmoDataChanged(
+        EItemId ItemId, int32 Clip, int32 Reserve);
+    void BroadcastActiveItemAndAmmo();
 };
