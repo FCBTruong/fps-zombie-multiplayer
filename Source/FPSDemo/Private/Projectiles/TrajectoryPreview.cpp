@@ -24,33 +24,7 @@ void ATrajectoryPreview::Tick(float DeltaTime)
 
 USplineMeshComponent* ATrajectoryPreview::GetAMesh()
 {
-	for (USplineMeshComponent* Mesh : MeshPool)
-	{
-		if (Mesh && !Mesh->IsVisible())
-		{
-			Mesh->SetVisibility(true);
-			return Mesh;
-		}
-	}
-
-	USplineMeshComponent* NewMesh = NewObject<USplineMeshComponent>(this);
-	if (NewMesh)
-	{
-		NewMesh->SetMobility(EComponentMobility::Movable);
-		
-
-		UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-		NewMesh->SetupAttachment(SplineRef);
-		NewMesh->SetStartScale(FVector2D(MeshScale));
-		NewMesh->SetEndScale(FVector2D(MeshScale));
-		NewMesh->SetStaticMesh(GMR->GlobalData->TrajectoryMesh);
-		NewMesh->SetMaterial(0, GMR->GlobalData->TrajectoryMaterial);
-		NewMesh->SetCastShadow(false);
-
-		NewMesh->RegisterComponent();
-		MeshPool.Add(NewMesh);
-	}
-	return NewMesh;
+	return nullptr;
 }
 
 

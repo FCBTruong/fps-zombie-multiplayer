@@ -128,11 +128,7 @@ void AMyPlayerState::AutoBuy() {
 
 void AMyPlayerState::TryBuySlot(EWeaponSubTypes Type)
 {
-	TArray<UWeaponData*> AllWeapons =
-		UGameManager::Get(GetWorld())
-		->GetWeaponDataManager()
-		->GetAllWeapons();
-
+	/*
 	// filter by type
 	TArray<UWeaponData*> FilteredWeapons;
 	for (UWeaponData* Wep : AllWeapons)
@@ -143,10 +139,7 @@ void AMyPlayerState::TryBuySlot(EWeaponSubTypes Type)
 		}
 	}
 
-	// sort by price ascending
-	/*FilteredWeapons.Sort([](const UWeaponData& A, const UWeaponData& B) {
-		return A.Price > B.Price;
-		});*/
+	
 
 	if (FilteredWeapons.Num() == 0)
 	{
@@ -159,5 +152,5 @@ void AMyPlayerState::TryBuySlot(EWeaponSubTypes Type)
 	if (CanBuyThisItem(RandomWeapon))
 	{
 		ProcessBuy(RandomWeapon);
-	}
+	} */
 }

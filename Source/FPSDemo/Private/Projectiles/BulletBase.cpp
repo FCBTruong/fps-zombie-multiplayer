@@ -5,6 +5,7 @@
 #include "Characters/BaseCharacter.h"
 #include "NiagaraComponent.h"
 #include "Game/GameManager.h"
+#include "Game/GlobalDataAsset.h"
 
 // Sets default values
 ABulletBase::ABulletBase()
@@ -136,7 +137,7 @@ void ABulletBase::FireTowards(const FVector& Target)
 	SetActorRelativeRotation(Dir.Rotation());
     ProjectileMovement->SetVelocityInLocalSpace(FVector::ForwardVector * ProjectileMovement->InitialSpeed);
     ProjectileMovement->Activate(true);
-    UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+	UGameManager* GMR = UGameManager::Get(GetWorld());  
     UNiagaraSystem* BulletTrailNS = GMR->GlobalData->BulletTrailNS;
     if (BulletTrailNS)
     {

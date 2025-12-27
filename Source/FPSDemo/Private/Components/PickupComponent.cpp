@@ -24,8 +24,8 @@ UPickupComponent::UPickupComponent()
 void UPickupComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+	UE_LOG(LogTemp, Warning, TEXT("PickupComponent::BeginPlay called"));
+	GMR = UGameManager::Get(GetWorld());
 }
 
 

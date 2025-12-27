@@ -3,50 +3,49 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Subsystems/GameInstanceSubsystem.h"
+#include "Engine/GameInstance.h"
 #include "Pickup/PickupData.h"
-#include "Items/ItemData.h"
-#include "Game/GlobalDataAsset.h"
-#include "Weapons/WeaponDataManager.h"
-#include "Pickup/PickupItem.h"
-#include "Asset/CharacterAsset.h"
 #include "GameManager.generated.h"
+
+class UGlobalDataAsset;
+class APickupItem;
+class UCharacterAsset;
+class ABaseCharacter;
 
 /**
  * 
  */
 UCLASS()
-class FPSDEMO_API UGameManager : public UGameInstanceSubsystem
+class FPSDEMO_API UGameManager : public UGameInstance
 {
 	GENERATED_BODY()
 
 private:
-	UWeaponDataManager* WeaponDataManager;
 	TMap<int32, APickupItem*> PickupItemsOnMap;
 	TArray<ABaseCharacter*> RegisteredPlayers; // for clients access
+
+protected:
+	virtual void Init() override;
 public:
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UGlobalDataAsset> GlobalData = nullptr;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UCharacterAsset> CharacterAsset = nullptr;
+
 	FPickupData GetDataPickupItem(int32 ItemOnMapId);
 	void FindAndDestroyItemNode(int32 ItemOnMapId);
-	UItemData* GetItemDataById(EItemId ItemId);
 	int32 GetNextItemOnMapId();
-	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-	UWeaponDataManager* GetWeaponDataManager();
-
-	UGlobalDataAsset* GlobalData;
-	UWeaponData* GetWeaponDataById(EItemId ItemId);
 	APickupItem* CreatePickupActor(FPickupData Data);
 	void CleanPickupItemsOnMap();
 	APickupItem* GetPickupNode(int PickupId);
-
-	static int CurrentPickupId;
 	APickupItem* GetPickupSpike();
-	static UGameManager* Get(UObject* WorldContextObject);
 	void RegisterPlayer(ABaseCharacter* Pawn);
 	void UnregisterPlayer(ABaseCharacter* Pawn);
 	TArray<ABaseCharacter*> GetRegisteredPlayers() const { return RegisteredPlayers; }
 	void ClearRegisteredPlayers() { RegisteredPlayers.Empty(); }
 	TWeakObjectPtr<APickupItem> PickupSpike;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Global")
-	TSoftObjectPtr<UCharacterAsset> CharacterAsset;
+	int CurrentPickupId;
+	static UGameManager* Get(UObject* WorldContextObject);
 };

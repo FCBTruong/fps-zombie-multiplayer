@@ -17,7 +17,9 @@ class FPSDEMO_API UItemsManager : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 private:
+	UPROPERTY()
 	TArray<UItemConfig*> ItemList;
+	UPROPERTY()
 	TMap<EItemId, UItemConfig*> ItemConfigMap;
 public:
 	UItemConfig* GetItemById(EItemId Id) const;

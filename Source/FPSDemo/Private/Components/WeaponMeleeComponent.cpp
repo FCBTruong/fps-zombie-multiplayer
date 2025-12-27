@@ -28,6 +28,7 @@ void UWeaponMeleeComponent::Initialize(
 void UWeaponMeleeComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Log, TEXT("UWeaponMeleeComponent::BeginPlay called"));
 	Character = Cast<ABaseCharacter>(GetOwner());
 }
 

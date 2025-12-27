@@ -9,6 +9,8 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Characters/BaseCharacter.h"
 #include "Bot/BotRole.h"
+#include "Engine/TriggerBox.h"
+#include "Engine/TargetPoint.h"
 
 void ASpikeMode::StartPlay()
 {

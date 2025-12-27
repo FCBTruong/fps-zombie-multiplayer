@@ -22,6 +22,7 @@ UThrowableComponent::UThrowableComponent()
 void UThrowableComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Log, TEXT("UThrowableComponent::BeginPlay called"));
 	CharacterOwner = Cast<ABaseCharacter>(GetOwner());
 	if (CharacterOwner)
 	{

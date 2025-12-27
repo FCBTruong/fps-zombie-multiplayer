@@ -11,6 +11,7 @@
 #include "Game/SpikeMode.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/PickupComponent.h"
+#include "Pickup/PickupItem.h"
 
 UEquipComponent::UEquipComponent()
 {
@@ -25,6 +26,7 @@ void UEquipComponent::Initialize(UInventoryComponent* InInventoryComp, UActionSt
 void UEquipComponent::BeginPlay()
 {
     Super::BeginPlay();
+	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::BeginPlay called"));
 
     CachedGM = UGameManager::Get(GetWorld());
 }

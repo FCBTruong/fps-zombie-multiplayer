@@ -19,6 +19,7 @@ void USpikeComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UE_LOG(LogTemp, Log, TEXT("USpikeComponent::BeginPlay called"));
 	// ...
 	
 }

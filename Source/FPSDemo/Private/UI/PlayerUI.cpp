@@ -260,12 +260,12 @@ void UPlayerUI::UpdatePistol(const EItemId& ItemId) {
         Pistol->SetVisibility(ESlateVisibility::Collapsed);
     } else {
         Pistol->SetVisibility(ESlateVisibility::Visible);
-        UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-        UWeaponData* WeaponConf = GMR->GetWeaponDataById(ItemId);
+        
+		UItemConfig* WeaponConf = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
         if (WeaponConf == nullptr) {
             return;
         }
-        PistolIcon->SetBrushFromTexture(WeaponConf->Icon);
+        PistolIcon->SetBrushFromTexture(WeaponConf->ItemIcon.Get());
     }
 }
 
@@ -275,12 +275,12 @@ void UPlayerUI::UpdateRifle(const EItemId& ItemId) {
     }
     else {
         Rifle->SetVisibility(ESlateVisibility::Visible);
-        UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-        UWeaponData* WeaponConf = GMR->GetWeaponDataById(ItemId);
+        
+        UItemConfig* WeaponConf = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
         if (WeaponConf == nullptr) {
             return;
         }
-        RifleIcon->SetBrushFromTexture(WeaponConf->Icon);
+        RifleIcon->SetBrushFromTexture(WeaponConf->ItemIcon.Get());
     }
 }
 

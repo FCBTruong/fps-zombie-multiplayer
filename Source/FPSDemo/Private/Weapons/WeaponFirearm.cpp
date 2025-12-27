@@ -12,6 +12,7 @@
 #include "NiagaraComponent.h"
 #include "Items/ItemConfig.h"
 #include "Items/FirearmConfig.h"
+#include "Game/GlobalDataAsset.h"
 
 AWeaponFirearm::AWeaponFirearm()
 {
@@ -50,7 +51,7 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 			PSC->SetWorldScale3D(FVector(0.15f));
 
 			if (bIsFpsView) {
-				// TODO later
+				PSC->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 			}
 		}
 		else {
@@ -82,7 +83,7 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 	Bullet->InitFromData(FC->BulletData, TargetPoint);
 
 	if (bIsFpsView) {
-		UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+		UGameManager* GMR = UGameManager::Get(GetWorld());
 		if (!GMR || !GMR->GlobalData || !GMR->GlobalData->BulletTrailNS) return;
 
 		UNiagaraComponent* Trail =
@@ -145,7 +146,7 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 			);
 		
 		if (bIsFpsView) {
-			
+			MuzzleFlash->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Spawned Niagara Muzzle Flash"));

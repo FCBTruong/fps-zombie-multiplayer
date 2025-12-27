@@ -12,12 +12,17 @@
 #include "Projectiles/TrajectoryPreview.h"
 #include "Weapons/WeaponState.h"
 #include "Weapons/WeaponActionState.h"
+#include "Pickup/PickupData.h"
+#include "Weapons/WeaponTypes.h"
 #include "WeaponComponent.generated.h"
 
 class ABaseCharacter;
 class AWeaponBase;
 class ATrajectoryPreview;
 class UWeaponData;
+class APickupItem;
+
+class UWeaponDataManager;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateAmmoState, int, int);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGrenades, const TArray<EItemId>&);

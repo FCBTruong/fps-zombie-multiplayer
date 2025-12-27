@@ -20,12 +20,6 @@ void AShooterGameMode::StartPlay()
     UWeaponDataManager* WeaponDataMgr = GetGameInstance()->GetSubsystem<UWeaponDataManager>();
     if (!WeaponDataMgr || WeaponDataMgr->GetAllWeapons().Num() == 0)
         return;
-
-    UGameManager* GMR = GetGameInstance()->GetSubsystem<UGameManager>();
-    if (!GMR)
-    {
-        return;
-    }
 }
 
 void AShooterGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)

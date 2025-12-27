@@ -65,6 +65,7 @@ void UCharCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 void UCharCameraComponent::BeginPlay()
 {
     Super::BeginPlay();
+	UE_LOG(LogTemp, Warning, TEXT("UCharCameraComponent::BeginPlay called"));
   
 	CameraBoom->bInheritYaw = false;
 }

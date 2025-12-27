@@ -5,6 +5,7 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Game/GameManager.h"
+#include "Game/GlobalDataAsset.h"
 
 void UZoomableButton::SynchronizeProperties()
 {
@@ -22,7 +23,7 @@ void UZoomableButton::SynchronizeProperties()
 void UZoomableButton::HandlePressed()
 {
     // play sound
-    UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+	UGameManager* GMR = UGameManager::Get(GetWorld());
     if (GMR && GMR->GlobalData && GMR->GlobalData->TouchSound)
     {
         UGameplayStatics::PlaySound2D(this, GMR->GlobalData->TouchSound);

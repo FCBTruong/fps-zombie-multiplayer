@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include <Engine/TriggerBox.h>
-#include <Engine/TargetPoint.h>
 #include "ActorManager.generated.h"
+
+class ATriggerBox;
+class ATargetPoint;
+class APlayerStart;
 
 UCLASS()
 class FPSDEMO_API AActorManager : public AActor
@@ -65,6 +67,7 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "Setup")
 	AActor* MainPlane;
+
 	static AActorManager* Get(UObject* WorldContextObject);
 	FVector GetRandomHoldLocationNearBombSite(FName BombSiteName) const;
 	FVector GetRandomScoutLocation() const;

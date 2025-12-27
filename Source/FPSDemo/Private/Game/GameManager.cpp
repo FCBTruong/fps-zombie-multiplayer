@@ -6,29 +6,16 @@
 #include "Game/ShooterGameState.h"
 #include "Weapons/WeaponDataManager.h"
 #include "Characters/BaseCharacter.h"
+#include "Pickup/PickupItem.h"
+#include "Asset/CharacterAsset.h"
+#include "Game/GlobalDataAsset.h"
+#include "Characters/BaseCharacter.h"
 
-int32 UGameManager::CurrentPickupId = 1000;
-
-void UGameManager::Initialize(FSubsystemCollectionBase& Collection)
+void UGameManager::Init()
 {
-    Super::Initialize(Collection);
+	Super::Init();
+	CurrentPickupId = 1000;
     UE_LOG(LogTemp, Warning, TEXT("ObjectAAA address = %p"), this);
-
-    GlobalData = TSoftObjectPtr<UGlobalDataAsset>(
-        FSoftObjectPath(TEXT("/Game/Main/Data/GlobalData.GlobalData"))
-    ).LoadSynchronous();
-
-	WeaponDataManager = GetWeaponDataManager();
-
-    CharacterAsset = TSoftObjectPtr<UCharacterAsset>(
-        FSoftObjectPath(TEXT("/Game/Main/CharacterAsset.CharacterAsset"))
-    ).LoadSynchronous();
-    
-
-    if (!CharacterAsset.IsValid())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("CharacterAsset is not valid!"));
-    }
 }
 
 
@@ -47,40 +34,6 @@ void UGameManager::FindAndDestroyItemNode(int32 ItemOnMapId) {
         }
         PickupItemsOnMap.Remove(ItemOnMapId);
 	}
-}
-
-UItemData * UGameManager::GetItemDataById(EItemId ItemId) {
-	UWeaponDataManager* WeaponDataMgr = GetWeaponDataManager();
-	if (!WeaponDataMgr) {
-		UE_LOG(LogTemp, Warning, TEXT("GetItemDataById: WeaponData Manager is null"));
-		return nullptr;
-	}
-    return WeaponDataMgr->GetWeaponById(ItemId);
-}
-
-UWeaponData* UGameManager::GetWeaponDataById(EItemId ItemId) {
-    UWeaponDataManager* WeaponDataMgr = GetWeaponDataManager();
-    if (!WeaponDataMgr) {
-        UE_LOG(LogTemp, Warning, TEXT("GetWeaponDataById: WeaponData Manager is null"));
-        return nullptr;
-    }
-    return WeaponDataMgr->GetWeaponById(ItemId);
-}
-
-UWeaponDataManager* UGameManager::GetWeaponDataManager() {
-    if (WeaponDataManager) {
-        return WeaponDataManager;
-	}
-    UWorld* World = GetWorld();
-    if (!World) {
-        return nullptr;
-    }
-    UGameInstance* GI = World->GetGameInstance();
-    if (!GI) {
-        return nullptr;
-    }
-    WeaponDataManager = GI->GetSubsystem<UWeaponDataManager>();
-    return WeaponDataManager;
 }
 
 int32 UGameManager::GetNextItemOnMapId() {
@@ -156,7 +109,9 @@ UGameManager* UGameManager::Get(UObject* WorldContextObject) {
     if (!GI) {
         return nullptr;
     }
-    return GI->GetSubsystem<UGameManager>();
+    UGameManager* GI_Cast = Cast<UGameManager>(GI);
+	
+    return GI_Cast;
 }
 
 void UGameManager::RegisterPlayer(ABaseCharacter* Pawn) {

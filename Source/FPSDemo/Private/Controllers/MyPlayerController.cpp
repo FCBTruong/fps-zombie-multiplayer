@@ -21,6 +21,7 @@
 #include "Components/WeaponMeleeComponent.h"
 #include "Components/ThrowableComponent.h"
 #include "Components/InventoryComponent.h"
+#include "Game/GlobalDataAsset.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -29,6 +30,7 @@ AMyPlayerController::AMyPlayerController() {
 void AMyPlayerController::BeginPlay()
 {
     Super::BeginPlay();
+	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: BeginPlay called"));
 
     APlayerCameraManager* PCM = this->PlayerCameraManager;
     if (PCM)
@@ -37,7 +39,7 @@ void AMyPlayerController::BeginPlay()
         PCM->ViewPitchMax = 60.f;
     }
 
-    GMR = GetGameInstance()->GetSubsystem<UGameManager>();
+	GMR = UGameManager::Get(GetWorld());
     if (!GMR)
     {
 		UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: GameManager subsystem not found"));
@@ -49,7 +51,7 @@ void AMyPlayerController::BeginPlay()
         return;
     }
     
-    if (GMR->GlobalData->PlayerUIClass)
+    if (GMR->GlobalData && GMR->GlobalData->PlayerUIClass.Get())
     {
         UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Creating PlayerUI widget"));
         PlayerUI = CreateWidget<UPlayerUI>(this, GMR->GlobalData->PlayerUIClass);
@@ -312,7 +314,7 @@ void AMyPlayerController::SetupInputComponent()
 
 void AMyPlayerController::ServerBuyItem_Implementation(const EItemId Itemid)
 {
-    if (!GMR) {
+    /*if (!GMR) {
         UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called but GMR is null"));
         return;
 	}
@@ -334,7 +336,7 @@ void AMyPlayerController::ServerBuyItem_Implementation(const EItemId Itemid)
 		return;
 	}
 
-    PS->ProcessBuy(Item);
+    PS->ProcessBuy(Item);*/
 }
 
 void AMyPlayerController::OnRep_PlayerState()

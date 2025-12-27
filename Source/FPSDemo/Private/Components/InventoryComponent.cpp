@@ -18,6 +18,7 @@ UInventoryComponent::UInventoryComponent()
 void UInventoryComponent::BeginPlay()
 {
     Super::BeginPlay();
+	UE_LOG(LogTemp, Log, TEXT("UInventoryComponent::BeginPlay called"));
     CachedGM = UGameManager::Get(GetWorld());
 }
 
@@ -28,12 +29,14 @@ void UInventoryComponent::Test()
     PistolState.ItemId = EItemId::PISTOL_PL_14;
 	RifleState.ItemId = EItemId::RIFLE_AK_47;
 
-    UWeaponData* PistolData = UGameManager::Get(GetWorld())->GetWeaponDataById(EItemId::PISTOL_PL_14);
+	UItemConfig* ItemPistol = UItemsManager::Get(GetWorld())->GetItemById(EItemId::PISTOL_PL_14);
+	UFirearmConfig* PistolData = Cast<UFirearmConfig>(ItemPistol);
     PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
     PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
 	PistolState.MaxAmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
 
-	UWeaponData* RifleData = UGameManager::Get(GetWorld())->GetWeaponDataById(RifleState.ItemId);
+	UItemConfig* ItemRifle = UItemsManager::Get(GetWorld())->GetItemById(EItemId::RIFLE_AK_47);
+	UFirearmConfig* RifleData = Cast<UFirearmConfig>(ItemRifle);
 	RifleState.AmmoInClip = 2;
     RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 3 : 0;
 	RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;

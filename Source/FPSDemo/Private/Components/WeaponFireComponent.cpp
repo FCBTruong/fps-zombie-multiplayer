@@ -24,6 +24,7 @@ UWeaponFireComponent::UWeaponFireComponent()
 void UWeaponFireComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::BeginPlay called"));
 	Character = Cast<ABaseCharacter>(GetOwner());
 	if (Character) {
 		AudioComp = Character ? Character->GetAudioComponent() : nullptr;

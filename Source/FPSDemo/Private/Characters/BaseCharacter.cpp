@@ -55,6 +55,7 @@
 #include "Asset/CharacterAsset.h"
 #include "Components/PostProcessComponent.h"
 #include "Materials/MaterialInterface.h"
+#include "Game/GlobalDataAsset.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -224,11 +225,11 @@ void ABaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (!WeaponComp) {
-        UE_LOG(LogTemp, Warning, TEXT("DEBUGGG:: WeaponComp is not valid at beginplay"));
-    }
-
     UGameManager* GameManager = UGameManager::Get(GetWorld());
+    if (!GameManager) {
+        UE_LOG(LogTemp, Warning, TEXT("GameManager is null in ABaseCharacter::BeginPlay"));
+        return;
+	}
     CachedCharacterAsset = GameManager->CharacterAsset.Get();
 
     if (UGameManager* GM = UGameManager::Get(GetWorld()))
@@ -299,11 +300,6 @@ void ABaseCharacter::BeginPlay()
         StimuliSource->RegisterWithPerceptionSystem();
 	}
 
-    CameraComp->OnViewModeChanged.AddUObject(
-        WeaponComp,
-        &UWeaponComponent::OnViewModeChanged
-    );
-
     if (WeaponComp) {
         WeaponComp->OnUpdateCurrentWeapon.AddUObject(this, &ABaseCharacter::UpdateCurrentWeapon);
     }
@@ -322,6 +318,7 @@ void ABaseCharacter::BeginPlay()
             InventoryComp->Test();
 		}
 		EquipComp->AutoSelectBestWeapon();
+		UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BeginPlay: Added test items to inventory"));
     }
 	
     // if attach to head socket
@@ -375,7 +372,7 @@ void ABaseCharacter::OnRep_PlayerState() {
 void ABaseCharacter::ApplyTeamMesh()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Setting mesh based on team"));
-    UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
+    UGameManager* GMR = Cast<UGameManager>(GetWorld()->GetGameInstance());
     if (GMR && GMR->GlobalData)
     {
         // get player state
@@ -801,8 +798,8 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
         UE_LOG(LogTemp, Warning, TEXT("Damage came from WeaponId: %d"), (int32)WeaponId);
 
-        UGameManager* GMR = GetWorld()->GetGameInstance()->GetSubsystem<UGameManager>();
-        LastDamageCauser = GMR->GetWeaponDataById(WeaponId);
+   
+        //LastDamageCauser = GMR->GetWeaponDataById(WeaponId);
 		bLastHitWasHeadshot = MyEvent->bIsHeadshot;
     }
     else if (DamageCauser) {

@@ -4,6 +4,9 @@
 #include "Game/ActorManager.h"
 #include "EngineUtils.h"
 #include <Kismet/GameplayStatics.h>
+#include "GameFramework/PlayerStart.h"
+#include "Engine/TriggerBox.h"
+#include "Engine/TargetPoint.h"
 
 // Sets default values
 AActorManager::AActorManager()

@@ -44,7 +44,7 @@ void UItemVisualComponent::Initialize(UEquipComponent* InEquipComp, UCharCameraC
 void UItemVisualComponent::BeginPlay()
 {
     Super::BeginPlay();
-
+	UE_LOG(LogTemp, Log, TEXT("UItemVisualComponent::BeginPlay called"));
     CachedGM = UGameManager::Get(GetWorld());
 }
 
