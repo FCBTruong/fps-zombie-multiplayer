@@ -18,6 +18,7 @@ public:
     void ResetAIState();
     void StartPlantingSpike();
     void StartDefusingSpike();
+    void RequestFireOnce();
 protected:
     virtual void OnPossess(APawn* InPawn) override;
     virtual void BeginPlay() override;
@@ -28,6 +29,7 @@ protected:
     void OnTargetPerceptionUpdated(
         AActor* Actor,
         FAIStimulus Stimulus);
+    void OnAmmoChanged(int32 Clip, int32 Reserve);
 private:
     UPROPERTY(VisibleAnywhere)
     class UAIPerceptionComponent* PerceptionComp;

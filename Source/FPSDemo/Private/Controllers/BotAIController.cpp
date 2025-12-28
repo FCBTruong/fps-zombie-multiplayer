@@ -6,7 +6,11 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Controllers/MyPlayerState.h"
 #include "Items/ItemIds.h"
-#include "Components/WeaponComponent.h"
+#include "Components/WeaponFireComponent.h"
+#include "Components/SpikeComponent.h"
+#include "Game/GlobalDataAsset.h"
+#include "Game/GameManager.h"
+#include "Components/EquipComponent.h"
 
 ABotAIController::ABotAIController()
 {
@@ -45,11 +49,17 @@ void ABotAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
-    ABaseCharacter* BC = Cast<ABaseCharacter>(InPawn);
-    if (BC && BC->GetBehaviorTree())
+    UGameManager* GMR = Cast<UGameManager>(GetWorld()->GetGameInstance());
+    if (GMR && GMR->GlobalData)
     {
-        UE_LOG(LogTemp, Log, TEXT("BotAIController: Running Behavior Tree"));
-        RunBehaviorTree(BC->GetBehaviorTree());
+        if (GMR->GlobalData->BotBehaviorTree) {
+            RunBehaviorTree(GMR->GlobalData->BotBehaviorTree);
+        }
+    }
+	ABaseCharacter* MyChar = Cast<ABaseCharacter>(InPawn);
+    if (MyChar) {
+        UEquipComponent* EquipComp = MyChar->GetEquipComponent();
+        EquipComp->OnAmmoChanged.AddUObject(this, &ABotAIController::OnAmmoChanged);
     }
 }
 
@@ -134,14 +144,11 @@ void ABotAIController::StartPlantingSpike() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        if (UEquipComponent* EC = MyChar->GetEquipComponent())
         {
-            if (WC->GetCurrentWeaponType() == EWeaponTypes::Spike) {
-                WC->OnInput_StartPlantSpike();
-            }
-            else {
-				WC->EquipWeapon(EItemId::SPIKE);
-				WC->OnInput_StartPlantSpike();
+            if (USpikeComponent* SC = MyChar->GetSpikeComponent())
+            {
+                SC->RequestPlantSpike();
             }
         }
     }
@@ -152,9 +159,38 @@ void ABotAIController::StartDefusingSpike() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        if (USpikeComponent* WC = MyChar->GetSpikeComponent())
         {     
-           WC->OnInput_StartDefuseSpike();
+			WC->RequestStartDefuseSpike();
         }
     }
+}
+
+void ABotAIController::RequestFireOnce()
+{
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        if (UWeaponFireComponent* WC = MyChar->GetWeaponFireComponent())
+        {
+            WC->RequestFireOnce();
+        }
+    }
+}
+
+void ABotAIController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current active weapon
+{
+	UE_LOG(LogTemp, Warning, TEXT("BotAIController::OnAmmoChanged: Clip=%d, Reserve=%d"), Clip, Reserve);
+    if (Clip <= 0 && Reserve > 0)
+    {
+        APawn* MyPawn = GetPawn();
+        if (!MyPawn) return;
+        if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+        {
+            if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
+                WFC->RequestReload();
+            }
+        }
+	}
 }

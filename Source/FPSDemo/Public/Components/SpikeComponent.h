@@ -6,6 +6,13 @@
 #include "Components/ActorComponent.h"
 #include "SpikeComponent.generated.h"
 
+class UInventoryComponent;
+class UActionStateComponent;
+class UEquipComponent;
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNotifyToastMessage, const FText&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePlantSpikeState, bool);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateDefuseSpikeState, bool);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API USpikeComponent : public UActorComponent
@@ -16,11 +23,20 @@ public:
 	// Sets default values for this component's properties
 	USpikeComponent();
 
+	virtual void BeginPlay() override;
 public:
 	void RequestPlantSpike();
 	void RequestStopPlantSpike();
-
+	void RequestStartDefuseSpike();
+	void RequestStopDefuseSpike();
+	void OnDefuseSucceed();
+	FOnNotifyToastMessage OnNotifyToastMessage;
+	FOnUpdatePlantSpikeState OnUpdatePlantSpikeState;
+	FOnUpdateDefuseSpikeState OnUpdateDefuseSpikeState;
 private:
+	UPROPERTY(Transient) TObjectPtr<UInventoryComponent> InventoryComp = nullptr;
+	UPROPERTY(Transient) TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
+	UPROPERTY(Transient) TObjectPtr<UEquipComponent> EquipComp = nullptr;
 	FTimerHandle PlantTimerHandle;
 
 	UFUNCTION(Server, Reliable)
@@ -33,4 +49,30 @@ private:
 
 	bool CanPlantHere() const;
 	void StartPlant_Internal();
+	void StopPlant_Internal();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStartPlantSpike();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStopPlantSpike();
+
+	// Defuse
+	void StartDefuse_Internal();
+	void StopDefuse_Internal();
+	void FinishDefuseSpike();
+
+	UFUNCTION(Server, Reliable)
+	void ServerStartDefuseSpike();
+	UFUNCTION(Server, Reliable)
+	void ServerStopDefuseSpike();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStartDefuseSpike();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStopDefuseSpike();
+
+	void LockMovement();
+	void UnlockMovement();
+
+	bool bCachedJumpAllowed;
 };

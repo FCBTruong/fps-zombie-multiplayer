@@ -34,7 +34,6 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/Material.h"
-#include "BehaviorTree/BehaviorTree.h"
 #include "Perception/AISense_Sight.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Components/AudioComponent.h"
@@ -57,6 +56,7 @@
 #include "Components/PostProcessComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "Game/GlobalDataAsset.h"
+#include "BehaviorTree/BehaviorTree.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -752,17 +752,14 @@ void ABaseCharacter::UpdateMaxWalkSpeed() {
 float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
     AController* EventInstigator, AActor* DamageCauser)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     if (HealthComp && HealthComp->IsDead())
     {
         return 0.f; // already dead
 	}
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-    // calculate with Armor
-    if (!WeaponComp) {
-        UE_LOG(LogTemp, Warning, TEXT("WeaponComp is null in TakeDamage"));
-        return ActualDamage;
-    }
-    FArmorState* Armor = WeaponComp->GetArmorState();
+    
+   /* const FArmorState* Armor = InventoryComp->GetArmorState();
     if (Armor)
     {
         if (Armor->ArmorPoints > 0)
@@ -783,7 +780,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
             ActualDamage = DamageToHealth;
 		}
-	}
+	}*/
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     LastHitByController = EventInstigator;
 	bLastHitWasHeadshot = false;
@@ -1214,17 +1211,9 @@ void ABaseCharacter::ApplyRotationMode(bool bIsPlayer)
     auto* Move = GetCharacterMovement();
     if (!Move) return;
 
-    bUseControllerRotationYaw = false; // keep false for smooth turning via MovementComponent
-
-    if (bIsPlayer)
+    if (!bIsPlayer)
     {
-        // Smoothly rotate to controller yaw (camera yaw)
-        Move->bOrientRotationToMovement = false;
-        Move->bUseControllerDesiredRotation = true;
-        Move->RotationRate = FRotator(0.f, 540.f, 0.f);
-    }
-    else
-    {
+        bUseControllerRotationYaw = false;
         // Smoothly rotate to movement direction during MoveTo
         Move->bUseControllerDesiredRotation = false;
         Move->bOrientRotationToMovement = true;
@@ -1253,10 +1242,6 @@ FVector ABaseCharacter::GetThrowableLocation() const
     return EyeLoc
         + GetActorRightVector() * 10.f
         + FVector(0.f, 0.f, 30.f);
-}
-
-UBehaviorTree* ABaseCharacter::GetBehaviorTree() const {
-    return BehaviorTree;
 }
 
 EMovementState ABaseCharacter::GetCurrentMovementState() const {

@@ -29,8 +29,6 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateGrenades, const TArray<EItemId>&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateCurrentWeapon, EItemId);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRifleWeapon, const EItemId&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePistolWeapon, const EItemId&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePlantSpikeState, bool);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateDefuseSpikeState, bool);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateArmor, int);
 
 
@@ -261,8 +259,6 @@ public:
 	void OnInput_StopPlantSpike();
 	void OnInput_StartDefuseSpike();
 	void OnInput_StopDefuseSpike();
-	FOnUpdatePlantSpikeState OnUpdatePlantSpikeState;
-	FOnUpdateDefuseSpikeState OnUpdateDefuseSpikeState;
 	FOnUpdateArmor OnUpdateArmor;
 	void FinishDefuseSpike();
 	bool CanPlantSpikeAtCurrentLocation();

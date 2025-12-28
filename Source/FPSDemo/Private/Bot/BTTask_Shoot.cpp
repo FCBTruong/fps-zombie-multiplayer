@@ -2,7 +2,8 @@
 #include "Controllers/BotAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Characters/BaseCharacter.h"
-#include "Components/WeaponComponent.h"
+#include "Components/EquipComponent.h"
+#include "Components/WeaponFireComponent.h"
 
 UBTTask_Shoot::UBTTask_Shoot()
 {
@@ -47,8 +48,8 @@ void UBTTask_Shoot::TickTask(
         return;
     }
 
-    UWeaponComponent* WC = Char->GetWeaponComponent();
-    if (!WC)
+    UEquipComponent* EC = Char->GetEquipComponent();
+    if (!EC)
     {
         return;
     }
@@ -72,25 +73,9 @@ void UBTTask_Shoot::TickTask(
     FVector TargetPoint = Target->GetActorLocation();
     TargetPoint.Z += 60.f; // chest height
 
-    // === Distance-based accuracy ===
-    const float Distance = FVector::Dist(CameraLocation, TargetPoint);
-
-    float AimError = FMath::GetMappedRangeValueClamped(
-        FVector2D(300.f, 2000.f),
-        FVector2D(10.f, 60.f), // cm
-        Distance
-    );
-
-    // === Movement penalty ===
-    const float TargetSpeed = Target->GetVelocity().Size();
-    AimError += TargetSpeed * 0.015f;
-
-    // === Random spread ===
-    TargetPoint += FMath::VRand() * AimError;
-
-
+   
     // === Fire ===
-    WC->RequestStartFire();
+    AI->RequestFireOnce();
 
     LastTimeFire = CurrentTime;
 }

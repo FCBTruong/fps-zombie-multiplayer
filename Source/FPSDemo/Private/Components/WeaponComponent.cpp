@@ -767,199 +767,33 @@ void UWeaponComponent::MulticastStopPlantSpike_Implementation() {
 
 
 void UWeaponComponent::ServerStartDefuseSpike_Implementation() {
-    UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike called"));
-    // Validate
-    // check spike is planted in game mode
-    ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
-    if (!SpikeGM) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No SpikeGM found"));
-        return;
-    }
-    AShooterGameState* GameState = Cast<AShooterGameState>(GetWorld()->GetGameState());
-
-    ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
-    if (GameState->GetMatchState() != EMyMatchState::SPIKE_PLANTED) {
-        return; // can only defuse during playing state
-    }
-    if (!SpikeActor) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No planted spike found"));
-        return;
-    }
-
-    if (SpikeActor->IsDefuseInProgress()) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Defuse already in progress"));
-        return;
-    }
-
-
-    if (SpikeActor->IsDefused()) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Spike is already defused"));
-        return;
-    }
-
-    // check team
-    ABaseCharacter* Character = GetCharacter();
-    AMyPlayerState* MyPS = Cast<AMyPlayerState>(Character->GetPlayerState());
-    if (MyPS->GetTeamID() == GameState->GetAttackerTeam()) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Attackers cannot defuse spike"));
-        return; // attackers cannot defuse
-    }
-
-    //bIsDefusingSpike = true;
-    SpikeActor->StartDefuse(this);
-    Character->RequestCrouch();
+   
 }
 
 void UWeaponComponent::FinishDefuseSpike() {
-    ABaseCharacter* Character = GetCharacter();
-    //bIsDefusingSpike = false;
-    // check spike is planted in game mode
-    UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike called"));
-    Character->RequestUnCrouch();
+    
 }
 
 void UWeaponComponent::ServerStopDefuseSpike_Implementation() {
-    // Need refactor
-  /*  if (!bIsDefusingSpike) {
-        return;
-    }*/
-    ABaseCharacter* Character = GetCharacter();
-    //bIsDefusingSpike = false;
-    Character->RequestUnCrouch();
-    ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
-    if (!SpikeGM) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerStopDefuseSpike: No SpikeGM found"));
-        return;
-	}
-    ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
-    if (SpikeActor) {
-        if (SpikeActor->IsDefuseInProgress()) {
-            SpikeActor->CancelDefuse();
-        }
-    }
+    
 }
 
 void UWeaponComponent::OnInput_StartPlantSpike() {
-    // Refactor this later
-    //UE_LOG(LogTemp, Warning, TEXT("OnInput_StartPlantSpike called"));
- //   if (bHasSpike == false) {
- //       return; // no spike to plant
- //   }
- //   if (bIsPlantingSpike) {
- //       return;
- //   }
- //   if (!CanPlantSpikeAtCurrentLocation()) {
- //       UE_LOG(LogTemp, Warning, TEXT("OnInput_StartPlantSpike: Cannot plant spike at current location"));
- //       return;
-    //}
-    //ServerStartPlantSpike();
+    
 }
 
 bool UWeaponComponent::CanPlantSpikeAtCurrentLocation() {
-    ABaseCharacter* Character = GetCharacter();
-    if (!Character) {
-        return false;
-    }
-
-    if (AActorManager::Get(GetWorld()) == nullptr) {
-        UE_LOG(LogTemp, Warning, TEXT("CanPlantSpikeAtCurrentLocation: ActorManager instance is null"));
-        return false;
-    }
-    TArray<ATriggerBox*> BombAreas = {
-        AActorManager::Get(GetWorld())->GetAreaBombA(),
-        AActorManager::Get(GetWorld())->GetAreaBombB()
-    };
-    for (ATriggerBox* Area : BombAreas)
-    {
-        if (!Area)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("CanPlantSpikeAtCurrentLocation: Bomb area is invalid"));
-            continue;   // skip invalid area
-        }
-
-        UBoxComponent* Box = Cast<UBoxComponent>(Area->GetCollisionComponent());
-        if (!Box) return false;
-
-        FVector BoxCenter = Box->GetComponentLocation();
-        FVector BoxSize = Box->GetScaledBoxExtent();
-
-        FVector CharLoc = Character->GetActorLocation();
-
-        bool bInside = UKismetMathLibrary::IsPointInBox(
-            CharLoc,
-            BoxCenter,
-            BoxSize
-        );
-
-        if (bInside)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Character IS inside %s"), *Area->GetName());
-            return true;
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Character is NOT inside %s"), *Area->GetName());
-        }
-    }
-
+    
     return false;
 }
 
 void UWeaponComponent::OnInput_StopPlantSpike() {
-    //   if (bHasSpike == false) {
-    //       return; // no spike to plant
-    //   }
-    //   if (!bIsPlantingSpike) {
-    //       return;
-       //}
-    //   ServerStopPlantSpike();
+   
 }
 
-//void UWeaponComponent::OnRep_IsPlantingSpike() {
-//    OnUpdatePlantSpikeState.Broadcast(bIsPlantingSpike);
-//    ABaseCharacter* Character = GetCharacter();
-//
-//    // play sound
-//    if (bIsPlantingSpike) {
-//        if (Character) {
-//            Character->OnPlantSpikeStarted();
-//        }
-//    }
-//    else {
-//        if (Character) {
-//            Character->OnPlantSpikeStopped();
-//        }
-//	}
-//}
 
 void UWeaponComponent::FinishPlantSpike() {
-    // Refactor this later
-    if (bHasSpike == false) {
-        return;
-    }
-    /*if (!bIsPlantingSpike) {
-        return;
-    }*/
-
-    // get spike game mode
-    ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
-
-    if (!SpikeGM) {
-        UE_LOG(LogTemp, Warning, TEXT("FinishPlantSpike: No SpikeGM found"));
-        return;
-    }
-    ABaseCharacter* Character = GetCharacter();
-    FVector SpikeLocation = Character->GetActorLocation()
-        + Character->GetActorForwardVector() * 50.f;
-    SpikeGM->PlantSpike(SpikeLocation, Character->GetController());
-    //bIsPlantingSpike = false;
-    bHasSpike = false;
-
-    UE_LOG(LogTemp, Warning, TEXT("FinishPlantSpike called"));
-
-    Character->RequestCrouch();
-    // change player equipment
-    AutoEquipBestWeapon();
+    
 }
 
 void UWeaponComponent::MulticastSpikePlanted_Implementation() {
@@ -974,23 +808,6 @@ void UWeaponComponent::OnInput_StopDefuseSpike() {
     ServerStopDefuseSpike();
 }
 
-//void UWeaponComponent::OnRep_IsDefusingSpike() {
-//    ABaseCharacter* Character = GetCharacter();
-//    if (!Character) {
-//        return;
-//	}
-//    OnUpdateDefuseSpikeState.Broadcast(bIsDefusingSpike);
-//    if (bIsDefusingSpike) {
-//        if (Character) {
-//            Character->OnDefuseSpikeStarted();
-//        }
-//    }
-//    else {
-//        if (Character) {
-//            Character->OnDefuseSpikeStopped();
-//        }
-//	}
-//}
 
 void UWeaponComponent::OnRep_HasSpike() {
     ABaseCharacter* Character = GetCharacter();

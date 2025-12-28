@@ -8,10 +8,25 @@
 #include "Components/BoxComponent.h"
 #include "Engine/TriggerBox.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Components/ActionStateComponent.h"
+#include "Components/EquipComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 USpikeComponent::USpikeComponent()
 {
     SetIsReplicatedByDefault(true);
+}
+
+void USpikeComponent::BeginPlay()
+{
+    Super::BeginPlay();
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (Character)
+    {
+        InventoryComp = Character->GetInventoryComponent();
+        ActionStateComp = Character->GetActionStateComponent();
+		EquipComp = Character->GetEquipComponent();
+    }
 }
 
 void USpikeComponent::RequestPlantSpike()
@@ -21,13 +36,20 @@ void USpikeComponent::RequestPlantSpike()
     if (!Character || !Character->IsAlive())
         return;
 
+    if (!InventoryComp || !InventoryComp->HasSpike())
+		return;
+
+	if (!ActionStateComp || !ActionStateComp->CanPlantNow())
+		return;
+
     if (Character->IsLocallyControlled()) {
         if (CanPlantHere()) {
             UE_LOG(LogTemp, Log, TEXT("USpikeComponent::RequestPlantSpike: Can plant here"));
         }
         else {
-            
+			OnNotifyToastMessage.Broadcast(FText::FromString("Cannot plant spike here! Move to a bomb site."));
             UE_LOG(LogTemp, Log, TEXT("USpikeComponent::RequestPlantSpike: Cannot plant here"));
+            return;
 		}
     }
 
@@ -46,12 +68,19 @@ void USpikeComponent::RequestStopPlantSpike()
     if (!Character)
         return;
 
+    if (!ActionStateComp)
+		return;
+
+    if (ActionStateComp->GetState() != EActionState::Planting) {
+        return;
+    }
+
     if (!Character->HasAuthority())
     {
         ServerStopPlantSpike();
         return;
     }
-	ServerStopPlantSpike();
+	StopPlant_Internal();
 }
 
 void USpikeComponent::ServerStartPlantSpike_Implementation()
@@ -59,8 +88,24 @@ void USpikeComponent::ServerStartPlantSpike_Implementation()
 	StartPlant_Internal();
 }
 
+
+// this function should be called only on server
 void USpikeComponent::StartPlant_Internal()
 {
+    if (!InventoryComp || !ActionStateComp || !EquipComp)
+		return;
+
+    if (EquipComp->GetActiveItemId() != EItemId::SPIKE) {
+        return;
+    }
+
+    if (!ActionStateComp->CanPlantNow())
+		return;
+
+	bool Result = ActionStateComp->TrySetState(EActionState::Planting);
+    if (!Result)
+		return;
+
 	UE_LOG(LogTemp, Log, TEXT("USpikeComponent::StartPlant_Internal called"));
     ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (!Character)
@@ -79,10 +124,12 @@ void USpikeComponent::StartPlant_Internal()
     if (!SpikeGM)
         return;
 
-    // Lock player state (crouch, animation handled elsewhere)
-    Character->RequestCrouch();
+    LockMovement();
 
-    // Delay planting (e.g. 3 seconds)
+    MulticastStartPlantSpike();
+
+	UE_LOG(LogTemp, Log, TEXT("USpikeComponent::StartPlant_Internal: Starting to plant spike"));
+    GetWorld()->GetTimerManager().ClearTimer(PlantTimerHandle);
     GetWorld()->GetTimerManager().SetTimer(
         PlantTimerHandle,
         this,
@@ -92,15 +139,35 @@ void USpikeComponent::StartPlant_Internal()
     );
 }
 
+void USpikeComponent::StopPlant_Internal()
+{
+    if (!ActionStateComp) {
+        return;
+    }
+
+    if (!ActionStateComp->IsInState(EActionState::Planting)) {
+        return;
+	}
+
+    UE_LOG(LogTemp, Log, TEXT("USpikeComponent::StopPlant_Internal called"));
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (!Character)
+		return;
+   
+	UnlockMovement();
+    
+	ActionStateComp->TrySetState(EActionState::Idle);
+    MulticastStopPlantSpike();
+
+	GetWorld()->GetTimerManager().ClearTimer(PlantTimerHandle);
+
+
+	OnUpdatePlantSpikeState.Broadcast(false);
+}
+
 void USpikeComponent::ServerStopPlantSpike_Implementation()
 {
-    GetWorld()->GetTimerManager().ClearTimer(PlantTimerHandle);
-
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (Character)
-    {
-        Character->RequestUnCrouch();
-    }
+	StopPlant_Internal();
 }
 
 void USpikeComponent::FinishPlantSpike()
@@ -109,9 +176,18 @@ void USpikeComponent::FinishPlantSpike()
     if (!Character)
         return;
 
-    UInventoryComponent* Inventory = Character->GetInventoryComponent();
-    if (!Inventory || !Inventory->HasSpike())
+    if (!ActionStateComp || !InventoryComp) {
         return;
+    }
+
+    if (!ActionStateComp->IsInState(EActionState::Planting)) {
+        return;
+    }
+
+    if (!InventoryComp->HasSpike())
+        return;
+
+	UnlockMovement();
 
     ASpikeMode* SpikeGM =
         Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
@@ -125,9 +201,13 @@ void USpikeComponent::FinishPlantSpike()
 
     SpikeGM->PlantSpike(PlantLocation, Character->GetController());
 
-    Inventory->SetHasSpike(false);
+    InventoryComp->SetHasSpike(false);
+	ActionStateComp->TrySetState(EActionState::Idle);
+	// auto select next weapon
 
-    Character->RequestUnCrouch();
+    if (EquipComp) {
+        EquipComp->AutoSelectBestWeapon();
+    }
 }
 
 bool USpikeComponent::CanPlantHere() const
@@ -168,4 +248,180 @@ bool USpikeComponent::CanPlantHere() const
     }
 
     return false;
+}
+
+void USpikeComponent::MulticastStartPlantSpike_Implementation()
+{
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (Character)
+    {
+        Character->OnPlantSpikeStarted();
+    }
+	OnUpdatePlantSpikeState.Broadcast(true);
+}
+
+void USpikeComponent::MulticastStopPlantSpike_Implementation()
+{
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (Character)
+    {
+        Character->OnPlantSpikeStopped();
+    }
+    OnUpdatePlantSpikeState.Broadcast(false);
+}
+
+void USpikeComponent::LockMovement()
+{
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (Character)
+    {
+        if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
+        {
+            bCachedJumpAllowed = MoveComp->IsJumpAllowed();
+
+            MoveComp->DisableMovement();
+            MoveComp->StopMovementImmediately();
+            MoveComp->SetJumpAllowed(false);
+        }
+    }
+}
+
+void USpikeComponent::UnlockMovement()
+{
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (Character)
+    {
+        if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
+        {   
+            MoveComp->SetMovementMode(MOVE_Walking);
+			MoveComp->SetJumpAllowed(bCachedJumpAllowed);
+        }
+    }
+}
+
+void USpikeComponent::RequestStartDefuseSpike() {
+    ServerStartDefuseSpike();
+}
+
+void USpikeComponent::RequestStopDefuseSpike() {
+    ServerStopDefuseSpike();
+}
+
+void USpikeComponent::StartDefuse_Internal() {
+    ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    if (!SpikeGM) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No SpikeGM found"));
+        return;
+    }
+    AShooterGameState* GameState = Cast<AShooterGameState>(GetWorld()->GetGameState());
+    if (!GameState) {
+        return;
+    }
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (!Character) {
+        return;
+    }
+    AMyPlayerState* MyPS = Cast<AMyPlayerState>(Character->GetPlayerState());
+    if (MyPS->GetTeamID() == GameState->GetAttackerTeam()) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Attackers cannot defuse spike"));
+        return; // attackers cannot defuse
+    }
+
+    ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
+    if (GameState->GetMatchState() != EMyMatchState::SPIKE_PLANTED) {
+        return; // can only defuse during playing state
+    }
+    if (!SpikeActor) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No planted spike found"));
+        return;
+    }
+
+    if (SpikeActor->IsDefuseInProgress()) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Defuse already in progress"));
+        return;
+    }
+
+
+    if (SpikeActor->IsDefused()) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Spike is already defused"));
+        return;
+    }
+
+    if (!ActionStateComp) {
+        return;
+    }
+    if (!ActionStateComp->CanDefuseNow()) {
+        return;
+    }
+    ActionStateComp->TrySetState(EActionState::Defusing);
+	LockMovement();
+
+    MulticastStartDefuseSpike();
+    SpikeActor->StartDefuse(this);
+}
+
+void USpikeComponent::StopDefuse_Internal() {
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (!Character) {
+        return;
+    }
+    ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    if (!SpikeGM) {
+        UE_LOG(LogTemp, Warning, TEXT("ServerStopDefuseSpike: No SpikeGM found"));
+        return;
+    }
+    if (!ActionStateComp) {
+        return;
+    }
+
+    if (!ActionStateComp->IsInState(EActionState::Defusing)) {
+        return;
+    }
+    ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
+    if (!SpikeActor) {
+        return;
+    }
+    if (!SpikeActor->IsDefuseInProgress()) {
+        return;
+    }
+    
+    SpikeActor->CancelDefuse();
+    ActionStateComp->TrySetState(EActionState::Idle);
+    UnlockMovement();
+    
+    MulticastStopDefuseSpike();
+}
+
+void USpikeComponent::ServerStartDefuseSpike_Implementation() {
+    StartDefuse_Internal();
+}
+
+void USpikeComponent::ServerStopDefuseSpike_Implementation() {
+    StopDefuse_Internal();
+}
+
+void USpikeComponent::MulticastStartDefuseSpike_Implementation() {
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (!Character) {
+        return;
+	}
+    OnUpdateDefuseSpikeState.Broadcast(true);
+    Character->OnDefuseSpikeStarted();
+}
+
+void USpikeComponent::MulticastStopDefuseSpike_Implementation() {
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (!Character) {
+        return;
+    }
+    OnUpdateDefuseSpikeState.Broadcast(false);
+    Character->OnDefuseSpikeStopped(); // Changed to OnDefuseSpikeStopped()
+}
+
+// callback from spike actor
+void USpikeComponent::OnDefuseSucceed() {
+    if (ActionStateComp) {
+        ActionStateComp->TrySetState(EActionState::Idle);
+    }
+    UnlockMovement();
 }

@@ -5,6 +5,7 @@
 #include <Kismet/GameplayStatics.h>
 #include "Components/AudioComponent.h"
 #include "Game/SpikeMode.h"
+#include "Components/SpikeComponent.h"
 
 // Sets default values
 ASpike::ASpike()
@@ -19,6 +20,7 @@ void ASpike::BeginPlay()
 	Super::BeginPlay();
 	
     ExplodeSphere = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("ExplodeEffect")));
+    MainMeshRef = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("MainMesh")));
 
 	if (ExplodeSphere)
 	{
@@ -66,12 +68,16 @@ void ASpike::Tick(float DeltaTime)
         float Alpha = FMath::Clamp(ExplodeTimer / 0.5f, 0.f, 1.f);
 
         // scale animation: 0 - 3
-        float Scale = FMath::Lerp(0.f, 15.f, Alpha);
+        float Scale = FMath::Lerp(0.f, 20.f, Alpha);
         ExplodeSphere->SetWorldScale3D(FVector(Scale));
 
         if (Alpha >= 1.f)
         {
             bIsExploding = false; // stop anim
+
+			// calculate damage to actors in radius here
+
+			OnCompleteExplode();
         }
     }
 }
@@ -92,6 +98,8 @@ void ASpike::Explode()
 
 	ASpikeMode* SpikeMode = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(this));
 	SpikeMode->SpikeExploded();
+
+
 	Multicast_Explode();
 }
 
@@ -116,6 +124,9 @@ void ASpike::Multicast_Explode_Implementation()
             GetActorLocation()
         );
     }
+    if (MainMeshRef) {
+		MainMeshRef->SetVisibility(false);
+    }
 }
 
 void ASpike::Defused()
@@ -136,11 +147,13 @@ void ASpike::Defused()
         UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike: No spike planted"));
         return;
     }
-    APawn* Pawn = Cast<APawn>(DefusingComponent->GetOwner());
-    if (!Pawn)
-    {
+
+    if (!DefusingComponent) {
         return;
     }
+    DefusingComponent->OnDefuseSucceed();
+
+    APawn* Pawn = Cast<APawn>(DefusingComponent->GetOwner());
 
     AController* PC = Cast<AController>(Pawn->GetController());
     if (!PC)
@@ -166,9 +179,16 @@ void ASpike::Multicast_Defused_Implementation()
     {
         ActiveSoundComp->Stop();
 	}
+
+    USceneComponent* EffectActiveRef = FindComponentByClass<USceneComponent>();
+
+    if (EffectActiveRef)
+    {
+        EffectActiveRef->SetVisibility(false, true); // hide + propagate to children
+    }
 }
 
-void ASpike::StartDefuse(UWeaponComponent* WeaponComp)
+void ASpike::StartDefuse(USpikeComponent* WeaponComp)
 {
     if (bIsDefuseInProgress || IsDefused())
     {
@@ -206,4 +226,50 @@ void ASpike::EndPlay(const EEndPlayReason::Type EndPlayReason)
         ActiveSoundComp->Stop();
     }
     Super::EndPlay(EndPlayReason);
+}
+
+void ASpike::OnCompleteExplode() {
+    if (!HasAuthority()) {
+        return;
+	}
+	// Apply damage to actors in radius here
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjTypes;
+    ObjTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+
+    TArray<AActor*> IgnoreActors;
+    IgnoreActors.Add(this);
+
+    TArray<AActor*> Overlapped;
+    float ExplodeRadius = 300.f;
+
+    if (ExplodeSphere && ExplodeSphere->GetStaticMesh())
+    {
+        const float BaseRadius = ExplodeSphere->GetStaticMesh()->GetBounds().SphereRadius; // unscaled
+        const float Scale = ExplodeSphere->GetComponentScale().GetAbsMax();                // current scale (your 0..15)
+        ExplodeRadius = BaseRadius * Scale;
+    }
+    UKismetSystemLibrary::SphereOverlapActors(
+        GetWorld(),
+        GetActorLocation(),
+        ExplodeRadius,
+        ObjTypes,
+        APawn::StaticClass(),
+        IgnoreActors,
+        Overlapped
+    );
+
+    AController* InstigatorController = GetInstigatorController();
+	float ExplodeDamage = 500.f;
+    for (AActor* A : Overlapped)
+    {
+        if (!IsValid(A)) continue;
+
+        UGameplayStatics::ApplyDamage(
+            A,
+            ExplodeDamage,
+            InstigatorController,
+            this,
+            UDamageType::StaticClass()
+        );
+    }
 }

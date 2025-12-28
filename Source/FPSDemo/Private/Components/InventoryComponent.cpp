@@ -224,7 +224,13 @@ bool UInventoryComponent::ConsumeAmmo(EItemId WeaponId, int32 Amount)
     if (!WS) return false;
 
     WS->AmmoInClip = FMath::Max(0, WS->AmmoInClip - Amount);
-    // No OnRep here; caller decides when to refresh UI (or you can broadcast)
+    
+    // On Rep manually
+    if (WS == &RifleState)
+        OnRep_RifleState();
+    else if (WS == &PistolState)
+		OnRep_PistolState();
+
     return true;
 }
 

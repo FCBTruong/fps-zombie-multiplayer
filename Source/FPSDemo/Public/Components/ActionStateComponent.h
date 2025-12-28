@@ -53,6 +53,10 @@ public:
     bool CanReloadNow() const;
     bool CanFireNow() const { return CanTransition(State, EActionState::Firing); }
     bool CanThrowNow() const { return CanTransition(State, EActionState::Throwing); }
+	bool CanMeleeNow() const { return CanTransition(State, EActionState::Melee); }
+	bool CanPlantNow() const { return CanTransition(State, EActionState::Planting); }
+	bool CanDefuseNow() const { return CanTransition(State, EActionState::Defusing); }
+	bool IsInState(EActionState QueryState) const { return State == QueryState; }
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

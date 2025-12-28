@@ -9,6 +9,8 @@
 #include "Controllers/MyPlayerState.h"
 #include "Game/GameManager.h"
 #include "Characters/BaseCharacter.h"
+#include "Components/InventoryComponent.h"
+#include "Pickup/PickupItem.h"
 
 void UMinimapRadarUI::NativeConstruct()
 {
@@ -140,9 +142,9 @@ void UMinimapRadarUI::UpdateTeammates()
 	if (ABaseCharacter* ViewChar = Cast<ABaseCharacter>(ViewTarget))
 	{
 		bool bHasSpike = false;
-		if (UWeaponComponent* WC = ViewChar->GetWeaponComponent())
+		if (UInventoryComponent* WC = ViewChar->GetInventoryComponent())
 		{
-			bHasSpike = WC->IsHasSpike();
+			bHasSpike = WC->HasSpike();
 		}
 
 		MyDot->UpdateData(
@@ -209,7 +211,12 @@ void UMinimapRadarUI::UpdateTeammates()
 
 		if (DotWidget)
 		{
-			DotWidget->UpdateData(false, !PawnActor->IsAlive(), PawnActor->GetWeaponComponent()->IsHasSpike());
+			bool bHasSpike = false;
+			if (UInventoryComponent* WC = PawnActor->GetInventoryComponent())
+			{
+				bHasSpike = WC->HasSpike();
+			}
+			DotWidget->UpdateData(false, !PawnActor->IsAlive(), bHasSpike);
 		}
 		// Update position
 		if (auto CvSlot = Cast<UCanvasPanelSlot>(TeammateWidget->Slot))

@@ -248,7 +248,7 @@ void AShooterGameMode::AutoBuyForBots() {
 void AShooterGameMode::SavePlayersGunsForNextRound()
 {
     AShooterGameState* GS = GetGameState<AShooterGameState>();
-    
+    /*
     TArray<APlayerState*> PlayerStates = GS->PlayerArray;
     for (APlayerState* PS : PlayerStates)
     {
@@ -272,5 +272,5 @@ void AShooterGameMode::SavePlayersGunsForNextRound()
                 MyPS->AddOwnedWeapon(W->ItemId);
             }
         }
-    }
+    }*/
 }

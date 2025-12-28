@@ -25,8 +25,8 @@ void ASpikeMode::StartPlay()
 	/*SpawnBot("B");
 	SpawnBot("B");*/
 	//SpawnBot("B");
-	//SpawnBot("B");
-	//SpawnBot("A");
+	SpawnBot("B");
+	SpawnBot("A");
 	//SpawnBot("A");
 	//SpawnBot("A");
 
@@ -182,9 +182,12 @@ void ASpikeMode::StartRound()
 		AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
 
 		bool IsAttacker = (PS->GetTeamID() == GS->GetAttackerTeam());
+		UE_LOG(LogTemp, Warning, TEXT("Deubg: Bot %s is %s"), *Bot->GetName(), IsAttacker ? TEXT("Attacker") : TEXT("Defender"));
 		// update bot data to blackboard
 		UBlackboardComponent* BB = Bot->GetBlackboardComponent();
 		if (!BB) continue;
+
+		UE_LOG(LogTemp, Warning, TEXT("Debug: Updating bot %s blackboard"), *Bot->GetName());
 
 		BB->SetValueAsBool(TEXT("B_IsAttacker"), IsAttacker);
 		BB->SetValueAsName(TEXT("Name_BombSite"), BombSite);

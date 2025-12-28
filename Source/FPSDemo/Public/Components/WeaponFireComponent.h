@@ -62,6 +62,7 @@ public:
 	void RequestStartFire();
 	void RequestStopFire();
 	void RequestReload();
+	void RequestFireOnce();
 
 	bool CanWeaponAim() const;
 

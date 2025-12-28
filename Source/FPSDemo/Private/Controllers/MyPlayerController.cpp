@@ -133,20 +133,13 @@ void AMyPlayerController::BindingUI()
         if (auto* PC = Char->GetPickupComponent()) {
 			PC->OnNewItemPickup.AddUObject(this, &AMyPlayerController::NotifyItemPickedUp);
         }
-      
-        if (auto* WC = Char->GetWeaponComponent())
+     
+
+        if (auto* SP = Char->GetSpikeComponent())
         {
-            WC->OnUpdateAmmoState.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
-            WC->OnUpdateGrenades.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
-            WC->OnUpdateCurrentWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdateCurrentWeapon);
-            WC->OnUpdateRifleWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdateRifle);
-            WC->OnUpdatePistolWeapon.AddUObject(PlayerUI, &UPlayerUI::UpdatePistol);
-			WC->OnUpdatePlantSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdatePlantSpikeState);
-			WC->OnUpdateDefuseSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdateDefuseSpikeState);
-			WC->OnUpdateArmor.AddUObject(PlayerUI, &UPlayerUI::UpdateArmor);
-            PlayerUI->UpdateArmor(0);
-			
-            WC->TriggerUpdateUI();
+            SP->OnNotifyToastMessage.AddUObject(this, &AMyPlayerController::NotifyToastMessage);
+            SP->OnUpdatePlantSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdatePlantSpikeState);
+            SP->OnUpdateDefuseSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdateDefuseSpikeState);
 		}
 
         Char->OnHit.AddUObject(PlayerUI, &UPlayerUI::OnHit);
@@ -396,12 +389,6 @@ void AMyPlayerController::Move(const FInputActionValue& Value)
 	ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn);
 
 	if (!MyChar) return;
-	UWeaponComponent* WeaponComp = MyChar->GetWeaponComponent();
-    if (WeaponComp) {
-        //if (WeaponComp->IsPlantingSpike()) {
-        //    return; // cannot move while planting spike
-        //}
-    }
 
     FVector2D MoveInput = Value.Get<FVector2D>();
 
@@ -617,9 +604,9 @@ void AMyPlayerController::StartDefuseSpike() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        if (USpikeComponent* SC = MyChar->GetSpikeComponent())
         {
-            WC->OnInput_StartDefuseSpike();
+            SC->RequestStartDefuseSpike();
         }
     }
 }
@@ -630,9 +617,9 @@ void AMyPlayerController::StopDefuseSpike() {
     if (!MyPawn) return;
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
-        if (UWeaponComponent* WC = MyChar->FindComponentByClass<UWeaponComponent>())
+        if (USpikeComponent* SC = MyChar->GetSpikeComponent())
         {
-            WC->OnInput_StopDefuseSpike();
+            SC->RequestStopDefuseSpike();
         }
     }
 }
@@ -887,5 +874,12 @@ void AMyPlayerController::NotifyItemPickedUp(EItemId ItemId)
         {
             PlayerUI->ShowNotiToast(Item->DisplayName);
         }
+	}
+}
+
+void AMyPlayerController::NotifyToastMessage(const FText& Message) {
+    if (PlayerUI)
+    {
+        PlayerUI->ShowNotiToast(Message);
 	}
 }

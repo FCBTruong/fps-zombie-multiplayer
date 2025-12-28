@@ -550,7 +550,6 @@ void UWeaponFireComponent::MulticastReload_Implementation()
 			if (FirearmConf->FirearmType == EFirearmType::Pistol)
 			{
 				AnimComp->PlayReloadPistolMontage();
-				return;
 			}
 			else {
 				AnimComp->PlayReloadRifleMontage();
@@ -602,4 +601,12 @@ bool UWeaponFireComponent::CanWeaponAim() const {
 		return false;
 	}
 	return true;
+}
+
+// for server only
+void UWeaponFireComponent::RequestFireOnce() {
+	if (GetOwner()->HasAuthority())
+	{
+		FireOnce_ServerAuth();
+	}
 }

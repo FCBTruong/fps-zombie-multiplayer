@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Components/WeaponComponent.h"
 #include "Spike.generated.h"
 
+class USpikeComponent;
 UCLASS()
 class FPSDEMO_API ASpike : public AActor
 {
@@ -24,6 +24,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Explode")
 	UStaticMeshComponent* ExplodeSphere;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Explode")
+	UStaticMeshComponent* MainMeshRef;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Explode")
 	USoundBase* ActiveSound;
@@ -57,11 +60,11 @@ public:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_Explode();
 
-	void StartDefuse(UWeaponComponent* DefuseComp);
+	void StartDefuse(USpikeComponent* DefuseComp);
 
 	FTimerHandle DefuseTimerHandle;
 
-	UWeaponComponent* DefusingComponent;
+	USpikeComponent* DefusingComponent;
 
 	bool IsDefuseInProgress() const;
 
@@ -69,4 +72,7 @@ public:
 
 	bool IsDefused() const { return bIsDefused; }
 	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+private:
+	void OnCompleteExplode();
 };

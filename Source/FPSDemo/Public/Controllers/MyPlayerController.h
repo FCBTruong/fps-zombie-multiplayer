@@ -151,4 +151,5 @@ public:
 private:
 	void HandleSpikeChanged(bool bHasSpike);
     void NotifyItemPickedUp(EItemId ItemId);
+	void NotifyToastMessage(const FText& Message);
 };

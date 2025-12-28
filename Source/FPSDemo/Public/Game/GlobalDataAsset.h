@@ -8,6 +8,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "GlobalDataAsset.generated.h"
 class UPlayerUI;
+class UBehaviorTree;
 /**
  * 
  */
@@ -37,4 +38,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Characters")
 	USkeletalMesh* CounterTerroristMesh;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI")
+	TObjectPtr<UBehaviorTree> BotBehaviorTree;
 };

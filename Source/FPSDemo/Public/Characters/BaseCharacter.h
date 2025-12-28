@@ -30,7 +30,6 @@ class USoundBase;
 class UMaterial;
 class UMaterialInstanceDynamic;
 class UMaterialParameterCollection;
-class UBehaviorTree;
 class UTextureRenderTarget2D;
 class AWeaponBase;
 class UWeaponData;
@@ -166,9 +165,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Init|Decal")
     TObjectPtr<UMaterialInterface> MeleeHitDecal;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Init|AI")
-    TObjectPtr<UBehaviorTree> BehaviorTree;
-
     UPROPERTY(EditDefaultsOnly, Category = "Init|Crouch")
     TObjectPtr<UCurveFloat> CrouchCurve = nullptr;
 
@@ -298,7 +294,6 @@ public:
     bool IsFpsViewMode() const;
 	bool IsAiming() const;
     FVector GetThrowableLocation() const;
-    UBehaviorTree* GetBehaviorTree() const;
 	USplineComponent* GetThrowSpline() const;
     UPickupComponent* GetPickupComponent() const;
     UInventoryComponent* GetInventoryComponent() const;
