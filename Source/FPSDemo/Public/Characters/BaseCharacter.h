@@ -13,7 +13,6 @@
 class UPickupComponent;
 class UInventoryComponent;
 class UInteractComponent;
-class UWeaponComponent;
 class UHealthComponent;
 class UCameraComponent;
 class USpikeComponent;
@@ -31,8 +30,6 @@ class UMaterial;
 class UMaterialInstanceDynamic;
 class UMaterialParameterCollection;
 class UTextureRenderTarget2D;
-class AWeaponBase;
-class UWeaponData;
 class UAudioComponent;
 class USplineComponent;
 class UAnimationComponent;
@@ -45,6 +42,7 @@ class UWeaponMeleeComponent;
 class UThrowableComponent;
 class UCharacterAsset;
 class UPostProcessComponent;
+class UItemConfig;
 
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
@@ -91,8 +89,6 @@ protected:
 
 protected:
 	// Components
-    UPROPERTY(VisibleAnywhere, Category = "Components")
-    TObjectPtr<UWeaponComponent> WeaponComp;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<UPickupComponent> PickupComponent;
@@ -195,10 +191,7 @@ protected:
     TWeakObjectPtr<AController> LastHitByController;
 
     UPROPERTY()
-    TWeakObjectPtr<UWeaponData> LastDamageCauser;
-
-    UPROPERTY(VisibleAnywhere, Category = "Components")
-    TObjectPtr<USplineComponent> ThrowSpline;
+    TWeakObjectPtr<UItemConfig> LastDamageCauser;
 
 protected:
 	// ===== Replicated Properties =====
@@ -230,11 +223,6 @@ protected:
 
     UFUNCTION()
     void HandleCrouchProgress(float Alpha);
-
-    UFUNCTION(BlueprintPure)
-    EWeaponTypes GetWeaponType() const;
-    UFUNCTION(BlueprintPure)
-	EWeaponSubTypes GetWeaponSubType() const;
 
     // ===== Networking RPC =====
     UFUNCTION(Server, Reliable)
@@ -294,13 +282,11 @@ public:
     bool IsFpsViewMode() const;
 	bool IsAiming() const;
     FVector GetThrowableLocation() const;
-	USplineComponent* GetThrowSpline() const;
     UPickupComponent* GetPickupComponent() const;
     UInventoryComponent* GetInventoryComponent() const;
 	UHealthComponent* GetHealthComponent() const;
 	UInteractComponent* GetInteractComponent() const;
 	UAnimationComponent* GetAnimationComponent() const;
-    UWeaponComponent* GetWeaponComponent() const;
     USkeletalMeshComponent* GetCurrentMesh() const;
 	UEquipComponent* GetEquipComponent() const;
 	UWeaponFireComponent* GetWeaponFireComponent() const;

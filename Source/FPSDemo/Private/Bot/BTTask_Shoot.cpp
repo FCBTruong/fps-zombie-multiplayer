@@ -8,63 +8,46 @@
 UBTTask_Shoot::UBTTask_Shoot()
 {
     NodeName = "Shoot Target";
-    bNotifyTick = true;
 }
 
 EBTNodeResult::Type UBTTask_Shoot::ExecuteTask(
     UBehaviorTreeComponent& OwnerComp,
     uint8* NodeMemory)
 {
-	// Always return InProgress, actual shooting logic will be handled in TickTask
-    return EBTNodeResult::InProgress;
-}
-
-void UBTTask_Shoot::TickTask(
-    UBehaviorTreeComponent& OwnerComp,
-    uint8* NodeMemory,
-    float DeltaSeconds)
-{
-    // === Fire rate control ===
-    const float CurrentTime = GetWorld()->GetTimeSeconds();
-    const float FireInterval = 0.3f;
-
-    if (CurrentTime - LastTimeFire < FireInterval)
-    {
-        return;
-    }
     UE_LOG(LogTemp, Log, TEXT("UBTTask_Shoot: fire called"));
 
     // === AI & Pawn ===
     ABotAIController* AI = Cast<ABotAIController>(OwnerComp.GetAIOwner());
     if (!AI)
     {
-        return;
+		return EBTNodeResult::Failed;
     }
 
     UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
     ABaseCharacter* Char = Cast<ABaseCharacter>(AI->GetPawn());
     if (!Char || !BB)
     {
-        return;
+        return EBTNodeResult::Failed;
     }
 
     UEquipComponent* EC = Char->GetEquipComponent();
     if (!EC)
     {
-        return;
+        return EBTNodeResult::Failed;
     }
 
     // === Target ===
     APawn* Target = Cast<APawn>(BB->GetValueAsObject(TEXT("Obj_TargetActor")));
     if (!Target)
     {
-        return;
+        return EBTNodeResult::Failed;
     }
+    AI->SetFocus(Target);
 
     // check Has Sight
     bool IsHasSight = BB->GetValueAsBool(TEXT("B_HasLineSight"));
     if (!IsHasSight) {
-        return;
+		return EBTNodeResult::Succeeded;
     }
 
     // === Base aim ===
@@ -73,9 +56,11 @@ void UBTTask_Shoot::TickTask(
     FVector TargetPoint = Target->GetActorLocation();
     TargetPoint.Z += 60.f; // chest height
 
-   
+
     // === Fire ===
     AI->RequestFireOnce();
 
-    LastTimeFire = CurrentTime;
+
+    return EBTNodeResult::Succeeded;
 }
+

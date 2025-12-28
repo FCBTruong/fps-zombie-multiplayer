@@ -2,9 +2,10 @@
 
 
 #include "UI/KillNotifySlot.h"
+#include "Items/ItemConfig.h"
+#include "Items/FirearmConfig.h"
 
-
-void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState* Victim, UWeaponData* WeaponConf, bool bIsHeadShot)
+void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState* Victim, const UItemConfig* WeaponConf, bool bIsHeadShot)
 {
 	const FString KillerName = Killer ? Killer->GetPlayerName() : TEXT("Unknown");
 	const FString VictimName = Victim ? Victim->GetPlayerName() : TEXT("Unknown");
@@ -12,10 +13,11 @@ void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState
 	UTexture2D* WeaponTex = nullptr;
 	if (WeaponConf)
 	{
-		WeaponTex = WeaponConf->Icon;
+		WeaponTex = WeaponConf->ItemIcon;
 
-		if (WeaponConf->WeaponType == EWeaponTypes::Firearm) {
-			if (WeaponConf->WeaponSubType == EWeaponSubTypes::Rifle) {
+		if (WeaponConf->GetItemType() == EItemType::Firearm) {
+			const UFirearmConfig* FirearmConf = Cast<UFirearmConfig>(WeaponConf);
+			if (FirearmConf->FirearmType == EFirearmType::Rifle) {
 				WeaponIcon->SetDesiredSizeOverride(FVector2D(120.f, 120.f));
 			}
 		}

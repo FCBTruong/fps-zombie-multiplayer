@@ -28,6 +28,7 @@ public:
     void OnNotifyGrabMag();
     void OnNotifyInsertMag();
     void HideItemVisual();
+	void OnOwnerDestroyed();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

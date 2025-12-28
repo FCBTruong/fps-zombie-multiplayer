@@ -3,11 +3,10 @@
 
 #include "Components/PickupComponent.h"
 #include "Components/InventoryComponent.h"
-#include "Weapons/WeaponDataManager.h"
-#include "Components/WeaponComponent.h"
 #include "Pickup/PickupItem.h"
 #include "Game/GameManager.h"
 #include "Characters/BaseCharacter.h"
+#include "Game/SpikeMode.h"
 
 // Sets default values for this component's properties
 UPickupComponent::UPickupComponent()
@@ -71,6 +70,15 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem)
 	UE_LOG(LogTemp, Warning, TEXT("PickupItem: Added = %s"), Added ? TEXT("true") : TEXT("false"));
 	if (Added) {
 		GMR->FindAndDestroyItemNode(PickupItem->GetPickupData().Id);
+
+		// check if is spike, need to tell game mode
+		if (PickupItem->GetPickupData().ItemId == EItemId::SPIKE) {
+			// tell spike mode
+			if (ASpikeMode* SpikeGM = Cast<ASpikeMode>(GetWorld()->GetAuthGameMode()))
+			{
+				SpikeGM->NotifySpikePickedUp(OwnerCharacter);
+			}
+		}
 
 		// notify client
 		ClientNotifyItemPickup(PickupItem->GetPickupData().ItemId);

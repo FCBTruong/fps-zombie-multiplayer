@@ -3,7 +3,6 @@
 #include "GameFramework/GameState.h"
 #include "Pickup/PickupData.h"
 #include "Controllers/MyPlayerState.h"
-#include "Weapons/WeaponData.h"
 #include "Game/MyMatchState.h"
 #include "ShooterGameState.generated.h"
 
@@ -47,7 +46,7 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     
     UFUNCTION(NetMulticast, UnReliable)
-    void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser, bool bWasHeadShot);
+    void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, UItemConfig* DamageCauser, bool bWasHeadShot);
     void SetMatchState(EMyMatchState NewState) {
         CurrentMatchState = NewState;
     }

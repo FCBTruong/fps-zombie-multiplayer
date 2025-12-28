@@ -296,6 +296,7 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 
 	if (bHit && Hit.GetActor())
 	{
+		UE_LOG(LogTemp, Log, TEXT("Hit actor: %s"), *Hit.GetActor()->GetName());
 		FMyPointDamageEvent DamageEvent;
 		DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
 		DamageEvent.WeaponID = WeaponId;
@@ -347,10 +348,14 @@ bool UWeaponFireComponent::TraceShot(
 
 	OutEnd = Start + Dir * 10000.f;
 
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponTrace), true);
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponTrace), false);
 	if (IgnoredActor) Params.AddIgnoredActor(IgnoredActor);
 
 	const bool bHit = World->LineTraceSingleByChannel(OutHit, Start, OutEnd, ECC_Visibility, Params);
+
+	UE_LOG(LogTemp, Log, TEXT("TraceShot: Start=%s, Dir=%s, End=%s, Hit=%s"),
+		*Start.ToString(), *Dir.ToString(), *OutEnd.ToString(),
+		bHit ? *OutHit.ImpactPoint.ToString() : TEXT("None"));
 	if (bHit) OutEnd = OutHit.ImpactPoint;
 
 	return bHit;
@@ -607,6 +612,9 @@ bool UWeaponFireComponent::CanWeaponAim() const {
 void UWeaponFireComponent::RequestFireOnce() {
 	if (GetOwner()->HasAuthority())
 	{
-		FireOnce_ServerAuth();
+		if (CanFireNow())
+		{
+			FireOnce_ServerAuth();
+		}
 	}
 }

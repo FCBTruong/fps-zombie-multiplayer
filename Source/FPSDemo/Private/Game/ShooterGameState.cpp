@@ -6,6 +6,7 @@
 #include "Pickup/PickupItem.h"
 #include "Controllers/MyPlayerController.h"
 #include "Controllers/MyPlayerState.h"
+#include "Items/ItemConfig.h"
 
 AShooterGameState::AShooterGameState()
 {
@@ -24,7 +25,7 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 }
 
 
-void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, UWeaponData* DamageCauser, bool bWasHeadShot)
+void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, UItemConfig* DamageCauser, bool bWasHeadShot)
 {
     UE_LOG(LogTemp, Warning,
         TEXT("MulticastKillNotify called | Killer=%s | Victim=%s | Weapon=%s | Headshot=%d"),

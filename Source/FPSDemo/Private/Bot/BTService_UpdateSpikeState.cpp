@@ -25,31 +25,7 @@ void UBTService_UpdateSpikeState::TickNode(
     uint8* NodeMemory,
     float DeltaSeconds)
 {
-    Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
-    ABotAIController* AICon = Cast<ABotAIController>(OwnerComp.GetAIOwner());
-    if (!AICon) return;
-
-    //UE_LOG(LogTemp, Log, TEXT("UBTService_UpdateSpikeState: debug02 called"));
-	UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-
-	// check if player is near plant location
-	APawn* AIPawn = AICon->GetPawn();
-	const EBotRole BotRole =
-		static_cast<EBotRole>(BB->GetValueAsEnum(TEXT("E_Role")));
-	
-    switch (BotRole)
-    {
-        case EBotRole::A_FindSpike:
-        {
-			UE_LOG(LogTemp, Log, TEXT("UBTService_UpdateSpikeState: A_FindSpike called"));
-			AActor* SpikeActor = UGameManager::Get(this->GetWorld())->GetPickupSpike();
-            if (SpikeActor) {
-				const FVector SpikeLocation = SpikeActor->GetActorLocation();
-                BB->SetValueAsVector(TEXT("Vec_SpikeLocation"), SpikeLocation);
-            }
-            break;
-        }
-    }
+    return;
 }
 
 void UBTService_UpdateSpikeState::OnBecomeRelevant(

@@ -1,5 +1,4 @@
 #include "Characters/BaseCharacter.h"
-
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
@@ -21,8 +20,6 @@
 #include "Controllers/BotAIController.h"
 #include "Weapons/WeaponState.h"
 #include "GameFramework/Character.h"
-#include "Weapons/WeaponTypes.h"
-#include "Weapons/WeaponBase.h"
 #include "Net/UnrealNetwork.h"
 #include "Camera/CameraComponent.h"
 #include "Components/TimelineComponent.h"
@@ -40,7 +37,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/PickupComponent.h"
 #include "Components/InventoryComponent.h"
-#include "Components/WeaponComponent.h"
 #include "Components/AnimationComponent.h"
 #include "Components/CharAudioComponent.h"
 #include "Components/CharCameraComponent.h"
@@ -79,9 +75,6 @@ ABaseCharacter::ABaseCharacter()
 
     CameraFps = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraFps"));
     CameraFps->bUsePawnControlRotation = false;
-
-    ThrowSpline = CreateDefaultSubobject<USplineComponent>(TEXT("SplineThrow"));
-    ThrowSpline->SetupAttachment(RootComponent);
 
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter constructor called"));
 
@@ -124,9 +117,6 @@ ABaseCharacter::ABaseCharacter()
         Capsule->SetVisibility(true);
     }*/
 
-    if (WeaponComp) {
-		UE_LOG(LogTemp, Warning, TEXT("DEBUGGG:: WeaponComp is valid in ABaseCharacter constructor"));
-    }
 
 	// Initialize components dependencies
     if (EquipComp) {
@@ -224,6 +214,11 @@ void ABaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
+    if (HasAuthority())
+    {
+        ApplyTeamMesh();
+    }
+
     UGameManager* GameManager = UGameManager::Get(GetWorld());
     if (!GameManager) {
         UE_LOG(LogTemp, Warning, TEXT("GameManager is null in ABaseCharacter::BeginPlay"));
@@ -298,10 +293,6 @@ void ABaseCharacter::BeginPlay()
         StimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
         StimuliSource->RegisterWithPerceptionSystem();
 	}
-
-    if (WeaponComp) {
-        WeaponComp->OnUpdateCurrentWeapon.AddUObject(this, &ABaseCharacter::UpdateCurrentWeapon);
-    }
     
     if (EquipComp) {
         EquipComp->OnActiveItemChanged.AddUObject(
@@ -403,6 +394,18 @@ void ABaseCharacter::ApplyTeamMesh()
 			UE_LOG(LogTemp, Warning, TEXT("MyPS is null in SetMeshBaseOnTeam"));
         }
     }
+
+    // TODO later
+    USkeletalMeshComponent* MeshMain = GetMesh();
+    MeshMain->SetCollisionEnabled(ECollisionEnabled::QueryOnly);   // IMPORTANT
+    MeshMain->SetCollisionObjectType(ECC_Pawn);
+    MeshMain->SetCollisionResponseToAllChannels(ECR_Ignore);
+    MeshMain->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	this->SetActorEnableCollision(true);
+    this->GetCapsuleComponent()->SetCollisionResponseToChannel(
+        ECC_Visibility,
+        ECR_Block
+	);
 }
 
 // Called every frame
@@ -611,23 +614,6 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     );
 }
 
-EWeaponTypes ABaseCharacter::GetWeaponType() const
-{
-    if (WeaponComp) {
-        return WeaponComp->GetCurrentWeaponType();
-    }
-	return EWeaponTypes::Unarmed;
-}
-
-EWeaponSubTypes ABaseCharacter::GetWeaponSubType() const
-{
-    if (WeaponComp) {
-        return WeaponComp->GetCurrentWeaponSubType();
-    }
-    return EWeaponSubTypes::None;
-}
-
-
 void ABaseCharacter::RequestStartAiming()
 {
 	UE_LOG(LogTemp, Warning, TEXT("RequestStartAiming called"));
@@ -826,10 +812,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
 void ABaseCharacter::OnMeleeNotify()
 {
-    if (WeaponComp)
-    {
-        WeaponComp->PerformMeleeAttack(0);
-    }
+    
 }
 
 
@@ -898,9 +881,9 @@ void ABaseCharacter::HandleDeath()
             }
         }
 
-        if (WeaponComp) {
+       /* if (WeaponComp) {
             WeaponComp->OnOwnerDeath();
-        }
+        }*/
 		SetLifeSpan(10.f); // auto destroy after 5 seconds
     }
 }
@@ -1085,9 +1068,9 @@ void ABaseCharacter::Destroyed()
 {
     Super::Destroyed();
 
-    if (WeaponComp && WeaponComp->GetCurrentWeapon())
+    if (ItemVisualComp)
     {
-        WeaponComp->GetCurrentWeapon()->Destroy();
+        ItemVisualComp->OnOwnerDestroyed();
     }
 }
 
@@ -1213,10 +1196,10 @@ void ABaseCharacter::ApplyRotationMode(bool bIsPlayer)
 
     if (!bIsPlayer)
     {
-        bUseControllerRotationYaw = false;
+        bUseControllerRotationYaw = true;
         // Smoothly rotate to movement direction during MoveTo
-        Move->bUseControllerDesiredRotation = false;
-        Move->bOrientRotationToMovement = true;
+        //Move->bUseControllerDesiredRotation = false;
+        Move->bOrientRotationToMovement = false;
         Move->RotationRate = FRotator(0.f, 360.f, 0.f);
     }
 }
@@ -1267,10 +1250,6 @@ UInventoryComponent* ABaseCharacter::GetInventoryComponent() const {
     return InventoryComp.Get();
 }
 
-UWeaponComponent* ABaseCharacter::GetWeaponComponent() const {
-    return WeaponComp.Get();
-}
-
 UInteractComponent* ABaseCharacter::GetInteractComponent() const {
     return InteractComp.Get();
 }
@@ -1297,10 +1276,6 @@ UActionStateComponent* ABaseCharacter::GetActionStateComponent() const {
 
 UCharAudioComponent* ABaseCharacter::GetAudioComponent() const {
     return AudioComp.Get();
-}
-
-USplineComponent* ABaseCharacter::GetThrowSpline() const {
-    return ThrowSpline;
 }
 
 UWeaponFireComponent* ABaseCharacter::GetWeaponFireComponent() const {

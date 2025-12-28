@@ -8,6 +8,8 @@
 #include "Spike/Spike.h"
 #include "SpikeMode.generated.h"
 
+class UItemConfig;
+
 /**
  * 
  */
@@ -24,7 +26,7 @@ protected:
 	FTimerHandle RoundTimerHandle;
 	void OnRoundTimeExpired();
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
-	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeadShot) override;
+	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, UItemConfig* DamageCauser, bool bWasHeadShot) override;
 public:
 	virtual void StartPlay() override;
 	void StartRound();
@@ -38,7 +40,8 @@ public:
 	void SpikeExploded();
 	static constexpr int32 ScoreToWin = 9;
 	static constexpr int32 TimePerRound = 90; // seconds
-	void NotifyPlayerSpikeState(ABaseCharacter* Player, bool bHasSpike);
+	void NotifySpikeDropped(ABaseCharacter* Player);
+	void NotifySpikePickedUp(ABaseCharacter* Player);
 	
 	ASpike* GetPlantedSpike() const {
 		return PlantedSpike;

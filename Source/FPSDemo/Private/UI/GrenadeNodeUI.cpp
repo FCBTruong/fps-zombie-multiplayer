@@ -2,7 +2,6 @@
 
 
 #include "UI/GrenadeNodeUI.h"
-#include "Weapons/WeaponData.h"
 #include "Game/ItemsManager.h"
 #include "Items/ItemConfig.h"
 

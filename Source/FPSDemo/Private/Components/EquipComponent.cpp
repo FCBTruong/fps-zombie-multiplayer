@@ -308,7 +308,7 @@ void UEquipComponent::HandleDropItem() {
         ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
 
         if (SpikeGM) {
-            SpikeGM->NotifyPlayerSpikeState(Character, false);
+            SpikeGM->NotifySpikeDropped(Character);
         }
     }
  

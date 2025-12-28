@@ -4,7 +4,6 @@
 #include "Game/GameManager.h"
 #include "Pickup/PickupItem.h"
 #include "Game/ShooterGameState.h"
-#include "Weapons/WeaponDataManager.h"
 #include "Characters/BaseCharacter.h"
 #include "Pickup/PickupItem.h"
 #include "Asset/CharacterAsset.h"

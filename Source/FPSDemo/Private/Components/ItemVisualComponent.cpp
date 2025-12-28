@@ -5,8 +5,6 @@
 #include "Components/EquipComponent.h"
 #include "Game/GameManager.h"
 #include "Characters/BaseCharacter.h"
-#include "Weapons/WeaponData.h"
-#include "Weapons/WeaponBase.h"
 #include "Weapons/WeaponFirearm.h"
 #include "Items/EquippedItem.h"
 #include "Game/ItemsManager.h"
@@ -298,4 +296,9 @@ void UItemVisualComponent::HideItemVisual()
     {
         EquippedActor->SetActorHiddenInGame(true);
     }
+}
+
+void UItemVisualComponent::OnOwnerDestroyed()
+{
+    DestroyVisual();
 }

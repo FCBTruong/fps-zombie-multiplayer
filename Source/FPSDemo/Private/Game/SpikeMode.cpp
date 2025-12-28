@@ -6,11 +6,9 @@
 #include <GameFramework/PlayerStart.h>
 #include "Game/ActorManager.h"
 #include <Kismet/GameplayStatics.h>
-#include "BehaviorTree/BlackboardComponent.h"
 #include "Characters/BaseCharacter.h"
-#include "Bot/BotRole.h"
-#include "Engine/TriggerBox.h"
 #include "Engine/TargetPoint.h"
+#include "Bot/BotStateManager.h"
 
 void ASpikeMode::StartPlay()
 {
@@ -46,48 +44,8 @@ void ASpikeMode::PlantSpike(FVector Location, AController* Planter)
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	GS->SetMatchState(EMyMatchState::SPIKE_PLANTED);
 
-	// update blackboard for bots
-	// After spike planted, we should update all bot's role to be suitable for game state
-
-	const EBotRole AttackerRoles[] =
-	{
-		EBotRole::Holder,
-		EBotRole::Scout
-	};
-	const EBotRole DefenderRoles[] =
-	{
-		EBotRole::Scout
-	};
-	TArray<ABotAIController*> Defenders;
-	for (ABotAIController* Bot : BotControllers)
-	{
-		UBlackboardComponent* BB = Bot->GetBlackboardComponent();
-		if (!BB) continue;
-
-		AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
-		if (PS->IsAlive() == false) continue;
-		
-		bool IsAttacker = (PS->GetTeamID() == GS->GetAttackerTeam());
-		if (IsAttacker) {
-			const int32 Index = FMath::RandRange(0, UE_ARRAY_COUNT(AttackerRoles) - 1);
-			const EBotRole ChosenRole = AttackerRoles[Index];
-			BB->SetValueAsEnum(TEXT("E_Role"), static_cast<uint8>(ChosenRole));
-		}
-		else {
-			const int32 Index = FMath::RandRange(0, UE_ARRAY_COUNT(DefenderRoles) - 1);
-			const EBotRole ChosenRole = DefenderRoles[Index];
-			BB->SetValueAsEnum(TEXT("E_Role"), static_cast<uint8>(ChosenRole));
-			Defenders.Add(Bot);
-		}
-		BB->SetValueAsVector(TEXT("Vec_SpikeLocation"), Location);
-	}
-	// assign one defender as spike defuser
-	if (Defenders.Num() > 0)
-	{
-		int32 RandomIndex = FMath::RandRange(0, Defenders.Num() - 1);
-		ABotAIController* SpikeDefuserBot = Defenders[RandomIndex];
-		SpikeDefuserBot->GetBlackboardComponent()->SetValueAsEnum(TEXT("E_Role"), static_cast<uint8>(EBotRole::D_Defuser));
-		UE_LOG(LogTemp, Warning, TEXT("Bot %s assigned as Spike Defuser"), *SpikeDefuserBot->GetName());
+	if (BotManager) {
+		BotManager->OnSpikePlanted(GS->GetAttackerTeam(), PlantedSpike);
 	}
 }
 
@@ -103,13 +61,8 @@ void ASpikeMode::DefuseSpike(AController* Defuser)
 		FName WinningTeam = GS->GetAttackerTeam() == FName("A") ? FName("B") : FName("A");
 		EndRound(WinningTeam);
 
-		for (ABotAIController* Bot : BotControllers)
-		{
-			UBlackboardComponent* BB = Bot->GetBlackboardComponent();
-			if (BB)
-			{
-				BB->SetValueAsEnum(TEXT("E_Role"), static_cast<uint8>(EBotRole::Scout));
-			}
+		if (BotManager) {
+			BotManager->OnSpikeDefused();
 		}
 	}
 	else
@@ -156,64 +109,11 @@ void ASpikeMode::StartRound()
 {
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 
-	AActorManager::Get(GetWorld())->ResetPlayerStartsUsage();
+	AActorManager* AM =  AActorManager::Get(GetWorld());
+	AM->ResetPlayerStartsUsage();
 
-	TArray<ABotAIController*> Attackers;
-
-	FName BombSite = FMath::RandBool() ? FName(TEXT("A")) : FName(TEXT("B"));
-	FVector PlantLocation =
-		(BombSite == FName(TEXT("A")))
-		? AActorManager::Get(GetWorld())->GetAreaBombA()->GetActorLocation()
-		: AActorManager::Get(GetWorld())->GetAreaBombB()->GetActorLocation();
-
-	const EBotRole AttackerRoles[] =
-	{
-		//EBotRole::A_Escort,
-		EBotRole::Scout
-	};
-	const EBotRole DefenderRoles[] =
-	{
-	/*	EBotRole::Holder,*/
-		EBotRole::Scout
-	};
-	for (ABotAIController* Bot : BotControllers)
-	{
-		Bot->ResetAIState();
-		AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
-
-		bool IsAttacker = (PS->GetTeamID() == GS->GetAttackerTeam());
-		UE_LOG(LogTemp, Warning, TEXT("Deubg: Bot %s is %s"), *Bot->GetName(), IsAttacker ? TEXT("Attacker") : TEXT("Defender"));
-		// update bot data to blackboard
-		UBlackboardComponent* BB = Bot->GetBlackboardComponent();
-		if (!BB) continue;
-
-		UE_LOG(LogTemp, Warning, TEXT("Debug: Updating bot %s blackboard"), *Bot->GetName());
-
-		BB->SetValueAsBool(TEXT("B_IsAttacker"), IsAttacker);
-		BB->SetValueAsName(TEXT("Name_BombSite"), BombSite);
-
-		BB->SetValueAsVector(TEXT("Vec_PlantLocation"), PlantLocation);
-
-		if (IsAttacker)
-		{
-			const int32 Index = FMath::RandRange(0, UE_ARRAY_COUNT(AttackerRoles) - 1);
-			const EBotRole ChosenRole = AttackerRoles[Index];
-			BB->SetValueAsEnum(TEXT("E_Role"), static_cast<uint8>(ChosenRole));
-			Attackers.Add(Bot);
-		}
-		else {
-			const int32 Index = FMath::RandRange(0, UE_ARRAY_COUNT(DefenderRoles) - 1);
-			const EBotRole ChosenRole = DefenderRoles[Index];
-			BB->SetValueAsEnum(TEXT("E_Role"), static_cast<uint8>(ChosenRole));
-		}
-	}
-	// auto assign spike carrier for one of the attackers
-	if (Attackers.Num() > 0)
-	{
-		int32 RandomIndex = FMath::RandRange(0, Attackers.Num() - 1);
-		ABotAIController* SpikeCarrierBot = Attackers[RandomIndex];
-		SpikeCarrierBot->GetBlackboardComponent()->SetValueAsEnum(TEXT("E_Role"), static_cast<uint8>(EBotRole::A_FindSpike));
-		UE_LOG(LogTemp, Warning, TEXT("Bot %s assigned as Spike Carrier"), *SpikeCarrierBot->GetName());
+	if (BotManager) {
+		BotManager->OnStartRound(AM, GS->GetAttackerTeam());
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Starting new round..."));
@@ -333,7 +233,7 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 }
 
 
-void ASpikeMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeatShot)
+void ASpikeMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UItemConfig* DamageCauser, bool bWasHeatShot)
 {
 	Super::NotifyPlayerKilled(Killer, Victim, DamageCauser, bWasHeatShot);
 
@@ -384,50 +284,16 @@ void ASpikeMode::OnRoundTimeExpired()
 	}
 }
 
-void ASpikeMode::NotifyPlayerSpikeState(ABaseCharacter* Player, bool bHasSpike)
+void ASpikeMode::NotifySpikeDropped(ABaseCharacter* Player)
 {
-	// If bot, set blackboard value
-	ABotAIController* BotController = Cast<ABotAIController>(Player->GetController());
-	if (BotController)
-	{
-		UBlackboardComponent* BB = BotController->GetBlackboardComponent();
-		
-		if (bHasSpike) {
-			BB->SetValueAsEnum("E_Role", static_cast<uint8>(EBotRole::A_Carrier));
-		}
-		UE_LOG(LogTemp, Warning, TEXT("Bot %s notified as Spike Carrier"), *BotController->GetName());
+	if (BotManager) {
+		BotManager->OnSpikeDropped();
 	}
-	// re access role for defender bots  
-	if (bHasSpike) {
-		for (ABotAIController* OtherBot : BotControllers)
-		{
-			UBlackboardComponent* BB = OtherBot->GetBlackboardComponent();
-			EBotRole BotRole = static_cast<EBotRole>(BB->GetValueAsEnum("E_Role"));
-			if (BotRole == EBotRole::A_FindSpike) { // no need to find spike anymore			
-				BB->SetValueAsEnum("E_Role", static_cast<uint8>(EBotRole::Scout));
-			}
-		}
-	}
-	else {
-		// must select new carrier if spike dropped
-		TArray<ABotAIController*> Attackers;
+}
 
-		for (ABotAIController* Bot : BotControllers)
-		{
-			AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
-			if (PS->IsAlive() == false) continue;
-			AShooterGameState* GS = GetGameState<AShooterGameState>();
-			if (PS->GetTeamID() == GS->GetAttackerTeam())
-			{
-				Attackers.Add(Bot);
-			}
-		}
-
-		if (Attackers.Num() > 0)
-		{
-			int32 RandomIndex = FMath::RandRange(0, Attackers.Num() - 1);
-			ABotAIController* SpikeCarrierBot = Attackers[RandomIndex];
-			SpikeCarrierBot->GetBlackboardComponent()->SetValueAsEnum(TEXT("E_Role"), static_cast<uint8>(EBotRole::A_FindSpike));
-		}
+void ASpikeMode::NotifySpikePickedUp(ABaseCharacter* Player)
+{
+	if (BotManager) {
+		BotManager->OnSpikePickedUp();
 	}
 }

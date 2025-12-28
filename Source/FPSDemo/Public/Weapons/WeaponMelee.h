@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "WeaponBase.h"
+#include "Items/EquippedItem.h"
 #include "WeaponMelee.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FPSDEMO_API AWeaponMelee : public AWeaponBase
+class FPSDEMO_API AWeaponMelee : public AEquippedItem
 {
 	GENERATED_BODY()
 	

@@ -3,11 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapons/WeaponBase.h"
 #include "GameFramework/GameMode.h"
 #include "Controllers/BotAIController.h"
 #include "ShooterGameMode.generated.h"
 
+class BotStateManager;
+class UItemConfig;
 /**
  * 
  */
@@ -17,7 +18,7 @@ class FPSDEMO_API AShooterGameMode : public AGameMode
 	GENERATED_BODY()
 public:
 	virtual void StartPlay() override;
-	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser = nullptr, bool bWasHeadShot = false);
+	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
 	virtual void AssignPlayerTeam(APlayerController* NewPlayer);
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
@@ -34,4 +35,5 @@ protected:
 	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;
 	TArray<ABotAIController*> BotControllers;
+	BotStateManager* BotManager = nullptr;
 };

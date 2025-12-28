@@ -1,24 +1,20 @@
 #include "Game/ShooterGameMode.h"
 #include "Game/ShooterGameState.h"
-#include "Weapons/WeaponDataManager.h"
 #include "Controllers/MyPlayerController.h"
 #include "Game/GameManager.h"
 #include "Weapons/WeaponState.h"
 #include "Characters/BaseCharacter.h"
-#include "Components/WeaponComponent.h"
+#include "Bot/BotStateManager.h"
 
 void AShooterGameMode::StartPlay()
 {
     Super::StartPlay();
+	BotManager = new BotStateManager();
 
     UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode:Game Started!"));
 
     AShooterGameState* GS = GetGameState<AShooterGameState>();
     if (!GS)
-        return;
-
-    UWeaponDataManager* WeaponDataMgr = GetGameInstance()->GetSubsystem<UWeaponDataManager>();
-    if (!WeaponDataMgr || WeaponDataMgr->GetAllWeapons().Num() == 0)
         return;
 }
 
@@ -35,7 +31,7 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 }
 
 
-void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UWeaponData* DamageCauser, bool bWasHeadShot)
+void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UItemConfig* DamageCauser, bool bWasHeadShot)
 {
     UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in TeamEliminationMode"));
 
@@ -210,6 +206,10 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
     BotControllers.Add(Bot);
     RestartPlayer(Bot);
 
+    if (BotManager)
+    {
+        BotManager->AddBot(Bot);
+	}
     return Bot;
 }
 

@@ -4,7 +4,6 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GameFramework/Actor.h"
 #include "Components/SphereComponent.h"
-#include "Weapons/WeaponData.h"
 #include "ThrownProjectile.generated.h"
 
 class UThrowableConfig;

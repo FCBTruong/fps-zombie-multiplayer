@@ -2,11 +2,12 @@
 
 
 #include "Pickup/PickupItem.h"
-#include "Weapons/WeaponDataManager.h"
+#include "Game/ItemsManager.h"
 #include "Characters/BaseCharacter.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Components/PickupComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Items/ItemConfig.h"
 
 // Sets default values
 APickupItem::APickupItem()
@@ -55,19 +56,9 @@ void APickupItem::SetData(const FPickupData& NewData)
 }
 
 void APickupItem::OnLoadData(){
-    UGameInstance* GI = GetGameInstance();
-	UE_LOG(LogTemp, Warning, TEXT("OnLoadData called in PickupItem"));
-	if (!GI)
-	{
-		return;
-	}
-
-    UWeaponDataManager* WeaponDataMgr = GI->GetSubsystem<UWeaponDataManager>();
-    if (!WeaponDataMgr)
-        return;
-
+	auto ItemsMgr = UItemsManager::Get(GetWorld());
     // local variable
-    UWeaponData* WeaponData = WeaponDataMgr->GetWeaponById(Data.ItemId);
+    const UItemConfig* WeaponData = ItemsMgr->GetItemById(Data.ItemId);
 	UE_LOG(LogTemp, Warning, TEXT("OnLoadData: Retrieved WeaponData for ItemId %d"), static_cast<int32>(Data.ItemId));
     if (WeaponData && WeaponData->StaticMesh && ItemMesh)
     {
@@ -114,21 +105,12 @@ FString APickupItem::GetItemName() const
 {
 	FString Name = TEXT("Unknown Item");
 
-	// Get Weapon Data
-	UGameInstance* GI = GetGameInstance();
-	if (GI)
+	const UItemConfig* WeaponData = UItemsManager::Get(GetWorld())->GetItemById(Data.ItemId);
+	if (WeaponData)
 	{
-		UWeaponDataManager* WeaponDataMgr = GI->GetSubsystem<UWeaponDataManager>();
-		if (WeaponDataMgr)
-		{
-			UWeaponData* WeaponData = WeaponDataMgr->GetWeaponById(Data.ItemId);
-			if (WeaponData)
-			{
-				Name = WeaponData->DisplayName.ToString();
-			}
-		}
+		Name = WeaponData->DisplayName.ToString();
 	}
-
+	
 	return Name;
 }
 

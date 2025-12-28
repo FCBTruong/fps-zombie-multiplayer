@@ -129,7 +129,7 @@ void UPlayerUI::OnEnter()
     }
 }
 
-void UPlayerUI::NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victim, UWeaponData* WeaponConf, bool bIsHeadShot)
+void UPlayerUI::NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victim, const UItemConfig* WeaponConf, bool bIsHeadShot)
 {
     if (KillNotifyWidgetClass && KillNotifyStack)
     {

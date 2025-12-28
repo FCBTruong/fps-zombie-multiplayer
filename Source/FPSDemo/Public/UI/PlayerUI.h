@@ -18,6 +18,7 @@
 #include "Controllers/MyPlayerState.h"
 #include "PlayerUI.generated.h"
 
+class UItemConfig;
 /**
  * 
  */
@@ -147,7 +148,7 @@ public:
 	void UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints);
 	void OnHit();
 	void OnEnter();
-	void NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victem, UWeaponData* WeaponTex, bool bIsHeadShot);
+	void NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victem, const UItemConfig* WeaponTex, bool bIsHeadShot);
 	void ApplyFlashEffect(const float& Strength);
 	void FadeOutFlashEffect();
 	void OpenShop();
