@@ -6,6 +6,7 @@
 #include "Components/AudioComponent.h"
 #include "Game/SpikeMode.h"
 #include "Components/SpikeComponent.h"
+#include "Characters/BaseCharacter.h"
 
 // Sets default values
 ASpike::ASpike()
@@ -62,6 +63,23 @@ void ASpike::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+    if (HasAuthority()) {
+        if (!HasAuthority()) {
+            if (bIsDefuseInProgress) {
+                if (DefusingComponent) {
+                    // check if player is dead or alive
+                    ABaseCharacter* Character = Cast<ABaseCharacter>(DefusingComponent->GetOwner());
+                    if (Character && !Character->IsAlive()) {
+                        CancelDefuse();
+                        return;
+                    }
+                }
+            }
+            return;
+        }
+	}
+
+    // effect client
     if (bIsExploding && ExplodeSphere)
     {
         ExplodeTimer += DeltaTime;
@@ -76,7 +94,6 @@ void ASpike::Tick(float DeltaTime)
             bIsExploding = false; // stop anim
 
 			// calculate damage to actors in radius here
-
 			OnCompleteExplode();
         }
     }
@@ -88,10 +105,6 @@ void ASpike::Explode()
     {
 		return;
 	}
-
-    if (!HasAuthority()) {
-        return;
-    }
 
 	// clear defuse timer if any
 	GetWorld()->GetTimerManager().ClearTimer(DefuseTimerHandle);
@@ -137,6 +150,7 @@ void ASpike::Defused()
     // off sound
 
     bIsDefused = true;
+	bIsDefuseInProgress = false;
 
     ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
     if (!SpikeGM) {

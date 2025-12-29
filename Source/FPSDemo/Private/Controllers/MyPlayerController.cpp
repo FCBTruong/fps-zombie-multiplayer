@@ -75,11 +75,11 @@ void AMyPlayerController::OnPossess(APawn* InPawn)
 
 void AMyPlayerController::OnUnPossess()
 {
+	Super::OnUnPossess();
     if (ABaseCharacter* Char = Cast<ABaseCharacter>(GetPawn()))
     {
         Char->OnAimingChanged.RemoveAll(this);
     }
-    Super::OnUnPossess();
 }
 
 

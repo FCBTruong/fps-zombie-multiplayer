@@ -280,17 +280,14 @@ void UEquipComponent::HandleDropItem() {
         return;
 	}
     FVector DropPoint = GetOwner()->GetActorLocation() + FVector(0.f, 0.f, 60.f) + Character->GetActorForwardVector() * 30;
-    FPickupData Data;
-    Data.Location = DropPoint;
-    Data.Amount = 1;
-    Data.ItemId = ActiveItemId;
-    Data.Id = UGameManager::Get(GetWorld())->GetNextItemOnMapId();
+    
 
     FVector LookDir = Character->GetControlRotation().Vector();
     FVector LaunchVelocity = LookDir * 600.f;
 
     // Spawn Pickup item
-    APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
+    APickupItem* Pickup = InventoryComp->DropItem(ActiveItemId);
+	Pickup->SetActorLocation(DropPoint);
 
     if (Pickup && Pickup->GetItemMesh())
     {
@@ -304,7 +301,7 @@ void UEquipComponent::HandleDropItem() {
 	}
 	InventoryComp->RemoveItem(ActiveItemId);
 
-    if (Data.ItemId == EItemId::SPIKE) {
+    if (ActiveItemId == EItemId::SPIKE) {
         ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
 
         if (SpikeGM) {

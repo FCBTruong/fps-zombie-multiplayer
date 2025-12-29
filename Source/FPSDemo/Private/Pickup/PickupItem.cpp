@@ -59,11 +59,26 @@ void APickupItem::OnLoadData(){
 	auto ItemsMgr = UItemsManager::Get(GetWorld());
     // local variable
     const UItemConfig* WeaponData = ItemsMgr->GetItemById(Data.ItemId);
+	if (!WeaponData)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("OnLoadData: No WeaponData found for ItemId %d"), static_cast<int32>(Data.ItemId));
+		return;
+	}
 	UE_LOG(LogTemp, Warning, TEXT("OnLoadData: Retrieved WeaponData for ItemId %d"), static_cast<int32>(Data.ItemId));
-    if (WeaponData && WeaponData->StaticMesh && ItemMesh)
+    if (WeaponData->StaticMesh && ItemMesh)
     {
         ItemMesh->SetStaticMesh(WeaponData->StaticMesh);
     }
+
+	// refactor later, set spike reference
+	if (Data.ItemId == EItemId::SPIKE)
+	{
+		UGameManager* GMR = UGameManager::Get(GetWorld());
+		if (GMR)
+		{
+			GMR->SetPickupSpike(this);
+		}
+	}
 }
 
 void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,

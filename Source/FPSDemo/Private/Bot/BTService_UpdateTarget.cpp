@@ -37,6 +37,7 @@ void UBTService_UpdateTarget::TickNode(
     // Collect all perceived actors by sight
     TArray<AActor*> PerceivedActors;
     Perception->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), PerceivedActors);
+	UE_LOG(LogTemp, Log, TEXT("BTService_UpdateTarget: Perceived %d actors"), PerceivedActors.Num());
 
     AActor* BestTarget = nullptr;
 
@@ -61,6 +62,14 @@ void UBTService_UpdateTarget::TickNode(
     }
 
     // Update blackboard
+   /* if (BestTarget)
+    {
+        UE_LOG(LogTemp, Log,
+            TEXT("BTService_UpdateTarget: New Target: %s"),
+			*BestTarget->GetName());
+        BB->SetValueAsObject("Obj_TargetActor", BestTarget);
+    }*/
+
     BB->SetValueAsObject("Obj_TargetActor", BestTarget);
 
     if (BestTarget)
@@ -81,10 +90,14 @@ void UBTService_UpdateTarget::TickNode(
 
         BB->SetValueAsBool("B_HasLineSight", bHasLOS);
         BB->SetValueAsVector("Vec_TargetLocation", TargetLoc);
+
+		AICon->SetFocus(BestTarget);
     }
     else
     {
+		BB->SetValueAsVector("Vec_TargetLocation", FVector::ZeroVector);
         BB->SetValueAsBool("B_HasLineSight", false);
+		AICon->ClearFocus(EAIFocusPriority::Default);
     }
-    AICon->SetFocus(BestTarget);
+    //AICon->SetFocus(BestTarget);
 }

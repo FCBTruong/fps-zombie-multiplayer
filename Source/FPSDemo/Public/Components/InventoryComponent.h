@@ -11,6 +11,7 @@
 class UItemConfig;
 class UGameManager;
 struct FPickupData;
+class APickupItem;
 
 DECLARE_MULTICAST_DELEGATE(FOnInventoryChanged);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnAmmoDataChanged, EItemId, int /*InClip*/, int /*Reserve*/);
@@ -68,7 +69,8 @@ public:
     bool CanDrop(EItemId ItemId);
     void ReloadWeapon(EItemId Id); // reload current weapon
 	void RemoveItem(EItemId ItemId); // remove item from inventory (server only)
-
+	void DropAllItems(); // drop all items (server only)
+    APickupItem* DropItem(EItemId ItemId);
 public:
     // ===== Events (fire on server + clients via OnRep) =====
     FOnInventoryChanged OnInventoryChanged;

@@ -4,18 +4,23 @@
 #include "Game/GameManager.h"
 #include "Weapons/WeaponState.h"
 #include "Characters/BaseCharacter.h"
-#include "Bot/BotStateManager.h"
 
 void AShooterGameMode::StartPlay()
 {
     Super::StartPlay();
-	BotManager = new BotStateManager();
+    BotManager = MakeUnique<BotStateManager>();
 
     UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode:Game Started!"));
 
     AShooterGameState* GS = GetGameState<AShooterGameState>();
     if (!GS)
         return;
+}
+
+void AShooterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    BotManager.Reset();
+    Super::EndPlay(EndPlayReason);
 }
 
 void AShooterGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
@@ -118,23 +123,10 @@ FString AShooterGameMode::InitNewPlayer(APlayerController* NewPlayerController, 
     return Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
 }
 
-void AShooterGameMode::CleanPawnsOnMap()
-{
-    // Destroy all currently possessed pawns (players + bots)
-    for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
-    {
-        AController* C = It->Get();
-        if (!C) continue;
-        if (APawn* P = C->GetPawn())
-        {
-            C->UnPossess();
-            P->Destroy();
-        }
-    }
-}
-
 void AShooterGameMode::ResetPlayers()
 {
+	// clean pawns first
+    CleanupCorpses();
     AShooterGameState* GS = GetGameState<AShooterGameState>();
 
     if (!GS) {
@@ -143,10 +135,26 @@ void AShooterGameMode::ResetPlayers()
     }
 
 	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
+    // log size of it
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGGG:::: Number of PlayerStates = %d"), PlayerStates.Num());
 
     for (APlayerState* PS : PlayerStates)
     {
 		if (!PS) continue;
+       
+        AController* Controller = PS->GetOwner<AController>();
+      
+        if (Controller)
+        {
+			UE_LOG(LogTemp, Warning, TEXT("DEBUGGG::: Restarting player: %s"), *GetNameSafe(Controller));
+            if (APawn* P = Controller->GetPawn())
+            {
+                Controller->UnPossess();
+                bool R = P->Destroy();
+            }
+            RestartPlayer(Controller);
+        }
+
         AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
         if (MyPS)
         {
@@ -154,19 +162,13 @@ void AShooterGameMode::ResetPlayers()
             MyPS->SetIsSpectator(false);
             MyPS->ResetBoughtItems();
         }
-       
-        AController* Controller = PS->GetOwner<AController>();
-      
-        if (Controller)
-        {
-            RestartPlayer(Controller);
-        }
 	}
 }
 
 void AShooterGameMode::RestartPlayer(AController* NewPlayer)
 {
     Super::RestartPlayer(NewPlayer);
+	if (!NewPlayer) return;
     if (AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>())
     {
         PS->SetIsAlive(true);
@@ -203,8 +205,6 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
 	}
 
     UE_LOG(LogTemp, Warning, TEXT("Spawned Bot for Team %s"), *TeamID.ToString());
-    BotControllers.Add(Bot);
-    RestartPlayer(Bot);
 
     if (BotManager)
     {
@@ -236,13 +236,13 @@ bool AShooterGameMode::CheckAllTeamDead(FName TeamID)
 }
 
 void AShooterGameMode::AutoBuyForBots() {
-    for (ABotAIController* Bot : BotControllers)
+   /* for (ABotAIController* Bot : BotControllers)
     {
         if (!Bot) continue;
         AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
         if (!PS) continue;
 		PS->AutoBuy();
-    }
+    }*/
 }
 
 void AShooterGameMode::SavePlayersGunsForNextRound()
@@ -273,4 +273,26 @@ void AShooterGameMode::SavePlayersGunsForNextRound()
             }
         }
     }*/
+}
+
+AShooterGameState* AShooterGameMode::GetShooterGS() const
+{
+    return GetGameState<AShooterGameState>();
+}
+
+void AShooterGameMode::RegisterCorpse(AActor* Corpse)
+{
+    Corpses.Add(Corpse);
+}
+
+void AShooterGameMode::CleanupCorpses()
+{
+    for (auto& W : Corpses)
+    {
+        if (AActor* A = W.Get())
+        {
+            A->Destroy();
+        }
+    }
+    Corpses.Empty();
 }

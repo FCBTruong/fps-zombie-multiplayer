@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "CharacterAsset.generated.h"
 
+class UNiagaraSystem;
 /**
  * 
  */
@@ -60,5 +61,11 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	TObjectPtr<USoundBase> Audio_DefuseSpike = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Camera")
+	TSubclassOf<AActor> DeathCameraProxyClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem> BloodFx;
 };
 

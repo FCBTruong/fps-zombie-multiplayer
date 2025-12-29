@@ -42,7 +42,7 @@ EBTNodeResult::Type UBTTask_Shoot::ExecuteTask(
     {
         return EBTNodeResult::Failed;
     }
-    AI->SetFocus(Target);
+    //AI->SetFocus(Target);
 
     // check Has Sight
     bool IsHasSight = BB->GetValueAsBool(TEXT("B_HasLineSight"));

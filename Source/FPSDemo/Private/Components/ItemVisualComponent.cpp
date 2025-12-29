@@ -78,12 +78,6 @@ void UItemVisualComponent::HandleActiveItemChanged(EItemId NewItemId)
 
 void UItemVisualComponent::DestroyVisual()
 {
-    ABaseCharacter* Character = GetCharacter();
-    if (Character)
-    {
-        
-    }
-
     if (EquippedActor)
     {
         EquippedActor->Destroy();
@@ -298,7 +292,7 @@ void UItemVisualComponent::HideItemVisual()
     }
 }
 
-void UItemVisualComponent::OnOwnerDestroyed()
+void UItemVisualComponent::OnOwnerDead()
 {
     DestroyVisual();
 }

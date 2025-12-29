@@ -319,6 +319,9 @@ void UWeaponFireComponent::MulticastFireFX_Implementation(FVector_NetQuantize Ta
 	if (VisualComp)
 	{
 		VisualComp->PlayFireFX(TargetPoint);
+
+		ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());	
+		OwnerChar->PlayBloodFx(TargetPoint);
 	}
 }
 

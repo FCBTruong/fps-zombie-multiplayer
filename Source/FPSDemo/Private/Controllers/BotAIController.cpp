@@ -142,10 +142,15 @@ void ABotAIController::ResetAIState()
 void ABotAIController::StartPlantingSpike() {
     APawn* MyPawn = GetPawn();
     if (!MyPawn) return;
+	UE_LOG(LogTemp, Warning, TEXT("BotAIController: StartPlantingSpike called"));
     if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
     {
         if (UEquipComponent* EC = MyChar->GetEquipComponent())
         {
+            if (EC->GetActiveItemId() != EItemId::SPIKE)
+            {
+                EC->RequestSelectActiveItem(EItemId::SPIKE);
+			}
             if (USpikeComponent* SC = MyChar->GetSpikeComponent())
             {
                 SC->RequestPlantSpike();

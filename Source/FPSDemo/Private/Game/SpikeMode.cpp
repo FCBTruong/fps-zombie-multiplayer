@@ -9,6 +9,8 @@
 #include "Characters/BaseCharacter.h"
 #include "Engine/TargetPoint.h"
 #include "Bot/BotStateManager.h"
+#include "Characters/BaseCharacter.h"
+#include "Pickup/PickupItem.h"
 
 void ASpikeMode::StartPlay()
 {
@@ -20,11 +22,11 @@ void ASpikeMode::StartPlay()
 	FName AttackerTeam = (FMath::RandBool()) ? FName("A") : FName("B");
 	AttackerTeam = "A"; // for testing
 	GS->SetAttackerTeam(AttackerTeam);
-	/*SpawnBot("B");
-	SpawnBot("B");*/
-	//SpawnBot("B");
 	SpawnBot("B");
-	SpawnBot("A");
+	SpawnBot("B");
+	SpawnBot("B");
+	SpawnBot("B");
+	/*SpawnBot("A");*/
 	//SpawnBot("A");
 	//SpawnBot("A");
 
@@ -96,8 +98,6 @@ void ASpikeMode::EndRound(FName WinningTeam)
 		StartRoundTimerHandle,
 		[this]()
 		{
-			//CleanPawnsOnMap();
-			ResetPlayers();
 			StartRound();
 		},
 		5.0f,
@@ -107,16 +107,12 @@ void ASpikeMode::EndRound(FName WinningTeam)
 
 void ASpikeMode::StartRound()
 {
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-
-	AActorManager* AM =  AActorManager::Get(GetWorld());
+	AActorManager* AM = AActorManager::Get(GetWorld());
 	AM->ResetPlayerStartsUsage();
+	ResetPlayers();
+	AShooterGameState* GS = GetShooterGS();
 
-	if (BotManager) {
-		BotManager->OnStartRound(AM, GS->GetAttackerTeam());
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Starting new round..."));
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGXX: Starting new round..."));
 
 	// Clean map
 
@@ -144,10 +140,12 @@ void ASpikeMode::StartRound()
 	P.Amount = 1;
 	P.Location = SpawnLocation;
 
-	GMR->CreatePickupActor(P);
-	UE_LOG(LogTemp, Warning, TEXT("Object address = %p"), GMR);
+	APickupItem* PickupActor = GMR->CreatePickupActor(P);
+	UE_LOG(LogTemp, Warning, TEXT("Object address = %p"), PickupActor);
 	
-	// add spike data to map
+	if (BotManager) {
+		BotManager->OnStartRound(AM, GS->GetAttackerTeam(), PickupActor);
+	}
 	
 	GS->SetMatchState(EMyMatchState::BUY_PHASE);
 	// auto buy for bots
@@ -198,6 +196,7 @@ void ASpikeMode::SpikeExploded()
 
 AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 {
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGXX: ChoosePlayerStart_Implementation..."));
 	AMyPlayerState* PS = Player->GetPlayerState<AMyPlayerState>();
 
 	if (!PS) {
@@ -213,6 +212,7 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 
 	if (TeamId == GS->GetAttackerTeam())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Choosing attacker start for player %s"), *Player->GetName());
 		APlayerStart* AttackerStart = AM->GetRandomAttackerStart();
 		if (AttackerStart)
 		{
@@ -294,6 +294,6 @@ void ASpikeMode::NotifySpikeDropped(ABaseCharacter* Player)
 void ASpikeMode::NotifySpikePickedUp(ABaseCharacter* Player)
 {
 	if (BotManager) {
-		BotManager->OnSpikePickedUp();
+		BotManager->OnSpikePickedUp(Player);
 	}
 }

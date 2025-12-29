@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
 #include "Controllers/BotAIController.h"
+#include "Bot/BotStateManager.h"
 #include "ShooterGameMode.generated.h"
 
-class BotStateManager;
 class UItemConfig;
+class AShooterGameState;
 /**
  * 
  */
@@ -18,6 +19,7 @@ class FPSDEMO_API AShooterGameMode : public AGameMode
 	GENERATED_BODY()
 public:
 	virtual void StartPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
 	virtual void AssignPlayerTeam(APlayerController* NewPlayer);
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
@@ -28,12 +30,16 @@ public:
 	virtual bool CheckAllTeamDead(FName TeamID);
 	virtual void AutoBuyForBots();
 	virtual void SavePlayersGunsForNextRound();
-	virtual void CleanPawnsOnMap();
+	AShooterGameState* GetShooterGS() const;
+	virtual void RegisterCorpse(AActor* Corpse);
+	virtual void CleanupCorpses();
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;
-	TArray<ABotAIController*> BotControllers;
-	BotStateManager* BotManager = nullptr;
+	TUniquePtr<BotStateManager> BotManager;
+
+	UPROPERTY()
+	TArray<TWeakObjectPtr<AActor>> Corpses;
 };

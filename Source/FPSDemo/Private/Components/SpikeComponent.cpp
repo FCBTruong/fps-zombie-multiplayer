@@ -11,6 +11,7 @@
 #include "Components/ActionStateComponent.h"
 #include "Components/EquipComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 
 USpikeComponent::USpikeComponent()
 {
@@ -197,7 +198,8 @@ void USpikeComponent::FinishPlantSpike()
 
     FVector PlantLocation =
         Character->GetActorLocation() +
-        Character->GetActorForwardVector() * 50.f;
+        Character->GetActorForwardVector() * 20.f;
+    PlantLocation.Z -= Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() - 30;
 
     SpikeGM->PlantSpike(PlantLocation, Character->GetController());
 
@@ -322,6 +324,9 @@ void USpikeComponent::StartDefuse_Internal() {
         return;
     }
     AMyPlayerState* MyPS = Cast<AMyPlayerState>(Character->GetPlayerState());
+    if (!MyPS) {
+        return;
+	}
     if (MyPS->GetTeamID() == GameState->GetAttackerTeam()) {
         UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Attackers cannot defuse spike"));
         return; // attackers cannot defuse
@@ -346,6 +351,15 @@ void USpikeComponent::StartDefuse_Internal() {
         UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Spike is already defused"));
         return;
     }
+
+	// check distance to spike
+	FVector SpikeLocation = SpikeActor->GetActorLocation();
+	FVector CharacterLocation = Character->GetActorLocation();
+	float Distance = FVector::Dist(SpikeLocation, CharacterLocation);
+	if (Distance > 200.f) {
+		UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Too far from spike to defuse"));
+		return;
+	}
 
     if (!ActionStateComp) {
         return;

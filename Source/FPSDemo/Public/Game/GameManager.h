@@ -23,7 +23,7 @@ class FPSDEMO_API UGameManager : public UGameInstance
 private:
 	TMap<int32, APickupItem*> PickupItemsOnMap;
 	TArray<ABaseCharacter*> RegisteredPlayers; // for clients access
-
+	TWeakObjectPtr<APickupItem> PickupSpike;
 protected:
 	virtual void Init() override;
 public:
@@ -39,13 +39,12 @@ public:
 	APickupItem* CreatePickupActor(FPickupData Data);
 	void CleanPickupItemsOnMap();
 	APickupItem* GetPickupNode(int PickupId);
-	APickupItem* GetPickupSpike();
+	APickupItem* GetPickupSpike() const;
 	void RegisterPlayer(ABaseCharacter* Pawn);
 	void UnregisterPlayer(ABaseCharacter* Pawn);
 	TArray<ABaseCharacter*> GetRegisteredPlayers() const { return RegisteredPlayers; }
 	void ClearRegisteredPlayers() { RegisteredPlayers.Empty(); }
-	TWeakObjectPtr<APickupItem> PickupSpike;
-
+	void SetPickupSpike(APickupItem* SpikeItem);
 	int CurrentPickupId;
 	static UGameManager* Get(UObject* WorldContextObject);
 };

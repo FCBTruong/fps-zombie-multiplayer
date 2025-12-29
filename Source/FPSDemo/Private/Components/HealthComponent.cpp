@@ -66,11 +66,6 @@ void UHealthComponent::OnRep_Health()
 void UHealthComponent::HealthDeath()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Health has reached zero!"));
-	// Implement death logic here (e.g., notify the owning actor, play death animation, etc.)
-	ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
-	if (!OwnerCharacter) return;
-	
-	// Optional: broadcast death event
 	OnDeath.Broadcast();
 }
 

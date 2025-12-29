@@ -3,9 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Bot/BotRole.h"
 
 class ABotAIController;
 class AActorManager;
+class ABaseCharacter;
+
 /**
  * 
  */
@@ -19,11 +22,13 @@ public:
 	void RemoveBot(ABotAIController* BotToRemove);
 	void OnSpikePlanted(FName AttackerTeamId, AActor* SpikeActor);
 	void OnSpikeDefused();
-	void OnSpikePickedUp();
+	void OnSpikePickedUp(ABaseCharacter* Player);
 	void OnSpikeDropped();
 	void OnSpikeCarrierKilled();
-	void OnStartRound(AActorManager* ActorMgr, FName AttackerTeamId);
+	void OnStartRound(AActorManager* ActorMgr, FName AttackerTeamId, AActor* SpikeActor);
 
 private:
 	TArray<ABotAIController*> ManagedBots;
+
+	void AssignBotAsRole(ABotAIController* Bot, EBotRole Role);
 };

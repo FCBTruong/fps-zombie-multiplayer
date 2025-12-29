@@ -28,10 +28,10 @@ protected:
 public:
 	AMyPlayerController();
 
-	void BeginPlay() override;
+	virtual void BeginPlay() override;
 	UPlayerUI* PlayerUI;
-	void OnPossess(APawn* InPawn) override;
-	void OnUnPossess() override;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
 	void BindingUI();
 	virtual void OnRep_Pawn() override;
 	void ApplyFlash(const float& Strength);
@@ -99,7 +99,7 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerBuyItem(const EItemId ItemId);
-	void OnRep_PlayerState() override;
+	virtual void OnRep_PlayerState() override;
 
 	void CloseShopIfOpen();
 	void ShowScope();
@@ -126,8 +126,8 @@ public:
 	void ReleaseSlow();
 	FName GetTeamId();
     AActor* FindLivingTeammate(AController* Spectator);
-	void BeginSpectatingState() override;
-	void EndSpectatingState() override;
+	virtual void BeginSpectatingState() override;
+	virtual void EndSpectatingState() override;
     void UpdateSpectatedPawn(APawn* InPawn, bool bSpectating);
 
     void OnSpectateNextPressed();

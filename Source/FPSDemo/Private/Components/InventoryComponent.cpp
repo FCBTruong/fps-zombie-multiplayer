@@ -9,6 +9,8 @@
 #include "Items/ItemConfig.h"
 #include "Items/FirearmConfig.h"
 #include "Net/UnrealNetwork.h"
+#include "Pickup/PickupItem.h"
+#include "Characters/BaseCharacter.h"
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -357,4 +359,49 @@ bool UInventoryComponent::AddItemFromPickup(const FPickupData& PickupData)
 bool UInventoryComponent::AddItemFromShop(const FPickupData& PickupData)
 {
     return AddItemInternal(PickupData);
+}
+
+void UInventoryComponent::DropAllItems() {
+    if (bHasSpike) {
+        DropItem(EItemId::SPIKE);
+        bHasSpike = false;
+    }
+    if (RifleState.ItemId != EItemId::NONE) {
+        DropItem(RifleState.ItemId);
+    }
+    if (PistolState.ItemId != EItemId::NONE) {
+        DropItem(PistolState.ItemId);
+    }
+}
+
+APickupItem* UInventoryComponent::DropItem(EItemId Id) {
+    if (Id == EItemId::NONE) {
+        return nullptr;
+    }
+
+    FPickupData Data;
+    Data.Location = GetOwner()->GetActorLocation();
+    Data.Amount = 1;
+    Data.ItemId = Id;
+    Data.Id = UGameManager::Get(GetWorld())->GetNextItemOnMapId();
+
+	UItemConfig* ItemConfig = UItemsManager::Get(GetWorld())->GetItemById(Id);
+	if (ItemConfig && ItemConfig->GetItemType() == EItemType::Firearm) {
+		FWeaponState* WeaponState = GetWeaponStateByItemId(Id);
+		if (WeaponState) {
+			Data.AmmoInClip = WeaponState->AmmoInClip;
+			Data.AmmoReserve = WeaponState->AmmoReserve;
+		}
+	}
+
+    APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
+
+    ABaseCharacter* Character = Cast<ABaseCharacter>(this->GetOwner());
+    if (Pickup)
+    {
+        Pickup->PlayerDropInfo(Character);
+    }
+
+    RemoveItem(Id);
+	return Pickup;
 }

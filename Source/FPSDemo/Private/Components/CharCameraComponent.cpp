@@ -98,17 +98,6 @@ void UCharCameraComponent::ApplyView()
     {
         return;
     }
-    APawn* Pawn = Cast<APawn>(GetOwner());
-    if (!Pawn)
-    {
-        return;
-    }
-
-    AMyPlayerController* PC = Cast<AMyPlayerController>(Pawn->GetController());
-    if (!PC)
-    {
-        return;
-    }
 
     if (bIsFPS)
     {
@@ -116,11 +105,13 @@ void UCharCameraComponent::ApplyView()
         CameraTps->SetActive(false);
 
 		MeshTps->SetOwnerNoSee(true);
+		MeshFps->SetOwnerNoSee(false);
     }
     else
     {
         CameraFps->SetActive(false);
         CameraTps->SetActive(true);
+		MeshFps->SetOwnerNoSee(true);
 
 		MeshTps->SetOwnerNoSee(false);
     }

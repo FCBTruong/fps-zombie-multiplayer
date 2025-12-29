@@ -49,10 +49,10 @@
 #include "Components/SpikeComponent.h"
 #include "Game/ItemsManager.h"
 #include "Asset/CharacterAsset.h"
-#include "Components/PostProcessComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "Game/GlobalDataAsset.h"
 #include "BehaviorTree/BehaviorTree.h"
+
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -401,7 +401,6 @@ void ABaseCharacter::ApplyTeamMesh()
     MeshMain->SetCollisionObjectType(ECC_Pawn);
     MeshMain->SetCollisionResponseToAllChannels(ECR_Ignore);
     MeshMain->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-	this->SetActorEnableCollision(true);
     this->GetCapsuleComponent()->SetCollisionResponseToChannel(
         ECC_Visibility,
         ECR_Block
@@ -420,12 +419,12 @@ void ABaseCharacter::Tick(float DeltaTime)
         CrouchTimeline.TickTimeline(DeltaTime);
 	}
     if (FpsPivot && Controller) {
-        FRotator ControlRot = Controller->GetControlRotation();
+        //FRotator ControlRot = Controller->GetControlRotation();
 
-        // FPS rule: pitch + yaw, no roll
-        FRotator PivotRot(ControlRot.Pitch, 0.f, 0.f);
+        //// FPS rule: pitch + yaw, no roll
+        //FRotator PivotRot(ControlRot.Pitch, 0.f, 0.f);
 
-        FpsPivot->SetRelativeRotation(PivotRot);
+        //FpsPivot->SetRelativeRotation(PivotRot);
     }
     // logic sound
     UpdateFootstepSound(DeltaTime);
@@ -859,17 +858,13 @@ void ABaseCharacter::HandleDeath()
         // get game mode and notify
         if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
         {
+			GM->RegisterCorpse(this);
             GM->NotifyPlayerKilled(LastHitByController.Get(), GetController(), LastDamageCauser.Get(), bLastHitWasHeadshot);
         }
         LastHitByController = nullptr; // reset after use
         LastDamageCauser = nullptr; // reset after use
-
-        GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        GetMesh()->SetSimulatePhysics(true);
-        GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-
  
-        MulticastHandleDeath();
+        MulticastPlayerDeath();
 
         AAIController* AI = Cast<AAIController>(GetController());
         if (AI)
@@ -880,18 +875,30 @@ void ABaseCharacter::HandleDeath()
                 Brain->StopLogic("Bot died");
             }
         }
-
-       /* if (WeaponComp) {
-            WeaponComp->OnOwnerDeath();
-        }*/
-		SetLifeSpan(10.f); // auto destroy after 5 seconds
+		
+		// drop inventory items
+        if (InventoryComp) {
+            InventoryComp->DropAllItems();
+        }
     }
 }
 
-void ABaseCharacter::MulticastHandleDeath_Implementation()
+void ABaseCharacter::MulticastPlayerDeath_Implementation()
 {
 	// if local player, show death UI, etc.
     // change to tps mmode
+
+	// log server or client
+	UE_LOG(LogTemp, Warning, TEXT("MulticastPlayerDeath called on %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"));
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    GetMesh()->SetSimulatePhysics(true);
+    GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+
+    // hide visual
+    if (ItemVisualComp) {
+        ItemVisualComp->OnOwnerDead();
+    }
+
     if (IsLocallyControlled()) {
         AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
         if (!PC) {
@@ -903,14 +910,17 @@ void ABaseCharacter::MulticastHandleDeath_Implementation()
         if (CameraComp->IsFPS()) {
             ChangeView(); // switch to tps view
         }
-        if (!DeathCameraProxyClass) return;
+        if (!CachedCharacterAsset) {
+            return;
+        }
+        if (!CachedCharacterAsset->DeathCameraProxyClass) return;
 
         // Use current camera position as start
         const FVector CamLoc = CameraTps->GetComponentLocation();
         const FRotator CamRot = CameraTps->GetComponentRotation();
 
         // Spawn proxy actor that has physics + camera
-        AActor* Proxy = GetWorld()->SpawnActor<AActor>(DeathCameraProxyClass, CamLoc, CamRot);
+        AActor* Proxy = GetWorld()->SpawnActor<AActor>(CachedCharacterAsset->DeathCameraProxyClass, CamLoc, CamRot);
         if (!Proxy) {
             return;
         }
@@ -941,9 +951,6 @@ void ABaseCharacter::MulticastHandleDeath_Implementation()
             false
         );
     }
-    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    //GetMesh()->SetSimulatePhysics(true);
-    GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
 }
 
 void ABaseCharacter::ServerRevive_Implementation()
@@ -978,10 +985,13 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation)
     if (IsFpsViewMode()) {
 		return; // no blood fx in fps mode
     }
-    if (BloodFx) {
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    if (CachedCharacterAsset->BloodFx) {
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(
             GetWorld(),
-            BloodFx,
+            CachedCharacterAsset->BloodFx,
             HitLocation
         );
     }
@@ -1068,9 +1078,12 @@ void ABaseCharacter::Destroyed()
 {
     Super::Destroyed();
 
+    // log client or server
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::Destroyed called on %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"));
+    
     if (ItemVisualComp)
     {
-        ItemVisualComp->OnOwnerDestroyed();
+        ItemVisualComp->OnOwnerDead();
     }
 }
 
@@ -1196,11 +1209,11 @@ void ABaseCharacter::ApplyRotationMode(bool bIsPlayer)
 
     if (!bIsPlayer)
     {
-        bUseControllerRotationYaw = true;
-        // Smoothly rotate to movement direction during MoveTo
-        //Move->bUseControllerDesiredRotation = false;
-        Move->bOrientRotationToMovement = false;
-        Move->RotationRate = FRotator(0.f, 360.f, 0.f);
+       /* bUseControllerRotationYaw = false;
+
+        Move->bOrientRotationToMovement = true;
+        Move->bUseControllerDesiredRotation = false;
+        Move->RotationRate = FRotator(0.f, 360.f, 0.f);*/
     }
 }
 

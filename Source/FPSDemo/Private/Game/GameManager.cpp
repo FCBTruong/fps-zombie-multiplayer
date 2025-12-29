@@ -78,22 +78,15 @@ APickupItem* UGameManager::GetPickupNode(int PickupId) {
 	return nullptr;
 }
 
-APickupItem* UGameManager::GetPickupSpike() {
+APickupItem* UGameManager::GetPickupSpike() const{
     if (PickupSpike.IsValid()) {
         return PickupSpike.Get();
 	}
-    for (const TPair<int32, APickupItem*>& Pair : PickupItemsOnMap)
-    {
-        APickupItem* Item = Pair.Value;
-        if (!Item) continue;
-
-        if (Item->GetData().ItemId == EItemId::SPIKE)   
-        {
-			PickupSpike = Item;
-            return Item;
-        }
-    }
     return nullptr;
+}
+
+void UGameManager::SetPickupSpike(APickupItem* SpikeItem) {
+    PickupSpike = SpikeItem;
 }
 
 UGameManager* UGameManager::Get(UObject* WorldContextObject) {

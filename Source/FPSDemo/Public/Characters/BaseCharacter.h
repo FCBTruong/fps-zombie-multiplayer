@@ -155,9 +155,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Init|FX")
     TObjectPtr<UNiagaraSystem> BloodFx;
 
-    UPROPERTY(EditDefaultsOnly, Category =  "Init|Camera")
-    TSubclassOf<AActor> DeathCameraProxyClass;
-
     UPROPERTY(EditDefaultsOnly, Category = "Init|Decal")
     TObjectPtr<UMaterialInterface> MeleeHitDecal;
 
@@ -236,7 +233,7 @@ protected:
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastReviveFX();
     UFUNCTION(NetMulticast, Reliable)
-    void MulticastHandleDeath();
+    void MulticastPlayerDeath();
 
 	// ===== Networking OnRep =====
     UFUNCTION()
