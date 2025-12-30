@@ -52,6 +52,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Game/GlobalDataAsset.h"
 #include "BehaviorTree/BehaviorTree.h"
+#include "Items/ThrowableConfig.h"
 
 
 // Sets default values
@@ -334,7 +335,7 @@ void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
     );
 	auto ItemsMgr = UItemsManager::Get(GetWorld());
 	
-	UItemConfig* ItemConfig = ItemsMgr->GetItemById(NewWeaponId);
+	const UItemConfig* ItemConfig = ItemsMgr->GetItemById(NewWeaponId);
     if (!ItemConfig) {
         UE_LOG(LogTemp, Warning, TEXT("ItemConfig is null in UpdateCurrentWeapon"));
 		return;
@@ -418,13 +419,28 @@ void ABaseCharacter::Tick(float DeltaTime)
     if (CrouchTimeline.IsPlaying()) {
         CrouchTimeline.TickTimeline(DeltaTime);
 	}
-    if (FpsPivot && Controller) {
-        //FRotator ControlRot = Controller->GetControlRotation();
 
-        //// FPS rule: pitch + yaw, no roll
-        //FRotator PivotRot(ControlRot.Pitch, 0.f, 0.f);
+    if (FpsPivot)
+    {
+        FRotator AimRot;
 
-        //FpsPivot->SetRelativeRotation(PivotRot);
+        if (IsLocallyControlled() && Controller)
+        {
+            // Only the owning player drives their own view/aim
+            AimRot = Controller->GetControlRotation();
+        }
+        else
+        {
+            // For spectators / remote clients: use the pawn's replicated aim, not the spectator's camera
+            AimRot = GetBaseAimRotation(); // uses RemoteViewPitch for non-owned pawns
+        }
+
+        const FRotator TargetPivotRot(AimRot.Pitch, 0.f, 0.f);
+
+        const FRotator Smoothed =
+            FMath::RInterpTo(FpsPivot->GetRelativeRotation(), TargetPivotRot, DeltaTime, 20.f);
+
+        FpsPivot->SetRelativeRotation(Smoothed);
     }
     // logic sound
     UpdateFootstepSound(DeltaTime);
@@ -780,14 +796,13 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         UE_LOG(LogTemp, Warning, TEXT("Damage came from WeaponId: %d"), (int32)WeaponId);
 
    
-        //LastDamageCauser = GMR->GetWeaponDataById(WeaponId);
+		LastDamageCauser = UItemsManager::Get(GetWorld())->GetItemById(WeaponId);
 		bLastHitWasHeadshot = MyEvent->bIsHeadshot;
     }
     else if (DamageCauser) {
 		AThrownProjectile* Projectile = Cast<AThrownProjectile>(DamageCauser);
         if (Projectile) {
-            // TODO later
-			//LastDamageCauser = Projectile->GetWeaponData();
+			LastDamageCauser = Projectile->GetWeaponData();
         }
     }
     if (!HealthComp) {
@@ -1202,31 +1217,36 @@ void ABaseCharacter::EndViewTarget(APlayerController* PC)
 	}
 }
 
-void ABaseCharacter::ApplyRotationMode(bool bIsPlayer)
+void ABaseCharacter::ApplyRotationMode()
 {
     auto* Move = GetCharacterMovement();
     if (!Move) return;
 
-    if (!bIsPlayer)
+   /* if (!IsLocal)
     {
-       /* bUseControllerRotationYaw = false;
+        bUseControllerRotationYaw = false;
+        bUseControllerRotationPitch = false;
 
-        Move->bOrientRotationToMovement = true;
-        Move->bUseControllerDesiredRotation = false;
-        Move->RotationRate = FRotator(0.f, 360.f, 0.f);*/
-    }
+        Move->bOrientRotationToMovement = false;
+        Move->bUseControllerDesiredRotation = true;
+        Move->RotationRate = FRotator(0.f, 720.f, 0.f);
+    }*/
 }
 
 void ABaseCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
-    ApplyRotationMode(Cast<APlayerController>(NewController) != nullptr);
+
+    //ApplyRotationMode(IsLocal, IsPlayer);
 }
 
 void ABaseCharacter::OnRep_Controller()
 {
     Super::OnRep_Controller();
-    ApplyRotationMode(Cast<APlayerController>(Controller) != nullptr);
+
+   /* bool IsLocal = Controller->IsLocalController();
+    bool IsPlayer = Cast<APlayerController>(Controller) != nullptr;
+    ApplyRotationMode(Cast<APlayerController>(Controller) != nullptr);*/
 }
 
 FVector ABaseCharacter::GetThrowableLocation() const

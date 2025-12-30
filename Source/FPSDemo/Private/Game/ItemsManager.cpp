@@ -5,7 +5,7 @@
 #include "Items/ItemConfig.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 
-UItemConfig* UItemsManager::GetItemById(EItemId Id) const
+const UItemConfig* UItemsManager::GetItemById(EItemId Id) const
 {
     if (ItemConfigMap.Contains(Id)) {
         return ItemConfigMap[Id];

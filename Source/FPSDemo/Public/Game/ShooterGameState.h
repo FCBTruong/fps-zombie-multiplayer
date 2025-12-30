@@ -46,7 +46,7 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     
     UFUNCTION(NetMulticast, UnReliable)
-    void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, UItemConfig* DamageCauser, bool bWasHeadShot);
+    void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot);
     void SetMatchState(EMyMatchState NewState) {
         CurrentMatchState = NewState;
     }

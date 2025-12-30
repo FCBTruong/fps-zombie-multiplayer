@@ -22,7 +22,7 @@ private:
 	UPROPERTY()
 	TMap<EItemId, UItemConfig*> ItemConfigMap;
 public:
-	UItemConfig* GetItemById(EItemId Id) const;
+	const UItemConfig* GetItemById(EItemId Id) const;
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	const TArray<UItemConfig*>& GetAllItems() const { return ItemList; }

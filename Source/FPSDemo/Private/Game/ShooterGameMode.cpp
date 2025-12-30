@@ -36,7 +36,7 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 }
 
 
-void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, class UItemConfig* DamageCauser, bool bWasHeadShot)
+void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
     UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in TeamEliminationMode"));
 

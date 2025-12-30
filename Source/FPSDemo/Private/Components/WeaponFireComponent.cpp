@@ -140,7 +140,9 @@ void UWeaponFireComponent::RequestStartFire()
 	// Client prediction (visual only)
 	if (!GetOwner()->HasAuthority() && IsOwningClient())
 	{
+		// should reset spread state on start
 		ShotCount = 0;
+		BurstAccDeg = 0; 
 		FireOnce_PredictedLocal();
 		GetWorld()->GetTimerManager().SetTimer(
 			FireTimer_Local,
@@ -198,6 +200,7 @@ void UWeaponFireComponent::StartFire_ServerAuth()
 		return;
 
 	ShotCount = 0;
+	BurstAccDeg = 0;
 
 	// Seed determinism inputs for this firing sequence
 	FireStartTimeServer = GetServerTimeSeconds();
@@ -241,12 +244,12 @@ void UWeaponFireComponent::FireOnce_PredictedLocal()
 	{
 		BurstAccDeg = 0.f;
 	}
-	UpdateBurstSpreadOnShot(Now);
 
 	FVector Start, AimDir;
 	GetAim(Start, AimDir);
 
 	const FVector ShotDir = ComputeShotDirDeterministic(AimDir, Now, BurstSeed);
+	UpdateBurstSpreadOnShot(Now);
 
 	FHitResult Hit;
 	FVector ShotEnd;
@@ -258,6 +261,8 @@ void UWeaponFireComponent::FireOnce_PredictedLocal()
 	}
 
 	LastShotTime = Now;
+
+	ApplyRecoilLocal(); // camera jitter
 }
 #endif
 
@@ -283,12 +288,12 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 	{
 		BurstAccDeg = 0.f;
 	}
-	UpdateBurstSpreadOnShot(Now);
 
 	FVector Start, AimDir;
 	GetAim(Start, AimDir);
 
 	const FVector ShotDir = ComputeShotDirDeterministic(AimDir, Now, BurstSeed);
+	UpdateBurstSpreadOnShot(Now);
 
 	FHitResult Hit;
 	FVector ShotEnd;
@@ -397,6 +402,8 @@ FVector UWeaponFireComponent::ComputeShotDirDeterministic(
 
 	const float SpreadDeg = GetTotalSpreadDeg(NowServerTime);
 	const float SpreadRad = FMath::DegreesToRadians(SpreadDeg);
+	UE_LOG(LogTemp, Log, TEXT("ComputeShotDirDeterministic: ShotIndex=%d, Seed=%d, SpreadDeg=%.2f"),
+		ShotIndex, PerShotSeed, SpreadDeg);
 
 	return Stream.VRandCone(AimDir, SpreadRad, SpreadRad).GetSafeNormal();
 }
@@ -404,7 +411,10 @@ FVector UWeaponFireComponent::ComputeShotDirDeterministic(
 float UWeaponFireComponent::GetTotalSpreadDeg(float NowServerTime) const
 {
 	// NOTE: BurstAccDeg should already be updated at the moment of firing on both sides.
-	const float Total = Spread.BaseDeg + GetMovementSpreadDeg() + GetAirSpreadDeg() + BurstAccDeg;
+	float MoveSpreadDeg = GetMovementSpreadDeg();
+	UE_LOG(LogTemp, Log, TEXT("GetTotalSpreadDeg: Base=%.2f, Move=%.2f, Air=%.2f, Burst=%.2f"),
+		Spread.BaseDeg, MoveSpreadDeg, GetAirSpreadDeg(), BurstAccDeg);
+	const float Total = Spread.BaseDeg + MoveSpreadDeg + GetAirSpreadDeg() + BurstAccDeg;
 	return FMath::Min(Total, Spread.MaxTotalDeg);
 }
 
@@ -441,13 +451,6 @@ float UWeaponFireComponent::GetMoveAlphaForSpread() const
 
 void UWeaponFireComponent::UpdateBurstSpreadOnShot(float NowServerTime)
 {
-	// Deterministic recovery based on time gap since last shot
-	if (LastShotTime > 0.0f)
-	{
-		const float Dt = FMath::Max(0.0f, NowServerTime - LastShotTime);
-		BurstAccDeg = FMath::Max(0.0f, BurstAccDeg - Spread.BurstRecoverDegPerSec * Dt);
-	}
-
 	// Add per-shot burst spread
 	BurstAccDeg = FMath::Min(BurstAccDeg + Spread.PerShotAddDeg, Spread.MaxBurstAddDeg);
 	LastShotTime = NowServerTime;
@@ -620,4 +623,23 @@ void UWeaponFireComponent::RequestFireOnce() {
 			FireOnce_ServerAuth();
 		}
 	}
+}
+
+void UWeaponFireComponent::ApplyRecoilLocal()
+{
+#if !UE_SERVER
+	if (!Character) return;
+	if (!IsOwningClient()) return;
+
+	if (ShotCount == 1) {
+		// no recoil on first shot
+		return;
+	}
+
+	const float PitchKick = Spread.RecoilPitchPerShot + FMath::FRandRange(-Spread.RecoilPitchJitter, Spread.RecoilPitchJitter);
+	const float YawKick = FMath::FRandRange(-Spread.RecoilYawPerShot, Spread.RecoilYawPerShot);
+
+	Character->AddControllerPitchInput(-PitchKick); // look up a bit
+	Character->AddControllerYawInput(YawKick);     // slight horizontal recoil
+#endif
 }

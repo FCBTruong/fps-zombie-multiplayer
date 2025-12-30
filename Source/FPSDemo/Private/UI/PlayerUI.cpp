@@ -261,7 +261,7 @@ void UPlayerUI::UpdatePistol(const EItemId& ItemId) {
     } else {
         Pistol->SetVisibility(ESlateVisibility::Visible);
         
-		UItemConfig* WeaponConf = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
+		const UItemConfig* WeaponConf = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
         if (WeaponConf == nullptr) {
             return;
         }
@@ -276,7 +276,7 @@ void UPlayerUI::UpdateRifle(const EItemId& ItemId) {
     else {
         Rifle->SetVisibility(ESlateVisibility::Visible);
         
-        UItemConfig* WeaponConf = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
+        const UItemConfig* WeaponConf = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
         if (WeaponConf == nullptr) {
             return;
         }

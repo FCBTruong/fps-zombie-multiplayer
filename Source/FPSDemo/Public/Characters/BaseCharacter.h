@@ -188,7 +188,7 @@ protected:
     TWeakObjectPtr<AController> LastHitByController;
 
     UPROPERTY()
-    TWeakObjectPtr<UItemConfig> LastDamageCauser;
+    TWeakObjectPtr<const UItemConfig> LastDamageCauser;
 
 protected:
 	// ===== Replicated Properties =====
@@ -261,14 +261,13 @@ public:
 	void UpdateMaxWalkSpeed();
     void PlayBloodFx(const FVector& HitLocation);
 	void PlayStunEffect(const float& Strength);
-    void StartAiming();
     void StopAiming();   
     void ChangeView();
 	void OnPlantSpikeStarted();
 	void OnPlantSpikeStopped();
     void OnDefuseSpikeStarted();
 	void OnDefuseSpikeStopped();
-    void ApplyRotationMode(bool bIsPlayer);
+    void ApplyRotationMode();
     void RequestCrouch();
     void RequestUnCrouch();
     void RequestSlowMovement(bool bEnable);

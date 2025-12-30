@@ -251,13 +251,21 @@ void UItemVisualComponent::PlayFireFX(FVector TargetPoint)
 	UE_LOG(LogTemp, Log, TEXT("UItemVisualComponent::PlayFireFX called with TargetPoint: %s"), *TargetPoint.ToString());
     if (!EquippedActor)
         return;
+
+    ABaseCharacter* Character = GetCharacter();
+    if (!Character)
+		return;
+
     if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(EquippedActor))
     {
-        Firearm->OnFire(TargetPoint, false, FVector::ZeroVector);
+        FRotator ViewRot;
+        FVector OutStart;
+        Character->GetActorEyesViewPoint(OutStart, ViewRot);
+        Firearm->OnFire(TargetPoint, true, OutStart);
     }
     // fire montage
-	ABaseCharacter* Character = GetCharacter();
-    if (Character && AnimComp)
+	
+    if (AnimComp)
     {
 		const UItemConfig* Data = EquippedActor->GetItemConfig();
         // cast to firearm
