@@ -29,7 +29,7 @@ protected:
 	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 public:
 	virtual void StartPlay() override;
-	void StartRound();
+	virtual void StartRound() override;
 	void EndRound(FName WinningTeam);
 	void EndGame(FName WinningTeam);
 	void PlantSpike(FVector Location, AController* Planter);

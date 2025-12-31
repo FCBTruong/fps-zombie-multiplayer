@@ -23,7 +23,7 @@ public:
 	ATeamEliminationMode();
 	virtual void BeginPlay() override;
 	void PostLogin(APlayerController* NewPlayer) override;
-	void StartRound();
+	virtual void StartRound() override;
 	
 	void StartNextRound();
 	void EndGame(FName WinningTeam);

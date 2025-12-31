@@ -6,7 +6,12 @@
 #include "Game/MyMatchState.h"
 #include "ShooterGameState.generated.h"
 
-
+UENUM(BlueprintType)
+enum class EMatchMode : uint8
+{
+    Spike,
+    Zombie
+};
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateScore, int32, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRoundTime, int32)
@@ -41,6 +46,12 @@ protected:
 
 	UFUNCTION()
 	void OnRep_MyMatchState();
+
+    UPROPERTY(ReplicatedUsing = OnRep_MatchMode)
+    EMatchMode MatchMode = EMatchMode::Spike;
+
+    UFUNCTION()
+    void OnRep_MatchMode();
 public:
 	AShooterGameState();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -74,4 +85,5 @@ public:
     void SetRoundEndTime(int NewRoundEndTime) {
         RoundEndTime = NewRoundEndTime;
 	}
+    void SetMatchMode(EMatchMode NewMode);
 };

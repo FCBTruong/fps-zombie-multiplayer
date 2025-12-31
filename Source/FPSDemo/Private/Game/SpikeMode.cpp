@@ -19,6 +19,7 @@ void ASpikeMode::StartPlay()
 	
 	// decided which team is attacker/defender
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	GS->SetMatchMode(EMatchMode::Spike);
 	FName AttackerTeam = (FMath::RandBool()) ? FName("A") : FName("B");
 	AttackerTeam = "A"; // for testing
 	GS->SetAttackerTeam(AttackerTeam);
@@ -29,8 +30,6 @@ void ASpikeMode::StartPlay()
 	/*SpawnBot("A");*/
 	//SpawnBot("A");
 	//SpawnBot("A");
-
-	StartRound();
 }
 
 void ASpikeMode::PlantSpike(FVector Location, AController* Planter)

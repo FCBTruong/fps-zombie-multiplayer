@@ -47,6 +47,7 @@
 #include "Components/WeaponMeleeComponent.h"
 #include "Components/ThrowableComponent.h"
 #include "Components/SpikeComponent.h"
+#include "Components/RoleComponent.h"
 #include "Game/ItemsManager.h"
 #include "Asset/CharacterAsset.h"
 #include "Materials/MaterialInterface.h"
@@ -95,6 +96,7 @@ ABaseCharacter::ABaseCharacter()
 	WeaponMeleeComp = CreateDefaultSubobject<UWeaponMeleeComponent>(TEXT("WeaponMeleeComponent"));
 	ThrowableComp = CreateDefaultSubobject<UThrowableComponent>(TEXT("ThrowableComponent"));
 	SpikeComp = CreateDefaultSubobject<USpikeComponent>(TEXT("SpikeComponent"));
+	RoleComp = CreateDefaultSubobject<URoleComponent>(TEXT("RoleComponent"));
 
     CameraComp->Initialize(
         CameraFps,
@@ -215,11 +217,6 @@ void ABaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (HasAuthority())
-    {
-        ApplyTeamMesh();
-    }
-
     UGameManager* GameManager = UGameManager::Get(GetWorld());
     if (!GameManager) {
         UE_LOG(LogTemp, Warning, TEXT("GameManager is null in ABaseCharacter::BeginPlay"));
@@ -322,6 +319,12 @@ void ABaseCharacter::BeginPlay()
     CameraFps->SetRelativeLocation(FVector(-90.f, 0, 90.f));*/
 
     bHasBeginPlayRun = true;
+
+    if (RoleComp)
+    {
+        RoleComp->OnRoleChanged.AddUObject(this, &ABaseCharacter::HandleRoleChanged);
+        this->HandleRoleChanged(RoleComp->GetRole(), RoleComp->GetRole());
+    }
 }
 
 void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
@@ -353,50 +356,43 @@ void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
 
 void ABaseCharacter::OnRep_PlayerState() {
     Super::OnRep_PlayerState();
-    // Set mesh based on team
-    if (!bAppliedTeamMesh) {
-        bAppliedTeamMesh = true;
-        ApplyTeamMesh();
-	}
 }
 
-void ABaseCharacter::ApplyTeamMesh()
+void ABaseCharacter::ApplyTeamMesh() // TODO later, for spike mode
 {
-	UE_LOG(LogTemp, Warning, TEXT("Setting mesh based on team"));
-    UGameManager* GMR = Cast<UGameManager>(GetWorld()->GetGameInstance());
-    if (GMR && GMR->GlobalData)
-    {
-        // get player state
-        AMyPlayerState* MyPS = Cast<AMyPlayerState>(GetPlayerState());
-		AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
-		if (!GS) {
-			UE_LOG(LogTemp, Warning, TEXT("GS is null in SetMeshBaseOnTeam"));
-			return;
-		}
-        if (MyPS) {
-            USkeletalMesh* NewMesh = nullptr;
+    UE_LOG(LogTemp, Warning, TEXT("Setting mesh based on team"));
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    // get player state
+    AMyPlayerState* MyPS = Cast<AMyPlayerState>(GetPlayerState());
+    AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+    if (!GS) {
+        UE_LOG(LogTemp, Warning, TEXT("GS is null in SetMeshBaseOnTeam"));
+        return;
+    }
+    if (MyPS) {
+        USkeletalMesh* NewMesh = nullptr;
 
-            UE_LOG(LogTemp, Warning,
-                TEXT("SetMeshBaseOnTeam: TeamID = %s"),
-                *MyPS->GetTeamID().ToString());
-            if (MyPS->GetTeamID() == GS->GetAttackerTeam()) {
-                NewMesh = GMR->GlobalData->TerroristMesh;
-            }
-            else {
-                NewMesh = GMR->GlobalData->CounterTerroristMesh;
-            }
-            if (NewMesh)
-            {
-				UE_LOG(LogTemp, Warning, TEXT("Setting new mesh for team"));
-                GetMesh()->SetSkeletalMesh(NewMesh);
-            }
+        UE_LOG(LogTemp, Warning,
+            TEXT("SetMeshBaseOnTeam: TeamID = %s"),
+            *MyPS->GetTeamID().ToString());
+        if (MyPS->GetTeamID() == GS->GetAttackerTeam()) {
+            NewMesh = CachedCharacterAsset->TerroristMesh;
         }
         else {
-			UE_LOG(LogTemp, Warning, TEXT("MyPS is null in SetMeshBaseOnTeam"));
+            NewMesh = CachedCharacterAsset->CounterTerroristMesh;
+        }
+        if (NewMesh)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Setting new mesh for team"));
+            GetMesh()->SetSkeletalMesh(NewMesh);
         }
     }
-
-    // TODO later
+    else {
+        UE_LOG(LogTemp, Warning, TEXT("MyPS is null in SetMeshBaseOnTeam"));
+    } 
+    /*
     USkeletalMeshComponent* MeshMain = GetMesh();
     MeshMain->SetCollisionEnabled(ECollisionEnabled::QueryOnly);   // IMPORTANT
     MeshMain->SetCollisionObjectType(ECC_Pawn);
@@ -405,7 +401,7 @@ void ABaseCharacter::ApplyTeamMesh()
     this->GetCapsuleComponent()->SetCollisionResponseToChannel(
         ECC_Visibility,
         ECR_Block
-	);
+    );*/
 }
 
 // Called every frame
@@ -1315,6 +1311,10 @@ UWeaponFireComponent* ABaseCharacter::GetWeaponFireComponent() const {
     return WeaponFireComp.Get();
 }
 
+URoleComponent* ABaseCharacter::GetRoleComponent() const {
+    return RoleComp.Get();
+}
+
 void ABaseCharacter::RequestSlowMovement(bool bNewIsSlow)
 {
     ServerSetIsSlow(bNewIsSlow);
@@ -1358,4 +1358,182 @@ UThrowableComponent* ABaseCharacter::GetThrowableComponent() const {
 
 USpikeComponent* ABaseCharacter::GetSpikeComponent() const {
     return SpikeComp.Get();
+}
+
+void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole)
+{
+    // Presentation
+    ApplyVisualByRole(NewRole);
+
+    // Gameplay wiring (attach/detach components, set attack provider, etc.)
+    ApplyLoadoutByRole(NewRole);
+    ApplyInputByRole(NewRole);
+}
+
+void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Applying visuals for role: %d"), (int32)NewRole);
+    if (!CachedCharacterAsset)
+        return;
+
+    // Pick meshes/anims
+    USkeletalMesh* NewTpsMesh = nullptr;
+    USkeletalMesh* NewFpsMesh = nullptr;
+    TSubclassOf<UAnimInstance> NewTpsAnim = nullptr;
+    TSubclassOf<UAnimInstance> NewFpsAnim = nullptr;
+
+    if (NewRole == ECharacterRole::Zombie)
+    {
+        NewTpsMesh = CachedCharacterAsset->ZombieMeshTPS;
+        NewFpsMesh = CachedCharacterAsset->ZombieMeshFPS;
+        NewTpsAnim = CachedCharacterAsset->ZombieAnimTPS;
+        NewFpsAnim = CachedCharacterAsset->ZombieAnimFPS;
+    }
+    else
+    {
+        // Human/Hero -> use team mesh
+        NewTpsMesh = CachedCharacterAsset->CounterTerroristMesh;
+
+       /* const bool bIsAttacker = (MyPS->GetTeamID() == GS->GetAttackerTeam());
+        NewTpsMesh = bIsAttacker ? CachedCharacterAsset->TerroristMesh : CachedCharacterAsset->CounterTerroristMesh;*/
+
+        //NewFpsMesh = CachedCharacterAsset->HumanMeshFPS;      
+        NewTpsAnim = CachedCharacterAsset->HumanAnimTPS;    
+        NewFpsAnim = CachedCharacterAsset->HumanAnimFPS;      
+    }
+
+    // Apply TPS
+    if (USkeletalMeshComponent* TpsMesh = GetMesh())
+    {
+        if (NewTpsMesh && TpsMesh->GetSkeletalMeshAsset() != NewTpsMesh)
+        {
+            TpsMesh->SetSkeletalMesh(NewTpsMesh);
+        }
+        if (NewTpsAnim)
+        {
+            TpsMesh->SetAnimInstanceClass(NewTpsAnim);
+        }
+    }
+
+    // Apply FPS
+    if (MeshFps)
+    {
+        if (NewFpsMesh && MeshFps->GetSkeletalMeshAsset() != NewFpsMesh)
+        {
+            MeshFps->SetSkeletalMesh(NewFpsMesh);
+        }
+        if (NewFpsAnim)
+        {
+            MeshFps->SetAnimInstanceClass(NewFpsAnim);
+        }
+    }
+
+    // Re-bind montage notify if needed (because anim class may change)
+    if (MeshFps)
+    {
+        if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
+        {
+            FPSAnim->OnPlayMontageNotifyBegin.RemoveDynamic(this, &ABaseCharacter::OnNotifyBegin);
+            FPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+        }
+    }
+    if (GetMesh())
+    {
+        if (UAnimInstance* TPSAnim = GetMesh()->GetAnimInstance())
+        {
+            TPSAnim->OnPlayMontageNotifyBegin.RemoveDynamic(this, &ABaseCharacter::OnNotifyBegin);
+            TPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+        }
+    }
+}
+
+void ABaseCharacter::ApplyInputByRole(ECharacterRole NewRole)
+{
+    // TODO this later
+   /* if (!IsLocallyControlled()) return;
+
+    if (AMyPlayerController* PC = Cast<AMyPlayerController>(GetController()))
+    {
+        PC->ApplyRoleInputContext(NewRole);
+    }*/
+}
+
+void ABaseCharacter::ApplyLoadoutByRole(ECharacterRole NewRole)
+{
+    // TODO later 
+    /*
+    const bool bIsZombie = (NewRole == ECharacterRole::Zombie || NewRole == ECharacterRole::Mutant);
+
+    // -------- Weapon / Equip --------
+    if (EquipComp)
+    {
+        EquipComp->SetComponentTickEnabled(!bIsZombie);
+        EquipComp->SetActive(!bIsZombie);          // add a bool in your component, or use Activate/Deactivate
+        if (bIsZombie)
+        {
+            EquipComp->ForceUnequip();             // implement: clear active item, stop equip montage, etc.
+        }
+        else
+        {
+            EquipComp->AutoSelectBestWeapon();
+        }
+    }
+
+    if (WeaponFireComp)
+    {
+        WeaponFireComp->SetComponentTickEnabled(!bIsZombie);
+        WeaponFireComp->SetActive(!bIsZombie);     // add if needed
+        if (bIsZombie)
+        {
+            WeaponFireComp->StopFire();            // stop firing, stop reload, stop aim
+            RequestStopAiming();                   // ensure aiming off
+        }
+    }
+
+    if (ThrowableComp)
+    {
+        ThrowableComp->SetComponentTickEnabled(!bIsZombie);
+        ThrowableComp->SetActive(!bIsZombie);
+        if (bIsZombie)
+        {
+            ThrowableComp->CancelThrow();          // optional
+        }
+    }
+
+    // -------- Objective / Spike --------
+    if (SpikeComp)
+    {
+        SpikeComp->SetComponentTickEnabled(!bIsZombie);
+        SpikeComp->SetActive(!bIsZombie);          // add if needed
+        if (bIsZombie)
+        {
+            SpikeComp->RequestStopPlantSpike();
+            SpikeComp->RequestStopDefuseSpike();
+        }
+    }
+
+    // -------- Melee --------
+    if (WeaponMeleeComp)
+    {
+        WeaponMeleeComp->SetComponentTickEnabled(true); // both roles can have knife/melee
+        WeaponMeleeComp->SetActive(true);
+    }
+
+    // -------- Visual reset --------
+    if (ItemVisualComp)
+    {
+        if (bIsZombie)
+        {
+            ItemVisualComp->OnOwnerDead();         // if you currently hide weapon on dead, use a dedicated func instead
+            ItemVisualComp->ClearWeaponVisuals();  // better: implement a function to hide all weapon visuals
+        }
+        else
+        {
+            ItemVisualComp->RefreshVisuals();      // reattach weapon meshes to hands, etc.
+        }
+    }
+
+    // -------- Movement tuning example --------
+    UpdateMaxWalkSpeed();
+    */ 
 }

@@ -26,6 +26,9 @@ public:
 	void OnSpikeDropped();
 	void OnSpikeCarrierKilled();
 	void OnStartRound(AActorManager* ActorMgr, FName AttackerTeamId, AActor* SpikeActor);
+	TArray<ABotAIController*> GetManagedBots() const {
+		return ManagedBots;
+	}
 
 private:
 	TArray<ABotAIController*> ManagedBots;

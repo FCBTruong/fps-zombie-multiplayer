@@ -18,6 +18,8 @@ class FPSDEMO_API AShooterGameMode : public AGameMode
 {
 	GENERATED_BODY()
 public:
+	AShooterGameMode();
+
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
@@ -35,6 +37,9 @@ public:
 	virtual void CleanupCorpses();
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual bool ReadyToStartMatch_Implementation() override;
+	virtual void HandleMatchHasStarted() override;
+	virtual void StartRound();
 
 	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;
@@ -42,4 +47,8 @@ protected:
 
 	UPROPERTY()
 	TArray<TWeakObjectPtr<AActor>> Corpses;
+
+	bool bRoundStarted = false;
+
+	FTimerHandle TryStartMatchHandle;
 };

@@ -8,6 +8,7 @@
 #include "Components/TimelineComponent.h"
 #include "Items/ItemIds.h"
 #include "Types/EquippedAnimState.h"
+#include "Components/RoleComponent.h"
 #include "BaseCharacter.generated.h"
 
 class UPickupComponent;
@@ -130,6 +131,9 @@ protected:
 	TObjectPtr<UWeaponMeleeComponent> WeaponMeleeComp;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<URoleComponent> RoleComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<UThrowableComponent> ThrowableComp;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -169,7 +173,6 @@ protected:
 protected:
     // ===== Runtime State =====
     bool bLastHitWasHeadshot;
-    bool bAppliedTeamMesh;
     bool bHasBeginPlayRun;
     float LastFootstepTime;
     float BaseStunDuration;
@@ -214,6 +217,10 @@ protected:
 	bool CanPlayFootstep() const;
 	bool IsBot() const;
     void UpdateCurrentWeapon(EItemId CurrentWeaponId);
+    void HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole);
+    void ApplyVisualByRole(ECharacterRole NewRole);
+    void ApplyInputByRole(ECharacterRole NewRole);
+	void ApplyLoadoutByRole(ECharacterRole NewRole);
 
     UFUNCTION(BlueprintPure)
     EEquippedAnimState GetEquippedAnimState() const;
@@ -291,6 +298,7 @@ public:
 	USpikeComponent* GetSpikeComponent() const;
 	UActionStateComponent* GetActionStateComponent() const;
 	UCharAudioComponent* GetAudioComponent() const;
+	URoleComponent* GetRoleComponent() const;
 
     UFUNCTION(BlueprintCallable)
     EMovementState GetCurrentMovementState() const;

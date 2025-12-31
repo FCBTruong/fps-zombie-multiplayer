@@ -67,5 +67,31 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem> BloodFx;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	USkeletalMesh* TerroristMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	USkeletalMesh* CounterTerroristMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	USkeletalMesh* ZombieMeshTPS;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	USkeletalMesh* ZombieMeshFPS;
+
+	// anim
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	TSubclassOf<UAnimInstance> ZombieAnimTPS;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	TSubclassOf<UAnimInstance> ZombieAnimFPS;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	TSubclassOf<UAnimInstance> HumanAnimFPS;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	TSubclassOf<UAnimInstance> HumanAnimTPS;
+
 };
 

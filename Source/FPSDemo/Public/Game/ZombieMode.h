@@ -14,4 +14,12 @@ class FPSDEMO_API AZombieMode : public AShooterGameMode
 {
 	GENERATED_BODY()
 	
+protected:
+	virtual void StartPlay() override;
+	virtual void StartRound() override;
+	void EndRound(FName WinningTeam);
+	void AssignZombieRoles();
+
+	FTimerHandle RoleAssignTimerHandle;
+public:
 };

@@ -5,6 +5,11 @@
 #include "Weapons/WeaponState.h"
 #include "Characters/BaseCharacter.h"
 
+AShooterGameMode::AShooterGameMode()
+{
+    bDelayedStart = true;
+}
+
 void AShooterGameMode::StartPlay()
 {
     Super::StartPlay();
@@ -15,6 +20,8 @@ void AShooterGameMode::StartPlay()
     AShooterGameState* GS = GetGameState<AShooterGameState>();
     if (!GS)
         return;
+
+    bDelayedStart = true;
 }
 
 void AShooterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -53,7 +60,6 @@ void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class ACont
     if (KillerPS && KillerPS != VictimPS && KillerPS->GetTeamID() != VictimPS->GetTeamID()) {
         KillerPS->AddKill();
     }
-
    
     AShooterGameState* GS = GetGameState<AShooterGameState>();
     if (GS)
@@ -64,7 +70,7 @@ void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class ACont
 
 void AShooterGameMode::AssignPlayerTeam(APlayerController* NewPlayer)
 {
-    UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in TeamEliminationMode"));
+    UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in AShooterGameMode"));
     if (!NewPlayer)
     {
         return;
@@ -295,4 +301,22 @@ void AShooterGameMode::CleanupCorpses()
         }
     }
     Corpses.Empty();
+}
+
+void AShooterGameMode::HandleMatchHasStarted()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Match Has Started in AShooterGameMode"));
+    Super::HandleMatchHasStarted();
+    StartRound();
+}
+
+bool AShooterGameMode::ReadyToStartMatch_Implementation()
+{
+    if (GetNumPlayers() <= 0) return false;
+
+    return true;
+}
+
+void AShooterGameMode::StartRound() {
+	UE_LOG(LogTemp, Warning, TEXT("Starting Round in AShooterGameMode"));
 }

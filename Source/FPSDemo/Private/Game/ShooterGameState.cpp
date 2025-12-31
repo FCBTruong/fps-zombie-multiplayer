@@ -22,6 +22,7 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterGameState, AttackerTeam);
 	DOREPLIFETIME(AShooterGameState, RoundEndTime);
 	DOREPLIFETIME(AShooterGameState, CurrentMatchState);
+    DOREPLIFETIME(AShooterGameState, MatchMode);
 }
 
 
@@ -110,3 +111,16 @@ void AShooterGameState::OnRep_MyMatchState()
     OnUpdateMatchState.Broadcast(CurrentMatchState);
 }
 
+void AShooterGameState::SetMatchMode(EMatchMode NewMode)
+{
+    if (!HasAuthority()) return;
+    if (MatchMode == NewMode) return;
+
+    MatchMode = NewMode;
+    OnRep_MatchMode(); // apply immediately on server too 
+}
+
+void AShooterGameState::OnRep_MatchMode()
+{
+    // optional: broadcast event if you want pawns to re-apply visuals
+}
