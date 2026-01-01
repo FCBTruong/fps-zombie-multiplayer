@@ -8,7 +8,7 @@
 #include "Components/TimelineComponent.h"
 #include "Items/ItemIds.h"
 #include "Types/EquippedAnimState.h"
-#include "Components/RoleComponent.h"
+#include "Characters/CharacterRole.h"
 #include "BaseCharacter.generated.h"
 
 class UPickupComponent;
@@ -44,7 +44,7 @@ class UThrowableComponent;
 class UCharacterAsset;
 class UPostProcessComponent;
 class UItemConfig;
-
+class URoleComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAimingChanged, bool);
@@ -284,6 +284,7 @@ public:
     bool IsAlive() const;
     bool IsFpsViewMode() const;
 	bool IsAiming() const;
+    bool IsCharacterRole(ECharacterRole InRole) const;
     FVector GetThrowableLocation() const;
     UPickupComponent* GetPickupComponent() const;
     UInventoryComponent* GetInventoryComponent() const;

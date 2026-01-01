@@ -54,6 +54,7 @@
 #include "Game/GlobalDataAsset.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "Items/ThrowableConfig.h"
+#include "Components/RoleComponent.h"
 
 
 // Sets default values
@@ -392,16 +393,17 @@ void ABaseCharacter::ApplyTeamMesh() // TODO later, for spike mode
     else {
         UE_LOG(LogTemp, Warning, TEXT("MyPS is null in SetMeshBaseOnTeam"));
     } 
-    /*
+    
+    //USkeletalMeshComponent* MeshMain = GetMesh();
+    //MeshMain->SetCollisionProfileName(TEXT("CharacterMesh"));
+    //MeshMain->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+
     USkeletalMeshComponent* MeshMain = GetMesh();
-    MeshMain->SetCollisionEnabled(ECollisionEnabled::QueryOnly);   // IMPORTANT
-    MeshMain->SetCollisionObjectType(ECC_Pawn);
-    MeshMain->SetCollisionResponseToAllChannels(ECR_Ignore);
-    MeshMain->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-    this->GetCapsuleComponent()->SetCollisionResponseToChannel(
-        ECC_Visibility,
-        ECR_Block
-    );*/
+    MeshMain->SetCollisionProfileName(TEXT("CharacterMesh"));
+    MeshMain->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+    MeshMain->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    //MeshMain->SetCollisionObjectType(ECC);
+
 }
 
 // Called every frame
@@ -1362,12 +1364,30 @@ USpikeComponent* ABaseCharacter::GetSpikeComponent() const {
 
 void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole)
 {
+    if (true) {
+        return;
+    }
     // Presentation
     ApplyVisualByRole(NewRole);
 
     // Gameplay wiring (attach/detach components, set attack provider, etc.)
     ApplyLoadoutByRole(NewRole);
     ApplyInputByRole(NewRole);
+
+    // play effect if human to zombie
+    if (OldRole == ECharacterRole::Human && NewRole == ECharacterRole::Zombie)
+    {
+		FVector SpawnLocation = GetActorLocation();
+		SpawnLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+        if (CachedCharacterAsset && CachedCharacterAsset->TurnToZombieFx)
+        {
+            UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+                GetWorld(),
+                CachedCharacterAsset->TurnToZombieFx,
+                SpawnLocation
+            );
+        }
+	}
 }
 
 void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
@@ -1460,56 +1480,49 @@ void ABaseCharacter::ApplyInputByRole(ECharacterRole NewRole)
 
 void ABaseCharacter::ApplyLoadoutByRole(ECharacterRole NewRole)
 {
-    // TODO later 
-    /*
-    const bool bIsZombie = (NewRole == ECharacterRole::Zombie || NewRole == ECharacterRole::Mutant);
+    const bool bIsZombie = (NewRole == ECharacterRole::Zombie);
 
     // -------- Weapon / Equip --------
     if (EquipComp)
     {
-        EquipComp->SetComponentTickEnabled(!bIsZombie);
-        EquipComp->SetActive(!bIsZombie);          // add a bool in your component, or use Activate/Deactivate
         if (bIsZombie)
         {
-            EquipComp->ForceUnequip();             // implement: clear active item, stop equip montage, etc.
+            EquipComp->DestroyComponent();
+			EquipComp = nullptr;
+            //EquipComp->ForceUnequip();             // implement: clear active item, stop equip montage, etc.
         }
         else
         {
-            EquipComp->AutoSelectBestWeapon();
+            //EquipComp->AutoSelectBestWeapon();
         }
     }
 
     if (WeaponFireComp)
     {
-        WeaponFireComp->SetComponentTickEnabled(!bIsZombie);
-        WeaponFireComp->SetActive(!bIsZombie);     // add if needed
         if (bIsZombie)
         {
-            WeaponFireComp->StopFire();            // stop firing, stop reload, stop aim
-            RequestStopAiming();                   // ensure aiming off
+			WeaponFireComp->DestroyComponent();
+            WeaponFireComp = nullptr;
         }
     }
 
     if (ThrowableComp)
     {
-        ThrowableComp->SetComponentTickEnabled(!bIsZombie);
-        ThrowableComp->SetActive(!bIsZombie);
         if (bIsZombie)
         {
-            ThrowableComp->CancelThrow();          // optional
-        }
+            ThrowableComp->DestroyComponent();
+            ThrowableComp = nullptr;
+		}
     }
 
     // -------- Objective / Spike --------
     if (SpikeComp)
     {
-        SpikeComp->SetComponentTickEnabled(!bIsZombie);
-        SpikeComp->SetActive(!bIsZombie);          // add if needed
         if (bIsZombie)
         {
-            SpikeComp->RequestStopPlantSpike();
-            SpikeComp->RequestStopDefuseSpike();
-        }
+            SpikeComp->DestroyComponent();
+            SpikeComp = nullptr;
+		}
     }
 
     // -------- Melee --------
@@ -1524,16 +1537,26 @@ void ABaseCharacter::ApplyLoadoutByRole(ECharacterRole NewRole)
     {
         if (bIsZombie)
         {
-            ItemVisualComp->OnOwnerDead();         // if you currently hide weapon on dead, use a dedicated func instead
-            ItemVisualComp->ClearWeaponVisuals();  // better: implement a function to hide all weapon visuals
+            ItemVisualComp->OnOwnerDead();         
+			ItemVisualComp->DestroyComponent();
+			ItemVisualComp = nullptr;
         }
         else
         {
-            ItemVisualComp->RefreshVisuals();      // reattach weapon meshes to hands, etc.
+            
         }
     }
 
     // -------- Movement tuning example --------
     UpdateMaxWalkSpeed();
-    */ 
+}
+
+
+bool ABaseCharacter::IsCharacterRole(ECharacterRole InRole) const
+{
+    if (RoleComp)
+    {
+        return RoleComp->GetRole() == InRole;
+    }
+    return false;
 }

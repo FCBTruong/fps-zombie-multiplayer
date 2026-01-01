@@ -45,6 +45,7 @@ void ABotAIController::BeginPlay()
 {
     Super::BeginPlay();
 }
+
 void ABotAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
@@ -60,6 +61,14 @@ void ABotAIController::OnPossess(APawn* InPawn)
     if (MyChar) {
         UEquipComponent* EquipComp = MyChar->GetEquipComponent();
         EquipComp->OnAmmoChanged.AddUObject(this, &ABotAIController::OnAmmoChanged);
+    }
+
+    // Get game mode and set initial match mode
+    AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    if (GS)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("BotAIController: Initial MatchMode=%d"), (uint8)GS->GetMatchMode());
+        SetMatchMode(GS->GetMatchMode());
     }
 }
 
@@ -115,18 +124,9 @@ void ABotAIController::Tick(float DeltaSeconds)
 
 void ABotAIController::ResetAIState()
 {
-    UBlackboardComponent* BB = GetBlackboardComponent();
-    if (!BB) return;
-
-    // Clear target data
-    BB->ClearValue("Obj_TargetActor");
-    BB->ClearValue("B_HasLineSight");
-    BB->ClearValue("Vec_TargetLocation");
-    BB->ClearValue("B_IsInBombArea");
-	BB->ClearValue("Vec_SpikeLocation");
-    BB->ClearValue("Vec_PlantLocation");
-	BB->ClearValue("Name_BombSite");
-    BB->ClearValue("Vec_HoldLocation");
+	SetTargetActor(nullptr);
+    SetHasLineSight(false);
+	SetPlantLocation(FVector::ZeroVector);
 
     // Clear AI focus
     ClearFocus(EAIFocusPriority::Gameplay);
@@ -198,4 +198,126 @@ void ABotAIController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current a
             }
         }
 	}
+}
+
+void ABotAIController::SetTargetActor(ABaseCharacter* NewTarget)
+{
+	TargetActor = NewTarget;
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsObject(BotBBKeys::TargetActor, NewTarget);
+    }
+}
+
+ABaseCharacter* ABotAIController::GetTargetActor() const
+{
+    return TargetActor;
+}
+
+void ABotAIController::SetMatchMode(EMatchMode NewMode)
+{
+    CurrentMatchMode = NewMode;
+
+    UE_LOG(LogTemp, Warning, TEXT("BotAIController: SetMatchMode"));
+
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("BotAIController: BBB OK"));
+        Blackboard->SetValueAsEnum(
+            BotBBKeys::MatchMode,
+            static_cast<uint8>(NewMode)
+        );
+    }
+}
+
+void ABotAIController::SetSpikeRole(EBotRole NewRole)
+{
+	SpikeRole = NewRole;
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsEnum(
+            BotBBKeys::SpikeRole,
+            static_cast<uint8>(NewRole)
+        );
+    }
+}
+
+void ABotAIController::SetSpikeActor(AActor* NewSpikeActor)
+{
+	SpikeActor = NewSpikeActor;
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsObject(
+            BotBBKeys::SpikeActor,
+            NewSpikeActor
+        );
+    }
+}
+
+void ABotAIController::SetIsAttacker(bool bAttacker)
+{
+	bIsAttacker = bAttacker;
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsBool(
+            BotBBKeys::IsAttacker,
+            bAttacker
+        );
+    }
+}
+
+void ABotAIController::SetPlantLocation(const FVector& NewLocation)
+{
+	PlantLocation = NewLocation;
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsVector(
+            BotBBKeys::PlantLocation,
+            NewLocation
+        );
+    }
+}
+
+void ABotAIController::SetCharacterRole(ECharacterRole NewRole)
+{
+	CharacterRole = NewRole;
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsEnum(
+            BotBBKeys::CharacterRole,
+            static_cast<uint8>(NewRole)
+        );
+    }
+}
+
+void ABotAIController::SetScoutLocation(const FVector& NewLocation)
+{
+    ScoutLocation = NewLocation;
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsVector(
+            BotBBKeys::ScoutLocation,
+            NewLocation
+        );
+    }
+}
+
+void ABotAIController::SetHasLineSight(bool bLineSight)
+{
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsBool(
+            BotBBKeys::HasLineSight,
+            bLineSight
+        );
+    }
 }

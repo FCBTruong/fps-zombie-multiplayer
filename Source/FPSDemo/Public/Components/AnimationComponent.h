@@ -30,5 +30,4 @@ public:
 	void PlayReloadRifleMontage();
 	void PlayReloadPistolMontage();
 	void PlayThrowNadeMontage();
-	void PlayHoldNadeMontage();
 };

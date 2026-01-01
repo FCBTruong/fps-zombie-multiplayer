@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Bot/BotRole.h"
+#include "Game/ShooterGameState.h"
+#include "Characters/BaseCharacter.h"
 
 class ABotAIController;
 class AActorManager;
-class ABaseCharacter;
 
 /**
  * 
@@ -26,12 +27,15 @@ public:
 	void OnSpikeDropped();
 	void OnSpikeCarrierKilled();
 	void OnStartRound(AActorManager* ActorMgr, FName AttackerTeamId, AActor* SpikeActor);
+	void NotifyCharacterRole(ABotAIController* Bot, ECharacterRole NewRole);
 	TArray<ABotAIController*> GetManagedBots() const {
 		return ManagedBots;
+	}
+	void SetMatchMode(EMatchMode NewMode) {
+		CurrentMatchMode = NewMode;
 	}
 
 private:
 	TArray<ABotAIController*> ManagedBots;
-
-	void AssignBotAsRole(ABotAIController* Bot, EBotRole Role);
+	EMatchMode CurrentMatchMode = EMatchMode::Spike;
 };

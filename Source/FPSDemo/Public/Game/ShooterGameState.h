@@ -86,4 +86,5 @@ public:
         RoundEndTime = NewRoundEndTime;
 	}
     void SetMatchMode(EMatchMode NewMode);
+	EMatchMode GetMatchMode() const { return MatchMode; }
 };

@@ -20,6 +20,7 @@ void ASpikeMode::StartPlay()
 	// decided which team is attacker/defender
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	GS->SetMatchMode(EMatchMode::Spike);
+	BotManager->SetMatchMode(EMatchMode::Spike);
 	FName AttackerTeam = (FMath::RandBool()) ? FName("A") : FName("B");
 	AttackerTeam = "A"; // for testing
 	GS->SetAttackerTeam(AttackerTeam);

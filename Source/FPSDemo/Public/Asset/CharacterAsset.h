@@ -23,9 +23,6 @@ public:
 	TObjectPtr<UAnimMontage> AnimMontage_ThrowNade = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
-	TObjectPtr<UAnimMontage> AnimMontage_HoldNade = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	TObjectPtr<UAnimMontage> AnimMontage_KnifeAttack1 = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
@@ -67,6 +64,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem> BloodFx;
+
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem> TurnToZombieFx;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
 	USkeletalMesh* TerroristMesh;

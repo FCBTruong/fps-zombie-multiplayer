@@ -4,17 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Characters/CharacterRole.h"
 #include "RoleComponent.generated.h"
 
-// Keep this enum generic. It is "form/archetype" of the character.
-// Zombie mode uses more values; bomb mode can stay at Human only.
-UENUM(BlueprintType)
-enum class ECharacterRole : uint8
-{
-	Human	UMETA(DisplayName = "Human"),
-	Zombie	UMETA(DisplayName = "Zombie"),
-	Hero	UMETA(DisplayName = "Hero")
-};
 
 // Native multicast delegate (same style as your SpikeComponent)
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnRoleChanged, ECharacterRole /*OldRole*/, ECharacterRole /*NewRole*/);

@@ -1,6 +1,5 @@
 #include "Bot/BTService_UpdateTarget.h"
 #include "Controllers/BotAIController.h"
-#include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Characters/BaseCharacter.h"
 #include "Perception/AISense_Sight.h"
@@ -23,10 +22,9 @@ void UBTService_UpdateTarget::TickNode(
     ABotAIController* AICon = Cast<ABotAIController>(OwnerComp.GetAIOwner());
     if (!AICon) return;
 
-    UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
     UAIPerceptionComponent* Perception = AICon->GetAIPerceptionComponent();
     APawn* Pawn = AICon->GetPawn();
-    if (!Pawn || !Perception || !BB) return;
+    if (!Pawn || !Perception) return;
 
     // Get my team ID
     AMyPlayerState* MyPS = Pawn->GetPlayerState<AMyPlayerState>();
@@ -39,7 +37,7 @@ void UBTService_UpdateTarget::TickNode(
     Perception->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), PerceivedActors);
 	UE_LOG(LogTemp, Log, TEXT("BTService_UpdateTarget: Perceived %d actors"), PerceivedActors.Num());
 
-    AActor* BestTarget = nullptr;
+    ABaseCharacter* BestTarget = nullptr;
 
     // Loop through perceived actors
     for (AActor* Actor : PerceivedActors)
@@ -57,7 +55,7 @@ void UBTService_UpdateTarget::TickNode(
         if (TargetPS->GetTeamID() == MyTeamID) continue;
 
         // This is an enemy we can see
-        BestTarget = Actor;
+        BestTarget = BC;
         break;
     }
 
@@ -70,7 +68,7 @@ void UBTService_UpdateTarget::TickNode(
         BB->SetValueAsObject("Obj_TargetActor", BestTarget);
     }*/
 
-    BB->SetValueAsObject("Obj_TargetActor", BestTarget);
+	AICon->SetTargetActor(BestTarget);
 
     if (BestTarget)
     {
@@ -87,16 +85,12 @@ void UBTService_UpdateTarget::TickNode(
         );
 
         bool bHasLOS = (!bHit || Hit.GetActor() == BestTarget);
-
-        BB->SetValueAsBool("B_HasLineSight", bHasLOS);
-        BB->SetValueAsVector("Vec_TargetLocation", TargetLoc);
-
+		AICon->SetHasLineSight(bHasLOS);
 		AICon->SetFocus(BestTarget);
     }
     else
     {
-		BB->SetValueAsVector("Vec_TargetLocation", FVector::ZeroVector);
-        BB->SetValueAsBool("B_HasLineSight", false);
+        AICon->SetHasLineSight(false);
 		AICon->ClearFocus(EAIFocusPriority::Default);
     }
     //AICon->SetFocus(BestTarget);

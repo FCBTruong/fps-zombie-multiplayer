@@ -107,10 +107,3 @@ void UAnimationComponent::PlayThrowNadeMontage() {
     }
     PlayMontage(CachedCharacterAsset->AnimMontage_ThrowNade);
 }
-
-void UAnimationComponent::PlayHoldNadeMontage() {
-    if (!CachedCharacterAsset) {
-        return;
-    }
-    PlayMontage(CachedCharacterAsset->AnimMontage_HoldNade);
-}

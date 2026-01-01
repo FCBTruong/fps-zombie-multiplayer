@@ -1,6 +1,7 @@
 #include "Bot/BTTask_RotateToTarget.h"
 #include "Controllers/BotAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Characters/BaseCharacter.h"
 
 UBTTask_RotateToTarget::UBTTask_RotateToTarget()
 {
@@ -23,8 +24,7 @@ void UBTTask_RotateToTarget::TickTask(
     if (!AI) { FinishLatentTask(OwnerComp, EBTNodeResult::Failed); return; }
 
     APawn* Pawn = AI->GetPawn();
-    UBlackboardComponent* BB = AI->GetBlackboardComponent();
-    AActor* Target = Cast<AActor>(BB->GetValueAsObject("TargetActor"));
+	ABaseCharacter* Target = AI->GetTargetActor();
 
     if (!Pawn || !Target)
     {

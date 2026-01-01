@@ -13,6 +13,7 @@ void AZombieMode::StartPlay()
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	GS->SetMatchMode(EMatchMode::Zombie);
+	BotManager->SetMatchMode(EMatchMode::Zombie);
 
 	FName AttackerTeam = (FMath::RandBool()) ? FName("A") : FName("B");
 	AttackerTeam = "A"; // for testing
@@ -36,7 +37,7 @@ void AZombieMode::StartRound()
 		RoleAssignTimerHandle,
 		this,
 		&AZombieMode::AssignZombieRoles,
-		2.0f,
+		5.0f,
 		false
 	);
 }
@@ -65,6 +66,8 @@ void AZombieMode::AssignZombieRoles()
 		RoleComp->SetRoleAuthoritative(
 			bMakeZombie ? ECharacterRole::Zombie : ECharacterRole::Human
 		);
+
+		BotManager->NotifyCharacterRole(Bot, bMakeZombie ? ECharacterRole::Zombie : ECharacterRole::Human);
 	}
 }
 

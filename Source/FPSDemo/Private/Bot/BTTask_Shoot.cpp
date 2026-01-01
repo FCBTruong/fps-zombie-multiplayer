@@ -1,6 +1,5 @@
 #include "Bot/BTTask_Shoot.h"
 #include "Controllers/BotAIController.h"
-#include "BehaviorTree/BlackboardComponent.h"
 #include "Characters/BaseCharacter.h"
 #include "Components/EquipComponent.h"
 #include "Components/WeaponFireComponent.h"
@@ -20,12 +19,11 @@ EBTNodeResult::Type UBTTask_Shoot::ExecuteTask(
     ABotAIController* AI = Cast<ABotAIController>(OwnerComp.GetAIOwner());
     if (!AI)
     {
-		return EBTNodeResult::Failed;
+        return EBTNodeResult::Failed;
     }
-
-    UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
+    
     ABaseCharacter* Char = Cast<ABaseCharacter>(AI->GetPawn());
-    if (!Char || !BB)
+    if (!Char)
     {
         return EBTNodeResult::Failed;
     }
@@ -37,7 +35,7 @@ EBTNodeResult::Type UBTTask_Shoot::ExecuteTask(
     }
 
     // === Target ===
-    APawn* Target = Cast<APawn>(BB->GetValueAsObject(TEXT("Obj_TargetActor")));
+	APawn* Target = AI->GetTargetActor();
     if (!Target)
     {
         return EBTNodeResult::Failed;
@@ -45,7 +43,7 @@ EBTNodeResult::Type UBTTask_Shoot::ExecuteTask(
     //AI->SetFocus(Target);
 
     // check Has Sight
-    bool IsHasSight = BB->GetValueAsBool(TEXT("B_HasLineSight"));
+	bool IsHasSight = AI->HasLineOfSight();
     if (!IsHasSight) {
 		return EBTNodeResult::Succeeded;
     }
