@@ -49,7 +49,7 @@ void UBTService_UpdateTarget::TickNode(
         if (!TargetPS) continue;
 
         // Skip dead players
-        if (!TargetPS->IsAlive()) continue;
+        if (BC->IsDead()) continue;
 
         // Skip same team
         if (TargetPS->GetTeamID() == MyTeamID) continue;

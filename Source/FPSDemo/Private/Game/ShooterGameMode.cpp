@@ -53,7 +53,6 @@ void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, class ACont
         UE_LOG(LogTemp, Warning, TEXT("VictimPS is null in NotifyPlayerKilled"));
         return;
     }
-    VictimPS->SetIsAlive(false);
 	VictimPS->AddDeath();
     
     // check same team or not
@@ -164,7 +163,6 @@ void AShooterGameMode::ResetPlayers()
         AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
         if (MyPS)
         {
-            MyPS->SetIsAlive(true);
             MyPS->SetIsSpectator(false);
             MyPS->ResetBoughtItems();
         }
@@ -177,7 +175,6 @@ void AShooterGameMode::RestartPlayer(AController* NewPlayer)
 	if (!NewPlayer) return;
     if (AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>())
     {
-        PS->SetIsAlive(true);
         PS->ResetBoughtItems();
     }
   
@@ -205,7 +202,6 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
 	if (PS)
 	{
 		PS->SetTeamID(TeamID);
-		PS->SetIsAlive(true);
 		FName BotName = FName(*FString::Printf(TEXT("Bot_%s_%d"), *TeamID.ToString(), FMath::RandRange(1000, 9999)));
 		PS->SetPlayerName(BotName.ToString());
 	}
@@ -231,7 +227,10 @@ bool AShooterGameMode::CheckAllTeamDead(FName TeamID)
 
 		if (MyPS->GetTeamID() != TeamID) continue;
 
-        if (MyPS->IsAlive())
+		ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPS->GetPawn());
+		if (!MyChar) continue;
+
+        if (MyChar->IsAlive())
         {
             return false; // At least 1 alive team NOT dead
         }

@@ -405,3 +405,9 @@ APickupItem* UInventoryComponent::DropItem(EItemId Id) {
     RemoveItem(Id);
 	return Pickup;
 }
+
+void UInventoryComponent::ClearInventory() {
+    RifleState.ItemId = EItemId::NONE;
+    PistolState.ItemId = EItemId::NONE;
+    Throwables.Empty();
+}

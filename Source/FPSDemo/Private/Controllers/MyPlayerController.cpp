@@ -662,10 +662,13 @@ AActor* AMyPlayerController::FindLivingTeammate(AController* Spectator)
         AMyPlayerState* OtherPS = Cast<AMyPlayerState>(PS);
         if (!OtherPS) continue;
 
+		ABaseCharacter* OtherChar = Cast<ABaseCharacter>(OtherPS->GetPawn());
+		if (!OtherChar) continue;
+
         if (OtherPS->GetTeamID() == SpectatorPS->GetTeamID()
-            && OtherPS->IsAlive())
+            && OtherChar->IsAlive())
         {
-            return OtherPS->GetPawn();
+            return OtherChar;
         }
     }
     return nullptr;
@@ -706,7 +709,9 @@ void AMyPlayerController::ServerSetSpectateTarget_Implementation(bool bNext)
     if (!PlayerState) return;
 	AMyPlayerState* PlayerMyState = Cast<AMyPlayerState>(PlayerState);
 	if (!PlayerMyState) return;
-	if (PlayerMyState->IsAlive()) return;
+
+	ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
+	if (MyChar->IsAlive()) return;
 
     if (bNext) {
         if (!PlayerState->IsSpectator()) {

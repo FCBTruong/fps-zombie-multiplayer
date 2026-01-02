@@ -5,6 +5,8 @@
 #include "Game/ShooterGameState.h"
 #include "Characters/BaseCharacter.h"
 #include "Components/RoleComponent.h"
+#include "Game/ActorManager.h"
+#include <GameFramework/PlayerStart.h>
 
 void AZombieMode::StartPlay()
 {
@@ -80,4 +82,64 @@ void AZombieMode::EndRound(FName WinningTeam)
 		GS->SetMatchState(EMyMatchState::ROUND_ENDED);
 		GS->Multicast_RoundResult(WinningTeam);
 	}
+}
+
+void AZombieMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
+{
+	Super::NotifyPlayerKilled(Killer, Victim, DamageCauser, bWasHeadShot);
+
+	// spawn victim as zombie
+
+	Victim->UnPossess(); // no need old pawn
+
+	UE_LOG(LogTemp, Warning, TEXT("Respawning player as zombie..."));
+	RestartPlayer(Victim);
+
+	ABaseCharacter* Char = Cast<ABaseCharacter>(Victim->GetPawn());
+	if (Char)
+	{
+		URoleComponent* RoleComp = Char->FindComponentByClass<URoleComponent>();
+		if (RoleComp)
+		{
+			RoleComp->SetRoleAuthoritative(ECharacterRole::Zombie);
+		}
+	}
+}
+
+AActor* AZombieMode::ChoosePlayerStart_Implementation(AController* Player)
+{
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGXX: ChoosePlayerStart_Implementation..."));
+	AMyPlayerState* PS = Player->GetPlayerState<AMyPlayerState>();
+
+	if (!PS) {
+		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in ChoosePlayerStart_Implementation"));
+		return Super::ChoosePlayerStart_Implementation(Player); // fallback
+	}
+
+
+	FName TeamId = PS->GetTeamID();
+
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	AActorManager* AM = AActorManager::Get(GetWorld());
+
+	if (TeamId == GS->GetAttackerTeam())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Choosing attacker start for player %s"), *Player->GetName());
+		APlayerStart* AttackerStart = AM->GetRandomAttackerStart();
+		if (AttackerStart)
+		{
+			return AttackerStart;
+		}
+	}
+	else {
+
+		APlayerStart* DefenderStart = AM->GetRandomDefenderStart();
+		if (DefenderStart)
+		{
+			return DefenderStart;
+		}
+	}
+
+
+	return Super::ChoosePlayerStart_Implementation(Player); // fallback
 }

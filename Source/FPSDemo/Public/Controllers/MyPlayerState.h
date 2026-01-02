@@ -23,9 +23,6 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_TeamId)
 	FName TeamID = "";
 
-	UPROPERTY(Replicated)
-	bool bIsAlive = true;
-
 	UPROPERTY(ReplicatedUsing = OnRep_Money)
 	int Money = 10000;
 
@@ -57,13 +54,10 @@ public:
 	AMyPlayerState();
 
 	FName GetTeamID() const { return TeamID; }
-	bool IsAlive() const { return bIsAlive; }
 	void SetTeamID(FName NewTeamID) { TeamID = NewTeamID; }
-	void SetIsAlive(bool bNewIsAlive) { bIsAlive = bNewIsAlive; }
 	void ProcessBuy(const UItemConfig* Item);
 	int GetMoney() const { return Money; }
 	void ResetBoughtItems() { BoughtItems.Empty(); }
-	bool IsDead() const { return !bIsAlive; }
 
 	FOnUpdateMoney OnUpdateMoney;
 	FOnUpdateBoughtItems OnUpdateBoughtItems;

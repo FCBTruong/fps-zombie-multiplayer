@@ -326,6 +326,10 @@ void ABaseCharacter::BeginPlay()
         RoleComp->OnRoleChanged.AddUObject(this, &ABaseCharacter::HandleRoleChanged);
         this->HandleRoleChanged(RoleComp->GetRole(), RoleComp->GetRole());
     }
+
+
+    USkeletalMeshComponent* MeshMain = GetMesh();
+    MeshMain->SetCollisionProfileName(TEXT("MyMesh"));
 }
 
 void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
@@ -393,17 +397,6 @@ void ABaseCharacter::ApplyTeamMesh() // TODO later, for spike mode
     else {
         UE_LOG(LogTemp, Warning, TEXT("MyPS is null in SetMeshBaseOnTeam"));
     } 
-    
-    //USkeletalMeshComponent* MeshMain = GetMesh();
-    //MeshMain->SetCollisionProfileName(TEXT("CharacterMesh"));
-    //MeshMain->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-
-    USkeletalMeshComponent* MeshMain = GetMesh();
-    MeshMain->SetCollisionProfileName(TEXT("CharacterMesh"));
-    MeshMain->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-    MeshMain->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-    //MeshMain->SetCollisionObjectType(ECC);
-
 }
 
 // Called every frame
@@ -885,7 +878,7 @@ void ABaseCharacter::HandleDeath()
             UBrainComponent* Brain = AI->GetBrainComponent();
             if (Brain)
             {
-                Brain->StopLogic("Bot died");
+                //Brain->StopLogic("Bot died");
             }
         }
 		
@@ -898,19 +891,16 @@ void ABaseCharacter::HandleDeath()
 
 void ABaseCharacter::MulticastPlayerDeath_Implementation()
 {
-	// if local player, show death UI, etc.
-    // change to tps mmode
+    // hide visual
+    if (ItemVisualComp) {
+        ItemVisualComp->OnOwnerDead();
+    }
 
 	// log server or client
 	UE_LOG(LogTemp, Warning, TEXT("MulticastPlayerDeath called on %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"));
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     GetMesh()->SetSimulatePhysics(true);
     GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-
-    // hide visual
-    if (ItemVisualComp) {
-        ItemVisualComp->OnOwnerDead();
-    }
 
     if (IsLocallyControlled()) {
         AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
@@ -1150,6 +1140,15 @@ bool ABaseCharacter::IsAlive() const
     return true; // if no health component, assume alive
 }
 
+bool ABaseCharacter::IsDead() const
+{
+    if (HealthComp)
+    {
+        return HealthComp->IsDead();
+    }
+    return false; // if no health component, assume alive
+}
+
 void ABaseCharacter::Landed(const FHitResult& Hit)
 {
     Super::Landed(Hit);
@@ -1364,9 +1363,6 @@ USpikeComponent* ABaseCharacter::GetSpikeComponent() const {
 
 void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole)
 {
-    if (true) {
-        return;
-    }
     // Presentation
     ApplyVisualByRole(NewRole);
 
@@ -1375,16 +1371,20 @@ void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole Ne
     ApplyInputByRole(NewRole);
 
     // play effect if human to zombie
-    if (OldRole == ECharacterRole::Human && NewRole == ECharacterRole::Zombie)
+    if (NewRole == ECharacterRole::Zombie)
     {
-		FVector SpawnLocation = GetActorLocation();
+		FVector SpawnLocation = FVector::ZeroVector;
 		SpawnLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
         if (CachedCharacterAsset && CachedCharacterAsset->TurnToZombieFx)
         {
-            UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-                GetWorld(),
+            UNiagaraFunctionLibrary::SpawnSystemAttached(
                 CachedCharacterAsset->TurnToZombieFx,
-                SpawnLocation
+                GetRootComponent(),
+                NAME_None,
+                SpawnLocation,
+                FRotator::ZeroRotator,
+                EAttachLocation::SnapToTarget,
+                true
             );
         }
 	}
@@ -1531,6 +1531,14 @@ void ABaseCharacter::ApplyLoadoutByRole(ECharacterRole NewRole)
         WeaponMeleeComp->SetComponentTickEnabled(true); // both roles can have knife/melee
         WeaponMeleeComp->SetActive(true);
     }
+
+    if (InventoryComp)
+    {
+        if (bIsZombie)
+        {
+            InventoryComp->ClearInventory();
+        }
+	}
 
     // -------- Visual reset --------
     if (ItemVisualComp)

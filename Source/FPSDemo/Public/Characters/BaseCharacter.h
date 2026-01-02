@@ -282,6 +282,7 @@ public:
     float GetSpeedWalkRatio() const;
     float GetAimSensitivity() const;
     bool IsAlive() const;
+	bool IsDead() const;
     bool IsFpsViewMode() const;
 	bool IsAiming() const;
     bool IsCharacterRole(ECharacterRole InRole) const;

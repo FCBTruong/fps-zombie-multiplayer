@@ -71,6 +71,8 @@ public:
 	void RemoveItem(EItemId ItemId); // remove item from inventory (server only)
 	void DropAllItems(); // drop all items (server only)
     APickupItem* DropItem(EItemId ItemId);
+
+    void ClearInventory();
 public:
     // ===== Events (fire on server + clients via OnRep) =====
     FOnInventoryChanged OnInventoryChanged;

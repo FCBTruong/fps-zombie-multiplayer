@@ -17,9 +17,11 @@ class FPSDEMO_API AZombieMode : public AShooterGameMode
 protected:
 	virtual void StartPlay() override;
 	virtual void StartRound() override;
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	void EndRound(FName WinningTeam);
 	void AssignZombieRoles();
 
 	FTimerHandle RoleAssignTimerHandle;
 public:
+	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 };

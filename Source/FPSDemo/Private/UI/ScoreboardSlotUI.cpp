@@ -2,6 +2,7 @@
 
 
 #include "UI/ScoreboardSlotUI.h"
+#include "Characters/BaseCharacter.h"
 
 void UScoreboardSlotUI::Setup(const AMyPlayerState* PS, bool isMe)
 {
@@ -29,7 +30,14 @@ void UScoreboardSlotUI::Setup(const AMyPlayerState* PS, bool isMe)
 	else if (PS->GetTeamID() == FName("B")) {
 		BackgroundImg->SetColorAndOpacity(FLinearColor(0.617f, 0.184f, 0.036f, 0.3f)); // Reddish
 	}
-	if (!PS->IsAlive()) {
+
+	bool bIsDead = false;
+	ABaseCharacter* PSChar = Cast<ABaseCharacter>(PS->GetPawn());
+	if (PSChar)
+	{
+		bIsDead = PSChar->IsDead();
+	}
+	if (bIsDead) {
 		BackgroundImg->SetOpacity(0.1f); // faded
 	}
 	else {

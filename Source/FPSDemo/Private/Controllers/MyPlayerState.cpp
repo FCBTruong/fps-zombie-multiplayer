@@ -70,7 +70,6 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, Money);
 	DOREPLIFETIME(AMyPlayerState, BoughtItems);
 	DOREPLIFETIME(AMyPlayerState, TeamID);
-	DOREPLIFETIME(AMyPlayerState, bIsAlive);
 	DOREPLIFETIME(AMyPlayerState, Kills);
 	DOREPLIFETIME(AMyPlayerState, Deaths);
 	DOREPLIFETIME(AMyPlayerState, Assists);

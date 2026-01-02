@@ -42,7 +42,10 @@ void BotStateManager::OnSpikePlanted(FName AttackerTeamId, AActor* SpikeActor)
 	for (ABotAIController* Bot : ManagedBots)
 	{
 		AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
-		if (PS->IsAlive() == false) continue;
+		if (!PS) continue;
+
+		ABaseCharacter* BotCharacter = Cast<ABaseCharacter>(Bot->GetPawn());
+		if (!BotCharacter || BotCharacter->IsDead()) continue;
 
 		bool IsAttacker = (PS->GetTeamID() == AttackerTeamId);
 		if (IsAttacker) {

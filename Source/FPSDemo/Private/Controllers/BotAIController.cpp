@@ -60,7 +60,9 @@ void ABotAIController::OnPossess(APawn* InPawn)
 	ABaseCharacter* MyChar = Cast<ABaseCharacter>(InPawn);
     if (MyChar) {
         UEquipComponent* EquipComp = MyChar->GetEquipComponent();
-        EquipComp->OnAmmoChanged.AddUObject(this, &ABotAIController::OnAmmoChanged);
+        if (EquipComp) {
+            EquipComp->OnAmmoChanged.AddUObject(this, &ABotAIController::OnAmmoChanged);
+        }
     }
 
     // Get game mode and set initial match mode
