@@ -112,3 +112,12 @@ void UCharAudioComponent::PlaySound3D(USoundBase* Sound)
 		Owner->GetActorLocation()
     );
 }
+
+void UCharAudioComponent::PlayZombieSpawn()
+{
+    if (!CachedCharacterAsset) {
+        return;
+    }
+	UE_LOG(LogTemp, Warning, TEXT("UCharAudioComponent::PlayZombieSpawn called"));
+    PlaySound3D(CachedCharacterAsset->Audio_MonsterSpawn);
+}

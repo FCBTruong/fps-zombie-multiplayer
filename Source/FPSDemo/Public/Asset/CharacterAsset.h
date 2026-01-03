@@ -40,6 +40,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	TObjectPtr<UAnimMontage> AnimMontage_ReloadPistol = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	TObjectPtr<UAnimMontage> AnimMontage_ZombieAttack = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Flash")
 	TObjectPtr<UMaterialParameterCollection> FlashCollection = nullptr;
 
@@ -59,11 +62,17 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	TObjectPtr<USoundBase> Audio_DefuseSpike = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_MonsterSpawn = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	TSubclassOf<AActor> DeathCameraProxyClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem> BloodFx;
+
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UParticleSystem> HitFx;
 
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UNiagaraSystem> TurnToZombieFx;

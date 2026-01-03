@@ -200,11 +200,13 @@ protected:
     bool bIsAiming = false;
     UPROPERTY(ReplicatedUsing = OnRep_CurrentMovementState)
     EMovementState CurrentMovementState = EMovementState::Normal;
-
+    UPROPERTY(ReplicatedUsing = OnRep_SpeedMultiplier)
+    float SpeedMultiplier = 1.0f;
 protected:
     // ===== Timelines =====
 	FTimeline StunTimeline;
     FTimeline CrouchTimeline;
+    FTimerHandle HitSlowTimer;
 protected:
     // ===== Internal Functions =====
     void ApplyAimingVisuals();
@@ -221,6 +223,8 @@ protected:
     void ApplyVisualByRole(ECharacterRole NewRole);
     void ApplyInputByRole(ECharacterRole NewRole);
 	void ApplyLoadoutByRole(ECharacterRole NewRole);
+    void ApplyHitSlow(float Multiplier, float Duration);
+    void ClearHitSlow();
 
     UFUNCTION(BlueprintPure)
     EEquippedAnimState GetEquippedAnimState() const;
@@ -247,6 +251,8 @@ protected:
     void OnRep_IsAiming();
     UFUNCTION()
     void OnRep_CurrentMovementState();
+    UFUNCTION()
+    void OnRep_SpeedMultiplier();
 
 	// ===== Client RPC =====
     UFUNCTION(Client, Reliable)
@@ -266,7 +272,7 @@ public:
     void RequestStartAiming();
 	void RequestStopAiming();
 	void UpdateMaxWalkSpeed();
-    void PlayBloodFx(const FVector& HitLocation);
+    void PlayBloodFx(const FVector& HitLocation, const FVector& HitNormal);
 	void PlayStunEffect(const float& Strength);
     void StopAiming();   
     void ChangeView();
@@ -286,6 +292,7 @@ public:
     bool IsFpsViewMode() const;
 	bool IsAiming() const;
     bool IsCharacterRole(ECharacterRole InRole) const;
+    void ZombieAttack();
     FVector GetThrowableLocation() const;
     UPickupComponent* GetPickupComponent() const;
     UInventoryComponent* GetInventoryComponent() const;

@@ -30,4 +30,5 @@ public:
 	void PlayReloadRifleMontage();
 	void PlayReloadPistolMontage();
 	void PlayThrowNadeMontage();
+	void PlayZombieAttackMontage();
 };

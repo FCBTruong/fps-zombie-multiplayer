@@ -23,5 +23,5 @@ protected:
 
 	FTimerHandle RoleAssignTimerHandle;
 public:
-	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 };

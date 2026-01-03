@@ -13,6 +13,7 @@
 #include "Items/ItemConfig.h"
 #include "Items/FirearmConfig.h"
 #include "Game/GlobalDataAsset.h"
+#include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 
 AWeaponFirearm::AWeaponFirearm()
 {
@@ -84,28 +85,35 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 
 	if (bIsFpsView) {
 		UGameManager* GMR = UGameManager::Get(GetWorld());
-		if (!GMR || !GMR->GlobalData || !GMR->GlobalData->BulletTrailNS) return;
+		if (!GMR || !GMR->GlobalData) return;
 
-		UNiagaraComponent* Trail =
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),                               // World
-				GMR->GlobalData->BulletTrailNS,           // Niagara System
-				StartPointBullet,                         // Location (Start)
-				FRotator::ZeroRotator,
-				FVector::OneVector,
-				true,   // AutoDestroy
-				false    // AutoActivate
+		if (GMR->GlobalData->BulletTrailNS) {
+			UNiagaraComponent* Trail =
+				UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+					GetWorld(),                               // World
+					GMR->GlobalData->BulletTrailNS,           // Niagara System
+					MuzzleLocation,                         // Location (Start)
+					FRotator::ZeroRotator,
+					FVector::OneVector,
+					true,   // AutoDestroy
+					false    // AutoActivate
+				);
+
+			if (!Trail) return;
+
+			// log start and end points
+			Trail->SetVectorParameter(TEXT("MuzzlePosition"), MuzzleLocation);
+			TArray<FVector> ImpactPositions;
+			ImpactPositions.Add(TargetPoint);
+
+			UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
+				Trail,
+				FName("User.ImpactPositions"),
+				ImpactPositions
 			);
 
-		if (!Trail) return;
-
-		// log start and end points
-		UE_LOG(LogTemp, Warning, TEXT("Bullet Trail Start: %s, End: %s"), *StartPointBullet.ToString(), *TargetPoint.ToString());
-
-		Trail->SetVectorParameter(TEXT("BeamEnd"), StartPointBullet);
-		Trail->SetVectorParameter(TEXT("BeamStart"), TargetPoint);
-
-		Trail->Activate(true);
+			Trail->Activate(true);
+		}
 	}
 
 	// Play sound

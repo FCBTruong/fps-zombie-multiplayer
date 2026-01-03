@@ -84,13 +84,16 @@ void AZombieMode::EndRound(FName WinningTeam)
 	}
 }
 
-void AZombieMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void AZombieMode::NotifyPlayerKilled(class AController* Killer, class ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
-	Super::NotifyPlayerKilled(Killer, Victim, DamageCauser, bWasHeadShot);
+	Super::NotifyPlayerKilled(Killer, VictimPawn, DamageCauser, bWasHeadShot);
+
+	AController* Victim = VictimPawn->GetController();
 
 	// spawn victim as zombie
 
 	Victim->UnPossess(); // no need old pawn
+	VictimPawn->SetLifeSpan(5.0f); // cleanup old pawn
 
 	UE_LOG(LogTemp, Warning, TEXT("Respawning player as zombie..."));
 	RestartPlayer(Victim);

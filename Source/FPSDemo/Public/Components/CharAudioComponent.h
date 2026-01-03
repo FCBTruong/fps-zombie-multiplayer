@@ -28,6 +28,7 @@ public:
 	void PlayDefuseSpike();
 	void StopDefuseSpike();
 	void PlaySound3D(USoundBase* Sound); // at actor location
+	void PlayZombieSpawn();
 
 protected:
     virtual void BeginPlay() override;

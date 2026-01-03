@@ -104,7 +104,7 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     ABaseCharacter* Enemy = Cast<ABaseCharacter>(OtherActor);
     if (Enemy)
     {
-        Enemy->PlayBloodFx(Hit.ImpactPoint);
+        Enemy->PlayBloodFx(Hit.ImpactPoint, Hit.ImpactNormal);
     }
 
     SetLifeSpan(0.5f);

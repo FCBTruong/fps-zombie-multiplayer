@@ -107,3 +107,11 @@ void UAnimationComponent::PlayThrowNadeMontage() {
     }
     PlayMontage(CachedCharacterAsset->AnimMontage_ThrowNade);
 }
+
+void UAnimationComponent::PlayZombieAttackMontage() {
+    if (!CachedCharacterAsset) {
+        return;
+    }
+	UE_LOG(LogTemp, Warning, TEXT("Playing Zombie Attack Montage"));
+    PlayMontage(CachedCharacterAsset->AnimMontage_ZombieAttack);
+}

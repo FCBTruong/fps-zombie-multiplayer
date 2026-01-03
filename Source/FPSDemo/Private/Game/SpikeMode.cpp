@@ -233,7 +233,7 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 }
 
 
-void ASpikeMode::NotifyPlayerKilled(class AController* Killer, class AController* Victim, const UItemConfig* DamageCauser, bool bWasHeatShot)
+void ASpikeMode::NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeatShot)
 {
 	Super::NotifyPlayerKilled(Killer, Victim, DamageCauser, bWasHeatShot);
 

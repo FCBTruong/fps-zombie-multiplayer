@@ -26,7 +26,7 @@ protected:
 	FTimerHandle RoundTimerHandle;
 	void OnRoundTimeExpired();
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
-	virtual void NotifyPlayerKilled(class AController* Killer, class AController* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 public:
 	virtual void StartPlay() override;
 	virtual void StartRound() override;

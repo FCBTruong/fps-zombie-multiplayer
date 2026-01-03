@@ -613,6 +613,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ABaseCharacter, bIsAiming);
+	DOREPLIFETIME(ABaseCharacter, SpeedMultiplier);
     DOREPLIFETIME_CONDITION(
         ABaseCharacter,
         CurrentMovementState,
@@ -730,15 +731,24 @@ float ABaseCharacter::GetSpeedWalkRatio() const
 
 void ABaseCharacter::UpdateMaxWalkSpeed() {
 	UE_LOG(LogTemp, Warning, TEXT("UpdateMaxWalkSpeed called"));
+    float Speed = 0;
     if (IsCrouched()) {
-        GetCharacterMovement()->MaxWalkSpeed = CROUCH_WALK_SPEED;
+        Speed = CROUCH_WALK_SPEED;
     }
     else if (CurrentMovementState == EMovementState::Slow) {
-        GetCharacterMovement()->MaxWalkSpeed = SLOW_WALK_SPEED;
+        Speed = SLOW_WALK_SPEED;
     }
     else {
-        GetCharacterMovement()->MaxWalkSpeed = NORMAL_WALK_SPEED * GetSpeedWalkRatio();
+        Speed = NORMAL_WALK_SPEED * GetSpeedWalkRatio();
+        if (RoleComp) {
+            if (RoleComp->GetRole() == ECharacterRole::Zombie) {
+                Speed *= 1.1f; // zombie role moves faster
+			}
+        }
     }
+	Speed *= SpeedMultiplier;
+    Speed *= 1.2; // for zombie mode TODO: check later
+	GetCharacterMovement()->MaxWalkSpeed = Speed;
 }
 
 float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
@@ -808,9 +818,11 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
     if (IsBot()) {
         if (ABotAIController* AICon = Cast<ABotAIController>(GetController()))
         {
-            AICon->SetFocus(EventInstigator);
+           // AICon->SetFocus(EventInstigator);
         }
     }
+
+	ApplyHitSlow(0.5, 0.25f); // slow for 0.25s at 20% speed
     return ActualDamage;
 }
 
@@ -865,7 +877,7 @@ void ABaseCharacter::HandleDeath()
         if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
         {
 			GM->RegisterCorpse(this);
-            GM->NotifyPlayerKilled(LastHitByController.Get(), GetController(), LastDamageCauser.Get(), bLastHitWasHeadshot);
+            GM->NotifyPlayerKilled(LastHitByController.Get(), this, LastDamageCauser.Get(), bLastHitWasHeadshot);
         }
         LastHitByController = nullptr; // reset after use
         LastDamageCauser = nullptr; // reset after use
@@ -983,7 +995,7 @@ void ABaseCharacter::ClientPlayHitEffect_Implementation()
 	OnHit.Broadcast();
 }
 
-void ABaseCharacter::PlayBloodFx(const FVector& HitLocation)
+void ABaseCharacter::PlayBloodFx(const FVector& HitLocation, const FVector& HitNormal)
 {
     if (IsFpsViewMode()) {
 		return; // no blood fx in fps mode
@@ -991,6 +1003,7 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation)
     if (!CachedCharacterAsset) {
         return;
     }
+    const FRotator HitRotation = HitNormal.Rotation();
     if (CachedCharacterAsset->BloodFx) {
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(
             GetWorld(),
@@ -998,6 +1011,25 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation)
             HitLocation
         );
     }
+    if (CachedCharacterAsset->HitFx)
+    {
+        FVector EffectScale(0.1f); // scale
+        FName SocketName = NAME_None; // or socket name if needed
+
+        UGameplayStatics::SpawnEmitterAttached(
+            CachedCharacterAsset->HitFx,
+            GetMesh(),                 // USceneComponent* to attach to
+            SocketName,
+            HitLocation,                  // relative location
+            HitRotation,         // relative rotation
+            EffectScale,                  // relative scale
+            EAttachLocation::KeepWorldPosition,
+            true                           // auto destroy
+        );
+    }
+    if (AudioComp) {
+     //   AudioComp->PlayBloodHit();
+	}
 }
 
 void ABaseCharacter::PlayStunEffect(const float& Strength) 
@@ -1219,15 +1251,10 @@ void ABaseCharacter::ApplyRotationMode()
     auto* Move = GetCharacterMovement();
     if (!Move) return;
 
-   /* if (!IsLocal)
+    if (IsBot())
     {
-        bUseControllerRotationYaw = false;
-        bUseControllerRotationPitch = false;
-
-        Move->bOrientRotationToMovement = false;
-        Move->bUseControllerDesiredRotation = true;
-        Move->RotationRate = FRotator(0.f, 720.f, 0.f);
-    }*/
+		Move->bOrientRotationToMovement = true;
+    }
 }
 
 void ABaseCharacter::PossessedBy(AController* NewController)
@@ -1373,6 +1400,9 @@ void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole Ne
     // play effect if human to zombie
     if (NewRole == ECharacterRole::Zombie)
     {
+        if (AudioComp) {
+			AudioComp->PlayZombieSpawn();
+        }
 		FVector SpawnLocation = FVector::ZeroVector;
 		SpawnLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
         if (CachedCharacterAsset && CachedCharacterAsset->TurnToZombieFx)
@@ -1567,4 +1597,79 @@ bool ABaseCharacter::IsCharacterRole(ECharacterRole InRole) const
         return RoleComp->GetRole() == InRole;
     }
     return false;
+}
+
+void ABaseCharacter::ApplyHitSlow(float Multiplier, float Duration)
+{
+    Multiplier = FMath::Clamp(Multiplier, 0.1f, 1.0f);
+
+    // Choose your stacking rule:
+    // "More slow wins" (keep the smallest multiplier).
+    SpeedMultiplier = FMath::Min(SpeedMultiplier, Multiplier);
+
+    // Apply immediately on server too.
+    OnRep_SpeedMultiplier();
+
+    // Refresh timer each time you get hit.
+    GetWorldTimerManager().ClearTimer(HitSlowTimer);
+    GetWorldTimerManager().SetTimer(HitSlowTimer, this, &ABaseCharacter::ClearHitSlow, Duration, false);
+}
+
+void ABaseCharacter::ClearHitSlow()
+{
+    SpeedMultiplier = 1.0f;
+    OnRep_SpeedMultiplier();
+}
+
+void ABaseCharacter::OnRep_SpeedMultiplier()
+{
+	UpdateMaxWalkSpeed();
+}
+
+void ABaseCharacter::ZombieAttack() {
+    if (!RoleComp) {
+        return;
+    }
+    if (RoleComp->GetRole() != ECharacterRole::Zombie) {
+        return;
+    }
+
+    // hands attack animation
+	UE_LOG(LogTemp, Warning, TEXT("ZombieAttack called"));
+    if (AnimationComp) {
+        AnimationComp->PlayZombieAttackMontage();
+    }
+
+    if (!HasAuthority()) return;
+
+    const float Damage = 25.f;
+    const float Range = 150.f;
+    const float Radius = 30.f;
+
+    const FVector Start = GetActorLocation() + FVector(0, 0, 50);
+    const FVector End = Start + GetActorForwardVector() * Range;
+
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(ZombieAttack), false, this);
+
+    FHitResult Hit;
+    const bool bHit = GetWorld()->SweepSingleByChannel(
+        Hit,
+        Start,
+        End,
+        FQuat::Identity,
+        ECC_Pawn,
+        FCollisionShape::MakeSphere(Radius),
+        Params
+    );
+
+    if (bHit && Hit.GetActor() && Hit.GetActor() != this)
+    {
+        UGameplayStatics::ApplyDamage(
+            Hit.GetActor(),
+            Damage,
+            GetController(),
+            this,
+            UDamageType::StaticClass()
+        );
+    }
 }
