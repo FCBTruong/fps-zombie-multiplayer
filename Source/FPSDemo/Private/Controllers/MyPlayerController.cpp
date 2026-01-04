@@ -38,8 +38,8 @@ void AMyPlayerController::BeginPlay()
     APlayerCameraManager* PCM = this->PlayerCameraManager;
     if (PCM)
     {
-        PCM->ViewPitchMin = -60.f;
-        PCM->ViewPitchMax = 60.f;
+        PCM->ViewPitchMin = -70.f;
+        PCM->ViewPitchMax = 70.f;
     }
 
 	GMR = UGameManager::Get(GetWorld());
@@ -711,6 +711,12 @@ void AMyPlayerController::ServerSetSpectateTarget_Implementation(bool bNext)
 	if (!PlayerMyState) return;
 
 	ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
+
+    if (!IsValid(MyChar))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Spectate target invalid or destroyed"));
+        return;
+    }
 	if (MyChar->IsAlive()) return;
 
     if (bNext) {

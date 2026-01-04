@@ -55,6 +55,7 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Items/ThrowableConfig.h"
 #include "Components/RoleComponent.h"
+#include "Items/FirearmConfig.h"
 
 
 // Sets default values
@@ -349,8 +350,16 @@ void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
 		return;
 	}
 
+	// limit anim asset, so have to hardcode offset for firearm
     if (ItemConfig->GetItemType() == EItemType::Firearm) {
-		MeshFps->SetRelativeLocation(FVector(0.f, 10.f, -170.f));
+        const UFirearmConfig* FirearmConfig = Cast<UFirearmConfig>(ItemConfig);
+
+        if (FirearmConfig && FirearmConfig->FirearmType == EFirearmType::Pistol) {
+            MeshFps->SetRelativeLocation(FVector(-5.f, 10.f, -170.f));
+        }
+        else {
+            MeshFps->SetRelativeLocation(FVector(0.f, 10.f, -170.f));
+        }
     }
     else {
         MeshFps->SetRelativeLocation(FVector(0.f, 0.f, -170.f));
@@ -754,6 +763,10 @@ void ABaseCharacter::UpdateMaxWalkSpeed() {
 float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
     AController* EventInstigator, AActor* DamageCauser)
 {
+    if (!HasAuthority()) {
+        return 0.f; // only server handles damage
+    }
+
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     if (HealthComp && HealthComp->IsDead())
     {

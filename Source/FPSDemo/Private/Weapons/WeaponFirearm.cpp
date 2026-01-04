@@ -159,6 +159,19 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 
 		UE_LOG(LogTemp, Warning, TEXT("Spawned Niagara Muzzle Flash"));
 	}
+	
+	if (WeaponMesh) {
+		// log debug
+		UE_LOG(LogTemp, Warning, TEXT("DEBUGZXX: Playing Fire Montage"));
+
+		if (FC && FC->FireAnimation) // FireAnimation: UAnimSequenceBase* (or UAnimationAsset*)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Playing Fire Animation (no montage)"));
+
+			// This switches the mesh to Single Node mode and plays the asset
+			WeaponMesh->PlayAnimation(FC->FireAnimation, /*bLoop*/ false);
+		}
+	}
 }
 
 void AWeaponFirearm::PlayOutOfAmmoSound()

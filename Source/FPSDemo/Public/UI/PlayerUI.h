@@ -130,6 +130,12 @@ protected:
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* PhotonPlantedAnim;
 
+	UPROPERTY(meta = (BindWidget))
+	UImage* KillMarkIcon;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* KillMarkAnim;
+
 	int RoundTimeEnd = 0;
 
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -170,4 +176,5 @@ public:
 	void UpdateGameState(const EMyMatchState& State);
 	void ShowScoreboard(bool bShow);
 	void UpdateArmor(int AmmorPoints);
+	void ShowKillMark(bool bHeadShot = false);
 };

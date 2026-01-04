@@ -46,6 +46,14 @@ void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Kille
 		}   
 
 		MyPC->PlayerUI->NotifyKill(Killer, Victim, DamageCauser, bWasHeadShot);
+
+		AActor* KillerPawn = Killer ? Killer->GetPawn() : nullptr;
+        AActor* ViewTargetPawn = MyPC->GetViewTarget();
+
+        if (KillerPawn && KillerPawn == ViewTargetPawn)
+        {
+			MyPC->PlayerUI->ShowKillMark(bWasHeadShot);
+		}
     }
 }
 

@@ -103,6 +103,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Casing")
 	TSubclassOf<AActor> CasingClass = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Firearm|Animation")
+	TObjectPtr<UAnimSequenceBase> FireAnimation = nullptr;
+
 public:
 	virtual EItemType GetItemType() const override { return EItemType::Firearm; }
 };

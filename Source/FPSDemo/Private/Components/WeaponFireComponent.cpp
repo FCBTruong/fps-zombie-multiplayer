@@ -279,6 +279,8 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 	ShotCount++;
 
 	const EItemId WeaponId = EquipComp->GetActiveItemId();
+	const UItemConfig* ItemConfig = EquipComp->GetActiveItemConfig();
+	const UFirearmConfig* FirearmConfig = ItemConfig ? Cast<UFirearmConfig>(ItemConfig) : nullptr;
 
 	// Consume ammo on server
 	InventoryComp->ConsumeAmmo(WeaponId, 1);
@@ -302,12 +304,25 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 	if (bHit && Hit.GetActor())
 	{
 		UE_LOG(LogTemp, Log, TEXT("Hit actor: %s"), *Hit.GetActor()->GetName());
+		FName HitBoneName = Hit.BoneName;
 		FMyPointDamageEvent DamageEvent;
 		DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
 		DamageEvent.WeaponID = WeaponId;
-		DamageEvent.bIsHeadshot = false;
+		
+		float Damage = FirearmConfig->Damage;
 
-		const float Damage = 25.f; // TODO: pull from weapon data by WeaponId
+		static const TSet<FName> HeadBones = {
+			TEXT("head"),
+			TEXT("Head"),
+			TEXT("neck_01")
+		};
+
+		if (HeadBones.Contains(HitBoneName))
+		{
+			Damage *= 4.0f;              // x4 headshot
+			DamageEvent.bIsHeadshot = true;
+		}
+
 		Hit.GetActor()->TakeDamage(Damage, DamageEvent, Character->GetController(), nullptr);
 	}
 

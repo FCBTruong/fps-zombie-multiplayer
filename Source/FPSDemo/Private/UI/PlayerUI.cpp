@@ -8,6 +8,8 @@
 #include "Items/ItemConfig.h"
 #include "Game/ItemsManager.h"
 #include "Items/FirearmConfig.h"
+#include "Game/GlobalDataAsset.h"
+#include <Kismet/GameplayStatics.h>
 
 void UPlayerUI::NativeConstruct()
 {
@@ -466,6 +468,7 @@ void UPlayerUI::ShowScoreboard(bool bShow) {
         }
     }
 }
+
 void UPlayerUI::UpdateArmor(int ArmorPoints) {
     if (AmmorPointLb) {
         AmmorPointLb->SetText(FText::AsNumber(ArmorPoints));
@@ -475,5 +478,35 @@ void UPlayerUI::UpdateArmor(int ArmorPoints) {
     }
     else {
         ArmorPn->SetVisibility(ESlateVisibility::Visible);
+    }
+}
+
+void UPlayerUI::ShowKillMark(bool bHeadShot) {
+    if (KillMarkIcon) {
+        KillMarkIcon->SetVisibility(ESlateVisibility::Visible);
+        PlayAnimation(KillMarkAnim);
+
+        // update icons
+		UGameManager* GM = UGameManager::Get(GetWorld());
+		UGlobalDataAsset* GlobalData = GM->GlobalData;
+        
+        if (bHeadShot) {
+            if (GlobalData->KillMarkHeadshotIcon) {
+                KillMarkIcon->SetBrushFromTexture(GlobalData->KillMarkHeadshotIcon.Get());
+            }
+
+            if (GlobalData->KillHeadshotSound) {
+                UGameplayStatics::PlaySound2D(GetWorld(), GlobalData->KillHeadshotSound.Get());
+            }
+        }
+        else {
+            if (GlobalData->KillMarkNormalIcon) {
+                KillMarkIcon->SetBrushFromTexture(GlobalData->KillMarkNormalIcon.Get());
+            }
+
+            if (GlobalData->KillMarkSound) {
+				UGameplayStatics::PlaySound2D(GetWorld(), GlobalData->KillMarkSound.Get());
+            }
+		}
     }
 }
