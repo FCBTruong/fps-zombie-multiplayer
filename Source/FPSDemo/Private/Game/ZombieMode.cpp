@@ -94,14 +94,15 @@ void AZombieMode::NotifyPlayerKilled(class AController* Killer, class ABaseChara
 
 	Victim->UnPossess(); // no need old pawn
 	VictimPawn->SetLifeSpan(5.0f); // cleanup old pawn
+	bool bIsCurrentZombie = VictimPawn->GetCharacterRole() == ECharacterRole::Zombie;
 
 	UE_LOG(LogTemp, Warning, TEXT("Respawning player as zombie..."));
 	RestartPlayer(Victim);
 
-	ABaseCharacter* Char = Cast<ABaseCharacter>(Victim->GetPawn());
-	if (Char)
+	ABaseCharacter* NewChar = Cast<ABaseCharacter>(Victim->GetPawn());
+	if (NewChar)
 	{
-		URoleComponent* RoleComp = Char->FindComponentByClass<URoleComponent>();
+		URoleComponent* RoleComp = NewChar->FindComponentByClass<URoleComponent>();
 		if (RoleComp)
 		{
 			RoleComp->SetRoleAuthoritative(ECharacterRole::Zombie);

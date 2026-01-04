@@ -293,6 +293,7 @@ public:
 	bool IsAiming() const;
     bool IsCharacterRole(ECharacterRole InRole) const;
     void ZombieAttack();
+	ECharacterRole GetCharacterRole() const;
     FVector GetThrowableLocation() const;
     UPickupComponent* GetPickupComponent() const;
     UInventoryComponent* GetInventoryComponent() const;

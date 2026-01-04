@@ -81,6 +81,9 @@ public:
 	USkeletalMesh* TerroristMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
+	USkeletalMesh* FpsMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
 	USkeletalMesh* CounterTerroristMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")

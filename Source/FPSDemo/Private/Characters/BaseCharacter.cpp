@@ -1447,7 +1447,8 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
        /* const bool bIsAttacker = (MyPS->GetTeamID() == GS->GetAttackerTeam());
         NewTpsMesh = bIsAttacker ? CachedCharacterAsset->TerroristMesh : CachedCharacterAsset->CounterTerroristMesh;*/
 
-        //NewFpsMesh = CachedCharacterAsset->HumanMeshFPS;      
+        //NewFpsMesh = CachedCharacterAsset->HumanMeshFPS;    
+		NewFpsMesh = CachedCharacterAsset->FpsMesh;
         NewTpsAnim = CachedCharacterAsset->HumanAnimTPS;    
         NewFpsAnim = CachedCharacterAsset->HumanAnimFPS;      
     }
@@ -1672,4 +1673,11 @@ void ABaseCharacter::ZombieAttack() {
             UDamageType::StaticClass()
         );
     }
+}
+
+ECharacterRole ABaseCharacter::GetCharacterRole() const {
+    if (RoleComp) {
+        return RoleComp->GetRole();
+    }
+    return ECharacterRole::Human;
 }
