@@ -2,10 +2,13 @@
 
 
 #include "Components/WeaponMeleeComponent.h"
-#include "Components/EquipComponent.h"
 #include "Components/ActionStateComponent.h"
 #include "Components/ItemVisualComponent.h"
 #include "Characters/BaseCharacter.h"
+#include "Game/ItemsManager.h"
+#include "Items/ItemConfig.h"
+#include "Items/MeleeConfig.h"
+#include "GameConstants.h"
 
 UWeaponMeleeComponent::UWeaponMeleeComponent()
 {
@@ -14,12 +17,10 @@ UWeaponMeleeComponent::UWeaponMeleeComponent()
 }
 
 void UWeaponMeleeComponent::Initialize(
-	UEquipComponent* InEquip,
 	UActionStateComponent* InAction,
 	UItemVisualComponent* InVisual
 )
 {
-	EquipComp = InEquip;
 	ActionStateComp = InAction;
 	VisualComp = InVisual;
 	Character = Cast<ABaseCharacter>(GetOwner());
@@ -43,7 +44,19 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 		if (!CanMeleeNow())
 			return;
 		ActionStateComp->TrySetState(EActionState::Melee);
-		VisualComp->PlayMeleeAttack(AttackIndex);
+
+		if (MeleeConfig) {
+			if (AttackIndex == FGameConstants::MELEE_ATTACK_INDEX_PRIMARY) {
+				if (MeleeConfig->Attack1Montage) {
+					VisualComp->PlayMeleeAttack(MeleeConfig->Attack1Montage);
+				}
+			}
+			else {
+				if (MeleeConfig->Attack2Montage) {
+					VisualComp->PlayMeleeAttack(MeleeConfig->Attack2Montage);
+				}
+			}
+		}
 	}
 
 	if (Character->HasAuthority())
@@ -94,10 +107,25 @@ void UWeaponMeleeComponent::MulticastPlayMelee_Implementation(int32 AttackIndex)
 	UE_LOG(LogTemp, Log, TEXT("MulticastPlayMelee called with AttackIndex: %d"), AttackIndex);
 	if (!Character)
 		return;
+	
+	// Skip owning client if already played
+	if (IsOwningClient())
+		return;
 
 	if (VisualComp)
 	{
-		VisualComp->PlayMeleeAttack(AttackIndex);
+		if (MeleeConfig) {
+			if (AttackIndex == FGameConstants::MELEE_ATTACK_INDEX_PRIMARY) {
+				if (MeleeConfig->Attack1Montage) {
+					VisualComp->PlayMeleeAttack(MeleeConfig->Attack1Montage);
+				}
+			}
+			else {
+				if (MeleeConfig->Attack2Montage) {
+					VisualComp->PlayMeleeAttack(MeleeConfig->Attack2Montage);
+				}
+			}
+		}
 	}
 }
 
@@ -150,6 +178,10 @@ bool UWeaponMeleeComponent::CanMeleeNow() const
 	if (!ActionStateComp)
 		return false;
 
+	if (!MeleeConfig) {
+		return false;
+	}
+
 	if (!ActionStateComp->IsIdle())
 		return false;
 	return true;
@@ -158,4 +190,16 @@ bool UWeaponMeleeComponent::CanMeleeNow() const
 bool UWeaponMeleeComponent::IsOwningClient() const
 {
 	return Character && Character->IsLocallyControlled();
+}
+
+void UWeaponMeleeComponent::HandleActiveItemChanged(EItemId MeleeId)
+{
+	if (MeleeId == EItemId::NONE)
+	{
+		MeleeConfig = nullptr;
+		return;
+	}
+	MeleeConfig = Cast<UMeleeConfig>(
+		UItemsManager::Get(GetWorld())->GetItemById(MeleeId)
+	);
 }

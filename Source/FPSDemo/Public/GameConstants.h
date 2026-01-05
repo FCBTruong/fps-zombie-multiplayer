@@ -12,4 +12,7 @@ public:
     static constexpr int32 SLOT_MELEE = 3;
     static constexpr int32 SLOT_THROWABLE = 4;
 	static constexpr int32 SLOT_SPIKE = 5;
+
+	static constexpr int32 MELEE_ATTACK_INDEX_PRIMARY = 1;
+	static constexpr int32 MELEE_ATTACK_INDEX_SECONDARY = 2;
 };

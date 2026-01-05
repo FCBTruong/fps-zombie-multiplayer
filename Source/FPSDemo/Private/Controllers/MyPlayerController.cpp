@@ -262,7 +262,7 @@ void AMyPlayerController::SetupInputComponent()
 
         if (IA_AIM)
         {
-            EnhancedInput->BindAction(IA_AIM, ETriggerEvent::Started, this, &AMyPlayerController::ClickAim);
+            EnhancedInput->BindAction(IA_AIM, ETriggerEvent::Started, this, &AMyPlayerController::OnMouse_RightStarted);
         }
         if (IA_RELOAD)
         {
@@ -301,9 +301,9 @@ void AMyPlayerController::SetupInputComponent()
         if (IA_SELECT_SPIKE) {
 			EnhancedInput->BindAction(IA_SELECT_SPIKE, ETriggerEvent::Started, this, &AMyPlayerController::EquipSlot, FGameConstants::SLOT_SPIKE);
         }
-        if (IA_DEFUSE_SPIKE) {
-			EnhancedInput->BindAction(IA_DEFUSE_SPIKE, ETriggerEvent::Started, this, &AMyPlayerController::StartDefuseSpike);
-			EnhancedInput->BindAction(IA_DEFUSE_SPIKE, ETriggerEvent::Completed, this, &AMyPlayerController::StopDefuseSpike);
+        if (IA_BUTTON_E) {
+			EnhancedInput->BindAction(IA_BUTTON_E, ETriggerEvent::Started, this, &AMyPlayerController::OnButtonE_Started);
+			EnhancedInput->BindAction(IA_BUTTON_E, ETriggerEvent::Completed, this, &AMyPlayerController::OnButtonE_Completed);
         }
         if (IA_SCOREBOARD) {
             EnhancedInput->BindAction(IA_SCOREBOARD, ETriggerEvent::Started, this, &AMyPlayerController::ShowScoreboard);
@@ -431,7 +431,7 @@ void AMyPlayerController::OnLeftClickStart()
             }
             else if (ActiveItemConfig->GetItemType() == EItemType::Melee) {
                 if (UWeaponMeleeComponent* WMC = MyChar->GetWeaponMeleeComponent()) {
-					WMC->RequestMeleeAttack();
+					WMC->RequestMeleeAttack(FGameConstants::MELEE_ATTACK_INDEX_PRIMARY);
                 }
 			}
             else if (ActiveItemConfig->GetItemType() == EItemType::Throwable) {
@@ -518,6 +518,30 @@ void AMyPlayerController::Look(const FInputActionValue& Value) {
     AddYawInput(Axis.X * AimSensitivity);
     AddPitchInput(-Axis.Y * AimSensitivity);
 }
+
+void AMyPlayerController::OnMouse_RightStarted() {
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    {
+        // get current weapon
+		UEquipComponent* EC = MyChar->GetEquipComponent();
+		if (!EC) return;
+		const UItemConfig* ActiveItemConfig = EC->GetActiveItemConfig();
+		if (!ActiveItemConfig) return;
+
+        if (ActiveItemConfig->GetItemType() == EItemType::Firearm) {
+            ClickAim();
+        }
+        else if (ActiveItemConfig->GetItemType() == EItemType::Melee) {
+            if (UWeaponMeleeComponent* WMC = MyChar->GetWeaponMeleeComponent())
+            {
+                WMC->RequestMeleeAttack(FGameConstants::MELEE_ATTACK_INDEX_SECONDARY);
+            }
+		}
+    }
+}
+
 
 void AMyPlayerController::ClickAim() {
     APawn* MyPawn = GetPawn();
@@ -893,4 +917,33 @@ void AMyPlayerController::NotifyToastMessage(const FText& Message) {
     {
         PlayerUI->ShowNotiToast(Message);
 	}
+}
+
+void AMyPlayerController::OnButtonE_Started()
+{
+    // Get game mode
+	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+	if (!GS) return;
+
+    if (GS->GetMatchMode() == EMatchMode::Spike) {
+        StartDefuseSpike();
+    }
+    else {
+        APawn* MyPawn = GetPawn();
+        if (!MyPawn) return;
+        if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+        {
+            MyChar->RequestBecomeHero();
+        }
+    }
+}
+
+void AMyPlayerController::OnButtonE_Completed()
+{
+    AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+    if (!GS) return;
+
+    if (GS->GetMatchMode() == EMatchMode::Spike) {
+        StopDefuseSpike();
+    }
 }

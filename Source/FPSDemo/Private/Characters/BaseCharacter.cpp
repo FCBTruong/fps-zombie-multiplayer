@@ -134,7 +134,7 @@ ABaseCharacter::ABaseCharacter()
 		WeaponFireComp->Initialize(EquipComp, InventoryComp, ActionStateComp, ItemVisualComp);
     }
     if (WeaponMeleeComp) {
-        WeaponMeleeComp->Initialize(EquipComp, ActionStateComp, ItemVisualComp);
+        WeaponMeleeComp->Initialize(ActionStateComp, ItemVisualComp);
     }
 
 
@@ -298,6 +298,10 @@ void ABaseCharacter::BeginPlay()
         EquipComp->OnActiveItemChanged.AddUObject(
             this,
             &ABaseCharacter::UpdateCurrentWeapon
+        );
+        EquipComp->OnActiveItemChanged.AddUObject(
+            WeaponMeleeComp,
+            &UWeaponMeleeComponent::HandleActiveItemChanged
         );
 		this->UpdateCurrentWeapon(EquipComp->GetActiveItemId());
 	}
@@ -1431,6 +1435,15 @@ void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole Ne
             );
         }
 	}
+    // temp, refactor later
+    if (NewRole == ECharacterRole::Hero) {
+        if (InventoryComp) {
+            InventoryComp->OnBecomeHero();
+		}
+        if (EquipComp) {
+            EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
+        }
+    }
 }
 
 void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
@@ -1445,6 +1458,8 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
     TSubclassOf<UAnimInstance> NewTpsAnim = nullptr;
     TSubclassOf<UAnimInstance> NewFpsAnim = nullptr;
 
+    // hard code for testing
+    //NewRole = ECharacterRole::Hero;
     if (NewRole == ECharacterRole::Zombie)
     {
         NewTpsMesh = CachedCharacterAsset->ZombieMeshTPS;
@@ -1452,15 +1467,37 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
         NewTpsAnim = CachedCharacterAsset->ZombieAnimTPS;
         NewFpsAnim = CachedCharacterAsset->ZombieAnimFPS;
     }
+    else if (NewRole == ECharacterRole::Hero)
+    {
+        // Hero -> use team mesh
+        NewTpsMesh = CachedCharacterAsset->HeroMeshTPS;
+		NewFpsMesh = CachedCharacterAsset->HeroMeshFPS;
+
+        NewTpsAnim = CachedCharacterAsset->HeroAnimTPS;
+        NewFpsAnim = CachedCharacterAsset->HeroAnimFPS;
+
+        if (CachedCharacterAsset->HeroFx)
+        {
+            FVector EffectScale(0.4f); // scale
+            FName SocketName = NAME_None; // or socket name if needed
+			FVector Loc = GetActorLocation();
+			Loc.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+
+            UGameplayStatics::SpawnEmitterAttached(
+                CachedCharacterAsset->HeroFx,
+                GetMesh(),                 // USceneComponent* to attach to
+                SocketName,
+                Loc,                  // relative location
+                FRotator::ZeroRotator,         // relative rotation
+                EffectScale,                  // relative scale
+                EAttachLocation::KeepWorldPosition,
+                true                           // auto destroy
+            );
+        }
+    }
     else
     {
-        // Human/Hero -> use team mesh
         NewTpsMesh = CachedCharacterAsset->CounterTerroristMesh;
-
-       /* const bool bIsAttacker = (MyPS->GetTeamID() == GS->GetAttackerTeam());
-        NewTpsMesh = bIsAttacker ? CachedCharacterAsset->TerroristMesh : CachedCharacterAsset->CounterTerroristMesh;*/
-
-        //NewFpsMesh = CachedCharacterAsset->HumanMeshFPS;    
 		NewFpsMesh = CachedCharacterAsset->FpsMesh;
         NewTpsAnim = CachedCharacterAsset->HumanAnimTPS;    
         NewFpsAnim = CachedCharacterAsset->HumanAnimFPS;      
@@ -1584,6 +1621,14 @@ void ABaseCharacter::ApplyLoadoutByRole(ECharacterRole NewRole)
         }
 	}
 
+    if (PickupComponent) {
+        if (NewRole != ECharacterRole::Human)
+        {
+            PickupComponent->DestroyComponent();
+            PickupComponent = nullptr;
+		}
+    }
+
     // -------- Visual reset --------
     if (ItemVisualComp)
     {
@@ -1693,4 +1738,26 @@ ECharacterRole ABaseCharacter::GetCharacterRole() const {
         return RoleComp->GetRole();
     }
     return ECharacterRole::Human;
+}
+
+void ABaseCharacter::RequestBecomeHero() {
+    if (!HasAuthority()) {
+        ServerBecomeHero();
+        return;
+	}
+	BecomeHero_Internal();
+}
+
+void ABaseCharacter::ServerBecomeHero_Implementation() {
+    BecomeHero_Internal();
+}
+
+void ABaseCharacter::BecomeHero_Internal() {
+    if (!RoleComp) {
+        return;
+    }
+    if (RoleComp->GetRole() == ECharacterRole::Hero) {
+        return; // already hero
+    }
+    RoleComp->SetRoleAuthoritative(ECharacterRole::Hero);
 }

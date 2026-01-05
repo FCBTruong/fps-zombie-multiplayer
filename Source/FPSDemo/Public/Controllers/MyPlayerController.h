@@ -90,7 +90,7 @@ public:
     class UInputAction* IA_SELECT_SPIKE;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-    class UInputAction* IA_DEFUSE_SPIKE;
+    class UInputAction* IA_BUTTON_E;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_SCOREBOARD;
@@ -120,6 +120,9 @@ public:
 	void EquipSlot(const int32 SlotIndex);
 	void DropWeapon();
 	void ChangeView();
+	void OnButtonE_Started();
+	void OnButtonE_Completed();
+	void OnMouse_RightStarted();
 	void StartDefuseSpike();
 	void StopDefuseSpike();
 	void ClickSlow();

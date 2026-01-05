@@ -103,7 +103,10 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 			UE_LOG(LogTemp, Warning, TEXT("OverlapBegin: Item was just dropped by this player, ignoring pickup"));
 			return;
 		}
-		Player->GetPickupComponent()->PickupItem(this);
+		UPickupComponent* PC = Player->GetPickupComponent();
+		if (PC) {
+			PC->PickupItem(this);
+		}
 	}
 }
 

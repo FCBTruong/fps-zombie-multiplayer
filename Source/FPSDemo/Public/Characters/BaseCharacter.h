@@ -225,6 +225,7 @@ protected:
 	void ApplyLoadoutByRole(ECharacterRole NewRole);
     void ApplyHitSlow(float Multiplier, float Duration);
     void ClearHitSlow();
+	void BecomeHero_Internal();
 
     UFUNCTION(BlueprintPure)
     EEquippedAnimState GetEquippedAnimState() const;
@@ -239,6 +240,8 @@ protected:
     void ServerRevive();
     UFUNCTION(Server, Reliable)
     void ServerSetIsSlow(bool bNewIsSlow); 
+	UFUNCTION(Server, Reliable)
+	void ServerBecomeHero();
 
     // ===== Networking Multicast =====
     UFUNCTION(NetMulticast, Unreliable)
@@ -269,30 +272,30 @@ protected:
   
 public:
     // ===== Public API =====
-    void RequestStartAiming();
-	void RequestStopAiming();
-	void UpdateMaxWalkSpeed();
-    void PlayBloodFx(const FVector& HitLocation, const FVector& HitNormal);
-	void PlayStunEffect(const float& Strength);
-    void StopAiming();   
-    void ChangeView();
-	void OnPlantSpikeStarted();
-	void OnPlantSpikeStopped();
-    void OnDefuseSpikeStarted();
-	void OnDefuseSpikeStopped();
-    void ApplyRotationMode();
-    void RequestCrouch();
-    void RequestUnCrouch();
-    void RequestSlowMovement(bool bEnable);
-	void RequestJump();
-    float GetSpeedWalkRatio() const;
-    float GetAimSensitivity() const;
-    bool IsAlive() const;
-	bool IsDead() const;
-    bool IsFpsViewMode() const;
-	bool IsAiming() const;
-    bool IsCharacterRole(ECharacterRole InRole) const;
-    void ZombieAttack();
+    virtual void RequestStartAiming();
+    virtual void RequestStopAiming();
+    virtual void UpdateMaxWalkSpeed();
+    virtual void PlayBloodFx(const FVector& HitLocation, const FVector& HitNormal);
+    virtual void PlayStunEffect(const float& Strength);
+    virtual void ChangeView();
+    virtual void OnPlantSpikeStarted();
+    virtual void OnPlantSpikeStopped();
+    virtual void OnDefuseSpikeStarted();
+    virtual void OnDefuseSpikeStopped();
+    virtual void ApplyRotationMode();
+    virtual void RequestCrouch();
+    virtual void RequestUnCrouch();
+    virtual void RequestSlowMovement(bool bEnable);
+    virtual void RequestJump();
+    virtual float GetSpeedWalkRatio() const;
+    virtual float GetAimSensitivity() const;
+    virtual bool IsAlive() const;
+    virtual bool IsDead() const;
+    virtual bool IsFpsViewMode() const;
+    virtual bool IsAiming() const;
+    virtual bool IsCharacterRole(ECharacterRole InRole) const;
+    virtual void ZombieAttack();
+    virtual void RequestBecomeHero();
 	ECharacterRole GetCharacterRole() const;
     FVector GetThrowableLocation() const;
     UPickupComponent* GetPickupComponent() const;

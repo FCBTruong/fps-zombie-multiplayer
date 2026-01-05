@@ -25,7 +25,6 @@ public:
 	void PlayEquipMontage();
 	void PlayFireRifleMontage(FVector TargetPoint);
 	void PlayFirePistolMontage(FVector TargetPoint);
-	void PlayMeleeAttackMontage(int32 AttackIndex);
 	void PlayMontage(UAnimMontage* MontageToPlay);
 	void PlayReloadRifleMontage();
 	void PlayReloadPistolMontage();

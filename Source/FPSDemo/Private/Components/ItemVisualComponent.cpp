@@ -283,12 +283,12 @@ void UItemVisualComponent::PlayFireFX(FVector TargetPoint)
 	}
 }
 
-void UItemVisualComponent::PlayMeleeAttack(int32 AttackIndex)
+void UItemVisualComponent::PlayMeleeAttack(UAnimMontage* Anim)
 {
     ABaseCharacter* Character = GetCharacter();
     if (Character && AnimComp)
     {
-        AnimComp->PlayMeleeAttackMontage(AttackIndex);
+		AnimComp->PlayMontage(Anim);
     }
 }
 

@@ -38,7 +38,7 @@ public:
 	void OnViewModeChanged(bool bIsFPS);
     void Initialize(UEquipComponent* InEquipComp, UCharCameraComponent* InCameraComp, UAnimationComponent* InAnimComp);
     void PlayFireFX(FVector TargetPoint);
-	void PlayMeleeAttack(int32 AttackIndex);
+    void PlayMeleeAttack(UAnimMontage* Anim);
 
 private:
     UPROPERTY(Transient) 

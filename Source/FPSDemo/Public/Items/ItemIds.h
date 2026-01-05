@@ -23,4 +23,5 @@ enum class EItemId : uint8
 	KEVLAR_VEST,
 	KEVLAR_VEST_HELMET,
     SPIKE,
+    MELEE_SWORD_HERO,
 };

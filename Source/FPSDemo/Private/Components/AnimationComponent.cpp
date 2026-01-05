@@ -75,18 +75,6 @@ void UAnimationComponent::PlayFirePistolMontage(FVector TargetPoint) {
     PlayMontage(CachedCharacterAsset->AnimMontage_FirePistol);
 }
 
-void UAnimationComponent::PlayMeleeAttackMontage(int32 AttackIndex) {
-    if (!CachedCharacterAsset) {
-        return;
-	}
-    if (AttackIndex == 0) {
-        PlayMontage(CachedCharacterAsset->AnimMontage_KnifeAttack1);
-    }
-    else if (AttackIndex == 1) {
-        PlayMontage(CachedCharacterAsset->AnimMontage_KnifeAttack2);
-    }
-}
-
 void UAnimationComponent::PlayReloadRifleMontage() {
     if (!CachedCharacterAsset) {
         return;

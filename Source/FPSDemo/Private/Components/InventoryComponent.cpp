@@ -411,3 +411,14 @@ void UInventoryComponent::ClearInventory() {
     PistolState.ItemId = EItemId::NONE;
     Throwables.Empty();
 }
+
+void UInventoryComponent::OnBecomeHero() {
+    MeleeState.ItemId = EItemId::MELEE_SWORD_HERO;
+    OnRep_MeleeState();
+
+	RifleState = FWeaponState();
+	PistolState = FWeaponState();
+	OnRep_RifleState();
+	OnRep_PistolState();
+	Throwables.Empty();
+}

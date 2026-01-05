@@ -21,6 +21,11 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
     float Range = 150.f;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee|Animation")
+    TObjectPtr<UAnimMontage> Attack1Montage = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee|Animation")
+    TObjectPtr<UAnimMontage> Attack2Montage = nullptr;
 public:
 	virtual EItemType GetItemType() const override { return EItemType::Melee; }
 };

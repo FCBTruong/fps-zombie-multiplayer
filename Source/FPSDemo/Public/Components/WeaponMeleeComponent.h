@@ -4,12 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Items/ItemIds.h"
 #include "WeaponMeleeComponent.generated.h"
 
 class ABaseCharacter;
-class UEquipComponent;
 class UActionStateComponent;
 class UItemVisualComponent;
+class UMeleeConfig;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UWeaponMeleeComponent : public UActorComponent
@@ -19,11 +20,12 @@ class FPSDEMO_API UWeaponMeleeComponent : public UActorComponent
 public:	
 	UWeaponMeleeComponent();
 	void Initialize(
-		UEquipComponent* InEquip,
 		UActionStateComponent* InAction,
 		UItemVisualComponent* InVisual
 	);
-	void RequestMeleeAttack(int32 AttackIndex = 0);
+	void RequestMeleeAttack(int32 AttackIndex);
+	void HandleActiveItemChanged(EItemId MeleeId);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -39,8 +41,10 @@ private:
 	bool CanMeleeNow() const;
 	bool IsOwningClient() const;
 private:
-	UPROPERTY(Transient) TObjectPtr<UEquipComponent> EquipComp = nullptr;
-	UPROPERTY(Transient) TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
+	UPROPERTY(Transient) 
+	TObjectPtr<const UMeleeConfig> MeleeConfig = nullptr;
+	UPROPERTY(Transient) 
+	TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
 	UPROPERTY(Transient) TObjectPtr<UItemVisualComponent> VisualComp = nullptr;
 
 	UPROPERTY(Transient) TObjectPtr<ABaseCharacter> Character = nullptr;
