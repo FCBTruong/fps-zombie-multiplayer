@@ -14,7 +14,14 @@ class UInventoryComponent;
 class UActionStateComponent;
 class UItemVisualComponent;
 class UCharAudioComponent;
+class UFirearmConfig;
 
+enum EFireEnableReason
+{
+	OK,
+	NoAmmo,
+	Undefined,
+};
 USTRUCT(BlueprintType)
 struct FSpreadTuning
 {
@@ -61,7 +68,6 @@ public:
 	UWeaponFireComponent();
 
 	void Initialize(
-		UEquipComponent* InEquip,
 		UInventoryComponent* InInventory,
 		UActionStateComponent* InAction,
 		UItemVisualComponent* InVisual
@@ -74,6 +80,8 @@ public:
 	void RequestFireOnce();
 
 	bool CanWeaponAim() const;
+	UFUNCTION()
+	void OnActiveItemChanged(EItemId NewId);
 
 protected:
 	virtual void BeginPlay() override;
@@ -99,7 +107,7 @@ private:
 	void FireOnce_PredictedLocal();
 #endif
 
-	bool CanFireNow() const;
+	EFireEnableReason CanFireNow() const;
 	bool IsOwningClient() const;
 
 	void GetAim(FVector& OutStart, FVector& OutDir) const;
@@ -121,16 +129,12 @@ private:
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastFireFX(FVector_NetQuantize TargetPoint);
 
-	UFUNCTION()
-	void OnActiveItemChanged(EItemId NewId);
-
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastReload();
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
 private:
 	// Dependencies
-	UPROPERTY(Transient) TObjectPtr<UEquipComponent> EquipComp = nullptr;
 	UPROPERTY(Transient) TObjectPtr<UInventoryComponent> InventoryComp = nullptr;
 	UPROPERTY(Transient) TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
 	UPROPERTY(Transient) TObjectPtr<UItemVisualComponent> VisualComp = nullptr;
@@ -157,9 +161,11 @@ private:
 	float LastShotTime = 0.f;
 
 	// Tunables
-	float FireInterval = 0.1f;
 	float BurstResetDelay = 0.25f;
 	int ShotCount = 0;
 
 	FSpreadTuning Spread;
+
+	UPROPERTY(Transient)
+	TObjectPtr<const UFirearmConfig> CurrentFirearmConfig = nullptr;
 };

@@ -48,6 +48,9 @@ public:
 	float ReloadTime = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
+	float FireInterval = 0.2f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
 	bool bHasScopeEquipped = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm")
@@ -105,6 +108,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Firearm|Animation")
 	TObjectPtr<UAnimSequenceBase> FireAnimation = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Firearm|Animation")
+	TObjectPtr<UAnimMontage> CharFireMontage = nullptr;
 
 public:
 	virtual EItemType GetItemType() const override { return EItemType::Firearm; }

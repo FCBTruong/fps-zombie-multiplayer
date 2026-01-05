@@ -59,4 +59,5 @@ private:
     float DefaultFpsFov = 103.f;
 
     void ApplyView();
+	const float FIRST_PERSON_SCALE = 0.1f;
 };

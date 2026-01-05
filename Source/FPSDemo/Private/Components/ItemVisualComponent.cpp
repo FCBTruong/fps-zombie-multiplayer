@@ -176,6 +176,13 @@ void UItemVisualComponent::AttachToHands(const UItemConfig* Data)
         FAttachmentTransformRules::SnapToTargetNotIncludingScale,
         SocketName
     );
+    if (bIsFPS) {
+        EquippedActor->SetActorRelativeLocation(Data->OffsetFps);
+    }
+    else {
+        EquippedActor->SetActorRelativeLocation(Data->OffsetTps);
+	}
+
 
     if (USceneComponent* Root = EquippedActor->GetRootComponent())
     {
@@ -272,7 +279,7 @@ void UItemVisualComponent::PlayFireFX(FVector TargetPoint)
 		const UFirearmConfig* FirearmData = Cast<UFirearmConfig>(Data);
         if (FirearmData) {
             if (FirearmData->FirearmType == EFirearmType::Rifle) {
-				AnimComp->PlayFireRifleMontage(TargetPoint);
+				AnimComp->PlayFireRifleMontage(TargetPoint, FirearmData->CharFireMontage);
                 return;
 			}
             else {

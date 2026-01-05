@@ -131,7 +131,7 @@ ABaseCharacter::ABaseCharacter()
         ItemVisualComp->Initialize(EquipComp, CameraComp, AnimationComp);
     }
     if (WeaponFireComp) {
-		WeaponFireComp->Initialize(EquipComp, InventoryComp, ActionStateComp, ItemVisualComp);
+		WeaponFireComp->Initialize(InventoryComp, ActionStateComp, ItemVisualComp);
     }
     if (WeaponMeleeComp) {
         WeaponMeleeComp->Initialize(ActionStateComp, ItemVisualComp);
@@ -303,7 +303,14 @@ void ABaseCharacter::BeginPlay()
             WeaponMeleeComp,
             &UWeaponMeleeComponent::HandleActiveItemChanged
         );
-		this->UpdateCurrentWeapon(EquipComp->GetActiveItemId());
+        if (WeaponFireComp) {
+            EquipComp->OnActiveItemChanged.AddUObject(
+                WeaponFireComp,
+                &UWeaponFireComponent::OnActiveItemChanged
+            );
+		}
+		EquipComp->OnActiveItemChanged.Broadcast(EquipComp->GetActiveItemId());
+		//this->UpdateCurrentWeapon(EquipComp->GetActiveItemId());
 	}
 
 	// add pistol to inventory at begin play

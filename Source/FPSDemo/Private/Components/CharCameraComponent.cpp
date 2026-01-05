@@ -17,7 +17,8 @@
 
 UCharCameraComponent::UCharCameraComponent()
 {
-    
+    PrimaryComponentTick.bCanEverTick = true;
+    PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
 void UCharCameraComponent::Initialize(
@@ -43,9 +44,10 @@ void UCharCameraComponent::Initialize(
     if (CameraFps) {
 		CameraFps->bEnableFirstPersonFieldOfView = true;
 		CameraFps->bEnableFirstPersonScale = true;
-        CameraFps->SetFirstPersonScale(0.2f);
+        CameraFps->SetFirstPersonScale(FIRST_PERSON_SCALE);
 		CameraFps->SetFirstPersonFieldOfView(DefaultFpsFov);
     }
+	UE_LOG(LogTemp, Warning, TEXT("UCharCameraComponent::Initialize called"));
 }
 
 void UCharCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -58,8 +60,10 @@ void UCharCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
     }
 
     const float CurrentFOV = CameraFps->FieldOfView;
-    const float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f);
+	UE_LOG(LogTemp, Warning, TEXT("CurrentFOV: %f, TargetFOV: %f"), CurrentFOV, TargetFOV);
+    const float NewFOV = TargetFOV; // FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f);
     CameraFps->SetFieldOfView(NewFOV);
+	CameraFps->SetFirstPersonFieldOfView(NewFOV);
 }
 
 void UCharCameraComponent::BeginPlay()

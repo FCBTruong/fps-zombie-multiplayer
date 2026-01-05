@@ -23,7 +23,7 @@ protected:
 
 public:	
 	void PlayEquipMontage();
-	void PlayFireRifleMontage(FVector TargetPoint);
+	void PlayFireRifleMontage(FVector TargetPoint, UAnimMontage* FireMontage);
 	void PlayFirePistolMontage(FVector TargetPoint);
 	void PlayMontage(UAnimMontage* MontageToPlay);
 	void PlayReloadRifleMontage();

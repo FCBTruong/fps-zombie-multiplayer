@@ -29,7 +29,7 @@ void UInventoryComponent::Test()
     // Test function to be removed later
     MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
     PistolState.ItemId = EItemId::PISTOL_PL_14;
-	RifleState.ItemId = EItemId::RIFLE_AK_47;
+	RifleState.ItemId = EItemId::SNIPER_BOLT_R;
 
 	const UItemConfig* ItemPistol = UItemsManager::Get(GetWorld())->GetItemById(EItemId::PISTOL_PL_14);
 	const UFirearmConfig* PistolData = Cast<UFirearmConfig>(ItemPistol);

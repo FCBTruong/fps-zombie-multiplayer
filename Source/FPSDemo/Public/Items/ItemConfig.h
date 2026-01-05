@@ -64,5 +64,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
 	int Price = 0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
+	FVector OffsetFps = FVector::ZeroVector;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
+	FVector OffsetTps = FVector::ZeroVector;
+
 	virtual EItemType GetItemType() const { return EItemType::None; }
 };

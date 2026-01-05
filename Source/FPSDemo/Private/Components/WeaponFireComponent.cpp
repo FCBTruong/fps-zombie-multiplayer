@@ -14,6 +14,7 @@
 #include "Items/FirearmConfig.h"
 #include "Components/AnimationComponent.h"
 #include "Components/CharAudioComponent.h"
+#include "Game/ItemsManager.h"
 
 UWeaponFireComponent::UWeaponFireComponent()
 {
@@ -55,22 +56,15 @@ void UWeaponFireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 }
 
 void UWeaponFireComponent::Initialize(
-	UEquipComponent* InEquip,
 	UInventoryComponent* InInventory,
 	UActionStateComponent* InAction,
 	UItemVisualComponent* InVisual
 )
 {
-	EquipComp = InEquip;
 	InventoryComp = InInventory;
 	ActionStateComp = InAction;
 	VisualComp = InVisual;
 	Character = Cast<ABaseCharacter>(GetOwner());
-
-	if (EquipComp)
-	{
-		EquipComp->OnActiveItemChanged.AddUObject(this, &UWeaponFireComponent::OnActiveItemChanged);
-	}
 }
 
 bool UWeaponFireComponent::IsOwningClient() const
@@ -79,33 +73,38 @@ bool UWeaponFireComponent::IsOwningClient() const
 	return OwnerChar && OwnerChar->IsLocallyControlled();
 }
 
-bool UWeaponFireComponent::CanFireNow() const
+EFireEnableReason UWeaponFireComponent::CanFireNow() const
 {
+	if (!CurrentFirearmConfig) {
+		return EFireEnableReason::Undefined;
+	}
 	if (!Character || !Character->IsAlive())
-		return false;
+		return EFireEnableReason::Undefined;
 
-	if (!EquipComp || !InventoryComp || !ActionStateComp)
-		return false;
+	if (!InventoryComp || !ActionStateComp)
+		return EFireEnableReason::Undefined;
 
 	if (!ActionStateComp->CanFireNow())
-		return false;
-
-	const EItemId WeaponId = EquipComp->GetActiveItemId();
-	if (WeaponId == EItemId::NONE)
-		return false;
+		return EFireEnableReason::Undefined;
 
 	// Ammo check (only firearms should pass)
-	const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(WeaponId);
+	const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(CurrentFirearmConfig->Id);
 	if (!State)
-		return false;
+		return EFireEnableReason::Undefined;
 
-	return State->AmmoInClip > 0;
+	if (State->AmmoInClip <= 0)
+		return EFireEnableReason::NoAmmo;
+	return EFireEnableReason::OK;
 }
 
-void UWeaponFireComponent::OnActiveItemChanged(EItemId /*NewId*/)
+void UWeaponFireComponent::OnActiveItemChanged(EItemId NewId)
 {
-	// Stop any ongoing fire on weapon switch
-	RequestStopFire();
+	if (NewId == EItemId::NONE)
+	{
+		CurrentFirearmConfig = nullptr;
+		return;
+	}
+	CurrentFirearmConfig = Cast<UFirearmConfig>(UItemsManager::Get(GetWorld())->GetItemById(NewId));
 	BurstAccDeg = 0.f;
 	LastShotTime = 0.f;
 }
@@ -113,23 +112,14 @@ void UWeaponFireComponent::OnActiveItemChanged(EItemId /*NewId*/)
 void UWeaponFireComponent::RequestStartFire()
 {
 	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::RequestStartFire called"));
-	if (!CanFireNow())
+	EFireEnableReason Reason = CanFireNow();
+	if (Reason != EFireEnableReason::OK)
 	{
 		// if reason is bullet ammo empty, could trigger a "dry fire" sound/animation here
-		if (InventoryComp && EquipComp) {
-			const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(EquipComp->GetActiveItemId());
-			if (State) {
-				if (State->AmmoInClip <= 0) {
-					const UItemConfig* ItemConfig = EquipComp->GetActiveItemConfig();
-					if (ItemConfig && ItemConfig->IsA(UFirearmConfig::StaticClass())) {
-						// play sound
-						const UFirearmConfig* FirearmConfig = Cast<UFirearmConfig>(ItemConfig);
-						if (AudioComp) {
-							AudioComp->PlaySound3D(FirearmConfig->DryFireSound);
-						}
-					}
-					UE_LOG(LogTemp, Log, TEXT("Cannot fire: No ammo in clip"));
-				}
+		
+		if (Reason == EFireEnableReason::NoAmmo) {
+			if (AudioComp) {
+				AudioComp->PlaySound3D(CurrentFirearmConfig->DryFireSound);
 			}
 		}
 		return;
@@ -144,11 +134,18 @@ void UWeaponFireComponent::RequestStartFire()
 		ShotCount = 0;
 		BurstAccDeg = 0; 
 		FireOnce_PredictedLocal();
+
+		// if is aiming, stop aim
+		ABaseCharacter* Char = Cast<ABaseCharacter>(GetOwner());
+		if (Char->IsAiming()) {
+			Char->RequestStopAiming();
+		}
+
 		GetWorld()->GetTimerManager().SetTimer(
 			FireTimer_Local,
 			this,
 			&UWeaponFireComponent::FireOnce_PredictedLocal,
-			FireInterval,
+			CurrentFirearmConfig->FireInterval,
 			true
 		);
 	}
@@ -212,9 +209,9 @@ void UWeaponFireComponent::StartFire_ServerAuth()
 		FireTimer_Server,
 		this,
 		&UWeaponFireComponent::FireOnce_ServerAuth,
-		FireInterval,
+		CurrentFirearmConfig->FireInterval,
 		true,
-		FireInterval
+		CurrentFirearmConfig->FireInterval
 	);
 }
 
@@ -232,7 +229,7 @@ void UWeaponFireComponent::StopFire_ServerAuth()
 #if !UE_SERVER
 void UWeaponFireComponent::FireOnce_PredictedLocal()
 {
-	if (!CanFireNow())
+	if (CanFireNow() != EFireEnableReason::OK)
 	{
 		if (GetWorld()) GetWorld()->GetTimerManager().ClearTimer(FireTimer_Local);
 		return;
@@ -271,19 +268,15 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 	if (!Character || !Character->HasAuthority())
 		return;
 
-	if (!CanFireNow())
+	if (CanFireNow() != EFireEnableReason::OK)
 	{
 		StopFire_ServerAuth();
 		return;
 	}
 	ShotCount++;
 
-	const EItemId WeaponId = EquipComp->GetActiveItemId();
-	const UItemConfig* ItemConfig = EquipComp->GetActiveItemConfig();
-	const UFirearmConfig* FirearmConfig = ItemConfig ? Cast<UFirearmConfig>(ItemConfig) : nullptr;
-
 	// Consume ammo on server
-	InventoryComp->ConsumeAmmo(WeaponId, 1);
+	InventoryComp->ConsumeAmmo(CurrentFirearmConfig->Id, 1);
 
 	const float Now = GetServerTimeSeconds();
 	if (LastShotTime > 0.f && (Now - LastShotTime) > BurstResetDelay)
@@ -307,9 +300,9 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 		FName HitBoneName = Hit.BoneName;
 		FMyPointDamageEvent DamageEvent;
 		DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
-		DamageEvent.WeaponID = WeaponId;
+		DamageEvent.WeaponID = CurrentFirearmConfig->Id;
 		
-		float Damage = FirearmConfig->Damage;
+		float Damage = CurrentFirearmConfig->Damage;
 
 		static const TSet<FName> HeadBones = {
 			TEXT("head"),
@@ -497,28 +490,23 @@ bool UWeaponFireComponent::CanReload() const {
 	if (!Character || !Character->IsAlive()) {
 		return false;
 	}
-	if (!EquipComp || !InventoryComp) {
+	if (!InventoryComp) {
 		return false;
 	}
 	if (!ActionStateComp) {
 		return false;
 	}
-	if (EquipComp->GetActiveItemId() == EItemId::NONE) {
+	if (!CurrentFirearmConfig) {
 		return false;
 	}
 
-	const UItemConfig* ItemConf = EquipComp->GetActiveItemConfig();
-	
-	if (ItemConf->GetItemType() != EItemType::Firearm) {
-		return false;
-	}
 	// check action state
 	if (!ActionStateComp->CanReloadNow()) {
 		return false;
 	}
 
 	// check ammo availability
-	const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(EquipComp->GetActiveItemId());
+	const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(CurrentFirearmConfig->Id);
 	if (!State) {
 		return false;
 	}
@@ -559,34 +547,28 @@ void UWeaponFireComponent::MulticastReload_Implementation()
 	if (!Character) {
 		return;
 	}
-	if (!EquipComp) {
+	
+	if (!CurrentFirearmConfig) {
 		return;
 	}
 
 	UAnimationComponent* AnimComp = Character->GetAnimationComponent();
 	if (AnimComp) {
 		// get item config to determine reload animation
-		const UItemConfig* ItemConf = EquipComp->GetActiveItemConfig();
-		if (!ItemConf) {
-			return;
-		}
-		const UFirearmConfig* FirearmConf = Cast<UFirearmConfig>(ItemConf);
-		if (FirearmConf)
+
+		if (CurrentFirearmConfig->FirearmType == EFirearmType::Pistol)
 		{
-			if (FirearmConf->FirearmType == EFirearmType::Pistol)
-			{
-				AnimComp->PlayReloadPistolMontage();
-			}
-			else {
-				AnimComp->PlayReloadRifleMontage();
-			}
+			AnimComp->PlayReloadPistolMontage();
+		}
+		else {
+			AnimComp->PlayReloadRifleMontage();
 		}
 	}
 
-	/* if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(CurrentWeapon))
-		{
-			Firearm->PlayReloadSound();
-		}*/
+	/*if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(Equip))
+	{
+		Firearm->PlayReloadSound();
+	}*/
 }
 
 void UWeaponFireComponent::OnFinishedReload()
@@ -595,35 +577,30 @@ void UWeaponFireComponent::OnFinishedReload()
 	if (!GetOwner()->HasAuthority()) {
 		return;
 	}
+	if (!CurrentFirearmConfig) {
+		return;
+	}
 	ActionStateComp->TrySetState(EActionState::Idle);
 
 	UE_LOG(LogTemp, Warning, TEXT("OnFinishedReload called"));
-	if (!EquipComp) {
-		return;
-	}
-	InventoryComp->ReloadWeapon(EquipComp->GetActiveItemId());
+	InventoryComp->ReloadWeapon(CurrentFirearmConfig->Id);
 }
 
 bool UWeaponFireComponent::CanWeaponAim() const {
 	if (!Character || !Character->IsAlive()) {
 		return false;
 	}
-	if (!EquipComp || !InventoryComp) {
+	if (!CurrentFirearmConfig) {
+		return false;
+	}
+	if (!InventoryComp) {
 		return false;
 	}
 	if (!ActionStateComp) {
 		return false;
 	}
 	
-	const UItemConfig* ItemConf = EquipComp->GetActiveItemConfig();
-	if (!ItemConf) {
-		return false;
-	}
-	if (ItemConf->GetItemType() != EItemType::Firearm) {
-		return false;
-	}
-	const UFirearmConfig* FirearmConf = Cast<UFirearmConfig>(ItemConf);
-	if (!FirearmConf->bHasScopeEquipped) {
+	if (!CurrentFirearmConfig->bHasScopeEquipped) {
 		return false;
 	}
 	return true;
@@ -633,7 +610,7 @@ bool UWeaponFireComponent::CanWeaponAim() const {
 void UWeaponFireComponent::RequestFireOnce() {
 	if (GetOwner()->HasAuthority())
 	{
-		if (CanFireNow())
+		if (CanFireNow() == EFireEnableReason::OK)
 		{
 			FireOnce_ServerAuth();
 		}

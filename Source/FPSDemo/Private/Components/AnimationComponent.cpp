@@ -61,11 +61,17 @@ void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
 	}
 }
 
-void UAnimationComponent::PlayFireRifleMontage(FVector TargetPoint) {
+void UAnimationComponent::PlayFireRifleMontage(FVector TargetPoint, UAnimMontage* FireMontage) {
     if (!CachedCharacterAsset) {
 		return;
 	}
-	PlayMontage(CachedCharacterAsset->AnimMontage_FireRifle);
+    if (FireMontage) {
+		UE_LOG(LogTemp, Warning, TEXT("Playing custom FireMontage"));
+        PlayMontage(FireMontage);
+	}
+    else {
+        PlayMontage(CachedCharacterAsset->AnimMontage_FireRifle); // default
+    }
 }
 
 void UAnimationComponent::PlayFirePistolMontage(FVector TargetPoint) {
