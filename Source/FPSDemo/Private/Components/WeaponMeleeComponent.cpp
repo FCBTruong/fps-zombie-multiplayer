@@ -9,6 +9,13 @@
 #include "Items/ItemConfig.h"
 #include "Items/MeleeConfig.h"
 #include "GameConstants.h"
+#include "Damage/MyPointDamageEvent.h"
+#include "Damage/MyDamageType.h"
+#include "DrawDebugHelpers.h"
+#include "Game/GameManager.h"
+#include "Game/GlobalDataAsset.h"
+#include "Kismet/GameplayStatics.h"
+#include "NiagaraComponent.h"
 
 UWeaponMeleeComponent::UWeaponMeleeComponent()
 {
@@ -44,6 +51,8 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 		if (!CanMeleeNow())
 			return;
 		ActionStateComp->TrySetState(EActionState::Melee);
+
+		PredictMeleeHitFX();
 
 		if (MeleeConfig) {
 			if (AttackIndex == FGameConstants::MELEE_ATTACK_INDEX_PRIMARY) {
@@ -90,15 +99,16 @@ void UWeaponMeleeComponent::StartMelee_ServerAuth(int32 AttackIndex)
 	{
 		World->GetTimerManager().ClearTimer(MeleeTraceTimer);
 
-		FTimerDelegate Delegate;
+		PerformMeleeTrace(AttackIndex);
+		/*FTimerDelegate Delegate;
 		Delegate.BindUObject(this, &UWeaponMeleeComponent::PerformMeleeTrace, AttackIndex);
 
 		World->GetTimerManager().SetTimer(
 			MeleeTraceTimer,
 			Delegate,
-			1.0f,
+			0.1f,
 			false
-		);
+		);*/
 	}
 }
 
@@ -129,48 +139,50 @@ void UWeaponMeleeComponent::MulticastPlayMelee_Implementation(int32 AttackIndex)
 	}
 }
 
+
 void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 {
 	UE_LOG(LogTemp, Log, TEXT("PerformMeleeTrace called for AttackIndex: %d"), AttackIndex);
 
-	FVector Start;
-	FRotator ViewRot;
-	Character->GetActorEyesViewPoint(Start, ViewRot);
-
-	float MeleeRange = 150.f;
-	FVector End = Start + ViewRot.Vector() * MeleeRange;
-
 	FHitResult Hit;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(Character);
-
-	// Sphere sweep prevents precision exploits
-	FCollisionShape Shape = FCollisionShape::MakeSphere(25.f);
-
-	if (GetWorld()->SweepSingleByChannel(
-		Hit,
-		Start,
-		End,
-		FQuat::Identity,
-		ECC_Pawn,
-		Shape,
-		Params))
+	if (!DoMeleeSweep(Hit, MeleeRange, MeleeRadius))
 	{
-		if (AActor* Target = Hit.GetActor())
-		{
-			/*FPointDamageEvent DamageEvent;
-			DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
-
-			Target->TakeDamage(
-				Melee.Damage,
-				DamageEvent,
-				Character->GetController(),
-				Character
-			);*/
-		}
+		ActionStateComp->TrySetState(EActionState::Idle);
+		return;
 	}
+	if (AActor* Target = Hit.GetActor())
+	{
+		FMyPointDamageEvent DamageEvent;
+		DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
+		DamageEvent.WeaponID = MeleeConfig->Id;
+
+		FName HitBoneName = Hit.BoneName;
+
+		float Damage = MeleeConfig->Damage;
+
+		static const TSet<FName> HeadBones = {
+			TEXT("head"),
+			TEXT("Head"),
+			TEXT("neck_01")
+		};
+
+		if (HeadBones.Contains(HitBoneName))
+		{
+			Damage *= 4.0f;              // x4 headshot
+			DamageEvent.bIsHeadshot = true;
+		}
+
+		Target->TakeDamage(
+			Damage,
+			DamageEvent,
+			Character->GetController(),
+			Character
+		);
+	}
+
 	ActionStateComp->TrySetState(EActionState::Idle);
 }
+
 
 
 bool UWeaponMeleeComponent::CanMeleeNow() const
@@ -202,4 +214,97 @@ void UWeaponMeleeComponent::HandleActiveItemChanged(EItemId MeleeId)
 	MeleeConfig = Cast<UMeleeConfig>(
 		UItemsManager::Get(GetWorld())->GetItemById(MeleeId)
 	);
+}
+
+bool UWeaponMeleeComponent::DoMeleeSweep(
+	FHitResult& OutHit,
+	float Range,
+	float Radius
+) const
+{
+	if (!Character || !GetWorld())
+		return false;
+
+	FVector Start;
+	FRotator ViewRot;
+	Character->GetActorEyesViewPoint(Start, ViewRot);
+
+	FVector End = Start + ViewRot.Vector() * Range;
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(Character);
+
+	return GetWorld()->SweepSingleByChannel(
+		OutHit,
+		Start,
+		End,
+		FQuat::Identity,
+		ECC_Pawn,
+		FCollisionShape::MakeSphere(Radius),
+		Params
+	);
+}
+
+void UWeaponMeleeComponent::PredictMeleeHitFX()
+{
+	if (!IsOwningClient())
+		return;
+
+	FHitResult Hit;
+	if (DoMeleeSweep(Hit, MeleeRange, MeleeRadius))
+	{
+		PlayHitFX_Local(Hit.ImpactPoint, Hit.ImpactNormal);
+	}
+}
+
+void UWeaponMeleeComponent::PlayHitFX_Local(
+	const FVector& ImpactPoint,
+	const FVector& ImpactNormal
+)
+{
+	UGameManager* GameManager = UGameManager::Get(GetWorld());
+	if (!GameManager)
+		return;
+
+	UGlobalDataAsset* GlobalData = GameManager->GlobalData;
+	UE_LOG(LogTemp, Log, TEXT("PlayHitFX_Local called at Point: %s, Normal: %s"),
+		*ImpactPoint.ToString(), *ImpactNormal.ToString());
+	if (GlobalData->MeleeHitFx) {
+		/*auto Fx = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			GlobalData->MeleeHitFx,
+			ImpactPoint,
+			ImpactNormal.Rotation()
+		);
+		if (Fx)
+		{
+			Fx->SetWorldScale3D(FVector(0.02f));
+		}
+		Fx->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);*/
+
+		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(),
+			GlobalData->MeleeHitFx,
+			ImpactPoint,
+			ImpactNormal.Rotation(),
+			FVector(0.05f),
+			true
+		);
+
+		if (PSC)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));
+			PSC->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+
+		}
+	}
+
+	if (GlobalData->MeleeImpactBodySound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			GetWorld(),
+			GlobalData->MeleeImpactBodySound,
+			ImpactPoint
+		);
+	}
 }

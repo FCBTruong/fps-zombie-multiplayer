@@ -421,14 +421,14 @@ float UWeaponFireComponent::GetTotalSpreadDeg(float NowServerTime) const
 	// NOTE: BurstAccDeg should already be updated at the moment of firing on both sides.
 	float MoveSpreadDeg = GetMovementSpreadDeg();
 	UE_LOG(LogTemp, Log, TEXT("GetTotalSpreadDeg: Base=%.2f, Move=%.2f, Air=%.2f, Burst=%.2f"),
-		Spread.BaseDeg, MoveSpreadDeg, GetAirSpreadDeg(), BurstAccDeg);
-	const float Total = Spread.BaseDeg + MoveSpreadDeg + GetAirSpreadDeg() + BurstAccDeg;
-	return FMath::Min(Total, Spread.MaxTotalDeg);
+		CurrentFirearmConfig->BaseDeg, MoveSpreadDeg, GetAirSpreadDeg(), BurstAccDeg);
+	const float Total = CurrentFirearmConfig->BaseDeg + MoveSpreadDeg + GetAirSpreadDeg() + BurstAccDeg;
+	return FMath::Min(Total, CurrentFirearmConfig->MaxTotalDeg);
 }
 
 float UWeaponFireComponent::GetMovementSpreadDeg() const
 {
-	return Spread.MoveAddDeg * GetMoveAlphaForSpread();
+	return CurrentFirearmConfig->MoveAddDeg * GetMoveAlphaForSpread();
 }
 
 float UWeaponFireComponent::GetAirSpreadDeg() const
@@ -439,7 +439,7 @@ float UWeaponFireComponent::GetAirSpreadDeg() const
 	const UCharacterMovementComponent* Move = C->GetCharacterMovement();
 	if (!Move) return 0.0f;
 
-	return Move->IsFalling() ? Spread.AirAddDeg : 0.0f;
+	return Move->IsFalling() ? CurrentFirearmConfig->AirAddDeg : 0.0f;
 }
 
 float UWeaponFireComponent::GetMoveAlphaForSpread() const
@@ -453,14 +453,14 @@ float UWeaponFireComponent::GetMoveAlphaForSpread() const
 	const float Alpha = FMath::Clamp(Speed2D / 600, 0.0f, 1.0f); // 600 is max walk speed
 
 	// Apply curve
-	const float Exp = FMath::Max(0.1f, Spread.MoveCurveExp);
+	const float Exp = FMath::Max(0.1f, CurrentFirearmConfig->MoveCurveExp);
 	return FMath::Pow(Alpha, Exp);
 }
 
 void UWeaponFireComponent::UpdateBurstSpreadOnShot(float NowServerTime)
 {
 	// Add per-shot burst spread
-	BurstAccDeg = FMath::Min(BurstAccDeg + Spread.PerShotAddDeg, Spread.MaxBurstAddDeg);
+	BurstAccDeg = FMath::Min(BurstAccDeg + CurrentFirearmConfig->PerShotAddDeg, CurrentFirearmConfig->MaxBurstAddDeg);
 	LastShotTime = NowServerTime;
 }
 
@@ -628,7 +628,7 @@ void UWeaponFireComponent::ApplyRecoilLocal()
 		return;
 	}
 
-	const float PitchKick = Spread.RecoilPitchPerShot + FMath::FRandRange(-Spread.RecoilPitchJitter, Spread.RecoilPitchJitter);
+	const float PitchKick = CurrentFirearmConfig->RecoilPitchPerShot + FMath::FRandRange(-CurrentFirearmConfig->RecoilPitchJitter, Spread.RecoilPitchJitter);
 	const float YawKick = FMath::FRandRange(-Spread.RecoilYawPerShot, Spread.RecoilYawPerShot);
 
 	Character->AddControllerPitchInput(-PitchKick); // look up a bit

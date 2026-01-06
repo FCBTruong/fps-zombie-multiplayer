@@ -336,6 +336,9 @@ void UPlayerUI::UpdateCurrentWeapon(EItemId CurrentWeaponId) {
                     }
                 }
             }
+            if (FirearmConf->bHasScopeEquipped) {
+                WBP_Crosshair->SetVisibility(ESlateVisibility::Hidden);
+            }
         }
     }
 	ShowWeaponGuide();

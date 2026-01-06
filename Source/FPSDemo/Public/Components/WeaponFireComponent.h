@@ -164,8 +164,6 @@ private:
 	float BurstResetDelay = 0.25f;
 	int ShotCount = 0;
 
-	FSpreadTuning Spread;
-
 	UPROPERTY(Transient)
 	TObjectPtr<const UFirearmConfig> CurrentFirearmConfig = nullptr;
 };

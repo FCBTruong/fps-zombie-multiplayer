@@ -47,4 +47,10 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase> KillHeadshotSound;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase> MeleeImpactBodySound;
+
+	UPROPERTY(EditAnywhere, Category = "Fx")
+	TObjectPtr<UParticleSystem> MeleeHitFx;
 };

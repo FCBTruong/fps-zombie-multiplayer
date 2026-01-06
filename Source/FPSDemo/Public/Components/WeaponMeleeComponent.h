@@ -25,6 +25,10 @@ public:
 	);
 	void RequestMeleeAttack(int32 AttackIndex);
 	void HandleActiveItemChanged(EItemId MeleeId);
+	void PlayHitFX_Local(
+		const FVector& ImpactPoint,
+		const FVector& ImpactNormal
+	);
 
 protected:
 	virtual void BeginPlay() override;
@@ -40,6 +44,12 @@ private:
 	void MulticastPlayMelee(int32 AttackIndex);
 	bool CanMeleeNow() const;
 	bool IsOwningClient() const;
+	bool DoMeleeSweep(
+		FHitResult& OutHit,
+		float Range,
+		float Radius
+	) const;
+	void PredictMeleeHitFX();
 private:
 	UPROPERTY(Transient) 
 	TObjectPtr<const UMeleeConfig> MeleeConfig = nullptr;
@@ -49,4 +59,7 @@ private:
 
 	UPROPERTY(Transient) TObjectPtr<ABaseCharacter> Character = nullptr;
 	FTimerHandle MeleeTraceTimer;
+
+	float MeleeRange = 100.f;
+	float MeleeRadius = 50.f;
 };
