@@ -18,6 +18,10 @@ protected:
 	virtual void StartPlay() override;
 	virtual void StartRound() override;
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	virtual APawn* SpawnDefaultPawnAtTransform_Implementation(
+		AController* NewPlayer,
+		const FTransform& SpawnTransform
+	) override;
 	void EndRound(FName WinningTeam);
 	void AssignZombieRoles();
 

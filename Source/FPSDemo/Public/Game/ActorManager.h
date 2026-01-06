@@ -54,6 +54,8 @@ protected:
 
 	TSet<APlayerStart*> StartUsage;
 
+	TArray<APlayerStart*> ZombieStartLocations;
+
 	APlayerStart* GetRandomStart(const TArray<APlayerStart*>& Starts);
 public:	
 	// Called every frame
@@ -63,6 +65,7 @@ public:
 	FVector GetSpikeStartLocation() const;
 	APlayerStart* GetRandomAttackerStart();
 	APlayerStart* GetRandomDefenderStart();
+	APlayerStart* GetRandomZombieStart();
 	void ResetPlayerStartsUsage();
 
 	UPROPERTY(EditInstanceOnly, Category = "Setup")

@@ -52,7 +52,13 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 			return;
 		ActionStateComp->TrySetState(EActionState::Melee);
 
-		PredictMeleeHitFX();
+		GetWorld()->GetTimerManager().SetTimer(
+			MeleeClientFxTimer,
+			this,
+			&UWeaponMeleeComponent::PredictMeleeHitFX,
+			MeleeTraceDelay,
+			false
+		);
 
 		if (MeleeConfig) {
 			if (AttackIndex == FGameConstants::MELEE_ATTACK_INDEX_PRIMARY) {
@@ -99,16 +105,16 @@ void UWeaponMeleeComponent::StartMelee_ServerAuth(int32 AttackIndex)
 	{
 		World->GetTimerManager().ClearTimer(MeleeTraceTimer);
 
-		PerformMeleeTrace(AttackIndex);
-		/*FTimerDelegate Delegate;
+		//PerformMeleeTrace(AttackIndex);
+		FTimerDelegate Delegate;
 		Delegate.BindUObject(this, &UWeaponMeleeComponent::PerformMeleeTrace, AttackIndex);
 
 		World->GetTimerManager().SetTimer(
 			MeleeTraceTimer,
 			Delegate,
-			0.1f,
+			MeleeTraceDelay,
 			false
-		);*/
+		);
 	}
 }
 
@@ -144,32 +150,54 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 {
 	UE_LOG(LogTemp, Log, TEXT("PerformMeleeTrace called for AttackIndex: %d"), AttackIndex);
 
-	FHitResult Hit;
-	if (!DoMeleeSweep(Hit, MeleeRange, MeleeRadius))
+	TArray<FHitResult> Hits;
+	if (!DoMeleeSweepMulti(Hits, MeleeRange, MeleeRadius))
 	{
 		ActionStateComp->TrySetState(EActionState::Idle);
 		return;
 	}
-	if (AActor* Target = Hit.GetActor())
+
+	// Prioritize closest hits first
+	Hits.Sort([](const FHitResult& A, const FHitResult& B)
+		{
+			return A.Distance < B.Distance;
+		});
+
+	TSet<TWeakObjectPtr<AActor>> DamagedActors;
+
+	static const TSet<FName> HeadBones = {
+		TEXT("head"),
+		TEXT("Head"),
+		TEXT("neck_01")
+	};
+
+	for (const FHitResult& Hit : Hits)
 	{
+		AActor* Target = Hit.GetActor();
+		if (!Target || Target == Character)
+			continue;
+
+		// Prevent multi-hit on same actor from multiple hit results
+		if (DamagedActors.Contains(Target))
+			continue;
+
+		DamagedActors.Add(Target);
+
 		FMyPointDamageEvent DamageEvent;
 		DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
 		DamageEvent.WeaponID = MeleeConfig->Id;
 
-		FName HitBoneName = Hit.BoneName;
+		float Damage = MeleeConfig ? MeleeConfig->Damage : 0.f;
 
-		float Damage = MeleeConfig->Damage;
-
-		static const TSet<FName> HeadBones = {
-			TEXT("head"),
-			TEXT("Head"),
-			TEXT("neck_01")
-		};
-
+		const FName HitBoneName = Hit.BoneName;
 		if (HeadBones.Contains(HitBoneName))
 		{
-			Damage *= 4.0f;              // x4 headshot
+			Damage *= 4.0f;
 			DamageEvent.bIsHeadshot = true;
+		}
+		else
+		{
+			DamageEvent.bIsHeadshot = false;
 		}
 
 		Target->TakeDamage(
@@ -178,10 +206,14 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 			Character->GetController(),
 			Character
 		);
+
+		// limit max number of actors hit per swing (cleave limit)
+		if (DamagedActors.Num() >= 2) break;
 	}
 
 	ActionStateComp->TrySetState(EActionState::Idle);
 }
+
 
 
 
@@ -216,44 +248,24 @@ void UWeaponMeleeComponent::HandleActiveItemChanged(EItemId MeleeId)
 	);
 }
 
-bool UWeaponMeleeComponent::DoMeleeSweep(
-	FHitResult& OutHit,
-	float Range,
-	float Radius
-) const
-{
-	if (!Character || !GetWorld())
-		return false;
-
-	FVector Start;
-	FRotator ViewRot;
-	Character->GetActorEyesViewPoint(Start, ViewRot);
-
-	FVector End = Start + ViewRot.Vector() * Range;
-
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(Character);
-
-	return GetWorld()->SweepSingleByChannel(
-		OutHit,
-		Start,
-		End,
-		FQuat::Identity,
-		ECC_Pawn,
-		FCollisionShape::MakeSphere(Radius),
-		Params
-	);
-}
-
 void UWeaponMeleeComponent::PredictMeleeHitFX()
 {
 	if (!IsOwningClient())
 		return;
 
-	FHitResult Hit;
-	if (DoMeleeSweep(Hit, MeleeRange, MeleeRadius))
+	TArray<FHitResult> Hits;
+	if (DoMeleeSweepMulti(Hits, MeleeRange, MeleeRadius))
 	{
-		PlayHitFX_Local(Hit.ImpactPoint, Hit.ImpactNormal);
+		for (const FHitResult& H : Hits)
+		{
+			AActor* A = H.GetActor();
+			if (!A) continue;
+
+			if (!A->IsA<APawn>()) // only pawns
+				continue;
+
+			PlayHitFX_Local(H.ImpactPoint, H.ImpactNormal);
+		}
 	}
 }
 
@@ -307,4 +319,37 @@ void UWeaponMeleeComponent::PlayHitFX_Local(
 			ImpactPoint
 		);
 	}
+}
+
+bool UWeaponMeleeComponent::DoMeleeSweepMulti(
+	TArray<FHitResult>& OutHits,
+	float Range,
+	float Radius
+) const
+{
+	OutHits.Reset();
+
+	if (!Character || !GetWorld())
+		return false;
+
+	FVector Start;
+	FRotator ViewRot;
+	Character->GetActorEyesViewPoint(Start, ViewRot);
+
+	const FVector End = Start + ViewRot.Vector() * Range;
+
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(MeleeSweep), false, Character);
+	Params.AddIgnoredActor(Character);
+
+	const bool bHitAny = GetWorld()->SweepMultiByChannel(
+		OutHits,
+		Start,
+		End,
+		FQuat::Identity,
+		ECC_Pawn,
+		FCollisionShape::MakeSphere(Radius),
+		Params
+	);
+
+	return bHitAny && OutHits.Num() > 0;
 }

@@ -37,6 +37,9 @@ protected:
 
     UPROPERTY(ReplicatedUsing = OnRep_RoundEndTime)
     int RoundEndTime = -1;
+
+    UPROPERTY(ReplicatedUsing = OnRep_RoundEndTime)
+    int BuyEndTime = -1;
     
     UFUNCTION()
     void OnRep_Score();
@@ -52,6 +55,9 @@ protected:
 
     UFUNCTION()
     void OnRep_MatchMode();
+
+    UFUNCTION()
+	void OnRep_BuyEndTime();
 public:
 	AShooterGameState();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -87,4 +93,10 @@ public:
 	}
     void SetMatchMode(EMatchMode NewMode);
 	EMatchMode GetMatchMode() const { return MatchMode; }
+    void SetBuyEndTime(int NewBuyEndTime) {
+        BuyEndTime = NewBuyEndTime;
+	}
+    int GetBuyEndTime() const {
+        return BuyEndTime;
+	}
 };

@@ -39,6 +39,7 @@ void AActorManager::BeginPlay()
     );
 
     ScoutLocations.Empty();
+	ZombieStartLocations.Empty();
 
     TArray<AActor*> FoundActors;
     UGameplayStatics::GetAllActorsOfClass(
@@ -61,6 +62,28 @@ void AActorManager::BeginPlay()
             ScoutLocations.Add(TargetPoint);
         }
     }
+
+    UGameplayStatics::GetAllActorsOfClass(
+        GetWorld(),
+        APlayerStart::StaticClass(),
+        FoundActors
+    );
+    UE_LOG(LogTemp, Warning, TEXT("ActorManager: Found %d TargetPoint actors"), FoundActors.Num());
+
+    for (AActor* Actor : FoundActors)
+    {
+        APlayerStart* TargetPoint = Cast<APlayerStart>(Actor);
+        if (!TargetPoint)
+        {
+            continue;
+        }
+
+        if (TargetPoint->ActorHasTag(TEXT("ZombiePoint")))
+        {
+            ZombieStartLocations.Add(TargetPoint);
+        }
+    }
+    UE_LOG(LogTemp, Warning, TEXT("ActorManager: Found %d Zombie start actors"), ZombieStartLocations.Num());
 }
 
 // Called every frame
@@ -175,4 +198,8 @@ FVector AActorManager::GetRandomScoutLocation() const
     }
 
     return Target->GetActorLocation();
+}
+
+APlayerStart* AActorManager::GetRandomZombieStart() {
+    return GetRandomStart(ZombieStartLocations);
 }

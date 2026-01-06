@@ -32,6 +32,13 @@ void UPlayerUI::NativeConstruct()
 
 void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
 	Super::NativeTick(MyGeometry, InDeltaTime);
+
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    AShooterGameState* GS = World->GetGameState<AShooterGameState>();
+    if (!GS) return;
+
     if (RoundTimeEnd > 0) {
         int32 CurrentTime = FMath::CeilToInt(GetWorld()->GetTimeSeconds());
         int32 RemainingTime = RoundTimeEnd - CurrentTime;
@@ -42,6 +49,17 @@ void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
         int32 Seconds = RemainingTime % 60;
         FString TimeStr = FString::Printf(TEXT("%2d:%02d"), Minutes, Seconds);
 
+        if (GS->GetMatchMode() == EMatchMode::Zombie) {
+            if (bPlayedTenSec == false && RemainingTime == 10) {
+                bPlayedTenSec = true;
+                UGameManager* GM = UGameManager::Get(GetWorld());
+                if (GM && GM->GlobalData) {
+                    if (GM->GlobalData->CountdownTenSound) {
+                        UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->CountdownTenSound);
+                    }
+                }
+            }
+        }
         if (MatchTimeLb) {
 			FLinearColor C = FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("FFFACDFF")));
             if (RemainingTime <= 10) {
@@ -433,6 +451,7 @@ void UPlayerUI::OnUpdateRoundTime(int TimeEnd) {
 void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
 	PhotonPlantedIcon->SetVisibility(ESlateVisibility::Hidden);
 	MatchTimeLb->SetVisibility(ESlateVisibility::Visible);
+    bPlayedTenSec = false;
     switch (State) {
         case EMyMatchState::PRE_MATCH:
             ShowMatchStateToast(FText::FromString("Prepare for battle!"), 0.f);

@@ -103,6 +103,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Recoil")
 	float MoveCurveExp = 2.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Recoil")
+	float RecoilPitchPerShot = 0.35f; // camera kick up amount per shot
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Recoil")
+	float RecoilPitchJitter = 0.05f;  // random pitch variation
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Recoil")
+	float RecoilYawPerShot = 0.15f;   // camera kick side amount per shot
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Casing")
 	TSubclassOf<AActor> CasingClass = nullptr;
 

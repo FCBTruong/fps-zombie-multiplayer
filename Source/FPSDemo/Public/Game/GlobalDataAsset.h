@@ -51,6 +51,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase> MeleeImpactBodySound;
 
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase> CountdownTenSound;
+
 	UPROPERTY(EditAnywhere, Category = "Fx")
 	TObjectPtr<UParticleSystem> MeleeHitFx;
 };

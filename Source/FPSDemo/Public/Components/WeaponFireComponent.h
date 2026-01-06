@@ -22,42 +22,6 @@ enum EFireEnableReason
 	NoAmmo,
 	Undefined,
 };
-USTRUCT(BlueprintType)
-struct FSpreadTuning
-{
-	GENERATED_BODY()
-
-	// Base accuracy (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float BaseDeg = 0.0f;
-
-	// Movement contribution (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MoveAddDeg = 3.0f;
-
-	// Airborne penalty (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float AirAddDeg = 4.0f;
-
-	// Burst (continuous fire) contribution (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float PerShotAddDeg = 0.5f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MaxBurstAddDeg = 4.0f;
-
-	// How fast burst spread recovers when time passes (deg/sec)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float BurstRecoverDegPerSec = 1.0f;
-
-	// Final clamp (deg)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MaxTotalDeg = 6.0f;
-
-	// Curve exponent for movement (1 = linear, 2 = smoother, 3 = even smoother)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MoveCurveExp = 2.0f;
-
-	UPROPERTY(EditAnywhere,  Category = "Weapon|Recoil")
-	float RecoilPitchPerShot = 0.35f; // camera kick up amount per shot
-
-	UPROPERTY(EditAnywhere, Category = "Weapon|Recoil")
-	float RecoilYawPerShot = 0.08f;   // small horizontal randomness
-
-	UPROPERTY(EditAnywhere, Category = "Weapon|Recoil")
-	float RecoilPitchJitter = 0.05f;  // random pitch variation
-};
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class FPSDEMO_API UWeaponFireComponent : public UActorComponent

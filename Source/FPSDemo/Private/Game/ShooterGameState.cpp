@@ -23,6 +23,7 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterGameState, RoundEndTime);
 	DOREPLIFETIME(AShooterGameState, CurrentMatchState);
     DOREPLIFETIME(AShooterGameState, MatchMode);
+	DOREPLIFETIME(AShooterGameState, BuyEndTime);
 }
 
 
@@ -131,4 +132,9 @@ void AShooterGameState::SetMatchMode(EMatchMode NewMode)
 void AShooterGameState::OnRep_MatchMode()
 {
     // optional: broadcast event if you want pawns to re-apply visuals
+}
+
+void AShooterGameState::OnRep_BuyEndTime()
+{
+    // You can add any client-side logic here that needs to respond to BuyEndTime changes
 }

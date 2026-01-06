@@ -628,8 +628,8 @@ void UWeaponFireComponent::ApplyRecoilLocal()
 		return;
 	}
 
-	const float PitchKick = CurrentFirearmConfig->RecoilPitchPerShot + FMath::FRandRange(-CurrentFirearmConfig->RecoilPitchJitter, Spread.RecoilPitchJitter);
-	const float YawKick = FMath::FRandRange(-Spread.RecoilYawPerShot, Spread.RecoilYawPerShot);
+	const float PitchKick = CurrentFirearmConfig->RecoilPitchPerShot + FMath::FRandRange(-CurrentFirearmConfig->RecoilPitchJitter, CurrentFirearmConfig->RecoilPitchJitter);
+	const float YawKick = FMath::FRandRange(-CurrentFirearmConfig->RecoilYawPerShot, CurrentFirearmConfig->RecoilYawPerShot);
 
 	Character->AddControllerPitchInput(-PitchKick); // look up a bit
 	Character->AddControllerYawInput(YawKick);     // slight horizontal recoil

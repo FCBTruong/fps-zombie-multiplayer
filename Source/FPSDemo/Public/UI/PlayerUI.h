@@ -137,7 +137,7 @@ protected:
 	UWidgetAnimation* KillMarkAnim;
 
 	int RoundTimeEnd = 0;
-
+	bool bPlayedTenSec = false;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 public:
 	UPROPERTY(meta = (BindWidget), Transient)

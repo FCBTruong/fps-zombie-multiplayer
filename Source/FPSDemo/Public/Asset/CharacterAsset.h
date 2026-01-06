@@ -59,6 +59,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	TObjectPtr<USoundBase> Audio_MonsterSpawn = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_HeroDead = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_HeroSpawn = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	TSubclassOf<AActor> DeathCameraProxyClass;
 

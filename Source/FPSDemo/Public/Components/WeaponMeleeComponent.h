@@ -44,8 +44,8 @@ private:
 	void MulticastPlayMelee(int32 AttackIndex);
 	bool CanMeleeNow() const;
 	bool IsOwningClient() const;
-	bool DoMeleeSweep(
-		FHitResult& OutHit,
+	bool DoMeleeSweepMulti(
+		TArray<FHitResult>& OutHits,
 		float Range,
 		float Radius
 	) const;
@@ -60,6 +60,9 @@ private:
 	UPROPERTY(Transient) TObjectPtr<ABaseCharacter> Character = nullptr;
 	FTimerHandle MeleeTraceTimer;
 
+	FTimerHandle MeleeClientFxTimer;
+
 	float MeleeRange = 100.f;
 	float MeleeRadius = 50.f;
+	float MeleeTraceDelay = 0.2f;
 };

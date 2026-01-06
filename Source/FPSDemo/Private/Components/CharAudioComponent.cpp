@@ -121,3 +121,19 @@ void UCharAudioComponent::PlayZombieSpawn()
 	UE_LOG(LogTemp, Warning, TEXT("UCharAudioComponent::PlayZombieSpawn called"));
     PlaySound3D(CachedCharacterAsset->Audio_MonsterSpawn);
 }
+
+void UCharAudioComponent::PlayHeroDeath()
+{
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlaySound3D(CachedCharacterAsset->Audio_HeroDead);
+}
+
+void UCharAudioComponent::PlayHeroSpawn()
+{
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlaySound3D(CachedCharacterAsset->Audio_HeroSpawn);
+}
