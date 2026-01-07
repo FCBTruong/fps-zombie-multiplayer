@@ -49,7 +49,7 @@ void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
         int32 Seconds = RemainingTime % 60;
         FString TimeStr = FString::Printf(TEXT("%2d:%02d"), Minutes, Seconds);
 
-        if (GS->GetMatchMode() == EMatchMode::Zombie) {
+        if (GS->GetMatchMode() == EMatchMode::Zombie && GS->GetMatchState() == EMyMatchState::BUY_PHASE) {
             if (bPlayedTenSec == false && RemainingTime == 10) {
                 bPlayedTenSec = true;
                 UGameManager* GM = UGameManager::Get(GetWorld());

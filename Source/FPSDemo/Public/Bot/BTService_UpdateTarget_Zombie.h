@@ -6,6 +6,7 @@
 #include "BehaviorTree/BTService.h"
 #include "BTService_UpdateTarget_Zombie.generated.h"
 
+class ABaseCharacter;
 /**
  * 
  */
@@ -19,4 +20,6 @@ public:
 
 protected:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+
+	void FindBestTarget(TArray<AActor*> PerceivedActors, ABaseCharacter* SelfPawn, ABaseCharacter*& OutBestTarget);
 };

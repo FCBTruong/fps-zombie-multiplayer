@@ -61,6 +61,10 @@ void AActorManager::BeginPlay()
         {
             ScoutLocations.Add(TargetPoint);
         }
+        else if (TargetPoint->ActorHasTag(TEXT("ZombieDefensePoint")))
+        {
+            ZombieDefenseLocations.Add(TargetPoint);
+        }
     }
 
     UGameplayStatics::GetAllActorsOfClass(
@@ -201,5 +205,16 @@ FVector AActorManager::GetRandomScoutLocation() const
 }
 
 APlayerStart* AActorManager::GetRandomZombieStart() {
-    return GetRandomStart(ZombieStartLocations);
+	if (ZombieStartLocations.Num() == 0)
+		return nullptr;
+	APlayerStart* Chosen = ZombieStartLocations[FMath::RandRange(0, ZombieStartLocations.Num() - 1)];
+	return Chosen;
+}
+
+ATargetPoint* AActorManager::GetRandomZombieDefensePoint() const {
+
+    if (ZombieDefenseLocations.Num() == 0)
+        return nullptr;
+    ATargetPoint* Chosen = ZombieDefenseLocations[FMath::RandRange(0, ZombieDefenseLocations.Num() - 1)];
+    return Chosen;
 }

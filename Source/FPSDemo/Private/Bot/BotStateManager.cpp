@@ -8,6 +8,7 @@
 #include "Game/ActorManager.h"
 #include "Engine/TriggerBox.h"
 #include "Characters/BaseCharacter.h"
+#include "Engine/TargetPoint.h"
 
 BotStateManager::BotStateManager()
 {
@@ -15,6 +16,12 @@ BotStateManager::BotStateManager()
 
 BotStateManager::~BotStateManager()
 {
+}
+
+void BotStateManager::Initialize(AActorManager* ActorMgr)
+{
+	UE_LOG(LogTemp, Warning, TEXT("BotStateManager: Initialized"));
+	ActorManager = ActorMgr;
 }
 
 void BotStateManager::AddBot(ABotAIController* NewBot)
@@ -118,13 +125,14 @@ void BotStateManager::RemoveBot(ABotAIController* BotToRemove)
 	ManagedBots.Remove(BotToRemove);
 }
 
-void BotStateManager::OnStartRound(AActorManager* ActorMgr, FName AttackerTeamId, AActor* SpikeActor)
+void BotStateManager::OnStartRound(FName AttackerTeamId, AActor* SpikeActor)
 {
+	if (!ActorManager) return;
 	FName BombSite = FMath::RandBool() ? FName(TEXT("A")) : FName(TEXT("B"));
 	FVector PlantLocation =
 		(BombSite == FName(TEXT("A")))
-		? ActorMgr->GetAreaBombA()->GetActorLocation()
-		: ActorMgr->GetAreaBombB()->GetActorLocation();
+		? ActorManager->GetAreaBombA()->GetActorLocation()
+		: ActorManager->GetAreaBombB()->GetActorLocation();
 
 	TArray<ABotAIController*> Attackers;
 	const EBotRole AttackerRoles[] =
@@ -169,6 +177,22 @@ void BotStateManager::OnStartRound(AActorManager* ActorMgr, FName AttackerTeamId
 		ABotAIController* SpikeCarrierBot = Attackers[RandomIndex];
 		SpikeCarrierBot->SetSpikeRole(EBotRole::A_Carrier);
 	}
+}
+
+void BotStateManager::OnStartRoundZombieMode() {
+	if (!ActorManager) return;
+	for (ABotAIController* Bot : ManagedBots)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BotStateManager: OnStartRoundZombieMode setting hold location for bot"));
+		ATargetPoint* ZombieSpawnPoint = ActorManager->GetRandomZombieDefensePoint();
+		if (!ZombieSpawnPoint) continue;
+		
+		Bot->SetHoldLocation(ZombieSpawnPoint->GetActorLocation());
+	}
+}
+void BotStateManager::SetMatchMode(EMatchMode NewMode)
+{
+	CurrentMatchMode = NewMode;
 }
 
 void BotStateManager::NotifyCharacterRole(ABotAIController* Bot, ECharacterRole NewRole) {

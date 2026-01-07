@@ -56,6 +56,8 @@ protected:
 
 	TArray<APlayerStart*> ZombieStartLocations;
 
+	TArray<ATargetPoint*> ZombieDefenseLocations;
+
 	APlayerStart* GetRandomStart(const TArray<APlayerStart*>& Starts);
 public:	
 	// Called every frame
@@ -66,6 +68,7 @@ public:
 	APlayerStart* GetRandomAttackerStart();
 	APlayerStart* GetRandomDefenderStart();
 	APlayerStart* GetRandomZombieStart();
+	ATargetPoint* GetRandomZombieDefensePoint() const;
 	void ResetPlayerStartsUsage();
 
 	UPROPERTY(EditInstanceOnly, Category = "Setup")

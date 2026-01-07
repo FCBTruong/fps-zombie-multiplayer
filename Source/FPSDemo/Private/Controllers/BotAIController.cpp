@@ -323,3 +323,16 @@ void ABotAIController::SetHasLineSight(bool bLineSight)
         );
     }
 }
+
+void ABotAIController::SetHoldLocation(const FVector& NewLocation)
+{
+    HoldLocation = NewLocation;
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsVector(
+            BotBBKeys::HoldLocation,
+            NewLocation
+        );
+    }
+}

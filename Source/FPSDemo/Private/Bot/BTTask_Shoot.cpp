@@ -43,10 +43,10 @@ EBTNodeResult::Type UBTTask_Shoot::ExecuteTask(
     //AI->SetFocus(Target);
 
     // check Has Sight
-	bool IsHasSight = AI->HasLineOfSight();
+	/*bool IsHasSight = AI->HasLineOfSight();
     if (!IsHasSight) {
 		return EBTNodeResult::Succeeded;
-    }
+    }*/
 
     // === Base aim ===
     const FVector CameraLocation = Char->GetPawnViewLocation();

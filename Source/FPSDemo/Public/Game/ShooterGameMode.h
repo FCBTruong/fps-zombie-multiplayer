@@ -40,6 +40,7 @@ protected:
 	virtual bool ReadyToStartMatch_Implementation() override;
 	virtual void HandleMatchHasStarted() override;
 	virtual void StartRound();
+	virtual void EndRound(FName WinningTeam);
 
 	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;

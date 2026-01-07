@@ -4,6 +4,7 @@
 #include "Game/GameManager.h"
 #include "Weapons/WeaponState.h"
 #include "Characters/BaseCharacter.h"
+#include "Game/ActorManager.h"
 
 AShooterGameMode::AShooterGameMode()
 {
@@ -14,6 +15,9 @@ void AShooterGameMode::StartPlay()
 {
     Super::StartPlay();
     BotManager = MakeUnique<BotStateManager>();
+
+	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
+	BotManager->Initialize(ActorMgr);
 
     UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode:Game Started!"));
 
@@ -318,4 +322,12 @@ bool AShooterGameMode::ReadyToStartMatch_Implementation()
 
 void AShooterGameMode::StartRound() {
 	UE_LOG(LogTemp, Warning, TEXT("Starting Round in AShooterGameMode"));
+
+    AActorManager* AM = AActorManager::Get(GetWorld());
+    AM->ResetPlayerStartsUsage();
+}
+
+void AShooterGameMode::EndRound(FName WinningTeam)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Ending Round in AShooterGameMode. Winning Team: %s"), *WinningTeam.ToString());
 }

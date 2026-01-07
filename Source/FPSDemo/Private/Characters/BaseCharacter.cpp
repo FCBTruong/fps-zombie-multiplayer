@@ -1775,3 +1775,13 @@
         }
         RoleComp->SetRoleAuthoritative(ECharacterRole::Hero);
     }
+
+    int ABaseCharacter::GetTeamId() const {
+        // for zombie mode
+		ECharacterRole R = GetCharacterRole();
+        if (R == ECharacterRole::Hero or R == ECharacterRole::Human) {
+            return FGameConstants::SODIER_TEAM_ID;
+        }
+
+		return FGameConstants::ZOMBIE_TEAM_ID;
+	}

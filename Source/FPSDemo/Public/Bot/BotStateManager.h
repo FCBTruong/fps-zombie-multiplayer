@@ -18,7 +18,7 @@ class FPSDEMO_API BotStateManager
 public:
 	BotStateManager();
 	~BotStateManager();
-
+	void Initialize(AActorManager* ActorMgr);
 	void AddBot(ABotAIController* NewBot);
 	void RemoveBot(ABotAIController* BotToRemove);
 	void OnSpikePlanted(FName AttackerTeamId, AActor* SpikeActor);
@@ -26,16 +26,15 @@ public:
 	void OnSpikePickedUp(ABaseCharacter* Player);
 	void OnSpikeDropped();
 	void OnSpikeCarrierKilled();
-	void OnStartRound(AActorManager* ActorMgr, FName AttackerTeamId, AActor* SpikeActor);
+	void OnStartRound(FName AttackerTeamId, AActor* SpikeActor);
+	void OnStartRoundZombieMode();
 	void NotifyCharacterRole(ABotAIController* Bot, ECharacterRole NewRole);
 	TArray<ABotAIController*> GetManagedBots() const {
 		return ManagedBots;
 	}
-	void SetMatchMode(EMatchMode NewMode) {
-		CurrentMatchMode = NewMode;
-	}
-
+	void SetMatchMode(EMatchMode NewMode);
 private:
 	TArray<ABotAIController*> ManagedBots;
 	EMatchMode CurrentMatchMode = EMatchMode::Spike;
+	AActorManager* ActorManager = nullptr;
 };

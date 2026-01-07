@@ -60,7 +60,6 @@ void UCharCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
     }
 
     const float CurrentFOV = CameraFps->FieldOfView;
-	UE_LOG(LogTemp, Warning, TEXT("CurrentFOV: %f, TargetFOV: %f"), CurrentFOV, TargetFOV);
     const float NewFOV = TargetFOV; // FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f);
     CameraFps->SetFieldOfView(NewFOV);
 	CameraFps->SetFirstPersonFieldOfView(NewFOV);

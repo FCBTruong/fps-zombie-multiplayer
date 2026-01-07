@@ -75,6 +75,7 @@ void ASpikeMode::DefuseSpike(AController* Defuser)
 
 void ASpikeMode::EndRound(FName WinningTeam)
 {
+	Super::EndRound(WinningTeam);
 	UE_LOG(LogTemp, Warning, TEXT("Round Ended! Team %s wins!"), *WinningTeam.ToString());
 	// Clear timer 
 	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
@@ -107,8 +108,7 @@ void ASpikeMode::EndRound(FName WinningTeam)
 
 void ASpikeMode::StartRound()
 {
-	AActorManager* AM = AActorManager::Get(GetWorld());
-	AM->ResetPlayerStartsUsage();
+	Super::StartRound();
 	ResetPlayers();
 	AShooterGameState* GS = GetShooterGS();
 
@@ -144,7 +144,7 @@ void ASpikeMode::StartRound()
 	UE_LOG(LogTemp, Warning, TEXT("Object address = %p"), PickupActor);
 	
 	if (BotManager) {
-		BotManager->OnStartRound(AM, GS->GetAttackerTeam(), PickupActor);
+		BotManager->OnStartRound(GS->GetAttackerTeam(), PickupActor);
 	}
 	
 	GS->SetMatchState(EMyMatchState::BUY_PHASE);

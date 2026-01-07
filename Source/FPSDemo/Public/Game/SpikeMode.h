@@ -30,7 +30,7 @@ protected:
 public:
 	virtual void StartPlay() override;
 	virtual void StartRound() override;
-	void EndRound(FName WinningTeam);
+	virtual void EndRound(FName WinningTeam) override;
 	void EndGame(FName WinningTeam);
 	void PlantSpike(FVector Location, AController* Planter);
 	bool IsSpikePlanted() {

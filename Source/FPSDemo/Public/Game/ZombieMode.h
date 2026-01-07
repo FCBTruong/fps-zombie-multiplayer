@@ -22,7 +22,7 @@ protected:
 		AController* NewPlayer,
 		const FTransform& SpawnTransform
 	) override;
-	void EndRound(FName WinningTeam);
+	virtual void EndRound(FName WinningTeam) override;
 	void AssignZombieRoles();
 
 	FTimerHandle RoleAssignTimerHandle;

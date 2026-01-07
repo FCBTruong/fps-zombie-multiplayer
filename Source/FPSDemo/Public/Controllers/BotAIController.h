@@ -26,6 +26,7 @@ namespace BotBBKeys
 	inline const FName CharacterRole(TEXT("E_CharacterRole"));
 	inline const FName ScoutLocation(TEXT("Vec_ScoutLocation"));
 	inline const FName HasLineSight(TEXT("B_HasLineSight"));
+	inline const FName HoldLocation(TEXT("Vec_HoldLocation"));
 }
 
 UCLASS()
@@ -50,6 +51,7 @@ public:
 	void SetCharacterRole(ECharacterRole NewRole);
 	void SetScoutLocation(const FVector& NewLocation);
 	void SetHasLineSight(bool bLineSight);
+	void SetHoldLocation(const FVector& NewLocation);
 
 	EBotRole GetSpikeRole() const { return SpikeRole; }
 	ABaseCharacter* GetTargetActor() const;
@@ -84,5 +86,6 @@ private:
     FVector PlantLocation;
     ECharacterRole CharacterRole;
 	FVector ScoutLocation;
+	FVector HoldLocation;
 	bool bHasLineSight;
 };

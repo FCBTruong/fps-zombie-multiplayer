@@ -33,37 +33,13 @@ void UBTService_UpdateTarget_Zombie::TickNode(
     const bool bSelfIsZombie = SelfCharacter->IsCharacterRole(ECharacterRole::Zombie);
 
     ABaseCharacter* CurrentTargetChar = AICon->GetTargetActor();
+    TArray<AActor*> PerceivedActors;
+    Perception->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), PerceivedActors);
  
+    ABaseCharacter* BestTarget = nullptr;
+    FindBestTarget(PerceivedActors, SelfCharacter, BestTarget);
     // Perceived actors via Sight
     if (bSelfIsZombie) {
-        TArray<AActor*> PerceivedActors;
-        Perception->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), PerceivedActors);
-
-        ABaseCharacter* BestTarget = nullptr;
-        float BestDistSq = TNumericLimits<float>::Max();
-
-        const FVector SelfLoc = SelfPawn->GetActorLocation();
-
-        for (AActor* Actor : PerceivedActors)
-        {
-            if (!Actor || Actor == SelfPawn) continue;
-
-			ABaseCharacter* TargetChar = Cast<ABaseCharacter>(Actor);
-
-			if (!TargetChar) continue;
-            
-			const bool bTargetIsZombie = TargetChar->IsCharacterRole(ECharacterRole::Zombie);
-			if (bTargetIsZombie) continue; // Skip other zombies
-
-            // Nearest
-            const float DistSq = FVector::DistSquared(SelfLoc, Actor->GetActorLocation());
-            if (DistSq < BestDistSq)
-            {
-                BestDistSq = DistSq;
-                BestTarget = TargetChar;
-            }
-        }
-
         // Write blackboard
         if (BestTarget) {
 			AICon->SetTargetActor(Cast<ABaseCharacter>(BestTarget));
@@ -74,5 +50,38 @@ void UBTService_UpdateTarget_Zombie::TickNode(
 				AICon->SetTargetActor(nullptr);
             }
 		}
+    }
+    else {
+		// Non-zombie logic can go here
+        AICon->SetTargetActor(Cast<ABaseCharacter>(BestTarget));
+    }
+}
+
+void UBTService_UpdateTarget_Zombie::FindBestTarget(TArray<AActor*> PerceivedActors, ABaseCharacter* SelfPawn, ABaseCharacter*& OutBestTarget) {
+    float BestDistSq = TNumericLimits<float>::Max();
+
+    const FVector SelfLoc = SelfPawn->GetActorLocation();
+	int MyTeamId = SelfPawn->GetTeamId();
+	
+    for (AActor* Actor : PerceivedActors)
+    {
+        if (!Actor || Actor == SelfPawn) continue;
+
+        ABaseCharacter* TargetChar = Cast<ABaseCharacter>(Actor);
+
+        if (!TargetChar) continue;
+
+		if (!TargetChar->IsAlive()) continue;
+
+		int TargetTeamId = TargetChar->GetTeamId();
+		if (TargetTeamId == MyTeamId) continue; // Skip same team
+
+        // Nearest
+        const float DistSq = FVector::DistSquared(SelfLoc, Actor->GetActorLocation());
+        if (DistSq < BestDistSq)
+        {
+            BestDistSq = DistSq;
+            OutBestTarget = TargetChar;
+        }
     }
 }

@@ -296,6 +296,7 @@ public:
     virtual bool IsCharacterRole(ECharacterRole InRole) const;
     virtual void ZombieAttack();
     virtual void RequestBecomeHero();
+	virtual int GetTeamId() const;
 	ECharacterRole GetCharacterRole() const;
     FVector GetThrowableLocation() const;
     UPickupComponent* GetPickupComponent() const;

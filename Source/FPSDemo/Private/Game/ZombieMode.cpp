@@ -26,6 +26,7 @@ void AZombieMode::StartPlay()
 void AZombieMode::StartRound()
 {
 	UE_LOG(LogTemp, Warning, TEXT("AZombieMode: Starting Round..."));
+	Super::StartRound();
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (GS) {
@@ -35,8 +36,9 @@ void AZombieMode::StartRound()
 	int BuyTime = 15; // seconds
 	int TimeBuyEnd = GetWorld()->GetTimeSeconds() + BuyTime;
 	GS->SetRoundEndTime(TimeBuyEnd);
-
 	ResetPlayers();
+
+	BotManager->OnStartRoundZombieMode();
 
 	GetWorldTimerManager().SetTimer(
 		RoleAssignTimerHandle,
@@ -96,6 +98,11 @@ void AZombieMode::AssignZombieRoles()
 		const bool bMakeZombie = (MyPS == ZombiePS);
 		if (bMakeZombie) {
 			RoleComp->SetRoleAuthoritative(ECharacterRole::Zombie);
+
+			if (ABotAIController* BotCtrl = Cast<ABotAIController>(MyPS->GetOwner()))
+			{
+				BotManager->NotifyCharacterRole(BotCtrl, ECharacterRole::Zombie);
+			}
 		}
 	}
 
@@ -103,6 +110,7 @@ void AZombieMode::AssignZombieRoles()
 
 void AZombieMode::EndRound(FName WinningTeam)
 {
+	Super::EndRound(WinningTeam);
 	UE_LOG(LogTemp, Warning, TEXT("Round Ended! Team %s wins!"), *WinningTeam.ToString());
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (GS)
@@ -141,6 +149,11 @@ void AZombieMode::NotifyPlayerKilled(class AController* Killer, class ABaseChara
 		if (RoleComp)
 		{
 			RoleComp->SetRoleAuthoritative(ECharacterRole::Zombie);
+
+			if (ABotAIController* BotCtrl = Cast<ABotAIController>(Victim))
+			{
+				BotManager->NotifyCharacterRole(BotCtrl, ECharacterRole::Zombie);
+			}
 		}
 	}
 }
