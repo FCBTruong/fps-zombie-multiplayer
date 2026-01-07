@@ -57,7 +57,7 @@ void UShopSlotUI::OnClicked()
 
 		UE_LOG(LogTemp, Warning, TEXT("DebugTime - CLICK: %.3f"), Time);
 
-		PC->ServerBuyItem(Data->Id);
+		PC->RequestBuyItem(Data->Id);
 	}
 }
 

@@ -57,13 +57,7 @@ void ABotAIController::OnPossess(APawn* InPawn)
             RunBehaviorTree(GMR->GlobalData->BotBehaviorTree);
         }
     }
-	ABaseCharacter* MyChar = Cast<ABaseCharacter>(InPawn);
-    if (MyChar) {
-        UEquipComponent* EquipComp = MyChar->GetEquipComponent();
-        if (EquipComp) {
-            EquipComp->OnAmmoChanged.AddUObject(this, &ABotAIController::OnAmmoChanged);
-        }
-    }
+    BindPawn(InPawn);
 
     // Get game mode and set initial match mode
     AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
@@ -72,6 +66,11 @@ void ABotAIController::OnPossess(APawn* InPawn)
         UE_LOG(LogTemp, Warning, TEXT("BotAIController: Initial MatchMode=%d"), (uint8)GS->GetMatchMode());
         SetMatchMode(GS->GetMatchMode());
     }
+}
+
+void ABotAIController::OnUnPossess() {
+    UnbindPawn();
+    Super::OnUnPossess();
 }
 
 void ABotAIController::OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors)
@@ -96,31 +95,11 @@ void ABotAIController::Tick(float DeltaSeconds)
     FVector Loc = GetPawn()->GetActorLocation();
     FRotator Rot = GetPawn()->GetActorRotation();
 
-    // Sight radius
-   /* DrawDebugCircle(
-        GetWorld(),
-        Loc,
-        SightConfig->SightRadius,
-        32,
-        FColor::Green,
-        false,
-        -1,
-        0,
-        2,
-        FVector(1, 0, 0),
-        FVector(0, 1, 0),
-        false
-    );*/
-
-    // FOV direction lines
     float HalfFOV = SightConfig->PeripheralVisionAngleDegrees;
     FVector Fwd = Rot.Vector();
 
     FVector LeftDir = Fwd.RotateAngleAxis(-HalfFOV, FVector::UpVector);
     FVector RightDir = Fwd.RotateAngleAxis(+HalfFOV, FVector::UpVector);
-
-   /* DrawDebugLine(GetWorld(), Loc, Loc + LeftDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);
-    DrawDebugLine(GetWorld(), Loc, Loc + RightDir * SightConfig->SightRadius, FColor::Blue, false, -1, 0, 2);*/
 }
 
 
@@ -142,48 +121,37 @@ void ABotAIController::ResetAIState()
 
 
 void ABotAIController::StartPlantingSpike() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-	UE_LOG(LogTemp, Warning, TEXT("BotAIController: StartPlantingSpike called"));
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    ABaseCharacter* MyChar = GetBotChar();
+
+    if (!MyChar) return;
+    UE_LOG(LogTemp, Warning, TEXT("BotAIController: StartPlantingSpike called"));
+
+    if (UEquipComponent* EC = MyChar->GetEquipComponent())
     {
-        if (UEquipComponent* EC = MyChar->GetEquipComponent())
+        if (EC->GetActiveItemId() != EItemId::SPIKE)
         {
-            if (EC->GetActiveItemId() != EItemId::SPIKE)
-            {
-                EC->RequestSelectActiveItem(EItemId::SPIKE);
-			}
-            if (USpikeComponent* SC = MyChar->GetSpikeComponent())
-            {
-                SC->RequestPlantSpike();
-            }
+            EC->RequestSelectActiveItem(EItemId::SPIKE);
         }
+        MyChar->RequestPrimaryActionPressed();
     }
 }
 
 void ABotAIController::StartDefusingSpike() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    ABaseCharacter* MyChar = GetBotChar();
+    if (!MyChar) return;
+
+    if (USpikeComponent* WC = MyChar->GetSpikeComponent())
     {
-        if (USpikeComponent* WC = MyChar->GetSpikeComponent())
-        {     
-			WC->RequestStartDefuseSpike();
-        }
+        WC->RequestStartDefuseSpike();
     }
 }
 
 void ABotAIController::RequestFireOnce()
 {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        if (UWeaponFireComponent* WC = MyChar->GetWeaponFireComponent())
-        {
-            WC->RequestFireOnce();
-        }
-    }
+    ABaseCharacter* MyChar = GetBotChar();
+    if (!MyChar) return;
+    MyChar->RequestPrimaryActionPressed();
+    MyChar->RequestPrimaryActionReleased();
 }
 
 void ABotAIController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current active weapon
@@ -191,13 +159,9 @@ void ABotAIController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current a
 	UE_LOG(LogTemp, Warning, TEXT("BotAIController::OnAmmoChanged: Clip=%d, Reserve=%d"), Clip, Reserve);
     if (Clip <= 0 && Reserve > 0)
     {
-        APawn* MyPawn = GetPawn();
-        if (!MyPawn) return;
-        if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+        if (ABaseCharacter* MyChar = GetBotChar())
         {
-            if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
-                WFC->RequestReload();
-            }
+            MyChar->RequestReloadPressed();
         }
 	}
 }
@@ -314,13 +278,10 @@ void ABotAIController::SetScoutLocation(const FVector& NewLocation)
 
 void ABotAIController::SetHasLineSight(bool bLineSight)
 {
-    UBlackboardComponent* BB = GetBlackboardComponent();
-    if (BB)
+    bHasLineSight = bLineSight;
+    if (UBlackboardComponent* BB = GetBlackboardComponent())
     {
-        BB->SetValueAsBool(
-            BotBBKeys::HasLineSight,
-            bLineSight
-        );
+        BB->SetValueAsBool(BotBBKeys::HasLineSight, bLineSight);
     }
 }
 
@@ -335,4 +296,27 @@ void ABotAIController::SetHoldLocation(const FVector& NewLocation)
             NewLocation
         );
     }
+}
+
+void ABotAIController::BindPawn(APawn* InPawn)
+{
+    CachedChar = Cast<ABaseCharacter>(InPawn);
+    if (!CachedChar.IsValid()) return;
+
+    if (UEquipComponent* EquipComp = CachedChar->GetEquipComponent())
+    {
+        EquipComp->OnAmmoChanged.AddUObject(this, &ABotAIController::OnAmmoChanged);
+    }
+}
+
+void ABotAIController::UnbindPawn()
+{
+    if (!CachedChar.IsValid()) return;
+
+    if (UEquipComponent* EquipComp = CachedChar->GetEquipComponent())
+    {
+        EquipComp->OnAmmoChanged.RemoveAll(this);
+    }
+
+    CachedChar.Reset();
 }

@@ -45,6 +45,7 @@ class UCharacterAsset;
 class UPostProcessComponent;
 class UItemConfig;
 class URoleComponent;
+class UItemUseComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAimingChanged, bool);
@@ -87,7 +88,6 @@ protected:
     virtual void OnRep_Controller() override;
     virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
     virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
-
 protected:
 	// Components
 
@@ -132,6 +132,9 @@ protected:
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<URoleComponent> RoleComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<UItemUseComponent> ItemUseComp;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<UThrowableComponent> ThrowableComp;
@@ -297,6 +300,13 @@ public:
     virtual void ZombieAttack();
     virtual void RequestBecomeHero();
 	virtual int GetTeamId() const;
+    void RequestPrimaryActionPressed();
+	void RequestPrimaryActionReleased();
+	void RequestSecondaryActionPressed();
+	void RequestSecondaryActionReleased();
+    void RequestReloadPressed();
+    bool CanAct();
+
 	ECharacterRole GetCharacterRole() const;
     FVector GetThrowableLocation() const;
     UPickupComponent* GetPickupComponent() const;

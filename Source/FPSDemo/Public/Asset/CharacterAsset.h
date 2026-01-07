@@ -120,5 +120,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
 	TSubclassOf<UAnimInstance> HeroAnimTPS;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterialInterface* FlashPPMat;
 };
 

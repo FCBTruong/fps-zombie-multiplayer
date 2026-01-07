@@ -57,10 +57,12 @@ public:
 	ABaseCharacter* GetTargetActor() const;
 	bool GetIsAttacker() const { return bIsAttacker; }
 	bool HasLineOfSight() const { return bHasLineSight; }
+    ABaseCharacter* GetBotChar() const { return CachedChar.Get(); }
 protected:
     virtual void OnPossess(APawn* InPawn) override;
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
+    virtual void OnUnPossess() override;
     UFUNCTION()
     void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
     UFUNCTION()
@@ -88,4 +90,9 @@ private:
 	FVector ScoutLocation;
 	FVector HoldLocation;
 	bool bHasLineSight;
+
+    TWeakObjectPtr<ABaseCharacter> CachedChar;
+
+    void BindPawn(APawn* InPawn);
+    void UnbindPawn();
 };

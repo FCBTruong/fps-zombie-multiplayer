@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
 #include "Controllers/MyPlayerController.h"
+#include "UI/PlayerUI.h"
 
 
 void UMyCheatManager::Live() {
@@ -23,13 +24,13 @@ void UMyCheatManager::Cmd(int Id) {
     
     switch (Id) {
     case 1:
-        PC->PlayerUI->OnUpdateDefuseSpikeState(false);
+        PC->GetPlayerUI()->OnUpdateDefuseSpikeState(false);
         break;
     case 2:
-        PC->PlayerUI->OnUpdateDefuseSpikeState(true);
+        PC->GetPlayerUI()->OnUpdateDefuseSpikeState(true);
         break;
     case 3:
-        PC->PlayerUI->ShowNotiToast(FText::FromString("You got me!!"));
+        PC->GetPlayerUI()->ShowNotiToast(FText::FromString("You got me!!"));
         break;
     }
 }

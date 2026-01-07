@@ -7,6 +7,7 @@
 #include "Controllers/MyPlayerController.h"
 #include "Controllers/MyPlayerState.h"
 #include "Items/ItemConfig.h"
+#include "UI/PlayerUI.h"
 
 AShooterGameState::AShooterGameState()
 {
@@ -42,18 +43,18 @@ void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Kille
         if (!MyPC) {
             return;
         }
-        if (!MyPC->PlayerUI) {
+        if (!MyPC->GetPlayerUI()) {
             return;
 		}   
 
-		MyPC->PlayerUI->NotifyKill(Killer, Victim, DamageCauser, bWasHeadShot);
+		MyPC->GetPlayerUI()->NotifyKill(Killer, Victim, DamageCauser, bWasHeadShot);
 
 		AActor* KillerPawn = Killer ? Killer->GetPawn() : nullptr;
         AActor* ViewTargetPawn = MyPC->GetViewTarget();
 
         if (KillerPawn && KillerPawn == ViewTargetPawn)
         {
-			MyPC->PlayerUI->ShowKillMark(bWasHeadShot);
+			MyPC->GetPlayerUI()->ShowKillMark(bWasHeadShot);
 		}
     }
 }
@@ -63,14 +64,14 @@ void AShooterGameState::Multicast_RoundResult_Implementation(FName WinningTeam)
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
         AMyPlayerController* MyPC = Cast<AMyPlayerController>(It->Get());
-        if (MyPC && MyPC->PlayerUI)
+        if (MyPC && MyPC->GetPlayerUI())
         {
 			bool IsWinner = false;
             if (MyPC->GetTeamId() == WinningTeam) {
 				IsWinner = true;
             }
 			FText ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
-			MyPC->PlayerUI->ShowMatchStateToast(ResultText, 1);
+			MyPC->GetPlayerUI()->ShowMatchStateToast(ResultText, 1);
         }
     }
 }

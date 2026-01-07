@@ -25,6 +25,7 @@
 #include "Game/GlobalDataAsset.h"
 #include "Game/ItemsManager.h"
 #include "Components/SpikeComponent.h"
+#include "UI/PlayerUI.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -34,6 +35,7 @@ void AMyPlayerController::BeginPlay()
 {
     Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: BeginPlay called"));
+    AddDefaultInputMapping();
 
     APlayerCameraManager* PCM = this->PlayerCameraManager;
     if (PCM)
@@ -58,28 +60,38 @@ void AMyPlayerController::BeginPlay()
     {
         UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Creating PlayerUI widget"));
         PlayerUI = CreateWidget<UPlayerUI>(this, GMR->GlobalData->PlayerUIClass);
-        PlayerUI->AddToViewport(5);
-		PlayerUI->CloseShop();
-		bIsShopOpen = false;
-        BindingUI();
+        if (PlayerUI) {
+            PlayerUI->AddToViewport(5);
+            PlayerUI->CloseShop();
+            bIsShopOpen = false;
+            RebindAll();
+        }
     }
 }
 
+void AMyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    RemoveDefaultInputMapping();
+    UnbindAll();
+    Super::EndPlay(EndPlayReason);
+}
 
 void AMyPlayerController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: OnPossess called"));
+
+    if (IsLocalController())
+    {
+        RebindAll();
+    }
 }
 
 
 void AMyPlayerController::OnUnPossess()
 {
+    UnbindAll();
 	Super::OnUnPossess();
-    if (ABaseCharacter* Char = Cast<ABaseCharacter>(GetPawn()))
-    {
-        Char->OnAimingChanged.RemoveAll(this);
-    }
 }
 
 
@@ -91,72 +103,7 @@ void AMyPlayerController::OnRep_Pawn()
 
     if (IsLocalController())
     {
-        BindingUI();
-    }
-}
-
-void AMyPlayerController::BindingUI()
-{
-	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: BindingUI called"));
-    if (!PlayerUI)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: PlayerUI is null, cannot bind"));
-        return;
-	}
-    PlayerUI->OnEnter();
-    UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Local controller possessing pawn"));
-    if (auto* Char = Cast<ABaseCharacter>(GetPawn()))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Binding health update for possessed character"));
-        if (auto* HC = Char->GetHealthComponent())
-        {
-            HC->OnHealthUpdated.AddUObject(PlayerUI, &UPlayerUI::UpdateHealth);
-            PlayerUI->UpdateHealth(HC->GetHealth(), HC->GetMaxHealth());
-        }
-        if (auto* IC = Char->GetInteractComponent())
-        {
-            IC->ShowPickupMessage.AddUObject(PlayerUI, &UPlayerUI::ShowPickupMessage);
-			IC->HidePickupMessage.AddUObject(PlayerUI, &UPlayerUI::HidePickupMessage);
-        }
-        if (auto* EC = Char->GetEquipComponent())
-        {
-            EC->OnAmmoChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
-            EC->OnActiveItemChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateCurrentWeapon);
-		}
-        if (auto* IC = Char->GetInventoryComponent())
-        {
-            IC->OnSpikeChanged.AddUObject(
-                this, &AMyPlayerController::HandleSpikeChanged);
-            IC->OnThrowablesChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
-			PlayerUI->UpdateGrenades(IC->GetThrowables());
-        }
-        if (auto* PC = Char->GetPickupComponent()) {
-			PC->OnNewItemPickup.AddUObject(this, &AMyPlayerController::NotifyItemPickedUp);
-        }
-     
-
-        if (auto* SP = Char->GetSpikeComponent())
-        {
-            SP->OnNotifyToastMessage.AddUObject(this, &AMyPlayerController::NotifyToastMessage);
-            SP->OnUpdatePlantSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdatePlantSpikeState);
-            SP->OnUpdateDefuseSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdateDefuseSpikeState);
-		}
-
-        Char->OnHit.AddUObject(PlayerUI, &UPlayerUI::OnHit);
-
-        Char->OnAimingChanged.AddUObject(
-            this,
-            &AMyPlayerController::HandleAimingChanged
-        );
-    }
-
-	// get game state and bind to score updates
-    AShooterGameState* GST = GetWorld()->GetGameState<AShooterGameState>();
-    if (GST)
-    {
-        GST->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::UpdateTeamScores);
-		GST->OnUpdateRoundTime.AddUObject(PlayerUI, &UPlayerUI::OnUpdateRoundTime);
-		GST->OnUpdateMatchState.AddUObject(PlayerUI, &UPlayerUI::UpdateGameState);
+        RebindAll();
     }
 }
 
@@ -170,7 +117,6 @@ void AMyPlayerController::ApplyFlash(const float& Strength)
 
 void AMyPlayerController::ToggleShop()
 {
-    UE_LOG(LogTemp, Warning, TEXT("ObjectToggleShop address = %p"), GMR);
 	UE_LOG(LogTemp, Warning, TEXT("Toggling shop UI"));
     if (!PlayerUI)
     {
@@ -220,14 +166,6 @@ void AMyPlayerController::SetupInputComponent()
             EnhancedInput->BindAction(IA_ESCAPE, ETriggerEvent::Started, this, &AMyPlayerController::CloseShopIfOpen);
         }
 
-        if (IMC_FPS)
-        {
-            if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-            {
-                Subsystem->AddMappingContext(IMC_FPS, 0);
-            }
-		}
-
         if (IA_MOVEMENT)
         {
             EnhancedInput->BindAction(IA_MOVEMENT, ETriggerEvent::Triggered, this, &AMyPlayerController::Move);
@@ -263,6 +201,7 @@ void AMyPlayerController::SetupInputComponent()
         if (IA_AIM)
         {
             EnhancedInput->BindAction(IA_AIM, ETriggerEvent::Started, this, &AMyPlayerController::OnMouse_RightStarted);
+            EnhancedInput->BindAction(IA_AIM, ETriggerEvent::Completed, this, &AMyPlayerController::OnMouse_RightReleased);
         }
         if (IA_RELOAD)
         {
@@ -313,47 +252,18 @@ void AMyPlayerController::SetupInputComponent()
 }
 
 
-void AMyPlayerController::ServerBuyItem_Implementation(const EItemId Itemid)
+void AMyPlayerController::ServerBuyItem_Implementation(EItemId ItemId)
 {
-	const UItemConfig* Item = UItemsManager::Get(GetWorld())->GetItemById(Itemid);
-    if (!Item) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called with null Item"));
-        return;
-	}
-	UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem called for item: %s"), *GetNameSafe(Item));
-    AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
-    if (!PS) {
-        return;
-    }
-
-	// check inventory component whether the player can buy this item
-	ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
-	if (!MyChar) {
-		UE_LOG(LogTemp, Warning, TEXT("ServerBuyItem: Pawn is not ABaseCharacter"));
-		return;
-	}
-
-    PS->ProcessBuy(Item);
+	BuyItem_Internal(ItemId);
 }
 
 void AMyPlayerController::OnRep_PlayerState()
 {
     Super::OnRep_PlayerState();
 
-    AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
-    if (PS)
+    if (IsLocalController())
     {
-        if (!PlayerUI)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: PlayerUI is null, cannot bind money update"));
-            return;
-		}
-        UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Binding money update for player state"));
-        PS->OnUpdateMoney.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateShopMoneyStatus);
-        PS->OnUpdateBoughtItems.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateBoughtItemsStatus);
-    }
-    else {
-        UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: PlayerState is null, cannot bind money update"));
+        RebindAll();
     }
 }
 
@@ -384,9 +294,7 @@ void AMyPlayerController::HideScope()
 
 void AMyPlayerController::Move(const FInputActionValue& Value)
 {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-	ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn);
+    ABaseCharacter* MyChar = GetMyChar();
 
 	if (!MyChar) return;
 
@@ -398,8 +306,8 @@ void AMyPlayerController::Move(const FInputActionValue& Value)
     const FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
     const FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
-    MyPawn->AddMovementInput(Forward, MoveInput.Y);
-    MyPawn->AddMovementInput(Right, MoveInput.X);
+    MyChar->AddMovementInput(Forward, MoveInput.Y);
+    MyChar->AddMovementInput(Right, MoveInput.X);
 }
 
 void AMyPlayerController::OnLeftClickStart()
@@ -413,104 +321,53 @@ void AMyPlayerController::OnLeftClickStart()
         return;
     }
 
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        if (UEquipComponent* EC = MyChar->GetEquipComponent())
-        {
-            const UItemConfig* ActiveItemConfig = EC->GetActiveItemConfig();
-			if (!ActiveItemConfig) {
-				UE_LOG(LogTemp, Warning, TEXT("OnLeftClickStart: No active item equipped"));
-				return;
-			}
-            if (ActiveItemConfig->GetItemType() == EItemType::Firearm) {
-                if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
-					WFC->RequestStartFire();
-                }
-            }
-            else if (ActiveItemConfig->GetItemType() == EItemType::Melee) {
-                if (UWeaponMeleeComponent* WMC = MyChar->GetWeaponMeleeComponent()) {
-					WMC->RequestMeleeAttack(FGameConstants::MELEE_ATTACK_INDEX_PRIMARY);
-                }
-			}
-            else if (ActiveItemConfig->GetItemType() == EItemType::Throwable) {
-                if (UThrowableComponent* ThrowableComp = MyChar->GetThrowableComponent()) {
-                    ThrowableComp->RequestStartThrow();
-                }
-            }
-            else {
-                if (ActiveItemConfig->Id == EItemId::SPIKE) {
-                    if (USpikeComponent* SC = MyChar->GetSpikeComponent()) {
-                        SC->RequestPlantSpike();
-                    }
-				}
-            }
-        }
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestPrimaryActionPressed();
 }
 
 void AMyPlayerController::OnLeftClickRelease()
 {
     if (bIsShopOpen) return;
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        if (UEquipComponent* EC = MyChar->GetEquipComponent())
-        {
-            const UItemConfig* ActiveItemConfig = EC->GetActiveItemConfig();
-            if (!ActiveItemConfig) {
-                return;
-			}
-            if (ActiveItemConfig->GetItemType() == EItemType::Firearm) {
-                if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
-                    WFC->RequestStopFire();
-                }
-            }
-            else {
-                if (ActiveItemConfig->Id == EItemId::SPIKE) {
-                    if (USpikeComponent* SC = MyChar->GetSpikeComponent()) {
-                        SC->RequestStopPlantSpike();
-                    }
-                }
-            }
-        }
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestPrimaryActionReleased();
 }
 
 void AMyPlayerController::Jump() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        MyChar->RequestJump();
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestJump();
 }
 
 void AMyPlayerController::ClickCrouch() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        MyChar->RequestCrouch();
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestCrouch();
 }
 
 void AMyPlayerController::StopCrouch() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        MyChar->RequestUnCrouch();
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestUnCrouch();
 }
 
 void AMyPlayerController::Look(const FInputActionValue& Value) {
     FVector2D Axis = Value.Get<FVector2D>();
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn);
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
+    }
 	if (!MyChar) return;
 
 	float AimSensitivity = MyChar->GetAimSensitivity() * 0.3;
@@ -520,135 +377,116 @@ void AMyPlayerController::Look(const FInputActionValue& Value) {
 }
 
 void AMyPlayerController::OnMouse_RightStarted() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        // get current weapon
-		UEquipComponent* EC = MyChar->GetEquipComponent();
-		if (!EC) return;
-		const UItemConfig* ActiveItemConfig = EC->GetActiveItemConfig();
-		if (!ActiveItemConfig) return;
-
-        if (ActiveItemConfig->GetItemType() == EItemType::Firearm) {
-            ClickAim();
-        }
-        else if (ActiveItemConfig->GetItemType() == EItemType::Melee) {
-            if (UWeaponMeleeComponent* WMC = MyChar->GetWeaponMeleeComponent())
-            {
-                WMC->RequestMeleeAttack(FGameConstants::MELEE_ATTACK_INDEX_SECONDARY);
-            }
-		}
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestSecondaryActionPressed();
+}
+
+void AMyPlayerController::OnMouse_RightReleased() {
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
+    }
+    MyChar->RequestSecondaryActionReleased();
 }
 
 
 void AMyPlayerController::ClickAim() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        if (MyChar->IsAiming()) {
-			MyChar->RequestStopAiming();
-            return;
-		}
-        else {
-            MyChar->RequestStartAiming();
-        }
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
+    }
+    if (MyChar->IsAiming()) {
+        MyChar->RequestStopAiming();
+    }
+    else {
+        MyChar->RequestStartAiming();
     }
 }
 
 void AMyPlayerController::StopAim() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        MyChar->RequestStopAiming();
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestStopAiming();
 }
 
 void AMyPlayerController::StartReload() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        if (UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent()) {
-            WFC->RequestReload();
-        }
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestReloadPressed();
 }
 
 void AMyPlayerController::Pickup() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
+    }
+    if (UInteractComponent* IC = MyChar->FindComponentByClass<UInteractComponent>())
     {
-        if (UInteractComponent* IC = MyChar->FindComponentByClass<UInteractComponent>())
-        {
-			// Deprecated: direct call without Enhanced Input
-        }
+        // Deprecated: direct call without Enhanced Input
     }
 }
 
 void AMyPlayerController::EquipSlot(const int32 SlotIndex) {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
+    }
+    if (UEquipComponent* EC = MyChar->GetEquipComponent())
     {
-        if (UEquipComponent* EC = MyChar->GetEquipComponent())
-        {
-			EC->SelectSlot(SlotIndex);
-        }
+        EC->SelectSlot(SlotIndex);
     }
 }
 
 void AMyPlayerController::DropWeapon() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
+    }
+    if (UEquipComponent* EC = MyChar->GetEquipComponent())
     {
-        if (UEquipComponent* EC = MyChar->GetEquipComponent())
-        {
-            EC->RequestDropItem();
-		}
+        EC->RequestDropItem();
     }
 }
 
 void AMyPlayerController::ChangeView() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        MyChar->ChangeView();
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->ChangeView();
 }
 
 void AMyPlayerController::StartDefuseSpike() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
+    }
+    if (USpikeComponent* SC = MyChar->GetSpikeComponent())
     {
-        if (USpikeComponent* SC = MyChar->GetSpikeComponent())
-        {
-            SC->RequestStartDefuseSpike();
-        }
+        SC->RequestStartDefuseSpike();
     }
 }
 
 void AMyPlayerController::StopDefuseSpike() {
-	UE_LOG(LogTemp, Warning, TEXT("StopDefuseSpike called"));
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
+    UE_LOG(LogTemp, Warning, TEXT("StopDefuseSpike called"));
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
+    }
+    if (USpikeComponent* SC = MyChar->GetSpikeComponent())
     {
-        if (USpikeComponent* SC = MyChar->GetSpikeComponent())
-        {
-            SC->RequestStopDefuseSpike();
-        }
+        SC->RequestStopDefuseSpike();
     }
 }
 
-FName AMyPlayerController::GetTeamId()
+FName AMyPlayerController::GetTeamId() const
 {
     AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
     if (PS)
@@ -659,21 +497,19 @@ FName AMyPlayerController::GetTeamId()
 }
 
 void AMyPlayerController::ClickSlow() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        MyChar->RequestSlowMovement(true);
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestSlowMovement(true);
 }
 
 void AMyPlayerController::ReleaseSlow() {
-    APawn* MyPawn = GetPawn();
-    if (!MyPawn) return;
-    if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-    {
-        MyChar->RequestSlowMovement(false);
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
     }
+    MyChar->RequestSlowMovement(false);
 }
 
 AActor* AMyPlayerController::FindLivingTeammate(AController* Spectator)
@@ -709,10 +545,6 @@ void AMyPlayerController::EndSpectatingState()
     Super::EndSpectatingState();
 }
 
-void AMyPlayerController::UpdateSpectatedPawn(APawn* InPawn, bool bSpectating)
-{
-	
-}
 
 bool AMyPlayerController::IsSpectatingState() const
 {
@@ -756,7 +588,7 @@ void AMyPlayerController::ServerSetSpectateTarget_Implementation(bool bNext)
 
     AActor* Target =
         bNext
-        ? FindNextLivingTeammate(CurrentSpectateTarget)
+        ? FindNextLivingTeammate(CurrentSpectateTarget.Get())
         : FindNextLivingTeammate(nullptr);
 
     if (Target)
@@ -770,7 +602,9 @@ void AMyPlayerController::ServerSetSpectateTarget_Implementation(bool bNext)
         if (GM) {
             if (GM->GetPlantedSpike()) {
                 CurrentSpectateTarget = GM->GetPlantedSpike();
-                ClientSetSpectateViewTarget(CurrentSpectateTarget, 0.3f);
+                if (CurrentSpectateTarget.IsValid()) {
+                    ClientSetSpectateViewTarget(CurrentSpectateTarget.Get(), 0.3f);
+                }
 				return;
             }
         }
@@ -798,8 +632,9 @@ AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
         if (MPS->GetTeamID() != MyTeamId) continue;
         if (MPS == PlayerState) continue;
 
-        APawn* MyPawn = MPS->GetPawn(); // Works if pawn is possessed; otherwise store pawn ref in PlayerState
-        ABaseCharacter* Char = Cast<ABaseCharacter>(MyPawn);
+        AController* OwnerController = Cast<AController>(MPS->GetOwner()); // On server, PlayerState owner is typically the Controller
+        APawn* OwnedPawn = OwnerController ? OwnerController->GetPawn() : nullptr;
+        ABaseCharacter* Char = Cast<ABaseCharacter>(OwnedPawn);
         if (!Char) continue;
         if (!Char->IsAlive()) continue;
 
@@ -922,19 +757,19 @@ void AMyPlayerController::NotifyToastMessage(const FText& Message) {
 void AMyPlayerController::OnButtonE_Started()
 {
     // Get game mode
-	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
-	if (!GS) return;
+    AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+    if (!GS) return;
+
+    ABaseCharacter* MyChar = GetMyChar();
+    if (!MyChar) {
+        return;
+    }
 
     if (GS->GetMatchMode() == EMatchMode::Spike) {
         StartDefuseSpike();
     }
     else {
-        APawn* MyPawn = GetPawn();
-        if (!MyPawn) return;
-        if (ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPawn))
-        {
-            MyChar->RequestBecomeHero();
-        }
+        MyChar->RequestBecomeHero();
     }
 }
 
@@ -945,5 +780,252 @@ void AMyPlayerController::OnButtonE_Completed()
 
     if (GS->GetMatchMode() == EMatchMode::Spike) {
         StopDefuseSpike();
+    }
+}
+
+void AMyPlayerController::RequestBuyItem(EItemId ItemId)
+{
+    if (!HasAuthority()) {
+        ServerBuyItem(ItemId);
+    }
+    else {
+		BuyItem_Internal(ItemId);
+    }
+}
+
+void AMyPlayerController::BuyItem_Internal(EItemId Itemid)
+{
+    const UItemConfig* Item = UItemsManager::Get(GetWorld())->GetItemById(Itemid);
+    if (!Item) {
+        UE_LOG(LogTemp, Warning, TEXT("BuyItem_Internal called with null Item"));
+        return;
+    }
+    UE_LOG(LogTemp, Warning, TEXT("BuyItem_Internal called for item: %s"), *GetNameSafe(Item));
+    AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
+    if (!PS) {
+        return;
+    }
+    // check inventory component whether the player can buy this item
+    ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
+    if (!MyChar) {
+        UE_LOG(LogTemp, Warning, TEXT("BuyItem_Internal: Pawn is not ABaseCharacter"));
+        return;
+    }
+    PS->ProcessBuy(Item);
+}
+
+void AMyPlayerController::RebindAll()
+{
+    if (!IsLocalController() || !PlayerUI)
+    {
+        return;
+    }
+
+    UnbindAll();
+
+    ABaseCharacter* Char = Cast<ABaseCharacter>(GetPawn());
+    AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
+
+    CachedChar = Char;
+    CachedGS = GS;
+    CachedPS = PS;
+
+    PlayerUI->OnEnter();
+
+    if (Char) BindCharacter(Char);
+    if (GS)   BindGameState(GS);
+    if (PS)   BindPlayerState(PS);
+}
+
+void AMyPlayerController::UnbindAll()
+{
+    if (ABaseCharacter* Char = CachedChar.Get())
+    {
+        UnbindCharacter(Char);
+    }
+    if (AShooterGameState* GS = CachedGS.Get())
+    {
+        UnbindGameState(GS);
+    }
+    if (AMyPlayerState* PS = CachedPS.Get())
+    {
+        UnbindPlayerState(PS);
+    }
+
+    CachedChar.Reset();
+    CachedGS.Reset();
+    CachedPS.Reset();
+}
+
+void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
+{
+    if (!Char || !PlayerUI) return;
+
+    if (UHealthComponent* HC = Char->GetHealthComponent())
+    {
+        H_HealthUpdated = HC->OnHealthUpdated.AddUObject(PlayerUI, &UPlayerUI::UpdateHealth);
+        PlayerUI->UpdateHealth(HC->GetHealth(), HC->GetMaxHealth());
+    }
+
+    if (UInteractComponent* IC = Char->GetInteractComponent())
+    {
+        H_ShowPickup = IC->ShowPickupMessage.AddUObject(PlayerUI, &UPlayerUI::ShowPickupMessage);
+        H_HidePickup = IC->HidePickupMessage.AddUObject(PlayerUI, &UPlayerUI::HidePickupMessage);
+    }
+
+    if (UEquipComponent* EC = Char->GetEquipComponent())
+    {
+        H_AmmoChanged = EC->OnAmmoChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
+        H_ActiveItemChanged = EC->OnActiveItemChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateCurrentWeapon);
+    }
+
+    if (UInventoryComponent* Inv = Char->GetInventoryComponent())
+    {
+        H_SpikeChanged = Inv->OnSpikeChanged.AddUObject(this, &AMyPlayerController::HandleSpikeChanged);
+        H_ThrowablesChanged = Inv->OnThrowablesChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
+        PlayerUI->UpdateGrenades(Inv->GetThrowables());
+    }
+
+    if (UPickupComponent* PC = Char->GetPickupComponent())
+    {
+        H_NewItemPickup = PC->OnNewItemPickup.AddUObject(this, &AMyPlayerController::NotifyItemPickedUp);
+    }
+
+    if (USpikeComponent* SC = Char->GetSpikeComponent())
+    {
+        H_Toast = SC->OnNotifyToastMessage.AddUObject(this, &AMyPlayerController::NotifyToastMessage);
+        H_UpdatePlantSpikeState = SC->OnUpdatePlantSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdatePlantSpikeState);
+        H_UpdateDefuseSpikeState = SC->OnUpdateDefuseSpikeState.AddUObject(PlayerUI, &UPlayerUI::OnUpdateDefuseSpikeState);
+    }
+
+    H_OnHit = Char->OnHit.AddUObject(PlayerUI, &UPlayerUI::OnHit);
+    H_AimingChanged = Char->OnAimingChanged.AddUObject(this, &AMyPlayerController::HandleAimingChanged);
+}
+
+void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
+{
+    if (!Char) return;
+
+    if (UHealthComponent* HC = Char->GetHealthComponent())
+    {
+        HC->OnHealthUpdated.Remove(H_HealthUpdated);
+        H_HealthUpdated.Reset();
+    }
+
+    if (UInteractComponent* IC = Char->GetInteractComponent())
+    {
+        IC->ShowPickupMessage.Remove(H_ShowPickup);
+        IC->HidePickupMessage.Remove(H_HidePickup);
+        H_ShowPickup.Reset();
+        H_HidePickup.Reset();
+    }
+
+    if (UEquipComponent* EC = Char->GetEquipComponent())
+    {
+        EC->OnAmmoChanged.Remove(H_AmmoChanged);
+        EC->OnActiveItemChanged.Remove(H_ActiveItemChanged);
+        H_AmmoChanged.Reset();
+        H_ActiveItemChanged.Reset();
+    }
+
+    if (UInventoryComponent* Inv = Char->GetInventoryComponent())
+    {
+        Inv->OnSpikeChanged.Remove(H_SpikeChanged);
+        Inv->OnThrowablesChanged.Remove(H_ThrowablesChanged);
+        H_SpikeChanged.Reset();
+        H_ThrowablesChanged.Reset();
+    }
+
+    if (UPickupComponent* PC = Char->GetPickupComponent())
+    {
+        PC->OnNewItemPickup.Remove(H_NewItemPickup);
+        H_NewItemPickup.Reset();
+    }
+
+    if (USpikeComponent* SC = Char->GetSpikeComponent())
+    {
+        SC->OnNotifyToastMessage.Remove(H_Toast);
+        SC->OnUpdatePlantSpikeState.Remove(H_UpdatePlantSpikeState);
+        SC->OnUpdateDefuseSpikeState.Remove(H_UpdateDefuseSpikeState);
+        H_Toast.Reset();
+        H_UpdatePlantSpikeState.Reset();
+        H_UpdateDefuseSpikeState.Reset();
+    }
+
+    Char->OnHit.Remove(H_OnHit);
+    Char->OnAimingChanged.Remove(H_AimingChanged);
+    H_OnHit.Reset();
+    H_AimingChanged.Reset();
+}
+
+
+void AMyPlayerController::BindGameState(AShooterGameState* GS)
+{
+    if (!GS || !PlayerUI) return;
+
+    H_UpdateScore = GS->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::UpdateTeamScores);
+    H_UpdateRoundTime = GS->OnUpdateRoundTime.AddUObject(PlayerUI, &UPlayerUI::OnUpdateRoundTime);
+    H_UpdateMatchState = GS->OnUpdateMatchState.AddUObject(PlayerUI, &UPlayerUI::UpdateGameState);
+}
+
+void AMyPlayerController::UnbindGameState(AShooterGameState* GS)
+{
+    if (!GS) return;
+
+    GS->OnUpdateScore.Remove(H_UpdateScore);
+    GS->OnUpdateRoundTime.Remove(H_UpdateRoundTime);
+    GS->OnUpdateMatchState.Remove(H_UpdateMatchState);
+
+    H_UpdateScore.Reset();
+    H_UpdateRoundTime.Reset();
+    H_UpdateMatchState.Reset();
+}
+
+void AMyPlayerController::BindPlayerState(AMyPlayerState* PS)
+{
+    if (!PS || !PlayerUI || !PlayerUI->WBP_Shop) return;
+
+    H_UpdateMoney = PS->OnUpdateMoney.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateShopMoneyStatus);
+    H_UpdateBoughtItems = PS->OnUpdateBoughtItems.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateBoughtItemsStatus);
+}
+
+void AMyPlayerController::UnbindPlayerState(AMyPlayerState* PS)
+{
+    if (!PS) return;
+
+    PS->OnUpdateMoney.Remove(H_UpdateMoney);
+    PS->OnUpdateBoughtItems.Remove(H_UpdateBoughtItems);
+
+    H_UpdateMoney.Reset();
+    H_UpdateBoughtItems.Reset();
+}
+
+ABaseCharacter* AMyPlayerController::GetMyChar() const
+{
+    return Cast<ABaseCharacter>(GetPawn());
+}
+
+void AMyPlayerController::AddDefaultInputMapping()
+{
+    if (!IsLocalController() || bInputMappingAdded || !IMC_FPS) return;
+
+    if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+        ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+    {
+        Subsystem->AddMappingContext(IMC_FPS, 0);
+        bInputMappingAdded = true;
+    }
+}
+
+void AMyPlayerController::RemoveDefaultInputMapping()
+{
+    if (!IsLocalController() || !bInputMappingAdded || !IMC_FPS) return;
+
+    if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+        ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+    {
+        Subsystem->RemoveMappingContext(IMC_FPS);
+        bInputMappingAdded = false;
     }
 }
