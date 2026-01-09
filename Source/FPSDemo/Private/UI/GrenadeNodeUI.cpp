@@ -8,7 +8,6 @@
 void UGrenadeNodeUI::UpdateIcon(EItemId ItemId)
 {
 	CurItemId = ItemId;
-	UE_LOG(LogTemp, Warning, TEXT("Updating grenade icon for ItemId: %d"), static_cast<int32>(ItemId));
 
 	if (ItemId == EItemId::NONE) {
 		Dot->SetVisibility(ESlateVisibility::Visible);

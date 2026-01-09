@@ -26,6 +26,7 @@
 #include "Game/ItemsManager.h"
 #include "Components/SpikeComponent.h"
 #include "UI/PlayerUI.h"
+#include "Components/CharCameraComponent.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -900,7 +901,11 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
     }
 
     H_OnHit = Char->OnHit.AddUObject(PlayerUI, &UPlayerUI::OnHit);
-    H_AimingChanged = Char->OnAimingChanged.AddUObject(this, &AMyPlayerController::HandleAimingChanged);
+
+    if (UCharCameraComponent* CamComp = Char->GetCharCameraComponent())
+    {
+        H_AimingChanged = CamComp->OnAimingVisualsChanged.AddUObject(this, &AMyPlayerController::HandleAimingChanged);
+	}
 }
 
 void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
@@ -954,7 +959,11 @@ void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
     }
 
     Char->OnHit.Remove(H_OnHit);
-    Char->OnAimingChanged.Remove(H_AimingChanged);
+
+    if (UCharCameraComponent* CamComp = Char->GetCharCameraComponent())
+    {
+		CamComp->OnAimingVisualsChanged.Remove(H_AimingChanged);
+    }
     H_OnHit.Reset();
     H_AimingChanged.Reset();
 }

@@ -15,6 +15,7 @@
 #include "Components/AnimationComponent.h"
 #include "Components/CharAudioComponent.h"
 #include "Game/ItemsManager.h"
+#include "Damage/DamageHelpers.h"
 
 UWeaponFireComponent::UWeaponFireComponent()
 {
@@ -43,6 +44,11 @@ void UWeaponFireComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(FireTimer_Server);
+	}
+
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(ReloadTimer);
 	}
 
 	Super::EndPlay(EndPlayReason);
@@ -75,6 +81,9 @@ bool UWeaponFireComponent::IsOwningClient() const
 
 EFireEnableReason UWeaponFireComponent::CanFireNow() const
 {
+	if (!IsEnabled())
+		return EFireEnableReason::Undefined;
+
 	if (!CurrentFirearmConfig) {
 		return EFireEnableReason::Undefined;
 	}
@@ -99,6 +108,13 @@ EFireEnableReason UWeaponFireComponent::CanFireNow() const
 
 void UWeaponFireComponent::OnActiveItemChanged(EItemId NewId)
 {
+#if !UE_SERVER
+	if (GetWorld()) GetWorld()->GetTimerManager().ClearTimer(FireTimer_Local);
+#endif
+	if (GetWorld()) GetWorld()->GetTimerManager().ClearTimer(FireTimer_Server);
+
+	if (GetWorld()) GetWorld()->GetTimerManager().ClearTimer(ReloadTimer);
+
 	if (NewId == EItemId::NONE)
 	{
 		CurrentFirearmConfig = nullptr;
@@ -111,12 +127,15 @@ void UWeaponFireComponent::OnActiveItemChanged(EItemId NewId)
 
 void UWeaponFireComponent::RequestStartFire()
 {
+	if (!IsEnabled())
+		return;
+
 	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::RequestStartFire called"));
 	EFireEnableReason Reason = CanFireNow();
 	if (Reason != EFireEnableReason::OK)
 	{
 		// if reason is bullet ammo empty, could trigger a "dry fire" sound/animation here
-		
+
 		if (Reason == EFireEnableReason::NoAmmo) {
 			if (AudioComp) {
 				AudioComp->PlaySound3D(CurrentFirearmConfig->DryFireSound);
@@ -132,7 +151,7 @@ void UWeaponFireComponent::RequestStartFire()
 	{
 		// should reset spread state on start
 		ShotCount = 0;
-		BurstAccDeg = 0; 
+		BurstAccDeg = 0;
 		FireOnce_PredictedLocal();
 
 		// if is aiming, stop aim
@@ -182,6 +201,8 @@ void UWeaponFireComponent::RequestStopFire()
 
 void UWeaponFireComponent::ServerStartFire_Implementation(int InBurstSeed)
 {
+	if (!IsEnabled())
+		return;
 	BurstSeed = InBurstSeed;
 	StartFire_ServerAuth();
 }
@@ -193,7 +214,13 @@ void UWeaponFireComponent::ServerStopFire_Implementation()
 
 void UWeaponFireComponent::StartFire_ServerAuth()
 {
+	if (!IsEnabled())
+		return;
 	if (!Character || !Character->HasAuthority())
+		return;
+
+	if (!CurrentFirearmConfig) return;
+	if (CanFireNow() != EFireEnableReason::OK)
 		return;
 
 	ShotCount = 0;
@@ -296,45 +323,49 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 
 	if (bHit && Hit.GetActor())
 	{
-		UE_LOG(LogTemp, Log, TEXT("Hit actor: %s"), *Hit.GetActor()->GetName());
-		FName HitBoneName = Hit.BoneName;
-		FMyPointDamageEvent DamageEvent;
-		DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
-		DamageEvent.WeaponID = CurrentFirearmConfig->Id;
-		
-		float Damage = CurrentFirearmConfig->Damage;
+		FDamageApplyParams Params;
+		Params.BaseDamage = CurrentFirearmConfig->Damage;
+		Params.WeaponId = CurrentFirearmConfig->Id;
+		Params.DamageTypeClass = UMyDamageType::StaticClass();
+		Params.bEnableHeadshot = true;
+		Params.HeadshotMultiplier = 4.f;
+		Params.Hit = Hit;
 
-		static const TSet<FName> HeadBones = {
-			TEXT("head"),
-			TEXT("Head"),
-			TEXT("neck_01")
-		};
-
-		if (HeadBones.Contains(HitBoneName))
-		{
-			Damage *= 4.0f;              // x4 headshot
-			DamageEvent.bIsHeadshot = true;
-		}
-
-		Hit.GetActor()->TakeDamage(Damage, DamageEvent, Character->GetController(), nullptr);
+		DamageHelpers::ApplyMyPointDamage(
+			Hit.GetActor(),
+			Params,
+			Character->GetController(),
+			nullptr
+		);
 	}
 
 	MulticastFireFX(ShotEnd);
-
 	LastShotTime = Now;
+
+#if !UE_SERVER
+	if (IsOwningClient()) // listen server host
+	{
+		if (VisualComp) {
+			VisualComp->PlayFireFX(ShotEnd);
+		}
+		ApplyRecoilLocal();
+	}
+#endif
 }
 
 void UWeaponFireComponent::MulticastFireFX_Implementation(FVector_NetQuantize TargetPoint)
 {
 	if (IsOwningClient())
-		return; // owning client already predicted
+		return;
 
 	if (VisualComp)
 	{
 		VisualComp->PlayFireFX(TargetPoint);
 
-		ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());	
-		OwnerChar->PlayBloodFx(TargetPoint, FVector::ZeroVector);
+		if (ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner()))
+		{
+			OwnerChar->PlayBloodFx(TargetPoint, FVector::ZeroVector);
+		}
 	}
 }
 
@@ -465,6 +496,8 @@ void UWeaponFireComponent::UpdateBurstSpreadOnShot(float NowServerTime)
 }
 
 void UWeaponFireComponent::RequestReload() {
+	if (!IsEnabled()) return;
+
 	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent: Reload called"));
 	if (!Character || !Character->IsAlive()) return;
 	if (!CanReload()) {
@@ -483,10 +516,15 @@ void UWeaponFireComponent::RequestReload() {
 
 void UWeaponFireComponent::ServerReload_Implementation()
 {
+	if (!IsEnabled()) return;
 	HandleReload();
 }
 
 bool UWeaponFireComponent::CanReload() const {
+	if (!IsEnabled()) {
+		return false;
+	}
+
 	if (!Character || !Character->IsAlive()) {
 		return false;
 	}
@@ -527,13 +565,15 @@ void UWeaponFireComponent::HandleReload()
 	if (!CanReload()) {
 		return;
 	}
+	StopFire_ServerAuth();
+
 	UE_LOG(LogTemp, Warning, TEXT("OnEquipWeaponFinished called"));
 	ActionStateComp->TrySetState(EActionState::Reloading);
 
 	MulticastReload();
-	FTimerHandle TimerHandle_FinishReload;
+
 	GetWorld()->GetTimerManager().SetTimer(
-		TimerHandle_FinishReload,
+		ReloadTimer,
 		this,
 		&UWeaponFireComponent::OnFinishedReload,
 		2.0f,
@@ -547,7 +587,7 @@ void UWeaponFireComponent::MulticastReload_Implementation()
 	if (!Character) {
 		return;
 	}
-	
+
 	if (!CurrentFirearmConfig) {
 		return;
 	}
@@ -587,6 +627,10 @@ void UWeaponFireComponent::OnFinishedReload()
 }
 
 bool UWeaponFireComponent::CanWeaponAim() const {
+	if (!IsEnabled()) {
+		return false;
+	}
+
 	if (!Character || !Character->IsAlive()) {
 		return false;
 	}
@@ -599,7 +643,7 @@ bool UWeaponFireComponent::CanWeaponAim() const {
 	if (!ActionStateComp) {
 		return false;
 	}
-	
+
 	if (!CurrentFirearmConfig->bHasScopeEquipped) {
 		return false;
 	}
@@ -634,4 +678,23 @@ void UWeaponFireComponent::ApplyRecoilLocal()
 	Character->AddControllerPitchInput(-PitchKick); // look up a bit
 	Character->AddControllerYawInput(YawKick);     // slight horizontal recoil
 #endif
+}
+
+
+void UWeaponFireComponent::OnEnabledChanged(bool bNowEnabled)
+{
+	if (!GetWorld()) return;
+
+#if !UE_SERVER
+	GetWorld()->GetTimerManager().ClearTimer(FireTimer_Local);
+#endif
+	GetWorld()->GetTimerManager().ClearTimer(FireTimer_Server);
+	GetWorld()->GetTimerManager().ClearTimer(ReloadTimer);
+
+	if (!bNowEnabled)
+	{
+		ShotCount = 0;
+		BurstAccDeg = 0.f;
+		LastShotTime = 0.f;
+	}
 }

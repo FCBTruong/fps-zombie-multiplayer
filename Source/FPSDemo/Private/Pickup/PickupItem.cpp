@@ -104,7 +104,7 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 			return;
 		}
 		UPickupComponent* PC = Player->GetPickupComponent();
-		if (PC) {
+		if (PC && PC->IsEnabled()) {
 			PC->PickupItem(this);
 		}
 	}

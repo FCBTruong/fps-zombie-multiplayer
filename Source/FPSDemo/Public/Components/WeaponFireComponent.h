@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/RoleGatedComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Items/ItemIds.h"
 #include "WeaponFireComponent.generated.h"
@@ -24,7 +24,7 @@ enum EFireEnableReason
 };
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class FPSDEMO_API UWeaponFireComponent : public UActorComponent
+class FPSDEMO_API UWeaponFireComponent : public URoleGatedComponent
 {
 	GENERATED_BODY()
 
@@ -51,7 +51,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual void OnEnabledChanged(bool bNowEnabled) override;
 private:
 	// Server auth
 	void StartFire_ServerAuth();
@@ -109,6 +109,7 @@ private:
 
 	// Timers
 	FTimerHandle FireTimer_Server;
+	FTimerHandle ReloadTimer;
 
 #if !UE_SERVER
 	FTimerHandle FireTimer_Local;

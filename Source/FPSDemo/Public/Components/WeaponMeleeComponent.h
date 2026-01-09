@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/RoleGatedComponent.h"
 #include "Items/ItemIds.h"
 #include "WeaponMeleeComponent.generated.h"
 
@@ -13,7 +13,7 @@ class UItemVisualComponent;
 class UMeleeConfig;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class FPSDEMO_API UWeaponMeleeComponent : public UActorComponent
+class FPSDEMO_API UWeaponMeleeComponent : public URoleGatedComponent
 {
 	GENERATED_BODY()
 

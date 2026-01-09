@@ -20,8 +20,6 @@ void UBTService_UpdateTarget_Zombie::TickNode(
 {
     Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 
-	UE_LOG(LogTemp, Log, TEXT("UBTService_UpdateTarget_Zombie: TickNode called"));
-
     ABotAIController* AICon = Cast<ABotAIController>(OwnerComp.GetAIOwner());
     if (!AICon) return;
 

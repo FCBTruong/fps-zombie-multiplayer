@@ -34,6 +34,11 @@ void UThrowableComponent::BeginPlay()
 
 bool UThrowableComponent::CanStartThrow() const
 {
+	if (!IsEnabled())
+	{
+		return false;
+	}
+
 	if (!EquipComp) {
 		return false;
 	}
@@ -63,6 +68,10 @@ bool UThrowableComponent::CanStartThrow() const
 
 void UThrowableComponent::RequestStartThrow()
 {
+	if (!IsEnabled())
+	{
+		return;
+	}
 	if (CharacterOwner && CharacterOwner->IsLocallyControlled())
 	{
 		if (!CanStartThrow()) return;
@@ -208,5 +217,17 @@ void UThrowableComponent::OnNadeRelease()
 	if (UItemVisualComponent* ItemVisualComp = CharacterOwner->FindComponentByClass<UItemVisualComponent>())
 	{
 		ItemVisualComp->HideItemVisual();
+	}
+}
+
+void UThrowableComponent::OnEnabledChanged(bool bNowEnabled)
+{
+	if (!GetWorld()) return;
+
+	GetWorld()->GetTimerManager().ClearTimer(TimerHandle_FinishThrow);
+
+	if (!bNowEnabled && ActionStateComp && ActionStateComp->GetState() == EActionState::Throwing)
+	{
+		ActionStateComp->TrySetState(EActionState::Idle);
 	}
 }

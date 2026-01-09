@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/RoleGatedComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Items/ItemIds.h"
 #include "GameConstants.h"
@@ -24,7 +24,7 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class FPSDEMO_API UEquipComponent : public UActorComponent
+class FPSDEMO_API UEquipComponent : public URoleGatedComponent
 {
 	GENERATED_BODY()
 
@@ -48,7 +48,7 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual void OnEnabledChanged(bool bNowEnabled) override;
 private:
     // Replicated active item id (in hands)
     UPROPERTY(ReplicatedUsing = OnRep_ActiveItemId)

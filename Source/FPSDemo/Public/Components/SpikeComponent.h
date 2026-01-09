@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/RoleGatedComponent.h"
 #include "SpikeComponent.generated.h"
 
 class UInventoryComponent;
@@ -15,7 +15,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePlantSpikeState, bool);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateDefuseSpikeState, bool);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class FPSDEMO_API USpikeComponent : public UActorComponent
+class FPSDEMO_API USpikeComponent : public URoleGatedComponent
 {
 	GENERATED_BODY()
 

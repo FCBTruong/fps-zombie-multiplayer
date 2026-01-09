@@ -9,12 +9,12 @@
 AShooterGameMode::AShooterGameMode()
 {
     bDelayedStart = true;
+    BotManager = MakeUnique<BotStateManager>();
 }
 
 void AShooterGameMode::StartPlay()
 {
     Super::StartPlay();
-    BotManager = MakeUnique<BotStateManager>();
 
 	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
 	BotManager->Initialize(ActorMgr);
@@ -26,6 +26,15 @@ void AShooterGameMode::StartPlay()
         return;
 
     bDelayedStart = true;
+
+	// call start round after short delay
+    GetWorldTimerManager().SetTimer(
+        TryStartMatchHandle,
+        this,
+        &AShooterGameMode::StartRound,
+        1.0f,
+        false
+	);
 }
 
 void AShooterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -145,7 +154,6 @@ void AShooterGameMode::ResetPlayers()
 
 	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
     // log size of it
-	UE_LOG(LogTemp, Warning, TEXT("DEBUGGG:::: Number of PlayerStates = %d"), PlayerStates.Num());
 
     for (APlayerState* PS : PlayerStates)
     {
@@ -155,7 +163,6 @@ void AShooterGameMode::ResetPlayers()
       
         if (Controller)
         {
-			UE_LOG(LogTemp, Warning, TEXT("DEBUGGG::: Restarting player: %s"), *GetNameSafe(Controller));
             if (APawn* P = Controller->GetPawn())
             {
                 Controller->UnPossess();
@@ -257,31 +264,7 @@ void AShooterGameMode::AutoBuyForBots() {
 void AShooterGameMode::SavePlayersGunsForNextRound()
 {
     AShooterGameState* GS = GetGameState<AShooterGameState>();
-    /*
-    TArray<APlayerState*> PlayerStates = GS->PlayerArray;
-    for (APlayerState* PS : PlayerStates)
-    {
-        if (!PS) continue;
-        AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
-        if (MyPS)
-        {
-            if (!MyPS->IsAlive()) {
-				MyPS->ClearOwnedWeapons();
-                continue;
-            }
-            // get pawn
-			APawn* Pawn = MyPS->GetPawn();
-            if (!Pawn) continue;
-            ABaseCharacter* MyChar = Cast<ABaseCharacter>(Pawn);
-            if (!MyChar) continue;
-			UWeaponComponent* WeaponComp = MyChar->GetWeaponComponent();
-			if (!WeaponComp) continue;
-            FWeaponState* W = WeaponComp->GetRifleState();
-            if (W) {
-                MyPS->AddOwnedWeapon(W->ItemId);
-            }
-        }
-    }*/
+   
 }
 
 AShooterGameState* AShooterGameMode::GetShooterGS() const
@@ -310,13 +293,11 @@ void AShooterGameMode::HandleMatchHasStarted()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Match Has Started in AShooterGameMode"));
     Super::HandleMatchHasStarted();
-    StartRound();
 }
 
 bool AShooterGameMode::ReadyToStartMatch_Implementation()
 {
     if (GetNumPlayers() <= 0) return false;
-
     return true;
 }
 

@@ -48,7 +48,6 @@ class URoleComponent;
 class UItemUseComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnAimingChanged, bool);
 
 UENUM(BlueprintType)
 enum class EMovementState : uint8
@@ -159,15 +158,6 @@ protected:
 
 	// ===== Init Data =====
 
-    UPROPERTY(EditDefaultsOnly, Category = "Init|FX")
-    TObjectPtr<UNiagaraSystem> BloodFx;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Decal")
-    TObjectPtr<UMaterialInterface> MeleeHitDecal;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Init|Crouch")
-    TObjectPtr<UCurveFloat> CrouchCurve = nullptr;
-
     UPROPERTY(Transient)
     TObjectPtr<UCharacterAsset> CachedCharacterAsset;
 
@@ -196,9 +186,11 @@ protected:
     UPROPERTY()
     TWeakObjectPtr<const UItemConfig> LastDamageCauser;
 
+    UPROPERTY()
+    TObjectPtr<UMaterialInstanceDynamic> FlashMID;
+
 protected:
 	// ===== Replicated Properties =====
-    float AimSensitivity = 1.0f;
     UPROPERTY(ReplicatedUsing = OnRep_IsAiming)
     bool bIsAiming = false;
     UPROPERTY(ReplicatedUsing = OnRep_CurrentMovementState)
@@ -212,7 +204,6 @@ protected:
     FTimerHandle HitSlowTimer;
 protected:
     // ===== Internal Functions =====
-    void ApplyAimingVisuals();
     void OnMeleeNotify();
     void PlayFootstepSound();
     void UpdateFootstepSound(float DeltaTime);
@@ -224,11 +215,17 @@ protected:
     void UpdateCurrentWeapon(EItemId CurrentWeaponId);
     void HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole);
     void ApplyVisualByRole(ECharacterRole NewRole);
-    void ApplyInputByRole(ECharacterRole NewRole);
 	void ApplyLoadoutByRole(ECharacterRole NewRole);
     void ApplyHitSlow(float Multiplier, float Duration);
     void ClearHitSlow();
 	void BecomeHero_Internal();
+    void BindDelegates();
+    void SetupCrouchTimeline();
+    void SetupStunTimeline();
+    void SetupPerception();
+    void SetupFlashPostProcess();
+    void SetupInitialInventory();
+	bool IsSpikeMode() const;
 
     UFUNCTION(BlueprintPure)
     EEquippedAnimState GetEquippedAnimState() const;
@@ -237,7 +234,7 @@ protected:
     void HandleCrouchProgress(float Alpha);
 
     // ===== Networking RPC =====
-    UFUNCTION(Server, Reliable)
+    UFUNCTION(Server, Unreliable)
     void ServerSetAiming(bool bNewAiming);
     UFUNCTION(Server, Reliable) 
     void ServerRevive();
@@ -323,13 +320,13 @@ public:
 	UActionStateComponent* GetActionStateComponent() const;
 	UCharAudioComponent* GetAudioComponent() const;
 	URoleComponent* GetRoleComponent() const;
+	UCharCameraComponent* GetCharCameraComponent() const;
 
     UFUNCTION(BlueprintCallable)
     EMovementState GetCurrentMovementState() const;
 
 	// ===== Delegates =====
     FOnHit OnHit;
-    FOnAimingChanged OnAimingChanged;
 
 	// ===== Constants =====
     static constexpr float MAX_WALK_SPEED = 600.f;

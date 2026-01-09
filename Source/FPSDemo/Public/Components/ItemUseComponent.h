@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/RoleGatedComponent.h"
 #include "ItemUseComponent.generated.h"
 
 class ABaseCharacter;
@@ -15,7 +15,7 @@ class UThrowableComponent;
 class USpikeComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class FPSDEMO_API UItemUseComponent : public UActorComponent
+class FPSDEMO_API UItemUseComponent : public URoleGatedComponent
 {
 	GENERATED_BODY()
 

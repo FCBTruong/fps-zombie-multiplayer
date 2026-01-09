@@ -235,17 +235,5 @@ void UCrosshair::NativeConstruct()
 
     FUECrosshairData Data = ParseCrosshairCode(InputString);
 
-    // LOG full data
-	UE_LOG(LogTemp, Warning, TEXT("Parsed Crosshair Data:"));
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Data: InnerThickness: %f"), Data.InnerThickness);
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Data: InnerLength: %f"), Data.InnerLength);
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Data: InnerOffset: %f"), Data.InnerOffset);
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Data: InnerAlpha: %f"), Data.InnerAlpha);
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Data: OuterThickness: %f"), Data.OuterThickness);
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Data: OuterLength: %f"), Data.OuterLength);
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Data: OuterOffset: %f"), Data.OuterOffset);
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Data: OuterAlpha: %f"), Data.OuterAlpha);
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Data: DotEnable: %s"), Data.DotEnable ? TEXT("true") : TEXT("false"));
-
     ApplyData(Data);
 }

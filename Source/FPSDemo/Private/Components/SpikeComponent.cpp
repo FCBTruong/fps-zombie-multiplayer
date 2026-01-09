@@ -32,6 +32,9 @@ void USpikeComponent::BeginPlay()
 
 void USpikeComponent::RequestPlantSpike()
 {
+    if (!IsEnabled()) {
+        return;
+    }
 	UE_LOG(LogTemp, Log, TEXT("USpikeComponent::RequestPlantSpike called"));
     ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (!Character || !Character->IsAlive())
@@ -65,6 +68,9 @@ void USpikeComponent::RequestPlantSpike()
 
 void USpikeComponent::RequestStopPlantSpike()
 {
+    if (!IsEnabled()) {
+        return;
+    }
     ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (!Character)
         return;
@@ -86,6 +92,9 @@ void USpikeComponent::RequestStopPlantSpike()
 
 void USpikeComponent::ServerStartPlantSpike_Implementation()
 {
+    if (!IsEnabled()) {
+        return;
+    }
 	StartPlant_Internal();
 }
 
@@ -93,6 +102,10 @@ void USpikeComponent::ServerStartPlantSpike_Implementation()
 // this function should be called only on server
 void USpikeComponent::StartPlant_Internal()
 {
+    if (!IsEnabled()) {
+        return;
+    }
+
     if (!InventoryComp || !ActionStateComp || !EquipComp)
 		return;
 
@@ -142,6 +155,9 @@ void USpikeComponent::StartPlant_Internal()
 
 void USpikeComponent::StopPlant_Internal()
 {
+    if (!IsEnabled()) {
+        return;
+    }
     if (!ActionStateComp) {
         return;
     }
@@ -168,11 +184,17 @@ void USpikeComponent::StopPlant_Internal()
 
 void USpikeComponent::ServerStopPlantSpike_Implementation()
 {
+    if (!IsEnabled()) {
+        return;
+    }
 	StopPlant_Internal();
 }
 
 void USpikeComponent::FinishPlantSpike()
 {
+    if (!IsEnabled()) {
+        return;
+    }
     ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (!Character)
         return;
@@ -302,14 +324,23 @@ void USpikeComponent::UnlockMovement()
 }
 
 void USpikeComponent::RequestStartDefuseSpike() {
+    if (!IsEnabled()) {
+        return;
+    }
     ServerStartDefuseSpike();
 }
 
 void USpikeComponent::RequestStopDefuseSpike() {
+    if (!IsEnabled()) {
+        return;
+    }
     ServerStopDefuseSpike();
 }
 
 void USpikeComponent::StartDefuse_Internal() {
+    if (!IsEnabled()) {
+        return;
+    }
     ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
     if (!SpikeGM) {
         UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No SpikeGM found"));
@@ -375,6 +406,9 @@ void USpikeComponent::StartDefuse_Internal() {
 }
 
 void USpikeComponent::StopDefuse_Internal() {
+    if (!IsEnabled()) {
+        return;
+    }
     ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (!Character) {
         return;
@@ -407,10 +441,16 @@ void USpikeComponent::StopDefuse_Internal() {
 }
 
 void USpikeComponent::ServerStartDefuseSpike_Implementation() {
+    if (!IsEnabled()) {
+        return;
+    }
     StartDefuse_Internal();
 }
 
 void USpikeComponent::ServerStopDefuseSpike_Implementation() {
+    if (!IsEnabled()) {
+        return;
+    }
     StopDefuse_Internal();
 }
 

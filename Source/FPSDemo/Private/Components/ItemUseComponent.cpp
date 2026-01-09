@@ -31,6 +31,9 @@ void UItemUseComponent::BeginPlay() {
 
 void UItemUseComponent::PrimaryPressed()
 {
+    if (!IsEnabled()) {
+        return;
+    }
     if (!OwnerChar || !EquipComp) return;
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();
     if (!Item) return;
@@ -67,6 +70,9 @@ void UItemUseComponent::PrimaryPressed()
 
 void UItemUseComponent::PrimaryReleased()
 {
+    if (!IsEnabled()) {
+        return;
+    }
     if (!OwnerChar || !EquipComp) return;
 
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();
@@ -94,11 +100,16 @@ void UItemUseComponent::PrimaryReleased()
 
 void UItemUseComponent::SecondaryReleased()
 {
-
+    if (!IsEnabled()) {
+        return;
+    }
 }
 
 void UItemUseComponent::SecondaryPressed()
 {
+    if (!IsEnabled()) {
+        return;
+	}
     if (!OwnerChar || !EquipComp) return;
 
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();
@@ -130,6 +141,9 @@ void UItemUseComponent::SecondaryPressed()
 }
 
 void UItemUseComponent::ReloadPressed() {
+    if (!IsEnabled()) {
+        return;
+    }
     if (!OwnerChar || !EquipComp) return;
 
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();

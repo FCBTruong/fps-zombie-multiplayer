@@ -12,6 +12,7 @@ class USceneCaptureComponent2D;
 class USkeletalMeshComponent;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnViewModeChanged, bool /*bIsFPS*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAimingVisualsChanged, bool /*bIsAiming*/);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UCharCameraComponent : public UActorComponent
@@ -37,8 +38,11 @@ public:
     void OnBecomeViewTarget(APlayerController* PC);
     void OnEndViewTarget(APlayerController* PC);
 
-    FOnViewModeChanged OnViewModeChanged;
+    void SetAiming(bool bAiming);
+    float GetAimSensitivity() const { return AimSensitivity; }
 
+    FOnViewModeChanged OnViewModeChanged;
+    FOnAimingVisualsChanged OnAimingVisualsChanged;
 protected:
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     virtual void BeginPlay() override;
@@ -57,7 +61,10 @@ private:
     bool bIsFPS = true;
     float TargetFOV = 103.f;
     float DefaultFpsFov = 103.f;
-
+    float AimSensitivity = 1.0f;
+    TWeakObjectPtr<APlayerController> CachedLocalPC;
     void ApplyView();
+    bool IsLocalViewingOwner() const;
+
 	const float FIRST_PERSON_SCALE = 0.1f;
 };

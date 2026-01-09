@@ -38,9 +38,6 @@ public:
 	TObjectPtr<UAnimMontage> AnimMontage_ZombieAttack = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flash")
-	TObjectPtr<UMaterialParameterCollection> FlashCollection = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flash")
 	TObjectPtr<UCurveFloat> StunCurve = nullptr;
 
 
@@ -122,5 +119,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterialInterface* FlashPPMat;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UCurveFloat* CrouchCurve;
 };
 

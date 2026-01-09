@@ -29,8 +29,10 @@ void UEquipComponent::BeginPlay()
 	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::BeginPlay called"));
 
     CachedGM = UGameManager::Get(GetWorld());
-    InventoryComp->OnAmmoDataChanged.AddUObject(
-        this, &UEquipComponent::HandleAmmoDataChanged);
+    if (InventoryComp) {
+        InventoryComp->OnAmmoDataChanged.AddUObject(
+            this, &UEquipComponent::HandleAmmoDataChanged);
+    }
 }
 
 void UEquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -48,6 +50,9 @@ void UEquipComponent::OnRep_ActiveItemId()
 
 bool UEquipComponent::CanSelectNow() const
 {
+    if (!IsEnabled()) {
+        return false;
+    }
     // Single gate: only allow selecting while idle
     if (!ActionStateComp) return false;
     return ActionStateComp->IsIdle();
@@ -55,6 +60,9 @@ bool UEquipComponent::CanSelectNow() const
 
 bool UEquipComponent::CanSelectItem(EItemId ItemId)
 {
+    if (!IsEnabled()) {
+        return false;
+    }
     if (!InventoryComp) return false;
     if (ItemId == EItemId::NONE) return false;
 
@@ -82,6 +90,9 @@ bool UEquipComponent::CanSelectItem(EItemId ItemId)
 
 void UEquipComponent::Select_Internal(EItemId ItemId)
 {
+    if (!IsEnabled()) {
+        return;
+    }
     if (!GetOwner() || !GetOwner()->HasAuthority())
         return;
 
@@ -96,6 +107,9 @@ void UEquipComponent::Select_Internal(EItemId ItemId)
 
 void UEquipComponent::RequestSelectActiveItem(EItemId ItemId)
 {
+    if (!IsEnabled()) {
+        return;
+    }
     if (!GetOwner()) return;
 
     if (!CanSelectNow()) {
@@ -191,6 +205,9 @@ void UEquipComponent::SelectSlot(int32 SlotIndex)
 
 void UEquipComponent::AutoSelectBestWeapon()
 {
+    if (!IsEnabled()) {
+        return;
+    }
     if (!CanSelectNow()) return;
     if (!InventoryComp) return;
 
@@ -212,9 +229,6 @@ void UEquipComponent::AutoSelectBestWeapon()
         RequestSelectActiveItem(InventoryComp->GetMeleeId());
         return;
     }
-
-    // If no weapons, keep NONE
-    RequestSelectActiveItem(EItemId::NONE);
 }
 
 
@@ -237,6 +251,9 @@ void UEquipComponent::RefreshCachedState()
 }
 
 bool UEquipComponent::CanDropItem() const {
+    if (!IsEnabled()) {
+        return false;
+    }
     const UItemConfig* ItemConfig = GetActiveItemConfig();
     if (!ItemConfig) {
         return false;
@@ -249,6 +266,9 @@ bool UEquipComponent::CanDropItem() const {
 }
 
 void UEquipComponent::RequestDropItem() {
+    if (!IsEnabled()) {
+        return;
+    }
     UE_LOG(LogTemp, Warning, TEXT("DropItem called"));
     if (CanDropItem()) {
         if (!GetOwner()->HasAuthority()) {
@@ -261,6 +281,9 @@ void UEquipComponent::RequestDropItem() {
 }
 
 void UEquipComponent::ServerDropItem_Implementation() {
+    if (!IsEnabled()) {
+        return;
+    }
     HandleDropItem();
 }
 
@@ -295,12 +318,6 @@ void UEquipComponent::HandleDropItem() {
         Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
     }
 
-    if (!InventoryComp) {
-        UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: No InventoryComp found"));
-        return;
-	}
-	InventoryComp->RemoveItem(ActiveItemId);
-
     if (ActiveItemId == EItemId::SPIKE) {
         ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
 
@@ -318,6 +335,12 @@ void UEquipComponent::HandleDropItem() {
 void UEquipComponent::RefreshOverlapPickupActors() {
 	ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
 	if (!Character) return;
+
+    if (Character->HasAuthority())
+    {
+        return; // server-only
+    }
+
     UCapsuleComponent* Cap = Character->GetCapsuleComponent();
     TArray<AActor*> OverlappingActors;
     Cap->GetOverlappingActors(OverlappingActors);
@@ -382,5 +405,17 @@ void UEquipComponent::BroadcastActiveItemAndAmmo()
     if (GetCurrentAmmo(Clip, Reserve))
     {
         OnAmmoChanged.Broadcast(Clip, Reserve);
+    }
+}
+
+void UEquipComponent::OnEnabledChanged(bool bNowEnabled)
+{
+    if (!bNowEnabled)
+    {
+        if (GetOwner() && GetOwner()->HasAuthority())
+        {
+            ActiveItemId = EItemId::NONE;
+            BroadcastActiveItemAndAmmo();
+        }
     }
 }

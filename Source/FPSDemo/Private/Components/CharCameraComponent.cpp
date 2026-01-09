@@ -11,8 +11,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
-
 #include "Controllers/MyPlayerController.h"
+#include "Kismet/GameplayStatics.h"
 
 
 UCharCameraComponent::UCharCameraComponent()
@@ -60,7 +60,7 @@ void UCharCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
     }
 
     const float CurrentFOV = CameraFps->FieldOfView;
-    const float NewFOV = TargetFOV; // FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f);
+    const float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f);
     CameraFps->SetFieldOfView(NewFOV);
 	CameraFps->SetFirstPersonFieldOfView(NewFOV);
 }
@@ -130,6 +130,7 @@ void UCharCameraComponent::OnBecomeViewTarget(APlayerController* PC)
         return;
     }
 
+    CachedLocalPC = PC;
     bIsFPS = true;
     TargetFOV = DefaultFpsFov;
     ApplyView();
@@ -137,11 +138,15 @@ void UCharCameraComponent::OnBecomeViewTarget(APlayerController* PC)
 
 void UCharCameraComponent::OnEndViewTarget(APlayerController* PC)
 {
-    // Optional: when local controller stops viewing this pawn, force TPS
     if (PC && PC->IsLocalController())
     {
         bIsFPS = false;
         ApplyView();
+    }
+
+    if (PC && CachedLocalPC.Get() == PC)
+    {
+        CachedLocalPC = nullptr;
     }
 }
 
@@ -153,4 +158,43 @@ void UCharCameraComponent::SetTargetFOV(float NewFOV)
 void UCharCameraComponent::ResetFOV()
 {
     TargetFOV = DefaultFpsFov;
+}
+
+void UCharCameraComponent::SetAiming(bool bAiming)
+{
+    // Only apply FOV / UI-related visuals when the local player is viewing this pawn
+    if (!IsLocalViewingOwner())
+    {
+        // Still update sensitivity so owner can query it consistently
+        AimSensitivity = bAiming ? 0.2f : 1.0f;
+        return;
+    }
+
+    if (bAiming)
+    {
+        SetTargetFOV(20.f);
+        AimSensitivity = 0.2f;
+        OnAimingVisualsChanged.Broadcast(true);
+    }
+    else
+    {
+        ResetFOV();
+        AimSensitivity = 1.0f;
+        OnAimingVisualsChanged.Broadcast(false);
+    }
+}
+
+bool UCharCameraComponent::IsLocalViewingOwner() const
+{
+    AActor* Owner = GetOwner();
+    if (!Owner) return false;
+
+    APlayerController* PC = CachedLocalPC.Get();
+    if (!PC)
+    {
+        PC = UGameplayStatics::GetPlayerController(Owner, 0);
+    }
+    if (!PC || !PC->IsLocalController()) return false;
+
+    return (PC->GetViewTarget() == Owner);
 }

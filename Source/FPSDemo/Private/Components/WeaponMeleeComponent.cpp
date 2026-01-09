@@ -16,6 +16,7 @@
 #include "Game/GlobalDataAsset.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraComponent.h"
+#include "Damage/DamageHelpers.h"
 
 UWeaponMeleeComponent::UWeaponMeleeComponent()
 {
@@ -42,6 +43,9 @@ void UWeaponMeleeComponent::BeginPlay()
 
 void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 {
+	if (!IsEnabled())
+		return;
+
 	UE_LOG(LogTemp, Log, TEXT("RequestMeleeAttack called with AttackIndex: %d"), AttackIndex);
 	if (!Character || !Character->IsAlive())
 		return;
@@ -86,6 +90,8 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 
 void UWeaponMeleeComponent::ServerStartMelee_Implementation(int32 AttackIndex)
 {
+	if (!IsEnabled())
+		return;
 	StartMelee_ServerAuth(AttackIndex);
 }
 
@@ -165,12 +171,6 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 
 	TSet<TWeakObjectPtr<AActor>> DamagedActors;
 
-	static const TSet<FName> HeadBones = {
-		TEXT("head"),
-		TEXT("Head"),
-		TEXT("neck_01")
-	};
-
 	for (const FHitResult& Hit : Hits)
 	{
 		AActor* Target = Hit.GetActor();
@@ -189,20 +189,17 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 
 		float Damage = MeleeConfig ? MeleeConfig->Damage : 0.f;
 
-		const FName HitBoneName = Hit.BoneName;
-		if (HeadBones.Contains(HitBoneName))
-		{
-			Damage *= 4.0f;
-			DamageEvent.bIsHeadshot = true;
-		}
-		else
-		{
-			DamageEvent.bIsHeadshot = false;
-		}
+		FDamageApplyParams Params;
+		Params.BaseDamage = MeleeConfig ? MeleeConfig->Damage : 0.f;
+		Params.WeaponId = MeleeConfig->Id;
+		Params.DamageTypeClass = UMyDamageType::StaticClass();
+		Params.bEnableHeadshot = true;
+		Params.HeadshotMultiplier = 4.f;
+		Params.Hit = Hit;
 
-		Target->TakeDamage(
-			Damage,
-			DamageEvent,
+		DamageHelpers::ApplyMyPointDamage(
+			Target,
+			Params,
 			Character->GetController(),
 			Character
 		);
@@ -214,11 +211,10 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 	ActionStateComp->TrySetState(EActionState::Idle);
 }
 
-
-
-
 bool UWeaponMeleeComponent::CanMeleeNow() const
 {
+	if (!IsEnabled())
+		return false;
 	if (!ActionStateComp)
 		return false;
 
@@ -238,6 +234,9 @@ bool UWeaponMeleeComponent::IsOwningClient() const
 
 void UWeaponMeleeComponent::HandleActiveItemChanged(EItemId MeleeId)
 {
+	if (!IsEnabled())
+		return;
+
 	if (MeleeId == EItemId::NONE)
 	{
 		MeleeConfig = nullptr;

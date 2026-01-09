@@ -37,6 +37,9 @@ void UPickupComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UPickupComponent::PickupItem(APickupItem* PickupItem)
 {
+	if (!IsEnabled()) {
+		return;
+	}
 	ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
 	if (!OwnerCharacter)
 	{

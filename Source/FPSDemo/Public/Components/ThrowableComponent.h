@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/RoleGatedComponent.h"
 #include "Items/ItemIds.h"
 #include "ThrowableComponent.generated.h"
 
@@ -13,7 +13,7 @@ class UEquipComponent;
 class UActionStateComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class FPSDEMO_API UThrowableComponent : public UActorComponent
+class FPSDEMO_API UThrowableComponent : public URoleGatedComponent
 {
 	GENERATED_BODY()
 
@@ -26,6 +26,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual void OnEnabledChanged(bool bNowEnabled) override;
 
 private:
 	float GrenadeInitSpeed = 1200.f;
