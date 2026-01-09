@@ -166,7 +166,6 @@ protected:
 protected:
     // ===== Runtime State =====
     bool bLastHitWasHeadshot;
-    bool bHasBeginPlayRun;
     float LastFootstepTime;
     float BaseStunDuration;
     float BasePivotFpsZ = 0.f;
@@ -189,6 +188,8 @@ protected:
     UPROPERTY()
     TObjectPtr<UMaterialInstanceDynamic> FlashMID;
 
+    UPROPERTY(Transient)
+    TWeakObjectPtr<AActor> DeathCameraProxy;
 protected:
 	// ===== Replicated Properties =====
     UPROPERTY(ReplicatedUsing = OnRep_IsAiming)
@@ -214,18 +215,20 @@ protected:
 	bool IsBot() const;
     void UpdateCurrentWeapon(EItemId CurrentWeaponId);
     void HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole);
+	void ApplyDefaultsForRole(ECharacterRole NewRole);
     void ApplyVisualByRole(ECharacterRole NewRole);
 	void ApplyLoadoutByRole(ECharacterRole NewRole);
     void ApplyHitSlow(float Multiplier, float Duration);
     void ClearHitSlow();
-	void BecomeHero_Internal();
     void BindDelegates();
     void SetupCrouchTimeline();
     void SetupStunTimeline();
     void SetupPerception();
     void SetupFlashPostProcess();
-    void SetupInitialInventory();
+    virtual void SetupInitialInventory();
 	bool IsSpikeMode() const;
+    void BecomeHero_Internal();
+    void PlayZombieSpawnEffects();
 
     UFUNCTION(BlueprintPure)
     EEquippedAnimState GetEquippedAnimState() const;
@@ -236,18 +239,14 @@ protected:
     // ===== Networking RPC =====
     UFUNCTION(Server, Unreliable)
     void ServerSetAiming(bool bNewAiming);
-    UFUNCTION(Server, Reliable) 
-    void ServerRevive();
     UFUNCTION(Server, Reliable)
     void ServerSetIsSlow(bool bNewIsSlow); 
-	UFUNCTION(Server, Reliable)
-	void ServerBecomeHero();
 
     // ===== Networking Multicast =====
-    UFUNCTION(NetMulticast, Unreliable)
-    void MulticastReviveFX();
     UFUNCTION(NetMulticast, Reliable)
-    void MulticastPlayerDeath();
+    void MulticastCharacterDeath();
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastRevive();
 
 	// ===== Networking OnRep =====
     UFUNCTION()
@@ -295,16 +294,21 @@ public:
     virtual bool IsAiming() const;
     virtual bool IsCharacterRole(ECharacterRole InRole) const;
     virtual void ZombieAttack();
-    virtual void RequestBecomeHero();
 	virtual int GetTeamId() const;
-    void RequestPrimaryActionPressed();
-	void RequestPrimaryActionReleased();
-	void RequestSecondaryActionPressed();
-	void RequestSecondaryActionReleased();
-    void RequestReloadPressed();
-    bool CanAct();
+    virtual void RequestBecomeHero();
+    virtual void RequestPrimaryActionPressed();
+    virtual void RequestPrimaryActionReleased();
+    virtual void RequestSecondaryActionPressed();
+    virtual void RequestSecondaryActionReleased();
+    virtual void RequestReloadPressed();
+    virtual bool CanAct();
+	void Revive();
+    void ApplyRealDeath(bool bDropInventory);
 
-	ECharacterRole GetCharacterRole() const;
+    UFUNCTION(Server, Reliable)
+    void ServerBecomeHero();
+
+    virtual ECharacterRole GetCharacterRole() const;
     FVector GetThrowableLocation() const;
     UPickupComponent* GetPickupComponent() const;
     UInventoryComponent* GetInventoryComponent() const;
@@ -318,6 +322,7 @@ public:
 	UThrowableComponent* GetThrowableComponent() const; 
 	USpikeComponent* GetSpikeComponent() const;
 	UActionStateComponent* GetActionStateComponent() const;
+    UItemVisualComponent* GetItemVisualComponent() const;
 	UCharAudioComponent* GetAudioComponent() const;
 	URoleComponent* GetRoleComponent() const;
 	UCharCameraComponent* GetCharCameraComponent() const;
@@ -334,4 +339,6 @@ public:
     static constexpr float CROUCH_WALK_SPEED = 200.f;
     static constexpr float SLOW_WALK_SPEED = 180.f;
     static constexpr float FOOTSTEP_SPEED_MIN = 300.f;
+    static const FVector TPSMeshRelLoc;
+    static const FRotator TPSMeshRelRot;
 };

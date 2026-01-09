@@ -31,12 +31,6 @@ class FPSDEMO_API UWeaponFireComponent : public URoleGatedComponent
 public:
 	UWeaponFireComponent();
 
-	void Initialize(
-		UInventoryComponent* InInventory,
-		UActionStateComponent* InAction,
-		UItemVisualComponent* InVisual
-	);
-
 	// Input-facing
 	void RequestStartFire();
 	void RequestStopFire();

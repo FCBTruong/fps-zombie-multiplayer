@@ -166,14 +166,14 @@ void UCharCameraComponent::SetAiming(bool bAiming)
     if (!IsLocalViewingOwner())
     {
         // Still update sensitivity so owner can query it consistently
-        AimSensitivity = bAiming ? 0.2f : 1.0f;
+        AimSensitivity = bAiming ? 0.4f : 1.0f;
         return;
     }
 
     if (bAiming)
     {
         SetTargetFOV(20.f);
-        AimSensitivity = 0.2f;
+        AimSensitivity = 0.4f;
         OnAimingVisualsChanged.Broadcast(true);
     }
     else

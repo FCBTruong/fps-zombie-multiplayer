@@ -19,10 +19,6 @@ class FPSDEMO_API UWeaponMeleeComponent : public URoleGatedComponent
 
 public:	
 	UWeaponMeleeComponent();
-	void Initialize(
-		UActionStateComponent* InAction,
-		UItemVisualComponent* InVisual
-	);
 	void RequestMeleeAttack(int32 AttackIndex);
 	void HandleActiveItemChanged(EItemId MeleeId);
 	void PlayHitFX_Local(

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
 #include "Items/ItemIds.h"
+#include "Characters/CharacterRole.h"
 #include "MyPlayerState.generated.h"
 
 class UItemConfig;

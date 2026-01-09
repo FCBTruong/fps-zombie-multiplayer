@@ -19,12 +19,12 @@ protected:
 	virtual void BeginPlay() override;
 public:
 	AWeaponFirearm();
-	virtual bool CanFire() {
-		return true;
-	};
-	virtual void OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint);
+	
+	void OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint);
 	void PlayOutOfAmmoSound();
 	void PlayReloadSound();
+
+	UPROPERTY()
 	UStaticMeshComponent* MagMesh;
 	void AttachMagToDefault();
 	int32 GetMaxAmmo() const;

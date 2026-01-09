@@ -24,8 +24,13 @@ protected:
 	) override;
 	virtual void EndRound(FName WinningTeam) override;
 	void AssignZombieRoles();
+	void BecomeZombie(AController* Controller);
+	void ReviveZombie(ABaseCharacter* ZombieCharacter);
 
 	FTimerHandle RoleAssignTimerHandle;
 public:
-	virtual void NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual EMatchMode GetMatchMode() const {
+		return EMatchMode::Zombie;
+	}
 };

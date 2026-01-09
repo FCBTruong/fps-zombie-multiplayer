@@ -9,8 +9,11 @@
 UENUM(BlueprintType)
 enum class EMatchMode : uint8
 {
+	None,
     Spike,
-    Zombie
+    Zombie,
+    TeamElimination,
+	DeathMatch
 };
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateScore, int32, int32)
@@ -38,7 +41,7 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_RoundEndTime)
     int RoundEndTime = -1;
 
-    UPROPERTY(ReplicatedUsing = OnRep_RoundEndTime)
+    UPROPERTY(ReplicatedUsing = OnRep_BuyEndTime)
     int BuyEndTime = -1;
     
     UFUNCTION()
@@ -62,15 +65,13 @@ public:
 	AShooterGameState();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     
-    UFUNCTION(NetMulticast, UnReliable)
+    UFUNCTION(NetMulticast, Unreliable)
     void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot);
-    void SetMatchState(EMyMatchState NewState) {
-        CurrentMatchState = NewState;
-    }
+    void SetMatchState(EMyMatchState NewState);
     EMyMatchState GetMatchState() const {
 		return CurrentMatchState;
 	}
-	UFUNCTION(NetMulticast, UnReliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_RoundResult(FName WinningTeam);
     FName GetAttackerTeam() const {
         return AttackerTeam;

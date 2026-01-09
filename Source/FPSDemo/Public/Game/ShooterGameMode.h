@@ -22,11 +22,12 @@ public:
 
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
+	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
 	virtual void AssignPlayerTeam(APlayerController* NewPlayer);
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
+	virtual void ResetPlayerNewRound(AController* NewPlayer);
 	virtual void ResetPlayers();
 	virtual ABotAIController* SpawnBot(FName TeamID);
 	virtual bool CheckAllTeamDead(FName TeamID);
@@ -35,6 +36,9 @@ public:
 	AShooterGameState* GetShooterGS() const;
 	virtual void RegisterCorpse(AActor* Corpse);
 	virtual void CleanupCorpses();
+	virtual EMatchMode GetMatchMode() const {
+		return EMatchMode::None;
+	}
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual bool ReadyToStartMatch_Implementation() override;

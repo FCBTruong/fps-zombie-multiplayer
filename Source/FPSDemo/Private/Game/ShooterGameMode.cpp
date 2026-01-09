@@ -25,6 +25,9 @@ void AShooterGameMode::StartPlay()
     if (!GS)
         return;
 
+    GS->SetMatchMode(GetMatchMode());
+    BotManager->SetMatchMode(GetMatchMode());
+
     bDelayedStart = true;
 
 	// call start round after short delay
@@ -56,9 +59,9 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 }
 
 
-void AShooterGameMode::NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void AShooterGameMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
-    UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in TeamEliminationMode"));
+    UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in AShooterGameMode"));
 
     AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
     AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
@@ -183,7 +186,12 @@ void AShooterGameMode::ResetPlayers()
 void AShooterGameMode::RestartPlayer(AController* NewPlayer)
 {
     Super::RestartPlayer(NewPlayer);
-	if (!NewPlayer) return;
+    ResetPlayerNewRound(NewPlayer);
+}
+
+void AShooterGameMode::ResetPlayerNewRound(AController * NewPlayer)
+{
+    if (!NewPlayer) return;
     if (AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>())
     {
         PS->ResetBoughtItems();

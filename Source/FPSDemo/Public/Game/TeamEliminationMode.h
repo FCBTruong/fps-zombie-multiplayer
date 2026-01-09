@@ -31,5 +31,9 @@ public:
 	void EndRound(FName WinningTeam);
 	
 	static constexpr int MaxRoundsToWin = 5;
-	virtual void NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+
+	virtual EMatchMode GetMatchMode() const {
+		return EMatchMode::TeamElimination;
+	}
 };

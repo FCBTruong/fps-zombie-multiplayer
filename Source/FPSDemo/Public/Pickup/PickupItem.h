@@ -25,20 +25,17 @@ private:
 	UStaticMeshComponent* ItemMesh;
 	UPROPERTY()
 	USphereComponent* PickupSphere;
-	double LastDropTimeMs = 0;
-	ABaseCharacter* LastOwner = nullptr;
+	float LastDropTimeMs = -FLT_MAX;
+	TWeakObjectPtr<ABaseCharacter> LastOwner;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()
 	void OnRep_Data();
 	void OnLoadData();
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	void SetData(const FPickupData& NewData);
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,

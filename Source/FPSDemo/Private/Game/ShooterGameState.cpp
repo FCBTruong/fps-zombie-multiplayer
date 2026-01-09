@@ -2,7 +2,7 @@
 
 
 #include "Game/ShooterGameState.h"
-#include <Net/UnrealNetwork.h>
+#include "Net/UnrealNetwork.h"
 #include "Pickup/PickupItem.h"
 #include "Controllers/MyPlayerController.h"
 #include "Controllers/MyPlayerState.h"
@@ -138,4 +138,11 @@ void AShooterGameState::OnRep_MatchMode()
 void AShooterGameState::OnRep_BuyEndTime()
 {
     // You can add any client-side logic here that needs to respond to BuyEndTime changes
+}
+
+void AShooterGameState::SetMatchState(EMyMatchState NewState)
+{
+    if (!HasAuthority()) return;
+    CurrentMatchState = NewState;
+    OnRep_MyMatchState(); // apply immediately on server
 }

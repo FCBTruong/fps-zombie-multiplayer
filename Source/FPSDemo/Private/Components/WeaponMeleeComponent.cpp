@@ -24,21 +24,16 @@ UWeaponMeleeComponent::UWeaponMeleeComponent()
 	SetIsReplicatedByDefault(true);
 }
 
-void UWeaponMeleeComponent::Initialize(
-	UActionStateComponent* InAction,
-	UItemVisualComponent* InVisual
-)
-{
-	ActionStateComp = InAction;
-	VisualComp = InVisual;
-	Character = Cast<ABaseCharacter>(GetOwner());
-}
-
 void UWeaponMeleeComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Log, TEXT("UWeaponMeleeComponent::BeginPlay called"));
 	Character = Cast<ABaseCharacter>(GetOwner());
+
+	if (Character) {
+		ActionStateComp = Character->GetActionStateComponent();
+		VisualComp = Character->GetItemVisualComponent();
+	}
 }
 
 void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)

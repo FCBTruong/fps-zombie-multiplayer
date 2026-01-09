@@ -58,6 +58,8 @@
 #include "Items/FirearmConfig.h"
 #include "Components/ItemUseComponent.h"
 
+const FVector ABaseCharacter::TPSMeshRelLoc(0.f, 0.f, -88.f);
+const FRotator ABaseCharacter::TPSMeshRelRot(0.f, -90.f, 0.f);
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -86,7 +88,6 @@ ABaseCharacter::ABaseCharacter()
 
     StimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSource"));
 
-    PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
     InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
     InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
     HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
@@ -95,13 +96,14 @@ ABaseCharacter::ABaseCharacter()
     CameraComp = CreateDefaultSubobject<UCharCameraComponent>(TEXT("CharCameraComponent"));
 	EquipComp = CreateDefaultSubobject<UEquipComponent>(TEXT("EquipComponent"));
 	ActionStateComp = CreateDefaultSubobject<UActionStateComponent>(TEXT("ActionStateComponent"));
-	ItemVisualComp = CreateDefaultSubobject<UItemVisualComponent>(TEXT("ItemVisualComponent"));
-	WeaponFireComp = CreateDefaultSubobject<UWeaponFireComponent>(TEXT("WeaponFireComponent"));
 	WeaponMeleeComp = CreateDefaultSubobject<UWeaponMeleeComponent>(TEXT("WeaponMeleeComponent"));
-	ThrowableComp = CreateDefaultSubobject<UThrowableComponent>(TEXT("ThrowableComponent"));
 	SpikeComp = CreateDefaultSubobject<USpikeComponent>(TEXT("SpikeComponent"));
 	RoleComp = CreateDefaultSubobject<URoleComponent>(TEXT("RoleComponent"));
 	ItemUseComp = CreateDefaultSubobject<UItemUseComponent>(TEXT("ItemUseComponent"));
+    ItemVisualComp = CreateDefaultSubobject<UItemVisualComponent>(TEXT("ItemVisualComponent"));
+    WeaponFireComp = CreateDefaultSubobject<UWeaponFireComponent>(TEXT("WeaponFireComponent"));
+    PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
+    ThrowableComp = CreateDefaultSubobject<UThrowableComponent>(TEXT("ThrowableComponent"));
 
     CameraComp->Initialize(
         CameraFps,
@@ -118,31 +120,9 @@ ABaseCharacter::ABaseCharacter()
         MoveComp->MaxWalkSpeedCrouched = CROUCH_WALK_SPEED;
 	}
 
-    /*UCapsuleComponent* Capsule = GetCapsuleComponent();
-    if (Capsule)
-    {
-        Capsule->SetHiddenInGame(false);
-        Capsule->SetVisibility(true);
-    }*/
-
-
-	// Initialize components dependencies
-    if (EquipComp) {
-        EquipComp->Initialize(InventoryComp, ActionStateComp);
-	}
-    if (ItemVisualComp) {
-        ItemVisualComp->Initialize(EquipComp, CameraComp, AnimationComp);
-    }
-    if (WeaponFireComp) {
-		WeaponFireComp->Initialize(InventoryComp, ActionStateComp, ItemVisualComp);
-    }
-    if (WeaponMeleeComp) {
-        WeaponMeleeComp->Initialize(ActionStateComp, ItemVisualComp);
-    }
-
     if (GetMesh()) {
-        GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -88.f));
-        GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+        GetMesh()->SetRelativeLocation(TPSMeshRelLoc);
+        GetMesh()->SetRelativeRotation(TPSMeshRelRot);
     }
     if (FpsPivot) {
         // set same eye position
@@ -198,8 +178,6 @@ void ABaseCharacter::BeginPlay()
         }
     }
 
-    bHasBeginPlayRun = true;
-
     USkeletalMeshComponent* MeshMain = GetMesh();
     MeshMain->SetCollisionProfileName(TEXT("MyMesh"));
 
@@ -239,10 +217,11 @@ void ABaseCharacter::BindDelegates() {
     }
     if (RoleComp)
     {
-        RoleComp->OnRoleChanged.AddUObject(this, &ABaseCharacter::HandleRoleChanged);
-        this->HandleRoleChanged(RoleComp->GetRole(), RoleComp->GetRole());
+       RoleComp->OnRoleChanged.AddUObject(this, &ABaseCharacter::HandleRoleChanged);
+       this->HandleRoleChanged(RoleComp->GetRole(), RoleComp->GetRole());
     }
 }
+
 void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
 {
     UE_LOG(
@@ -276,7 +255,6 @@ void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
     }
     UpdateMaxWalkSpeed();
 }
-
 
 void ABaseCharacter::OnRep_PlayerState() {
     Super::OnRep_PlayerState();
@@ -394,7 +372,6 @@ void ABaseCharacter::Jump()
     Super::Jump();
 }
 
-
 void ABaseCharacter::StopJumping()
 {
     Super::StopJumping();
@@ -464,7 +441,6 @@ void ABaseCharacter::HandleCrouchProgress(float Alpha)
     Loc.Z = BasePivotFpsZ + CurrentCrouchCompZ;
     FpsPivot->SetRelativeLocation(Loc);
 }
-
                                                                                                                          
 void ABaseCharacter::ChangeView()
 {
@@ -472,7 +448,6 @@ void ABaseCharacter::ChangeView()
         CameraComp->ToggleView();
 	}
 }
-
 
 USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh() const
 {
@@ -750,38 +725,32 @@ void ABaseCharacter::HandleDeath()
 	UE_LOG(LogTemp, Warning, TEXT("Character has died."));
     if (HasAuthority())
     {
-        GetCharacterMovement()->StopMovementImmediately();
-        GetCharacterMovement()->DisableMovement();
-
-        // get game mode and notify
-        if (AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this)))
-        {
-			GM->RegisterCorpse(this);
-            GM->NotifyPlayerKilled(LastHitByController.Get(), this, LastDamageCauser.Get(), bLastHitWasHeadshot);
+        AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this));
+        if (!GM) {
+            return;
         }
+        GM->OnCharacterKilled(LastHitByController.Get(), this, LastDamageCauser.Get(), bLastHitWasHeadshot);
         LastHitByController = nullptr; // reset after use
         LastDamageCauser = nullptr; // reset after use
- 
-        MulticastPlayerDeath();
-
-        AAIController* AI = Cast<AAIController>(GetController());
-        if (AI)
-        {
-            UBrainComponent* Brain = AI->GetBrainComponent();
-            if (Brain)
-            {
-                //Brain->StopLogic("Bot died");
-            }
-        }
-		
-		// drop inventory items
-        if (InventoryComp) {
-            InventoryComp->DropAllItems();
-        }
     }
 }
 
-void ABaseCharacter::MulticastPlayerDeath_Implementation()
+void ABaseCharacter::ApplyRealDeath(bool bDropInventory)
+{
+    GetCharacterMovement()->StopMovementImmediately();
+    GetCharacterMovement()->DisableMovement();
+
+    if (AAIController* AI = Cast<AAIController>(GetController()))
+        if (UBrainComponent* Brain = AI->GetBrainComponent())
+            Brain->StopLogic(TEXT("Bot died"));
+
+    if (bDropInventory && InventoryComp)
+        InventoryComp->DropAllItems();
+
+    MulticastCharacterDeath(); // NetMulticast trong Character
+}
+
+void ABaseCharacter::MulticastCharacterDeath_Implementation()
 {
     // hide visual
     if (ItemVisualComp) {
@@ -822,13 +791,13 @@ void ABaseCharacter::MulticastPlayerDeath_Implementation()
         const FRotator CamRot = CameraTps->GetComponentRotation();
 
         // Spawn proxy actor that has physics + camera
-        AActor* Proxy = GetWorld()->SpawnActor<AActor>(CachedCharacterAsset->DeathCameraProxyClass, CamLoc, CamRot);
-        if (!Proxy) {
-            return;
-        }
+        DeathCameraProxy = GetWorld()->SpawnActor<AActor>(CachedCharacterAsset->DeathCameraProxyClass, CamLoc, CamRot);
 
+        if (!DeathCameraProxy.IsValid()) {
+            return;
+		}
         // Add impulse so camera feels like it gets knocked down
-        if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(Proxy->GetRootComponent()))
+        if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(DeathCameraProxy->GetRootComponent()))
         {
             Root->AddImpulse(FVector(
                 FMath::RandRange(-80.f, 80.f),
@@ -838,7 +807,7 @@ void ABaseCharacter::MulticastPlayerDeath_Implementation()
         }
 
         // Blend view to death camera
-        PC->SetViewTargetWithBlend(Proxy, 0.15f, VTBlend_EaseOut);
+        PC->SetViewTargetWithBlend(DeathCameraProxy.Get(), 0.15f, VTBlend_EaseOut);
 		UE_LOG(LogTemp, Warning, TEXT("Switched to death camera proxy."));
 
 		// view spectator mode
@@ -853,26 +822,6 @@ void ABaseCharacter::MulticastPlayerDeath_Implementation()
             false
         );
     }
-}
-
-void ABaseCharacter::ServerRevive_Implementation()
-{
-    // Authoritative state changes
-    if (UHealthComponent* HC = FindComponentByClass<UHealthComponent>())
-        HC->SetHealth(HC->GetMaxHealth());
-
-    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    GetMesh()->SetSimulatePhysics(false);
-    GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
-
-    MulticastReviveFX(); // optional visuals for all
-}
-
-void ABaseCharacter::MulticastReviveFX_Implementation()
-{
-    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    GetMesh()->SetSimulatePhysics(false);
-    GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
 }
 
 void ABaseCharacter::ClientPlayHitEffect_Implementation()
@@ -1213,6 +1162,10 @@ UActionStateComponent* ABaseCharacter::GetActionStateComponent() const {
     return ActionStateComp.Get();
 }
 
+UItemVisualComponent* ABaseCharacter::GetItemVisualComponent() const {
+    return ItemVisualComp.Get();
+}
+
 UCharAudioComponent* ABaseCharacter::GetAudioComponent() const {
     return AudioComp.Get();
 }
@@ -1274,6 +1227,23 @@ USpikeComponent* ABaseCharacter::GetSpikeComponent() const {
     return SpikeComp.Get();
 }
 
+void ABaseCharacter::ApplyDefaultsForRole(ECharacterRole NewRole) {
+    if (NewRole == ECharacterRole::Zombie)
+    {
+        if (HealthComp) {
+            HealthComp->SetMaxHealth(150.f);
+            HealthComp->SetHealth(150.f);
+		}
+    }
+    else if (NewRole == ECharacterRole::Hero)
+    {
+        if (HealthComp) {
+            HealthComp->SetMaxHealth(200.f);
+            HealthComp->SetHealth(200.f);
+        }
+	}
+}
+
 void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole)
 {
     // Gameplay wiring (attach/detach components, set attack provider, etc.)
@@ -1281,27 +1251,15 @@ void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole Ne
 
     // Presentation
     ApplyVisualByRole(NewRole);
+    if (this->HasAuthority())
+    {
+        ApplyDefaultsForRole(NewRole);
+    }
 
     // play effect if human to zombie
     if (NewRole == ECharacterRole::Zombie)
     {
-        if (AudioComp) {
-			AudioComp->PlayZombieSpawn();
-        }
-		FVector SpawnLocation = FVector::ZeroVector;
-		SpawnLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-        if (CachedCharacterAsset && CachedCharacterAsset->TurnToZombieFx)
-        {
-            UNiagaraFunctionLibrary::SpawnSystemAttached(
-                CachedCharacterAsset->TurnToZombieFx,
-                GetRootComponent(),
-                NAME_None,
-                SpawnLocation,
-                FRotator::ZeroRotator,
-                EAttachLocation::SnapToTarget,
-                true
-            );
-        }
+        PlayZombieSpawnEffects();
 	}
     // temp, refactor later
     if (NewRole == ECharacterRole::Hero) {
@@ -1583,35 +1541,6 @@ void ABaseCharacter::ZombieAttack() {
     }
 }
 
-ECharacterRole ABaseCharacter::GetCharacterRole() const {
-    if (RoleComp) {
-        return RoleComp->GetRole();
-    }
-    return ECharacterRole::Human;
-}
-
-void ABaseCharacter::RequestBecomeHero() {
-    if (!HasAuthority()) {
-        ServerBecomeHero();
-        return;
-	}
-	BecomeHero_Internal();
-}
-
-void ABaseCharacter::ServerBecomeHero_Implementation() {
-    BecomeHero_Internal();
-}
-
-void ABaseCharacter::BecomeHero_Internal() {
-    if (!RoleComp) {
-        return;
-    }
-    if (RoleComp->GetRole() == ECharacterRole::Hero) {
-        return; // already hero
-    }
-    RoleComp->SetRoleAuthoritative(ECharacterRole::Hero);
-}
-
 int ABaseCharacter::GetTeamId() const {
     // for zombie mode
 	ECharacterRole R = GetCharacterRole();
@@ -1716,6 +1645,42 @@ void ABaseCharacter::SetupFlashPostProcess()
     FlashMID->SetScalarParameterValue(TEXT("Intensity"), 0.f);
 }
 
+bool ABaseCharacter::IsSpikeMode() const
+{
+    const AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    return GS && (GS->GetMatchMode() == EMatchMode::Spike);
+}
+
+
+ECharacterRole ABaseCharacter::GetCharacterRole() const {
+    if (RoleComp) {
+        return RoleComp->GetRole();
+    }
+    return ECharacterRole::Human;
+}
+
+void ABaseCharacter::RequestBecomeHero() {
+    if (!HasAuthority()) {
+        ServerBecomeHero();
+        return;
+    }
+    BecomeHero_Internal();
+}
+
+void ABaseCharacter::ServerBecomeHero_Implementation() {
+    BecomeHero_Internal();
+}
+
+void ABaseCharacter::BecomeHero_Internal() {
+    if (!RoleComp) {
+        return;
+    }
+    if (RoleComp->GetRole() == ECharacterRole::Hero) {
+        return; // already hero
+    }
+    RoleComp->SetRoleAuthoritative(ECharacterRole::Hero);
+}
+
 void ABaseCharacter::SetupInitialInventory()
 {
     if (!HasAuthority()) return;
@@ -1730,10 +1695,75 @@ void ABaseCharacter::SetupInitialInventory()
     }
 
     UE_LOG(LogTemp, Warning, TEXT("BeginPlay: Added test items to inventory"));
+
 }
 
-bool ABaseCharacter::IsSpikeMode() const
+void ABaseCharacter::MulticastRevive_Implementation()
 {
-    const AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
-    return GS && (GS->GetMatchMode() == EMatchMode::Spike);
+    // reset collision and physics
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    GetMesh()->SetSimulatePhysics(false);
+    GetMesh()->SetCollisionProfileName(TEXT("MyMesh"));
+
+    GetMesh()->SetRelativeLocation(TPSMeshRelLoc);
+    GetMesh()->SetRelativeRotation(TPSMeshRelRot);
+
+    PlayZombieSpawnEffects();
+
+	AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
+    if (PC) {
+        PC->SetIgnoreLookInput(false);
+        PC->SetIgnoreMoveInput(false);
+        PC->SetViewTargetWithBlend(this, 0.1f);
+    }
+    if (DeathCameraProxy.IsValid()) {
+        DeathCameraProxy->Destroy();
+        DeathCameraProxy = nullptr;
+	}
+
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+    if (MoveComp)
+    {
+        MoveComp->SetMovementMode(MOVE_Walking);
+		UpdateMaxWalkSpeed();
+    }
+}
+
+void ABaseCharacter::Revive()
+{
+    if (!HasAuthority()) return;
+    MulticastRevive();
+
+    if (UHealthComponent* HC = FindComponentByClass<UHealthComponent>())
+        HC->SetHealth(HC->GetMaxHealth());
+
+    AAIController* AI = Cast<AAIController>(GetController());
+    if (AI)
+    {
+        UBrainComponent* Brain = AI->GetBrainComponent();
+        if (Brain)
+        {
+            Brain->StartLogic();
+        }
+    }
+}
+
+void ABaseCharacter::PlayZombieSpawnEffects() {
+    if (AudioComp) {
+        AudioComp->PlayZombieSpawn();
+    }
+    FVector SpawnLocation = FVector::ZeroVector;
+    SpawnLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    if (CachedCharacterAsset && CachedCharacterAsset->TurnToZombieFx)
+    {
+        UNiagaraFunctionLibrary::SpawnSystemAttached(
+            CachedCharacterAsset->TurnToZombieFx,
+            GetRootComponent(),
+            NAME_None,
+            SpawnLocation,
+            FRotator::ZeroRotator,
+            EAttachLocation::SnapToTarget,
+            true
+        );
+    }
 }

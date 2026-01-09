@@ -21,12 +21,15 @@ class FPSDEMO_API ASpikeMode : public AShooterGameMode
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
 	TSubclassOf<ASpike> SpikeClass;
+
+	UPROPERTY()
 	ASpike* PlantedSpike;
+
 	FTimerHandle StartRoundTimerHandle;
 	FTimerHandle RoundTimerHandle;
 	void OnRoundTimeExpired();
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
-	virtual void NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 public:
 	virtual void StartPlay() override;
 	virtual void StartRound() override;
@@ -45,5 +48,8 @@ public:
 	
 	ASpike* GetPlantedSpike() const {
 		return PlantedSpike;
+	}
+	virtual EMatchMode GetMatchMode() const {
+		return EMatchMode::Spike;
 	}
 };

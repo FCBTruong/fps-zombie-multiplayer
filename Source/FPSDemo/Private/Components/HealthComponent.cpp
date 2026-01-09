@@ -78,3 +78,13 @@ void UHealthComponent::SetHealth(float NewHealth)
 	}
 	OnHealthUpdated.Broadcast(Health, MaxHealth);
 }
+
+void UHealthComponent::SetMaxHealth(float NewMaxHealth)
+{
+	MaxHealth = FMath::Max(0.0f, NewMaxHealth);
+	if (Health > MaxHealth)
+	{
+		Health = MaxHealth;
+		OnHealthUpdated.Broadcast(Health, MaxHealth);
+	}
+}

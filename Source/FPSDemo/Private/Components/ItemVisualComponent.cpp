@@ -19,31 +19,30 @@ UItemVisualComponent::UItemVisualComponent()
 	SetIsReplicatedByDefault(false);
 }
 
-void UItemVisualComponent::Initialize(UEquipComponent* InEquipComp, UCharCameraComponent* InCameraComp, UAnimationComponent* InAnimComp)
-{
-	if (!InEquipComp || !InCameraComp)
-        return;
-    EquipComp = InEquipComp;
-
-	AnimComp = InAnimComp;
-    
-    EquipComp->OnActiveItemChanged.AddUObject(
-        this,
-        &UItemVisualComponent::HandleActiveItemChanged
-    );
-	CameraComp = InCameraComp;
-    CameraComp->OnViewModeChanged.AddUObject(
-        this,
-        &UItemVisualComponent::OnViewModeChanged
-	);
-    // Initial visual
-    RefreshVisual(EquipComp->GetActiveItemId());
-}
 void UItemVisualComponent::BeginPlay()
 {
     Super::BeginPlay();
 	UE_LOG(LogTemp, Log, TEXT("UItemVisualComponent::BeginPlay called"));
     CachedGM = UGameManager::Get(GetWorld());
+
+	ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
+    if (!OwnerChar)
+		return;
+	EquipComp = OwnerChar->GetEquipComponent();
+
+	AnimComp = OwnerChar->GetAnimationComponent();
+
+    EquipComp->OnActiveItemChanged.AddUObject(
+        this,
+        &UItemVisualComponent::HandleActiveItemChanged
+    );
+	CameraComp = OwnerChar->GetCharCameraComponent();
+    CameraComp->OnViewModeChanged.AddUObject(
+        this,
+        &UItemVisualComponent::OnViewModeChanged
+    );
+    // Initial visual
+    RefreshVisual(EquipComp->GetActiveItemId());
 }
 
 void UItemVisualComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

@@ -43,12 +43,6 @@ void APickupItem::BeginPlay()
 	
 }
 
-// Called every frame
-void APickupItem::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-
 void APickupItem::SetData(const FPickupData& NewData)
 {
 	Data = NewData;

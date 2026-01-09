@@ -65,6 +65,9 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	APawn* Shooter = GetInstigator();
+	if (!Shooter) {
+		return;
+	}
 	SpawnParams.Instigator = Shooter;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 

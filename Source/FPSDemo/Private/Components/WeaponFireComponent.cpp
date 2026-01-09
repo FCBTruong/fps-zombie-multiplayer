@@ -28,8 +28,13 @@ void UWeaponFireComponent::BeginPlay()
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::BeginPlay called"));
 	Character = Cast<ABaseCharacter>(GetOwner());
+
 	if (Character) {
-		AudioComp = Character ? Character->GetAudioComponent() : nullptr;
+		InventoryComp = Character->GetInventoryComponent();
+		ActionStateComp = Character->GetActionStateComponent();
+		VisualComp = Character->GetItemVisualComponent();
+
+		AudioComp = Character->GetAudioComponent();
 	}
 }
 
@@ -59,18 +64,6 @@ void UWeaponFireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UWeaponFireComponent, FireStartTimeServer);
-}
-
-void UWeaponFireComponent::Initialize(
-	UInventoryComponent* InInventory,
-	UActionStateComponent* InAction,
-	UItemVisualComponent* InVisual
-)
-{
-	InventoryComp = InInventory;
-	ActionStateComp = InAction;
-	VisualComp = InVisual;
-	Character = Cast<ABaseCharacter>(GetOwner());
 }
 
 bool UWeaponFireComponent::IsOwningClient() const

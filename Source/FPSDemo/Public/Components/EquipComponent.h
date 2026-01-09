@@ -30,7 +30,6 @@ class FPSDEMO_API UEquipComponent : public URoleGatedComponent
 
 public:
     UEquipComponent();
-	void Initialize(UInventoryComponent* InInventoryComp, UActionStateComponent* InActionStateComp);
     // Input-facing API
     void RequestSelectActiveItem(EItemId ItemId);
     void SelectSlot(int32 SlotIndex);

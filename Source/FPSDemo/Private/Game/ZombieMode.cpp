@@ -6,16 +6,12 @@
 #include "Characters/BaseCharacter.h"
 #include "Components/RoleComponent.h"
 #include "Game/ActorManager.h"
-#include <GameFramework/PlayerStart.h>
+#include "GameFramework/PlayerStart.h"
 
 void AZombieMode::StartPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("SpikeMode Game Started!"));
 	Super::StartPlay();
-
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	GS->SetMatchMode(EMatchMode::Zombie);
-	BotManager->SetMatchMode(EMatchMode::Zombie);
 
 	SpawnBot("B");
 	SpawnBot("B");
@@ -33,7 +29,7 @@ void AZombieMode::StartRound()
 		GS->SetMatchState(EMyMatchState::BUY_PHASE);
 	}
 
-	int BuyTime = 15; // seconds
+	int BuyTime = 3; // seconds
 	int TimeBuyEnd = GetWorld()->GetTimeSeconds() + BuyTime;
 	GS->SetRoundEndTime(TimeBuyEnd);
 	ResetPlayers();
@@ -44,7 +40,7 @@ void AZombieMode::StartRound()
 		RoleAssignTimerHandle,
 		this,
 		&AZombieMode::AssignZombieRoles,
-		15.0f,
+		BuyTime,
 		false
 	);
 }
@@ -85,27 +81,28 @@ void AZombieMode::AssignZombieRoles()
 
 	const int32 ZombieIdx = FMath::RandRange(0, Eligible.Num() - 1);
 	AMyPlayerState* ZombiePS = Eligible[ZombieIdx];
+	if (!ZombiePS) return;
 
-	// Assign roles: only 1 zombie
-	for (AMyPlayerState* MyPS : Eligible)
-	{
-		ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPS->GetPawn());
-		if (!MyChar) continue;
+	AController* Ctrl = Cast<AController>(ZombiePS->GetOwner());
+	if (!Ctrl) return;
+	BecomeZombie(Ctrl);
+}
 
-		URoleComponent* RoleComp = MyChar->GetRoleComponent();
-		if (!RoleComp) continue;
-
-		const bool bMakeZombie = (MyPS == ZombiePS);
-		if (bMakeZombie) {
+void AZombieMode::BecomeZombie(AController* Controller) {
+	UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeZombie called"));
+	if (ABaseCharacter* Character = Cast<ABaseCharacter>(Controller->GetPawn()))
+	{		
+		URoleComponent* RoleComp = Character->GetRoleComponent();
+		
+		if (RoleComp)
+		{
 			RoleComp->SetRoleAuthoritative(ECharacterRole::Zombie);
-
-			if (ABotAIController* BotCtrl = Cast<ABotAIController>(MyPS->GetOwner()))
-			{
-				BotManager->NotifyCharacterRole(BotCtrl, ECharacterRole::Zombie);
-			}
 		}
 	}
-
+	if (ABotAIController* BotCtrl = Cast<ABotAIController>(Controller))
+	{
+		BotManager->NotifyCharacterRole(BotCtrl, ECharacterRole::Zombie);
+	}
 }
 
 void AZombieMode::EndRound(FName WinningTeam)
@@ -120,42 +117,54 @@ void AZombieMode::EndRound(FName WinningTeam)
 	}
 }
 
-void AZombieMode::NotifyPlayerKilled(class AController* Killer, class ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void AZombieMode::OnCharacterKilled(class AController* Killer, class ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
-	Super::NotifyPlayerKilled(Killer, VictimPawn, DamageCauser, bWasHeadShot);
+	Super::OnCharacterKilled(Killer, VictimPawn, DamageCauser, bWasHeadShot);
+	UE_LOG(LogTemp, Warning, TEXT("AZombieMode::OnCharacterKilled called"));
 
-	AController* Victim = VictimPawn->GetController();
+	AController* VictimCtr = VictimPawn->GetController();
+
+	ECharacterRole CurrentRole = VictimPawn->GetCharacterRole();
+	if (CurrentRole == ECharacterRole::Human)
+	{
+		// infected
+		BecomeZombie(VictimCtr);
+		return;
+	}
+	
+	VictimPawn->ApplyRealDeath(false);
 
 	// spawn victim as zombie
-	ECharacterRole CurrentRole = VictimPawn->GetCharacterRole();
 	if (CurrentRole == ECharacterRole::Hero)
 	{
 		// end game
 		EndRound("B"); // zombie team wins
 		return; // already a zombie
 	}
-
-	Victim->UnPossess(); // no need old pawn
-	VictimPawn->SetLifeSpan(5.0f); // cleanup old pawn
-	bool bIsCurrentZombie = VictimPawn->GetCharacterRole() == ECharacterRole::Zombie;
-
 	UE_LOG(LogTemp, Warning, TEXT("Respawning player as zombie..."));
-	RestartPlayer(Victim);
 
-	ABaseCharacter* NewChar = Cast<ABaseCharacter>(Victim->GetPawn());
-	if (NewChar)
-	{
-		URoleComponent* RoleComp = NewChar->FindComponentByClass<URoleComponent>();
-		if (RoleComp)
+	TWeakObjectPtr<ABaseCharacter> VictimPawnWeak = VictimPawn;
+	TWeakObjectPtr<AController>   VictimCtrlWeak = VictimCtr;
+	UE_LOG(LogTemp, Warning, TEXT("AZombieMode: Calling BecomeZombie immediately."));
+
+
+	// if is already a zombie, use logic revive instead
+	float RespawnDelay = 2.f; // seconds 
+	FTimerDelegate Del;
+	Del.BindLambda([this, VictimPawnWeak]()
 		{
-			RoleComp->SetRoleAuthoritative(ECharacterRole::Zombie);
-
-			if (ABotAIController* BotCtrl = Cast<ABotAIController>(Victim))
+			UE_LOG(LogTemp, Warning, TEXT("AZombieMode:Respawn timer triggered."));
+			if (!VictimPawnWeak.IsValid())
 			{
-				BotManager->NotifyCharacterRole(BotCtrl, ECharacterRole::Zombie);
+				UE_LOG(LogTemp, Warning, TEXT("AZombieMode: VictimPawn is no longer valid. Cannot Respawn."));
+				return;
 			}
-		}
-	}
+			ABaseCharacter* VictimPawn = VictimPawnWeak.Get();
+			this->ReviveZombie(VictimPawn);
+		});
+
+	FTimerHandle Handle;
+	GetWorldTimerManager().SetTimer(Handle, Del, RespawnDelay, false);
 }
 
 AActor* AZombieMode::ChoosePlayerStart_Implementation(AController* Player)
@@ -178,7 +187,6 @@ AActor* AZombieMode::ChoosePlayerStart_Implementation(AController* Player)
 	return Super::ChoosePlayerStart_Implementation(Player); // fallback
 }
 
-
 APawn* AZombieMode::SpawnDefaultPawnAtTransform_Implementation(
 	AController* NewPlayer,
 	const FTransform& SpawnTransform
@@ -191,4 +199,26 @@ APawn* AZombieMode::SpawnDefaultPawnAtTransform_Implementation(
 	NewTransform.SetRotation(Rot.Quaternion());
 
 	return Super::SpawnDefaultPawnAtTransform_Implementation(NewPlayer, NewTransform);
+}
+
+void AZombieMode::ReviveZombie(ABaseCharacter* ZombieCharacter)
+{
+	if (!ZombieCharacter) return;
+
+	// teleport to new location
+	AController* VictimCtrl = ZombieCharacter->GetController();
+	if (VictimCtrl)
+	{
+		AActor* StartSpot = ChoosePlayerStart_Implementation(VictimCtrl);
+		if (StartSpot)
+		{
+			const FVector Loc = StartSpot->GetActorLocation();
+			const FRotator Rot = StartSpot->GetActorRotation();
+
+			ZombieCharacter->TeleportTo(Loc, Rot, false, true);
+			ZombieCharacter->ForceNetUpdate();
+		}
+	}
+
+	ZombieCharacter->Revive();
 }

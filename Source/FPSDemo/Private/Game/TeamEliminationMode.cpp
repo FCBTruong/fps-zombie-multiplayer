@@ -101,9 +101,9 @@ void ATeamEliminationMode::EndGame(FName WinningTeam)
     // Implement additional end game logic here (e.g., display UI, reset game, etc.)
 }
 
-void ATeamEliminationMode::NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void ATeamEliminationMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
-    Super::NotifyPlayerKilled(Killer, Victim, DamageCauser);
+    Super::OnCharacterKilled(Killer, Victim, DamageCauser);
 }
 
 void ATeamEliminationMode::CheckRoundEnd()

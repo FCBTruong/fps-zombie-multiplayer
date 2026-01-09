@@ -19,8 +19,6 @@ void ASpikeMode::StartPlay()
 	
 	// decided which team is attacker/defender
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	GS->SetMatchMode(EMatchMode::Spike);
-	BotManager->SetMatchMode(EMatchMode::Spike);
 	FName AttackerTeam = (FMath::RandBool()) ? FName("A") : FName("B");
 	AttackerTeam = "A"; // for testing
 	GS->SetAttackerTeam(AttackerTeam);
@@ -233,9 +231,12 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 }
 
 
-void ASpikeMode::NotifyPlayerKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeatShot)
+void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeatShot)
 {
-	Super::NotifyPlayerKilled(Killer, Victim, DamageCauser, bWasHeatShot);
+	Super::OnCharacterKilled(Killer, Victim, DamageCauser, bWasHeatShot);
+
+	RegisterCorpse(Victim);
+	Victim->ApplyRealDeath(/*bDropInventory=*/true);
 
 	AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
 	if (!VictimPS) {

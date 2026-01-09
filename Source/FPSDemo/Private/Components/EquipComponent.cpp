@@ -18,17 +18,17 @@ UEquipComponent::UEquipComponent()
     SetIsReplicatedByDefault(true);
 }
 
-void UEquipComponent::Initialize(UInventoryComponent* InInventoryComp, UActionStateComponent* InActionStateComp) {
-    InventoryComp = InInventoryComp;
-    ActionStateComp = InActionStateComp;
-}
-
 void UEquipComponent::BeginPlay()
 {
     Super::BeginPlay();
 	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::BeginPlay called"));
 
     CachedGM = UGameManager::Get(GetWorld());
+	ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
+    if (OwnerChar) {
+		InventoryComp = OwnerChar->GetInventoryComponent();
+		ActionStateComp = OwnerChar->GetActionStateComponent();
+	}
     if (InventoryComp) {
         InventoryComp->OnAmmoDataChanged.AddUObject(
             this, &UEquipComponent::HandleAmmoDataChanged);
