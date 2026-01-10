@@ -23,14 +23,14 @@ public:
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
-	virtual void AssignPlayerTeam(APlayerController* NewPlayer);
+	virtual void AssignPlayerTeamInit(APlayerController* NewPlayer);
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
 	virtual void ResetPlayerNewRound(AController* NewPlayer);
 	virtual void ResetPlayers();
-	virtual ABotAIController* SpawnBot(FName TeamID);
-	virtual bool CheckAllTeamDead(FName TeamID);
+	virtual ABotAIController* SpawnBot(ETeamId TeamId);
+	virtual bool CheckAllTeamDead(ETeamId TeamId);
 	virtual void AutoBuyForBots();
 	virtual void SavePlayersGunsForNextRound();
 	AShooterGameState* GetShooterGS() const;
@@ -39,12 +39,15 @@ public:
 	virtual EMatchMode GetMatchMode() const {
 		return EMatchMode::None;
 	}
+	virtual bool IsDamageAllowed(AController* Killer, AController* Victim) const;
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual bool ReadyToStartMatch_Implementation() override;
 	virtual void HandleMatchHasStarted() override;
 	virtual void StartRound();
-	virtual void EndRound(FName WinningTeam);
+	virtual void EndRound(ETeamId WinningTeam);
+	virtual void EndGame(ETeamId WinningTeam);
+	void MoveSpectatorsOffDeadPawn(APawn* DeadPawn);
 
 	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;

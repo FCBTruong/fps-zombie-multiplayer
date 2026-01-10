@@ -17,18 +17,10 @@ void ASpikeMode::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("SpikeMode Game Started!"));
 	Super::StartPlay();
 	
-	// decided which team is attacker/defender
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	FName AttackerTeam = (FMath::RandBool()) ? FName("A") : FName("B");
-	AttackerTeam = "A"; // for testing
-	GS->SetAttackerTeam(AttackerTeam);
-	SpawnBot("B");
-	SpawnBot("B");
-	SpawnBot("B");
-	SpawnBot("B");
-	/*SpawnBot("A");*/
-	//SpawnBot("A");
-	//SpawnBot("A");
+	SpawnBot(ETeamId::Defender);
+	SpawnBot(ETeamId::Defender);
+	SpawnBot(ETeamId::Defender);
+	SpawnBot(ETeamId::Defender);
 }
 
 void ASpikeMode::PlantSpike(FVector Location, AController* Planter)
@@ -45,7 +37,7 @@ void ASpikeMode::PlantSpike(FVector Location, AController* Planter)
 	GS->SetMatchState(EMyMatchState::SPIKE_PLANTED);
 
 	if (BotManager) {
-		BotManager->OnSpikePlanted(GS->GetAttackerTeam(), PlantedSpike);
+		BotManager->OnSpikePlanted(PlantedSpike);
 	}
 }
 
@@ -54,12 +46,8 @@ void ASpikeMode::DefuseSpike(AController* Defuser)
 	if (PlantedSpike)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Spike defused by %s"), *Defuser->GetName());
-		// check game result
-		AShooterGameState* GS = GetGameState<AShooterGameState>();
-
 		
-		FName WinningTeam = GS->GetAttackerTeam() == FName("A") ? FName("B") : FName("A");
-		EndRound(WinningTeam);
+		EndRound(ETeamId::Defender);
 
 		if (BotManager) {
 			BotManager->OnSpikeDefused();
@@ -71,11 +59,10 @@ void ASpikeMode::DefuseSpike(AController* Defuser)
 	}
 }
 
-void ASpikeMode::EndRound(FName WinningTeam)
+void ASpikeMode::EndRound(ETeamId WinningTeam)
 {
 	Super::EndRound(WinningTeam);
-	UE_LOG(LogTemp, Warning, TEXT("Round Ended! Team %s wins!"), *WinningTeam.ToString());
-	// Clear timer 
+	
 	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
@@ -142,7 +129,7 @@ void ASpikeMode::StartRound()
 	UE_LOG(LogTemp, Warning, TEXT("Object address = %p"), PickupActor);
 	
 	if (BotManager) {
-		BotManager->OnStartRound(GS->GetAttackerTeam(), PickupActor);
+		BotManager->OnStartRound(PickupActor);
 	}
 	
 	GS->SetMatchState(EMyMatchState::BUY_PHASE);
@@ -174,9 +161,8 @@ void ASpikeMode::StartRound()
 	);
 }
 
-void ASpikeMode::EndGame(FName WinningTeam)
+void ASpikeMode::EndGame(ETeamId WinningTeam)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Game Over! Team %s wins the game!"), *WinningTeam.ToString());
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (GS) {
 		GS->SetMatchState(EMyMatchState::GAME_ENDED);
@@ -187,9 +173,7 @@ void ASpikeMode::EndGame(FName WinningTeam)
 void ASpikeMode::SpikeExploded()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Spike exploded!"));
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	FName WinningTeam = GS->GetAttackerTeam() == FName("A") ? FName("A") : FName("B");
-	EndRound(WinningTeam);
+	EndRound(ETeamId::Attacker);
 }
 
 AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
@@ -203,12 +187,12 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 	}
 
 
-	FName TeamId = PS->GetTeamID();
+	ETeamId TeamId = PS->GetTeamId();
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	AActorManager* AM = AActorManager::Get(GetWorld());
 
-	if (TeamId == GS->GetAttackerTeam())
+	if (TeamId == ETeamId::Attacker)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Choosing attacker start for player %s"), *Player->GetName());
 		APlayerStart* AttackerStart = AM->GetRandomAttackerStart();
@@ -231,19 +215,19 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 }
 
 
-void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeatShot)
+void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeatShot)
 {
-	Super::OnCharacterKilled(Killer, Victim, DamageCauser, bWasHeatShot);
+	Super::OnCharacterKilled(Killer, VictimPawn, DamageCauser, bWasHeatShot);
 
-	RegisterCorpse(Victim);
-	Victim->ApplyRealDeath(/*bDropInventory=*/true);
+	RegisterCorpse(VictimPawn);
+	VictimPawn->ApplyRealDeath(/*bDropInventory=*/true);
 
-	AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
+	AMyPlayerState* VictimPS = VictimPawn ? VictimPawn->GetPlayerState<AMyPlayerState>() : nullptr;
 	if (!VictimPS) {
 		UE_LOG(LogTemp, Warning, TEXT("VictimPS is null in NotifyPlayerKilled"));
 		return;
 	}
-	FName VictimTeam = VictimPS->GetTeamID();
+	ETeamId VictimTeam = VictimPS->GetTeamId();
 
 	// check if spike carrier is killed
 	
@@ -254,11 +238,11 @@ void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Vi
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (IsAllTeamDead)
 	{
-		FName WinningTeam;
+		ETeamId WinningTeam;
 		// if team dead if counter -> end the game with attacker win
-		if (VictimTeam != GS->GetAttackerTeam())
+		if (VictimTeam == ETeamId::Defender)
 		{
-			WinningTeam = GS->GetAttackerTeam();
+			WinningTeam = ETeamId::Attacker;
 			EndRound(WinningTeam);
 		}
 		else 
@@ -266,11 +250,34 @@ void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Vi
 			// check the bomb status
 			if (!IsSpikePlanted())
 			{
-				WinningTeam = GS->GetDefenderTeam();
+				WinningTeam = ETeamId::Defender;
 				EndRound(WinningTeam);
 			}
 		}
 	}
+
+	TWeakObjectPtr<AController> VictimCtrlWeak = VictimPawn->Controller;
+
+	const float SpectateDelay = 2.f;
+	FTimerDelegate SpectateDel;
+
+	MoveSpectatorsOffDeadPawn(VictimPawn);
+	if (AMyPlayerController* PC = Cast<AMyPlayerController>(VictimCtrlWeak.Get()))
+	{
+		PC->SetPlayerSpectate();
+	}
+	SpectateDel.BindLambda([VictimCtrlWeak]()
+		{
+			if (!VictimCtrlWeak.IsValid()) return;
+
+			if (AMyPlayerController* PC = Cast<AMyPlayerController>(VictimCtrlWeak.Get()))
+			{
+				PC->RequestSpectateNextPlayer();
+			}
+		});
+
+	FTimerHandle SpectateHandle;
+	GetWorldTimerManager().SetTimer(SpectateHandle, SpectateDel, SpectateDelay, false);
 }
 
 
@@ -281,7 +288,7 @@ void ASpikeMode::OnRoundTimeExpired()
 	// If spike NOT planted -> defenders win
 	if (!IsSpikePlanted())
 	{
-		EndRound(GS->GetDefenderTeam());
+		EndRound(ETeamId::Defender);
 	}
 }
 
@@ -297,4 +304,56 @@ void ASpikeMode::NotifySpikePickedUp(ABaseCharacter* Player)
 	if (BotManager) {
 		BotManager->OnSpikePickedUp(Player);
 	}
+}
+
+void ASpikeMode::AssignPlayerTeamInit(APlayerController* NewPlayer)
+{
+	UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in AShooterGameMode"));
+	if (!NewPlayer)
+	{
+		return;
+	}
+
+	AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>();
+	if (!PS) {
+		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in AddPlayer"));
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Adding player to team..."));
+
+	ETeamId AssignedTeam;
+
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) {
+		UE_LOG(LogTemp, Warning, TEXT("GameState is null in AssignPlayerTeam"));
+		return;
+	}
+
+	// pick suitable team
+	int32 AttackerCount = 0;
+	int32 DefenderCount = 0;
+	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
+	for (APlayerState* ExistingPS : PlayerStates)
+	{
+		if (!ExistingPS) continue;
+		AMyPlayerState* MyExistingPS = Cast<AMyPlayerState>(ExistingPS);
+		if (MyExistingPS && MyExistingPS->GetTeamId() == ETeamId::Attacker)
+		{
+			AttackerCount++;
+		}
+		else if (MyExistingPS && MyExistingPS->GetTeamId() == ETeamId::Defender)
+		{
+			DefenderCount++;
+		}
+	}
+	if (AttackerCount <= DefenderCount)
+	{
+		AssignedTeam = ETeamId::Attacker;
+	}
+	else
+	{
+		AssignedTeam = ETeamId::Defender;
+	}
+
+	PS->SetTeamId(AssignedTeam);
 }

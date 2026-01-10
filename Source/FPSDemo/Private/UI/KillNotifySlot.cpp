@@ -33,11 +33,11 @@ void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState
 
         if (Killer)
         {
-            if (Killer->GetTeamID() == FName("A"))
+            if (Killer->GetTeamId() == ETeamId::Attacker)
             {
                 KillerLb->SetColorAndOpacity(FSlateColor(DefenderColor));
             }
-            else if (Killer->GetTeamID() == FName("B"))
+            else if (Killer->GetTeamId() == ETeamId::Defender)
             {
                 KillerLb->SetColorAndOpacity(FSlateColor(AttackerColor));
             }
@@ -50,11 +50,11 @@ void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState
 
         if (Victim)
         {
-            if (Victim->GetTeamID() == FName("A"))
+            if (Victim->GetTeamId() == ETeamId::Defender)
             {
                 VictimLb->SetColorAndOpacity(FSlateColor(DefenderColor));
             }
-            else if (Victim->GetTeamID() == FName("B"))
+            else if (Victim->GetTeamId() == ETeamId::Attacker)
             {
                 VictimLb->SetColorAndOpacity(FSlateColor(AttackerColor));
             }

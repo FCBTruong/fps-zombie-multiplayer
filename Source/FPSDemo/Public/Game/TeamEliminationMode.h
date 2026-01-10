@@ -26,9 +26,9 @@ public:
 	virtual void StartRound() override;
 	
 	void StartNextRound();
-	void EndGame(FName WinningTeam);
+	virtual void EndGame(ETeamId WinningTeam) override;
 	void CheckRoundEnd();
-	void EndRound(FName WinningTeam);
+	void EndRound(ETeamId WinningTeam);
 	
 	static constexpr int MaxRoundsToWin = 5;
 	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;

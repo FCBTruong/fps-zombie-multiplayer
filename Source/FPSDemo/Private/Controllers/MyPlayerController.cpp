@@ -162,6 +162,16 @@ void AMyPlayerController::SetupInputComponent()
             );
         }
 
+        if (IA_TEST)
+        {
+            EnhancedInput->BindAction(
+                IA_TEST,
+                ETriggerEvent::Started,
+                this,
+                &AMyPlayerController::Test
+            );
+        }
+
         if (IA_ESCAPE)
         {
             EnhancedInput->BindAction(IA_ESCAPE, ETriggerEvent::Started, this, &AMyPlayerController::CloseShopIfOpen);
@@ -318,7 +328,7 @@ void AMyPlayerController::OnLeftClickStart()
 
     if (IsSpectatingState())
     {
-        OnSpectateNextPressed();
+		RequestSpectateNextPlayer();
         return;
     }
 
@@ -487,14 +497,14 @@ void AMyPlayerController::StopDefuseSpike() {
     }
 }
 
-FName AMyPlayerController::GetTeamId() const
+ETeamId AMyPlayerController::GetTeamId() const
 {
     AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
     if (PS)
     {
-        return PS->GetTeamID();
+        return PS->GetTeamId();
     }
-    return NAME_None;
+    return ETeamId::None;
 }
 
 void AMyPlayerController::ClickSlow() {
@@ -526,7 +536,7 @@ AActor* AMyPlayerController::FindLivingTeammate(AController* Spectator)
 		ABaseCharacter* OtherChar = Cast<ABaseCharacter>(OtherPS->GetPawn());
 		if (!OtherChar) continue;
 
-        if (OtherPS->GetTeamID() == SpectatorPS->GetTeamID()
+        if (OtherPS->GetTeamId() == SpectatorPS->GetTeamId()
             && OtherChar->IsAlive())
         {
             return OtherChar;
@@ -552,52 +562,47 @@ bool AMyPlayerController::IsSpectatingState() const
     return IsInState(NAME_Spectating);
 }
 
-void AMyPlayerController::OnSpectateNextPressed()
+void AMyPlayerController::RequestSpectateNextPlayer()
 {
-    if (!IsSpectatingState())
-        return;
-
-    // Must ask server to pick & apply the next target in online game
-    ServerSetSpectateTarget(true);
+    if (HasAuthority())
+    {
+        SpectateNextPlayer_Internal();
+    }
+    else
+    {
+        ServerSpectateNextPlayer();
+	}
 }
 
-void AMyPlayerController::ServerSetSpectateTarget_Implementation(bool bNext)
+void AMyPlayerController::ServerSpectateNextPlayer_Implementation()
 {
+    SpectateNextPlayer_Internal();
+}
+
+void AMyPlayerController::SpectateNextPlayer_Internal()
+{
+	UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal called"));
     if (!PlayerState) return;
 	AMyPlayerState* PlayerMyState = Cast<AMyPlayerState>(PlayerState);
 	if (!PlayerMyState) return;
 
-	ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
-
-    if (!IsValid(MyChar))
+    if (!IsSpectatingState())
     {
-        UE_LOG(LogTemp, Warning, TEXT("Spectate target invalid or destroyed"));
+		UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: Not in spectating state"));
         return;
     }
-	if (MyChar->IsAlive()) return;
-
-    if (bNext) {
-        if (!PlayerState->IsSpectator()) {
-            return;
-        }
-    }
-
-    if (!PlayerState->IsSpectator())
-    {
-        this->SetPlayerSpectate();
-    }
-
-    AActor* Target =
-        bNext
-        ? FindNextLivingTeammate(CurrentSpectateTarget.Get())
-        : FindNextLivingTeammate(nullptr);
+    
+    auto Target = FindNextLivingTeammate(CurrentSpectateTarget.Get());
+    UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug1"));
 
     if (Target)
     {
         CurrentSpectateTarget = Target;
         ClientSetSpectateViewTarget(Target, 0.3f);
+        UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug2"));
     }
     else {
+        UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug3"));
         // get game mode
 		ASpikeMode* GM = GetWorld()->GetAuthGameMode<ASpikeMode>();
         if (GM) {
@@ -621,7 +626,7 @@ AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
     if (!GS || !PlayerState) return nullptr;
 
     // Replace with your team accessors
-    const FName MyTeamId = CastChecked<AMyPlayerState>(PlayerState)->GetTeamID();
+    auto MyTeamId = CastChecked<AMyPlayerState>(PlayerState)->GetTeamId();
 
     TArray<AActor*> Candidates;
     Candidates.Reserve(GS->PlayerArray.Num());
@@ -630,7 +635,7 @@ AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
     {
         AMyPlayerState* MPS = Cast<AMyPlayerState>(PS);
         if (!MPS) continue;
-        if (MPS->GetTeamID() != MyTeamId) continue;
+        if (MPS->GetTeamId() != MyTeamId) continue;
         if (MPS == PlayerState) continue;
 
         AController* OwnerController = Cast<AController>(MPS->GetOwner()); // On server, PlayerState owner is typically the Controller
@@ -862,6 +867,11 @@ void AMyPlayerController::UnbindAll()
 void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
 {
     if (!Char || !PlayerUI) return;
+    if (CachedChar.IsValid()) {
+		// unbind previous
+		UnbindCharacter(CachedChar.Get());
+        CachedChar.Reset();
+    }
 
     if (UHealthComponent* HC = Char->GetHealthComponent())
     {
@@ -1038,3 +1048,13 @@ void AMyPlayerController::RemoveDefaultInputMapping()
         bInputMappingAdded = false;
     }
 }
+
+void AMyPlayerController::Test() {
+    ServerTest();
+}
+
+void AMyPlayerController::ServerTest_Implementation()
+{
+    
+}
+

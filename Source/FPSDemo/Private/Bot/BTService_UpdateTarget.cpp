@@ -30,7 +30,7 @@ void UBTService_UpdateTarget::TickNode(
     AMyPlayerState* MyPS = Pawn->GetPlayerState<AMyPlayerState>();
     if (!MyPS) return;
 
-    FName MyTeamID = MyPS->GetTeamID();
+    ETeamId MyTeamId = MyPS->GetTeamId();
 
     // Collect all perceived actors by sight
     TArray<AActor*> PerceivedActors;
@@ -52,7 +52,7 @@ void UBTService_UpdateTarget::TickNode(
         if (BC->IsDead()) continue;
 
         // Skip same team
-        if (TargetPS->GetTeamID() == MyTeamID) continue;
+        if (TargetPS->GetTeamId() == MyTeamId) continue;
 
         // This is an enemy we can see
         BestTarget = BC;

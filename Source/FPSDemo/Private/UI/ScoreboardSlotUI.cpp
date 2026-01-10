@@ -24,10 +24,10 @@ void UScoreboardSlotUI::Setup(const AMyPlayerState* PS, bool isMe)
 		AssistLb->SetText(FText::AsNumber(PS->GetAssists()));
 	}
 
-	if (PS->GetTeamID() == FName("A")) {
+	if (PS->GetTeamId() == ETeamId::Attacker) {
 		BackgroundImg->SetColorAndOpacity(FLinearColor(0.3f, 0.65f, 1.0f, 0.3f)); // Blueish
 	}
-	else if (PS->GetTeamID() == FName("B")) {
+	else if (PS->GetTeamId() == ETeamId::Defender) {
 		BackgroundImg->SetColorAndOpacity(FLinearColor(0.617f, 0.184f, 0.036f, 0.3f)); // Reddish
 	}
 

@@ -22,15 +22,28 @@ protected:
 		AController* NewPlayer,
 		const FTransform& SpawnTransform
 	) override;
-	virtual void EndRound(FName WinningTeam) override;
-	void AssignZombieRoles();
+	virtual void EndRound(ETeamId WinningTeam) override;
+	virtual void EndGame(ETeamId WinningTeam) override;
+
+	void RandomZombie();
+	void EnterFightState();
 	void BecomeZombie(AController* Controller);
 	void ReviveZombie(ABaseCharacter* ZombieCharacter);
+	void HandleHumanKilled(ABaseCharacter* VictimPawn);
+	void HandleZombieKilled(ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser);
+	void HandleHeroKilled(ABaseCharacter* VictimPawn);
+	void HandlePermanentZombieDeath(ABaseCharacter* VictimPawn);
+	void ScheduleZombieRevive(ABaseCharacter* VictimPawn);
+	void OnRoundTimeExpired();
+	void StartSpectating(ABaseCharacter* VictimPawn);
 
-	FTimerHandle RoleAssignTimerHandle;
+	FTimerHandle BuyingTimerHandle;
+	FTimerHandle FightStateTimerHandle;
+	FTimerHandle StartRoundTimerHandle;
 public:
 	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 	virtual EMatchMode GetMatchMode() const {
 		return EMatchMode::Zombie;
 	}
+	void BecomeHero(AController* Controller);
 };

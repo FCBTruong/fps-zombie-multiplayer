@@ -72,7 +72,7 @@ void AShooterGameMode::OnCharacterKilled(class AController* Killer, ABaseCharact
 	VictimPS->AddDeath();
     
     // check same team or not
-    if (KillerPS && KillerPS != VictimPS && KillerPS->GetTeamID() != VictimPS->GetTeamID()) {
+    if (KillerPS && KillerPS != VictimPS && KillerPS->GetTeamId() != VictimPS->GetTeamId()) {
         KillerPS->AddKill();
     }
    
@@ -83,64 +83,15 @@ void AShooterGameMode::OnCharacterKilled(class AController* Killer, ABaseCharact
     }
 }
 
-void AShooterGameMode::AssignPlayerTeam(APlayerController* NewPlayer)
+void AShooterGameMode::AssignPlayerTeamInit(APlayerController* NewPlayer)
 {
-    UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in AShooterGameMode"));
-    if (!NewPlayer)
-    {
-        return;
-    }
-
-    AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>();
-    if (!PS) {
-        UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in AddPlayer"));
-        return;
-    }
-    UE_LOG(LogTemp, Warning, TEXT("Adding player to team..."));
-
-    FName AssignedTeam;
-
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (!GS) {
-		UE_LOG(LogTemp, Warning, TEXT("GameState is null in AssignPlayerTeam"));
-		return;
-	}
-
-    // pick suitable team
-	int32 TeamACount = 0;
-	int32 TeamBCount = 0;
-    TArray<APlayerState*> PlayerStates = GS->PlayerArray;
-    for (APlayerState* ExistingPS : PlayerStates)
-    {
-        if (!ExistingPS) continue;
-        AMyPlayerState* MyExistingPS = Cast<AMyPlayerState>(ExistingPS);
-        if (MyExistingPS && MyExistingPS->GetTeamID() == FName("A"))
-        {
-            TeamACount++;
-        }
-        else if (MyExistingPS && MyExistingPS->GetTeamID() == FName("B"))
-        {
-            TeamBCount++;
-        }
-    }
-    if (TeamACount <= TeamBCount)
-    {
-        AssignedTeam = FName("A");
-    }
-    else
-    {
-        AssignedTeam = FName("B");
-    }
-
-	UE_LOG(LogTemp, Warning, TEXT("Assigned Team: %s"), *AssignedTeam.ToString());
-
-    PS->SetTeamID(AssignedTeam);
+    
 }
 
 FString AShooterGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) {
 
     UE_LOG(LogTemp, Warning, TEXT("InitNewPlayer called in TeamEliminationMode"));
-	AssignPlayerTeam(NewPlayerController);
+	AssignPlayerTeamInit(NewPlayerController);
     return Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
 }
 
@@ -204,9 +155,8 @@ void AShooterGameMode::ResetPlayerNewRound(AController * NewPlayer)
 	}
 }
 
-ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
+ABotAIController* AShooterGameMode::SpawnBot(ETeamId TeamId)
 {
-    UE_LOG(LogTemp, Warning, TEXT("Spawning Bot for Team %s"), *TeamID.ToString());
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
@@ -220,12 +170,10 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
 	AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
 	if (PS)
 	{
-		PS->SetTeamID(TeamID);
-		FName BotName = FName(*FString::Printf(TEXT("Bot_%s_%d"), *TeamID.ToString(), FMath::RandRange(1000, 9999)));
+		PS->SetTeamId(TeamId);
+		FName BotName = FName(*FString::Printf(TEXT("Bot_%d"), FMath::RandRange(1000, 9999)));
 		PS->SetPlayerName(BotName.ToString());
 	}
-
-    UE_LOG(LogTemp, Warning, TEXT("Spawned Bot for Team %s"), *TeamID.ToString());
 
     if (BotManager)
     {
@@ -234,7 +182,7 @@ ABotAIController* AShooterGameMode::SpawnBot(FName TeamID)
     return Bot;
 }
 
-bool AShooterGameMode::CheckAllTeamDead(FName TeamID)
+bool AShooterGameMode::CheckAllTeamDead(ETeamId TeamID)
 {
     // Check players
     TArray<APlayerState*> PlayerStates = GetGameState<AShooterGameState>()->PlayerArray;
@@ -244,7 +192,7 @@ bool AShooterGameMode::CheckAllTeamDead(FName TeamID)
         AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
         if (!MyPS) continue;
 
-		if (MyPS->GetTeamID() != TeamID) continue;
+		if (MyPS->GetTeamId() != TeamID) continue;
 
 		ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPS->GetPawn());
 		if (!MyChar) continue;
@@ -316,7 +264,42 @@ void AShooterGameMode::StartRound() {
     AM->ResetPlayerStartsUsage();
 }
 
-void AShooterGameMode::EndRound(FName WinningTeam)
+void AShooterGameMode::EndRound(ETeamId WinningTeam)
 {
-    UE_LOG(LogTemp, Warning, TEXT("Ending Round in AShooterGameMode. Winning Team: %s"), *WinningTeam.ToString());
+
+}
+
+void AShooterGameMode::EndGame(ETeamId WinningTeam)
+{
+
+}
+
+void AShooterGameMode::MoveSpectatorsOffDeadPawn(APawn* DeadPawn)
+{
+    if (!DeadPawn) return;
+
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+    {
+        AMyPlayerController* PC = Cast<AMyPlayerController>(It->Get());
+        if (!PC) continue;
+
+        if (!PC->IsSpectatingState()) continue;
+
+        AActor* ViewTarget = PC->GetViewTarget();
+        if (ViewTarget == DeadPawn)
+        {
+            PC->RequestSpectateNextPlayer();
+        }
+    }
+}
+
+bool AShooterGameMode::IsDamageAllowed(AController* Killer, AController* Victim) const
+{
+    // not allow same team
+	AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
+	AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
+    if (KillerPS && VictimPS && KillerPS->GetTeamId() == VictimPS->GetTeamId()) {
+        return false;
+	}
+	return true;
 }

@@ -20,7 +20,6 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AShooterGameState, TeamAScore);
 	DOREPLIFETIME(AShooterGameState, TeamBScore);
-	DOREPLIFETIME(AShooterGameState, AttackerTeam);
 	DOREPLIFETIME(AShooterGameState, RoundEndTime);
 	DOREPLIFETIME(AShooterGameState, CurrentMatchState);
     DOREPLIFETIME(AShooterGameState, MatchMode);
@@ -59,7 +58,7 @@ void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Kille
     }
 }
 
-void AShooterGameState::Multicast_RoundResult_Implementation(FName WinningTeam)
+void AShooterGameState::Multicast_RoundResult_Implementation(ETeamId WinningTeam)
 {
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
@@ -76,25 +75,25 @@ void AShooterGameState::Multicast_RoundResult_Implementation(FName WinningTeam)
     }
 }
 
-void AShooterGameState::AddScoreTeam(FName TeamId, int ScoreToAdd)
+void AShooterGameState::AddScoreTeam(ETeamId TeamId, int ScoreToAdd)
 {
-    if (TeamId == FName(TEXT("A")))
+    if (TeamId == ETeamId::Attacker)
     {
         TeamAScore += ScoreToAdd;
     }
-    else if (TeamId == FName(TEXT("B")))
+    else if (TeamId == ETeamId::Defender)
     {
         TeamBScore += ScoreToAdd;
     }
 }
 
-int AShooterGameState::GetScoreTeam(FName TeamId) const
+int AShooterGameState::GetScoreTeam(ETeamId TeamId) const
 {
-    if (TeamId == FName(TEXT("A")))
+    if (TeamId == ETeamId::Attacker)
     {
         return TeamAScore;
     }
-    else if (TeamId == FName(TEXT("B")))
+    else if (TeamId == ETeamId::Defender)
     {
         return TeamBScore;
     }

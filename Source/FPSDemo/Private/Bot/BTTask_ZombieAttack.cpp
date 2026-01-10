@@ -28,7 +28,7 @@ EBTNodeResult::Type UBTTask_ZombieAttack::ExecuteTask(
         return EBTNodeResult::Failed;
     }
 
-	Char->ZombieAttack();
+	Char->RequestPrimaryActionPressed();
 
     return EBTNodeResult::Succeeded;
 }

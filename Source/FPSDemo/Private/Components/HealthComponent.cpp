@@ -48,13 +48,11 @@ void UHealthComponent::ApplyDamage(float DamageAmount)
 	}
 }
 
-
-
-
 void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UHealthComponent, Health);
+	DOREPLIFETIME(UHealthComponent, MaxHealth);
 }
 
 void UHealthComponent::OnRep_Health()
@@ -87,4 +85,10 @@ void UHealthComponent::SetMaxHealth(float NewMaxHealth)
 		Health = MaxHealth;
 		OnHealthUpdated.Broadcast(Health, MaxHealth);
 	}
+}
+
+void UHealthComponent::ResetHealth()
+{
+	Health = MaxHealth;
+	OnHealthUpdated.Broadcast(Health, MaxHealth);
 }

@@ -19,35 +19,6 @@ void ATeamEliminationMode::PostLogin(APlayerController* NewPlayer)
 
 AActor* ATeamEliminationMode::ChoosePlayerStart_Implementation(AController* Player)
 {
-    AMyPlayerState* PS = Player->GetPlayerState<AMyPlayerState>();
-
-	if (!PS) {
-        UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in ChoosePlayerStart_Implementation"));
-        return Super::ChoosePlayerStart_Implementation(Player); // fallback
-	}
-
-
-    FName TeamId = PS->GetTeamID();
-
-    TArray<AActor*> FoundStarts;
-    UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), FoundStarts);
-
-    for (AActor* Actor : FoundStarts)
-    {
-        APlayerStart* Start = Cast<APlayerStart>(Actor);
-        if (!Start)
-        {
-            continue;
-        }
-		UE_LOG(LogTemp, Warning, TEXT("Found PlayerStart with tag: %s"), *Start->PlayerStartTag.ToString());
-		UE_LOG(LogTemp, Warning, TEXT("Players TeamId: %s"), *TeamId.ToString());
-
-        if (Start->PlayerStartTag == TeamId)
-        {
-            return Start;
-        }
-    }
-
     return Super::ChoosePlayerStart_Implementation(Player); // fallback
 }
 
@@ -76,9 +47,6 @@ void ATeamEliminationMode::StartRound()
     }
 	bRoundInProgress = true;
     ResetPlayers();
-
-    // test create bot AI 
-	SpawnBot("B");
 }
 
 
@@ -94,11 +62,9 @@ void ATeamEliminationMode::StartNextRound()
     );
 }
 
-void ATeamEliminationMode::EndGame(FName WinningTeam)
+void ATeamEliminationMode::EndGame(ETeamId WinningTeam)
 {
-    FString WinningTeamStr = WinningTeam.ToString();
-    UE_LOG(LogTemp, Warning, TEXT("Game Over! Team %s wins!"), *WinningTeamStr);
-    // Implement additional end game logic here (e.g., display UI, reset game, etc.)
+
 }
 
 void ATeamEliminationMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
@@ -110,7 +76,7 @@ void ATeamEliminationMode::CheckRoundEnd()
 {
     
 }
-void ATeamEliminationMode::EndRound(FName WinningTeam)
+void ATeamEliminationMode::EndRound(ETeamId WinningTeam)
 {
     
 }

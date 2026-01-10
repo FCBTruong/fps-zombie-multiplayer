@@ -21,12 +21,12 @@ public:
 	void Initialize(AActorManager* ActorMgr);
 	void AddBot(ABotAIController* NewBot);
 	void RemoveBot(ABotAIController* BotToRemove);
-	void OnSpikePlanted(FName AttackerTeamId, AActor* SpikeActor);
+	void OnSpikePlanted(AActor* SpikeActor);
 	void OnSpikeDefused();
 	void OnSpikePickedUp(ABaseCharacter* Player);
 	void OnSpikeDropped();
 	void OnSpikeCarrierKilled();
-	void OnStartRound(FName AttackerTeamId, AActor* SpikeActor);
+	void OnStartRound(AActor* SpikeActor);
 	void OnStartRoundZombieMode();
 	void NotifyCharacterRole(ABotAIController* Bot, ECharacterRole NewRole);
 	TArray<ABotAIController*> GetManagedBots() const {

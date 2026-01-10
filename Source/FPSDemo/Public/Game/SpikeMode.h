@@ -33,8 +33,8 @@ protected:
 public:
 	virtual void StartPlay() override;
 	virtual void StartRound() override;
-	virtual void EndRound(FName WinningTeam) override;
-	void EndGame(FName WinningTeam);
+	virtual void EndRound(ETeamId WinningTeam) override;
+	virtual void EndGame(ETeamId WinningTeam) override;
 	void PlantSpike(FVector Location, AController* Planter);
 	bool IsSpikePlanted() {
 		return PlantedSpike != nullptr;
@@ -45,6 +45,7 @@ public:
 	static constexpr int32 TimePerRound = 90; // seconds
 	void NotifySpikeDropped(ABaseCharacter* Player);
 	void NotifySpikePickedUp(ABaseCharacter* Player);
+	virtual void AssignPlayerTeamInit(APlayerController* NewPlayer) override;
 	
 	ASpike* GetPlantedSpike() const {
 		return PlantedSpike;

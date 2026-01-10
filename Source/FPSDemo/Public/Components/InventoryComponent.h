@@ -72,6 +72,7 @@ public:
 	void DropAllItems(); // drop all items (server only)
     APickupItem* DropItem(EItemId ItemId);
 	void OnBecomeHero(); // this will change melee to hero sword
+    void OnBecomeZombie();
 
     void ClearInventory();
 public:

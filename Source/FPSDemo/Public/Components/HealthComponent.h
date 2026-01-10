@@ -19,6 +19,7 @@ class FPSDEMO_API UHealthComponent : public UActorComponent
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_Health)
 	float Health;
+	UPROPERTY(Replicated)
 	float MaxHealth;
 
 	UFUNCTION()
@@ -51,4 +52,5 @@ public:
 	void SetMaxHealth(float NewMaxHealth);
 	bool IsAlive() const { return Health > 0.f; }
 	bool IsDead() const { return Health <= 0.f; }
+	void ResetHealth();
 };

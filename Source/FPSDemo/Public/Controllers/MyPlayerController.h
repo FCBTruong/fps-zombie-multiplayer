@@ -8,6 +8,7 @@
 #include "Items/ItemIds.h"
 #include "Game/GameManager.h"
 #include "InputActionValue.h"
+#include "Data/TeamId.h"
 #include "MyPlayerController.generated.h"
 
 class UPlayerUI;
@@ -44,6 +45,9 @@ public:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_SHOP;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_TEST;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_ESCAPE;
@@ -105,7 +109,8 @@ public:
     class UInputAction* IA_SCOREBOARD;
 
     UFUNCTION(Server, Reliable)
-    void ServerSetSpectateTarget(bool bNext);
+    void ServerSpectateNextPlayer();
+    void SpectateNextPlayer_Internal();
 
     UFUNCTION(Client, Reliable)
     void ClientSetSpectateViewTarget(AActor* Target, float BlendTime);
@@ -115,10 +120,15 @@ public:
     void HideScoreboard();
     UPlayerUI* GetPlayerUI() const { return PlayerUI; }
     void RequestBuyItem(EItemId ItemId);
-    FName GetTeamId() const;
+    ETeamId GetTeamId() const;
     AActor* FindLivingTeammate(AController* Spectator);
     AActor* FindNextLivingTeammate(AActor* CurrentTarget) const;
     bool IsSpectatingState() const;
+    void Test();
+    UFUNCTION(Server, Reliable)
+    void ServerTest();
+	void RequestSpectateNextPlayer();
+    void BindCharacter(ABaseCharacter* Char);
 private:
     UPROPERTY()
     TWeakObjectPtr<AActor> CurrentSpectateTarget;
@@ -183,18 +193,14 @@ private:
     void ClickCrouch();
     void StopCrouch();
     void Look(const FInputActionValue& Value);
-    void OnSpectateNextPressed();
     void CloseShopIfOpen();
     void ShowScope();
     void HideScope();
     void BuyItem_Internal(EItemId ItemId);
     ABaseCharacter* GetMyChar() const;
-
+    void UnbindCharacter(ABaseCharacter* Char);
     void RebindAll();
     void UnbindAll();
-
-    void BindCharacter(ABaseCharacter* Char);
-    void UnbindCharacter(ABaseCharacter* Char);
 
     void BindGameState(AShooterGameState* GS);
     void UnbindGameState(AShooterGameState* GS);

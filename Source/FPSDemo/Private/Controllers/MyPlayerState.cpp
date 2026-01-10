@@ -69,7 +69,7 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMyPlayerState, Money);
 	DOREPLIFETIME(AMyPlayerState, BoughtItems);
-	DOREPLIFETIME(AMyPlayerState, TeamID);
+	DOREPLIFETIME(AMyPlayerState, TeamId);
 	DOREPLIFETIME(AMyPlayerState, Kills);
 	DOREPLIFETIME(AMyPlayerState, Deaths);
 	DOREPLIFETIME(AMyPlayerState, Assists);
@@ -117,7 +117,7 @@ bool AMyPlayerState::CanBuyThisItem(const UItemConfig* Item) const
 
 void AMyPlayerState::OnRep_TeamId()
 {
-	UE_LOG(LogTemp, Warning, TEXT("TeamId updated: %s"), *TeamID.ToString());
+	
 }
 
 

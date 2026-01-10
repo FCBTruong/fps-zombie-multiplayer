@@ -31,6 +31,7 @@ void UItemUseComponent::BeginPlay() {
 
 void UItemUseComponent::PrimaryPressed()
 {
+	UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::PrimaryPressed called"));
     if (!IsEnabled()) {
         return;
     }
@@ -38,16 +39,23 @@ void UItemUseComponent::PrimaryPressed()
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();
     if (!Item) return;
 
+	UE_LOG(LogTemp, Log, TEXT("UItemUseComponent:Active Item ID: %d"), static_cast<int32>(Item->Id)); 
+
+    // print type
+	UE_LOG(LogTemp, Log, TEXT("UItemUseComponent:Active Item Type: %d"), static_cast<int32>(Item->GetItemType()));
     switch (Item->GetItemType())
     {
     case EItemType::Firearm:
+        UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::debug00 called"));
         if (WeaponFireComp) {
             WeaponFireComp->RequestStartFire();
         }
         break;
 
     case EItemType::Melee:
+        UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::debug01 called"));
         if (WeaponMeleeComp) {
+            UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::debug02 called"));
             WeaponMeleeComp->RequestMeleeAttack(FGameConstants::MELEE_ATTACK_INDEX_PRIMARY);
         }
         break;
@@ -66,6 +74,7 @@ void UItemUseComponent::PrimaryPressed()
         }
         break;
     }
+    UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::debug03 called"));
 }
 
 void UItemUseComponent::PrimaryReleased()

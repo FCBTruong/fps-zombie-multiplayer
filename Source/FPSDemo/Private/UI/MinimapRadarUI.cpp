@@ -134,7 +134,7 @@ void UMinimapRadarUI::UpdateTeammates()
 
 	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 	if (!PC) return;
-	FName MyTeamId = FName(TEXT("None"));
+	ETeamId MyTeamId = ETeamId::None;
 	AMyPlayerState* MyPS = PC->GetPlayerState<AMyPlayerState>();
 	AActor* ViewTarget = PC->GetViewTarget();
 	if (!ViewTarget || !MyPS) return;
@@ -155,7 +155,7 @@ void UMinimapRadarUI::UpdateTeammates()
 	}
 
 	if (MyPS) {
-		MyTeamId = MyPS->GetTeamID();
+		MyTeamId = MyPS->GetTeamId();
 	}
 
 	TArray<ABaseCharacter*> Players = UGameManager::Get(GetWorld())->GetRegisteredPlayers();
@@ -172,7 +172,7 @@ void UMinimapRadarUI::UpdateTeammates()
 		if (PawnActor == ViewTarget) continue;
 
 		// Team filter
-		if (TeamPS->GetTeamID() != MyTeamId) continue;
+		if (TeamPS->GetTeamId() != MyTeamId) continue;
 
 		// Calculate position on minimap
 		FVector WorldPos = PawnActor->GetActorLocation();

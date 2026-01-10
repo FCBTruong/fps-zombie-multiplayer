@@ -44,7 +44,6 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentRole)
 	ECharacterRole CurrentRole = ECharacterRole::Human;
 
-	// Optional: default role for BeginPlay on server (if you want to override per pawn BP)
 	UPROPERTY(EditDefaultsOnly, Category = "Role")
 	ECharacterRole InitialRole = ECharacterRole::Human;
 

@@ -172,6 +172,7 @@ protected:
     float CurrentCrouchCompZ = 0.f;
     float CrouchFromZ = 0.f;
     float CrouchToZ = 0.f;
+	bool bIsPermanentDead = false;
 
     UPROPERTY()
     TObjectPtr<UAudioComponent> DefuseSpikeAudioComp;
@@ -293,7 +294,6 @@ public:
     virtual bool IsFpsViewMode() const;
     virtual bool IsAiming() const;
     virtual bool IsCharacterRole(ECharacterRole InRole) const;
-    virtual void ZombieAttack();
 	virtual int GetTeamId() const;
     virtual void RequestBecomeHero();
     virtual void RequestPrimaryActionPressed();
@@ -304,6 +304,14 @@ public:
     virtual bool CanAct();
 	void Revive();
     void ApplyRealDeath(bool bDropInventory);
+	bool IsHero() const;
+	bool IsZombie() const;
+    void SetPermanentDead(bool In) {
+		bIsPermanentDead = In;
+    }
+    bool IsPermanentDead() {
+		return bIsPermanentDead;
+    }
 
     UFUNCTION(Server, Reliable)
     void ServerBecomeHero();

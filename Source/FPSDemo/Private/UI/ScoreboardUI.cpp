@@ -45,10 +45,10 @@ void UScoreboardUI::UpdateScoreboard(class AShooterGameState* GameState)
 			bool IsMe = (MyPS == LocalPS);
 			CvSlot->Setup(MyPS, IsMe);
 
-			if (MyPS->GetTeamID() == FName("A")) {
+			if (MyPS->GetTeamId() == ETeamId::Attacker) {
 				ScoreboardBoxA->AddChild(CvSlot);
 			}
-			else if (MyPS->GetTeamID() == FName("B")) {
+			else if (MyPS->GetTeamId() == ETeamId::Defender) {
 				ScoreboardBoxB->AddChild(CvSlot);
 			}
 		}

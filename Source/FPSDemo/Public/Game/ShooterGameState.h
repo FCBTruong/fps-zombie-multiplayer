@@ -29,9 +29,6 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_MyMatchState)
 	EMyMatchState CurrentMatchState;
 
-	UPROPERTY(Replicated)
-    FName AttackerTeam = FName(TEXT("A"));
-
     UPROPERTY(ReplicatedUsing = OnRep_Score)
     int TeamAScore = 0;
 
@@ -72,23 +69,15 @@ public:
 		return CurrentMatchState;
 	}
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_RoundResult(FName WinningTeam);
-    FName GetAttackerTeam() const {
-        return AttackerTeam;
-	}
-    FName GetDefenderTeam() const {
-        return AttackerTeam == FName(TEXT("A")) ? FName(TEXT("B")) : FName(TEXT("A"));
-	}
+	void Multicast_RoundResult(ETeamId WinningTeam);
 
     FOnUpdateScore OnUpdateScore;
 	FOnUpdateRoundTime OnUpdateRoundTime;
 	FOnUpdateMatchState OnUpdateMatchState;
 
-    void AddScoreTeam(FName TeamId, int ScoreToAdd);
-    int GetScoreTeam(FName TeamId) const;
-    void SetAttackerTeam(FName NewAttackerTeam) {
-        AttackerTeam = NewAttackerTeam;
-    }
+    void AddScoreTeam(ETeamId TeamId, int ScoreToAdd);
+    int GetScoreTeam(ETeamId TeamId) const;
+
     void SetRoundEndTime(int NewRoundEndTime) {
         RoundEndTime = NewRoundEndTime;
 	}

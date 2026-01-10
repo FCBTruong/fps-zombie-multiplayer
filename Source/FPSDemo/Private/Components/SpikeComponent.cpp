@@ -358,7 +358,7 @@ void USpikeComponent::StartDefuse_Internal() {
     if (!MyPS) {
         return;
 	}
-    if (MyPS->GetTeamID() == GameState->GetAttackerTeam()) {
+    if (MyPS->GetTeamId() == ETeamId::Attacker) {
         UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Attackers cannot defuse spike"));
         return; // attackers cannot defuse
     }

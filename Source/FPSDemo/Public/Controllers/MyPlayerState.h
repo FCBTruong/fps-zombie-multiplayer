@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Items/ItemIds.h"
 #include "Characters/CharacterRole.h"
+#include "Data/TeamId.h"
 #include "MyPlayerState.generated.h"
 
 class UItemConfig;
@@ -22,7 +23,7 @@ class FPSDEMO_API AMyPlayerState : public APlayerState
 
 protected:
 	UPROPERTY(ReplicatedUsing = OnRep_TeamId)
-	FName TeamID = "";
+	ETeamId TeamId = ETeamId::None;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Money)
 	int Money = 10000;
@@ -54,8 +55,8 @@ protected:
 public:
 	AMyPlayerState();
 
-	FName GetTeamID() const { return TeamID; }
-	void SetTeamID(FName NewTeamID) { TeamID = NewTeamID; }
+	ETeamId GetTeamId() const { return TeamId; }
+	void SetTeamId(ETeamId NewTeamId) { TeamId = NewTeamId; }
 	void ProcessBuy(const UItemConfig* Item);
 	int GetMoney() const { return Money; }
 	void ResetBoughtItems() { BoughtItems.Empty(); }

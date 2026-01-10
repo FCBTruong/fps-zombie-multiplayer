@@ -57,6 +57,7 @@
 #include "Components/RoleComponent.h"
 #include "Items/FirearmConfig.h"
 #include "Components/ItemUseComponent.h"
+#include "Game/ZombieMode.h"
 
 const FVector ABaseCharacter::TPSMeshRelLoc(0.f, 0.f, -88.f);
 const FRotator ABaseCharacter::TPSMeshRelRot(0.f, -90.f, 0.f);
@@ -276,10 +277,7 @@ void ABaseCharacter::ApplyTeamMesh() // TODO later, for spike mode
     if (MyPS) {
         USkeletalMesh* NewMesh = nullptr;
 
-        UE_LOG(LogTemp, Warning,
-            TEXT("SetMeshBaseOnTeam: TeamID = %s"),
-            *MyPS->GetTeamID().ToString());
-        if (MyPS->GetTeamID() == GS->GetAttackerTeam()) {
+        if (MyPS->GetTeamId() == ETeamId::Attacker) {
             NewMesh = CachedCharacterAsset->TerroristMesh;
         }
         else {
@@ -414,6 +412,8 @@ void ABaseCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeigh
     FpsPivot->SetRelativeLocation(Loc);
 
     CrouchTimeline.PlayFromStart();
+
+    UpdateMaxWalkSpeed();
 }
 
 void ABaseCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
@@ -431,6 +431,7 @@ void ABaseCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightA
     FpsPivot->SetRelativeLocation(Loc);
 
     CrouchTimeline.PlayFromStart(); // forward again (not Reverse)
+    UpdateMaxWalkSpeed();
 }
 
 void ABaseCharacter::HandleCrouchProgress(float Alpha)
@@ -609,6 +610,16 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         return 0.f; // only server handles damage
     }
 
+	// ask for game mode if damage is allowed 
+    AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this));
+    if (!GM) {
+        UE_LOG(LogTemp, Warning, TEXT("GameMode is null in ABaseCharacter::TakeDamage"));
+        return 0.f;
+    }
+    if (!GM->IsDamageAllowed(EventInstigator, this->Controller)) {
+        return 0.f;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     if (HealthComp && HealthComp->IsDead())
     {
@@ -732,6 +743,11 @@ void ABaseCharacter::HandleDeath()
         GM->OnCharacterKilled(LastHitByController.Get(), this, LastDamageCauser.Get(), bLastHitWasHeadshot);
         LastHitByController = nullptr; // reset after use
         LastDamageCauser = nullptr; // reset after use
+
+        if (bIsAiming) {
+            bIsAiming = false;
+            if (CameraComp) CameraComp->SetAiming(false);
+		}
     }
 }
 
@@ -816,7 +832,7 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
             TmpTimer,
             [PC]()
             {
-                PC->ServerSetSpectateTarget(false);
+               // PC->ServerSetSpectateTarget(false);
             },
             2.0f,
             false
@@ -1052,6 +1068,7 @@ void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
         UE_LOG(LogTemp, Error, TEXT("PC is not AMyPlayerController in BecomeViewTarget"));
         return;
     }
+    MyPC->BindCharacter(this);
 
     UE_LOG(LogTemp, Warning, TEXT("DEUBGGGG: ABaseCharacter : BecomeViewTarget"));
 
@@ -1231,15 +1248,22 @@ void ABaseCharacter::ApplyDefaultsForRole(ECharacterRole NewRole) {
     if (NewRole == ECharacterRole::Zombie)
     {
         if (HealthComp) {
-            HealthComp->SetMaxHealth(150.f);
-            HealthComp->SetHealth(150.f);
+            HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_ZOMBIE);
+            HealthComp->ResetHealth();
 		}
     }
     else if (NewRole == ECharacterRole::Hero)
     {
         if (HealthComp) {
-            HealthComp->SetMaxHealth(200.f);
-            HealthComp->SetHealth(200.f);
+            HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_HERO);
+            HealthComp->ResetHealth();
+        }
+	}
+    else // human
+    {
+        if (HealthComp) {
+            HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_SOLIDER);
+            HealthComp->ResetHealth();
         }
 	}
 }
@@ -1273,6 +1297,14 @@ void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole Ne
             AudioComp->PlayHeroSpawn();
         }
     }
+    else if (NewRole == ECharacterRole::Zombie) {
+        if (InventoryComp) {
+            InventoryComp->OnBecomeZombie();
+        }
+        if (EquipComp) {
+            EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
+        }
+	}
 
 	// role changed mean update walk speed
 	UpdateMaxWalkSpeed();
@@ -1397,29 +1429,9 @@ void ABaseCharacter::ApplyLoadoutByRole(ECharacterRole NewRole)
 {
     if (NewRole == ECharacterRole::Zombie)
     {
-        if (EquipComp)
-        {
-			EquipComp->SetEnabled(false);
-        }
-
-        if (InventoryComp)
-        {
-            InventoryComp->ClearInventory();
-		}
-
-        if (ItemUseComp)
-        {
-            ItemUseComp->SetEnabled(false);
-        }
-
         if (WeaponFireComp)
         {
             WeaponFireComp->SetEnabled(false);
-		}
-
-        if (WeaponMeleeComp)
-        {
-            WeaponMeleeComp->SetEnabled(true);
 		}
 
         if (ThrowableComp) {
@@ -1491,54 +1503,6 @@ void ABaseCharacter::ClearHitSlow()
 void ABaseCharacter::OnRep_SpeedMultiplier()
 {
 	UpdateMaxWalkSpeed();
-}
-
-void ABaseCharacter::ZombieAttack() {
-    if (!RoleComp) {
-        return;
-    }
-    if (RoleComp->GetRole() != ECharacterRole::Zombie) {
-        return;
-    }
-
-    // hands attack animation
-	UE_LOG(LogTemp, Warning, TEXT("ZombieAttack called"));
-    if (AnimationComp) {
-        AnimationComp->PlayZombieAttackMontage();
-    }
-
-    if (!HasAuthority()) return;
-
-    const float Damage = 25.f;
-    const float Range = 150.f;
-    const float Radius = 30.f;
-
-    const FVector Start = GetActorLocation() + FVector(0, 0, 50);
-    const FVector End = Start + GetActorForwardVector() * Range;
-
-    FCollisionQueryParams Params(SCENE_QUERY_STAT(ZombieAttack), false, this);
-
-    FHitResult Hit;
-    const bool bHit = GetWorld()->SweepSingleByChannel(
-        Hit,
-        Start,
-        End,
-        FQuat::Identity,
-        ECC_Pawn,
-        FCollisionShape::MakeSphere(Radius),
-        Params
-    );
-
-    if (bHit && Hit.GetActor() && Hit.GetActor() != this)
-    {
-        UGameplayStatics::ApplyDamage(
-            Hit.GetActor(),
-            Damage,
-            GetController(),
-            this,
-            UDamageType::StaticClass()
-        );
-    }
 }
 
 int ABaseCharacter::GetTeamId() const {
@@ -1676,9 +1640,14 @@ void ABaseCharacter::BecomeHero_Internal() {
         return;
     }
     if (RoleComp->GetRole() == ECharacterRole::Hero) {
-        return; // already hero
+        return;
     }
-    RoleComp->SetRoleAuthoritative(ECharacterRole::Hero);
+
+    AZombieMode* ZM = GetWorld()->GetAuthGameMode<AZombieMode>();
+    if (ZM)
+    {
+        ZM->BecomeHero(this->Controller);
+    }
 }
 
 void ABaseCharacter::SetupInitialInventory()
@@ -1766,4 +1735,12 @@ void ABaseCharacter::PlayZombieSpawnEffects() {
             true
         );
     }
+}
+
+bool ABaseCharacter::IsHero() const {
+    return GetCharacterRole() == ECharacterRole::Hero;
+}
+
+bool ABaseCharacter::IsZombie() const {
+    return GetCharacterRole() == ECharacterRole::Zombie;
 }

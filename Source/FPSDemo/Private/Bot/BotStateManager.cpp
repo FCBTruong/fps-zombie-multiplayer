@@ -29,7 +29,7 @@ void BotStateManager::AddBot(ABotAIController* NewBot)
 	ManagedBots.Add(NewBot);
 }
 
-void BotStateManager::OnSpikePlanted(FName AttackerTeamId, AActor* SpikeActor)
+void BotStateManager::OnSpikePlanted(AActor* SpikeActor)
 {
 	for (ABotAIController* Bot : ManagedBots)
 	{
@@ -54,7 +54,7 @@ void BotStateManager::OnSpikePlanted(FName AttackerTeamId, AActor* SpikeActor)
 		ABaseCharacter* BotCharacter = Cast<ABaseCharacter>(Bot->GetPawn());
 		if (!BotCharacter || BotCharacter->IsDead()) continue;
 
-		bool IsAttacker = (PS->GetTeamID() == AttackerTeamId);
+		bool IsAttacker = (PS->GetTeamId() == ETeamId::Attacker);
 		if (IsAttacker) {
 			const int32 Index = FMath::RandRange(0, UE_ARRAY_COUNT(AttackerRoles) - 1);
 			const EBotRole ChosenRole = AttackerRoles[Index];
@@ -125,7 +125,7 @@ void BotStateManager::RemoveBot(ABotAIController* BotToRemove)
 	ManagedBots.Remove(BotToRemove);
 }
 
-void BotStateManager::OnStartRound(FName AttackerTeamId, AActor* SpikeActor)
+void BotStateManager::OnStartRound(AActor* SpikeActor)
 {
 	if (!ActorManager) return;
 	FName BombSite = FMath::RandBool() ? FName(TEXT("A")) : FName(TEXT("B"));
@@ -149,7 +149,7 @@ void BotStateManager::OnStartRound(FName AttackerTeamId, AActor* SpikeActor)
 	{
 		Bot->ResetAIState();
 		AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
-		bool IsAttacker = (PS->GetTeamID() == AttackerTeamId);
+		bool IsAttacker = (PS->GetTeamId() == ETeamId::Attacker);
 
 		Bot->SetIsAttacker(IsAttacker);
 
