@@ -9,6 +9,7 @@
 #include "Items/ItemIds.h"
 #include "Types/EquippedAnimState.h"
 #include "Characters/CharacterRole.h"
+#include "Data/TeamId.h"
 #include "BaseCharacter.generated.h"
 
 class UPickupComponent;
@@ -294,7 +295,7 @@ public:
     virtual bool IsFpsViewMode() const;
     virtual bool IsAiming() const;
     virtual bool IsCharacterRole(ECharacterRole InRole) const;
-	virtual int GetTeamId() const;
+	virtual ETeamId GetTeamId() const;
     virtual void RequestBecomeHero();
     virtual void RequestPrimaryActionPressed();
     virtual void RequestPrimaryActionReleased();
@@ -312,6 +313,7 @@ public:
     bool IsPermanentDead() {
 		return bIsPermanentDead;
     }
+	FString GetPlayerName() const;
 
     UFUNCTION(Server, Reliable)
     void ServerBecomeHero();

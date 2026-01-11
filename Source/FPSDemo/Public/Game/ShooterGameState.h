@@ -19,6 +19,15 @@ enum class EMatchMode : uint8
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateScore, int32, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRoundTime, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateMatchState, const EMyMatchState&)
+DECLARE_MULTICAST_DELEGATE_OneParam(
+    FOnPlayerStateAdded,
+    APlayerState*
+);
+
+DECLARE_MULTICAST_DELEGATE_OneParam(
+    FOnPlayerStateRemoved,
+    APlayerState*
+);
 
 UCLASS()
 class FPSDEMO_API AShooterGameState : public AGameState
@@ -58,6 +67,9 @@ protected:
 
     UFUNCTION()
 	void OnRep_BuyEndTime();
+
+    virtual void RemovePlayerState(APlayerState* PlayerState) override;
+    virtual void AddPlayerState(APlayerState* PlayerState) override;
 public:
 	AShooterGameState();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -74,6 +86,8 @@ public:
     FOnUpdateScore OnUpdateScore;
 	FOnUpdateRoundTime OnUpdateRoundTime;
 	FOnUpdateMatchState OnUpdateMatchState;
+    FOnPlayerStateAdded   OnPlayerAdded;
+    FOnPlayerStateRemoved OnPlayerRemoved;
 
     void AddScoreTeam(ETeamId TeamId, int ScoreToAdd);
     int GetScoreTeam(ETeamId TeamId) const;

@@ -151,6 +151,7 @@ private:
     FDelegateHandle H_UpdateDefuseSpikeState;
     FDelegateHandle H_OnHit;
     FDelegateHandle H_AimingChanged;
+    FDelegateHandle H_ArmorChanged;
 
     // GameState delegate handles
     FDelegateHandle H_UpdateScore;

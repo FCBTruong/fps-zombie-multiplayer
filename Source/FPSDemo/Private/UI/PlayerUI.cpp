@@ -28,48 +28,40 @@ void UPlayerUI::NativeConstruct()
             WeaponTextNumbers.Add(Widget);
         }
     }
+
+    // update UI by game mode
+	AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+	if (GS)
+    {
+		EMatchMode CurrentMatchMode = GS->GetMatchMode();
+        if (CurrentMatchMode == EMatchMode::Zombie)
+        {
+            if (FirstTeamLb)
+            {
+                FirstTeamLb->SetText(FText::FromString(TEXT("Soldier")));
+            }
+            if (SecondTeamLb)
+            {
+                SecondTeamLb->SetText(FText::FromString(TEXT("Zombie")));
+            }
+        }
+        else if (CurrentMatchMode == EMatchMode::Spike)
+        {
+            if (FirstTeamLb)
+            {
+                FirstTeamLb->SetText(FText::FromString(TEXT("Attacker")));
+            }
+            if (SecondTeamLb)
+            {
+                SecondTeamLb->SetText(FText::FromString(TEXT("Defender")));
+            }
+        }
+
+	}
 }
 
 void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-
-    UWorld* World = GetWorld();
-    if (!World) return;
-
-    AShooterGameState* GS = World->GetGameState<AShooterGameState>();
-    if (!GS) return;
-
-    if (RoundTimeEnd > 0) {
-        int32 CurrentTime = FMath::CeilToInt(GetWorld()->GetTimeSeconds());
-        int32 RemainingTime = RoundTimeEnd - CurrentTime;
-        if (RemainingTime < 0) {
-            RemainingTime = 0;
-        }
-        int32 Minutes = RemainingTime / 60;
-        int32 Seconds = RemainingTime % 60;
-        FString TimeStr = FString::Printf(TEXT("%2d:%02d"), Minutes, Seconds);
-
-        if (GS->GetMatchMode() == EMatchMode::Zombie && GS->GetMatchState() == EMyMatchState::BUY_PHASE) {
-            if (bPlayedTenSec == false && RemainingTime == 10) {
-                bPlayedTenSec = true;
-                UGameManager* GM = UGameManager::Get(GetWorld());
-                if (GM && GM->GlobalData) {
-                    if (GM->GlobalData->CountdownTenSound) {
-                        UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->CountdownTenSound);
-                    }
-                }
-            }
-        }
-        if (MatchTimeLb) {
-			FLinearColor C = FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("FFFACDFF")));
-            if (RemainingTime <= 10) {
-				C = FLinearColor::Red;
-			}
-			MatchTimeLb->SetColorAndOpacity(C);
-            
-            MatchTimeLb->SetText(FText::FromString(TimeStr));
-        }
-	}
 }
 void UPlayerUI::ShowPickupMessage(const FString& Message)
 {
@@ -97,27 +89,27 @@ void UPlayerUI::UpdateHealth(float CurrentHealth, float MaxHealth)
 	HpValueLb->SetText(FText::AsNumber(FMath::RoundToInt(CurrentHealth)));
 }
 
-void UPlayerUI::UpdateAmmo(int CurrentAmmoValue, int TotalAmmoValue)
+void UPlayerUI::UpdateAmmo(int CurrentAmmoValue, int RemainAmmoValue)
 {
     if (CurrentAmmo)
     {
         CurrentAmmo->SetText(FText::AsNumber(CurrentAmmoValue));
     }
-    if (TotalAmmo)
+    if (RemainingAmmo)
     {
-        TotalAmmo->SetText(FText::AsNumber(TotalAmmoValue));
+        RemainingAmmo->SetText(FText::AsNumber(RemainAmmoValue));
     }
 }
 
-void UPlayerUI::UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints)
+void UPlayerUI::UpdateTeamScores(int FirstScore, int SecondScore)
 {
-    if (MyTeamScore)
+    if (FirstTeamScore)
     {
-        MyTeamScore->SetText(FText::AsNumber(MyTeamPoints));
+        FirstTeamScore->SetText(FText::AsNumber(FirstScore));
     }
-    if (OpponentTeamScore)
+    if (SecondTeamScore)
     {
-        OpponentTeamScore->SetText(FText::AsNumber(OpponentTeamPoints));
+        SecondTeamScore->SetText(FText::AsNumber(SecondScore));
     }
 }
 
@@ -323,6 +315,7 @@ void UPlayerUI::UpdateCurrentWeapon(EItemId CurrentWeaponId) {
         if (ItemConf == nullptr) {
             return;
         }
+		AmmoPn->SetVisibility(ItemConf->GetItemType() == EItemType::Firearm ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
         if (ItemConf->GetItemType() == EItemType::Throwable) {
             GrenadeTitle->SetText(ItemConf->DisplayName);
             for (UGrenadeNodeUI* Grenade : Grenades)
@@ -354,8 +347,16 @@ void UPlayerUI::UpdateCurrentWeapon(EItemId CurrentWeaponId) {
                     }
                 }
             }
+           
             if (FirearmConf->bHasScopeEquipped) {
                 WBP_Crosshair->SetVisibility(ESlateVisibility::Hidden);
+            }
+        }
+
+        if (CurrentItemIcon) {
+            // set texture
+            if (ItemConf->ItemIcon) {
+                CurrentItemIcon->SetBrushFromTexture(ItemConf->ItemIcon.Get());
             }
         }
     }
@@ -446,6 +447,7 @@ void UPlayerUI::ShowNotiToast(FText Txt)
 
 void UPlayerUI::OnUpdateRoundTime(int TimeEnd) {
 	RoundTimeEnd = TimeEnd;
+	StartRoundClock();
 }
 
 void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
@@ -491,15 +493,19 @@ void UPlayerUI::ShowScoreboard(bool bShow) {
     }
 }
 
-void UPlayerUI::UpdateArmor(int ArmorPoints) {
+void UPlayerUI::UpdateArmor(int ArmorPoints, int MaxArmorPoints) {
+	float ArmorPercent = MaxArmorPoints > 0 ? static_cast<float>(ArmorPoints) / static_cast<float>(MaxArmorPoints) : 0.0f;
+    if (ArmorBar) {
+        ArmorBar->SetPercent(ArmorPercent);
+	}
     if (AmmorPointLb) {
         AmmorPointLb->SetText(FText::AsNumber(ArmorPoints));
     }
     if (ArmorPoints <= 0) {
-        ArmorPn->SetVisibility(ESlateVisibility::Hidden);
+       
     }
     else {
-        ArmorPn->SetVisibility(ESlateVisibility::Visible);
+ 
     }
 }
 
@@ -530,5 +536,97 @@ void UPlayerUI::ShowKillMark(bool bHeadShot) {
 				UGameplayStatics::PlaySound2D(GetWorld(), GlobalData->KillMarkSound.Get());
             }
 		}
+    }
+}
+
+void UPlayerUI::StartRoundClock()
+{
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    // Run immediately and then every 1s
+    UpdateRoundClockOnce();
+
+    World->GetTimerManager().ClearTimer(RoundClockTimerHandle);
+    World->GetTimerManager().SetTimer(
+        RoundClockTimerHandle,
+        this,
+        &UPlayerUI::UpdateRoundClockOnce,
+        1.0f,
+        true
+    );
+}
+
+void UPlayerUI::StopRoundClock()
+{
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().ClearTimer(RoundClockTimerHandle);
+    }
+
+    if (MatchTimeLb) {
+        MatchTimeLb->SetText(FText::FromString(TEXT("")));
+	}
+}
+
+void UPlayerUI::UpdateRoundClockOnce()
+{
+    if (RoundTimeEnd <= 0 || !MatchTimeLb)
+    {
+        return;
+    }
+
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    AShooterGameState* GS = World->GetGameState<AShooterGameState>();
+    if (!GS)
+    {
+        return;
+    }
+
+    const int32 Now = FMath::CeilToInt(World->GetTimeSeconds());
+    const int32 Remaining = FMath::Max(RoundTimeEnd - Now, 0);
+
+    // 10-second warning (same logic as before)
+    if (!bPlayedTenSec
+        && Remaining == 10
+        && GS->GetMatchMode() == EMatchMode::Zombie
+        && GS->GetMatchState() == EMyMatchState::BUY_PHASE)
+    {
+        bPlayedTenSec = true;
+
+        if (UGameManager* GM = UGameManager::Get(World))
+        {
+            if (GM->GlobalData && GM->GlobalData->CountdownTenSound)
+            {
+                UGameplayStatics::PlaySound2D(World, GM->GlobalData->CountdownTenSound.Get());
+            }
+        }
+    }
+
+    const int32 Minutes = Remaining / 60;
+    const int32 Seconds = Remaining % 60;
+
+    MatchTimeLb->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
+
+    const FLinearColor NormalColor = FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("FFFACDFF")));
+    MatchTimeLb->SetColorAndOpacity((Remaining <= 10) ? FLinearColor::Red : NormalColor);
+
+    if (Remaining == 0)
+    {
+        StopRoundClock();
+    }
+}
+
+void UPlayerUI::UpdatePlayerName(const FString& PlayerName) {
+    if (PlayerNameLb) {
+        PlayerNameLb->SetText(FText::FromString(PlayerName));
     }
 }

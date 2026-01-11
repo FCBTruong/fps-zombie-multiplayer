@@ -17,10 +17,21 @@ void ASpikeMode::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("SpikeMode Game Started!"));
 	Super::StartPlay();
 	
-	SpawnBot(ETeamId::Defender);
-	SpawnBot(ETeamId::Defender);
-	SpawnBot(ETeamId::Defender);
-	SpawnBot(ETeamId::Defender);
+	SpawnBot();
+	SpawnBot();
+	SpawnBot();
+	SpawnBot();
+
+	// get all controllers and assign teams
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	for (APlayerState* PS : GS->PlayerArray)
+	{
+		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
+		if (!MyPS) continue;
+		AController* PC = MyPS->GetOwner<AController>();
+		if (!PC) continue;
+		AssignPlayerTeamInit(PC);
+	}
 }
 
 void ASpikeMode::PlantSpike(FVector Location, AController* Planter)
@@ -306,7 +317,7 @@ void ASpikeMode::NotifySpikePickedUp(ABaseCharacter* Player)
 	}
 }
 
-void ASpikeMode::AssignPlayerTeamInit(APlayerController* NewPlayer)
+void ASpikeMode::AssignPlayerTeamInit(AController* NewPlayer)
 {
 	UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in AShooterGameMode"));
 	if (!NewPlayer)

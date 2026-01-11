@@ -59,7 +59,7 @@ void UBTService_UpdateTarget_Zombie::FindBestTarget(TArray<AActor*> PerceivedAct
     float BestDistSq = TNumericLimits<float>::Max();
 
     const FVector SelfLoc = SelfPawn->GetActorLocation();
-	int MyTeamId = SelfPawn->GetTeamId();
+	ETeamId MyTeamId = SelfPawn->GetTeamId();
 	
     for (AActor* Actor : PerceivedActors)
     {
@@ -71,7 +71,7 @@ void UBTService_UpdateTarget_Zombie::FindBestTarget(TArray<AActor*> PerceivedAct
 
 		if (!TargetChar->IsAlive()) continue;
 
-		int TargetTeamId = TargetChar->GetTeamId();
+		ETeamId TargetTeamId = TargetChar->GetTeamId();
 		if (TargetTeamId == MyTeamId) continue; // Skip same team
 
         // Nearest

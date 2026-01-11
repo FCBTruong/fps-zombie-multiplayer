@@ -46,17 +46,27 @@ protected:
 	TMap<APlayerState*, UUserWidget*> TeammateWidgetsMap;
 
 	UPROPERTY(meta = (BindWidget))
-	UPlayerMapDot* MyDot;
-
-	UPROPERTY(meta = (BindWidget))
 	UWidget* SpikeIcon;
 public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeConstruct() override;
 
 	void UpdateBombAreaLabels();
-	void UpdateLabelPosition(const FVector2D& AbsPoint, UWidget* LabelWidget);
-	void UpdateTeammates();
+	void ClampWidgetToMap(const FVector2D& AbsPoint, UWidget* LabelWidget);
+	void UpdatePlayerDots();
 	FVector2D WorldToMinimapAbsolute(const FVector& WorldPos) const;
 	FVector2D WorldToMinimapLocal(const FVector& WorldPos) const;
+
+	UPROPERTY()
+	TMap<TWeakObjectPtr<APlayerState>, UPlayerMapDot*> PlayerNodes;
+
+	UPROPERTY()
+	APlayerController* CachedPC;
+
+	UFUNCTION()
+	void HandlePlayerAdded(APlayerState* NewPlayerState);
+
+	UFUNCTION()
+	void HandlePlayerRemoved(APlayerState* RemovedPlayerState);
+	void PivotCurrentPawn();
 };

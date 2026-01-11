@@ -37,6 +37,9 @@ public:
     int ArmorPoints = 0;
 
     UPROPERTY()
+    int ArmorMaxPoints = 0;
+
+    UPROPERTY()
     float ArmorRatio = 0;
 
     UPROPERTY()

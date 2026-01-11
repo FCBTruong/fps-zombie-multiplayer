@@ -35,7 +35,7 @@ void AShooterGameMode::StartPlay()
         TryStartMatchHandle,
         this,
         &AShooterGameMode::StartRound,
-        1.0f,
+        3.0f,
         false
 	);
 }
@@ -83,15 +83,14 @@ void AShooterGameMode::OnCharacterKilled(class AController* Killer, ABaseCharact
     }
 }
 
-void AShooterGameMode::AssignPlayerTeamInit(APlayerController* NewPlayer)
+void AShooterGameMode::AssignPlayerTeamInit(AController* NewPlayer)
 {
     
 }
 
 FString AShooterGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) {
 
-    UE_LOG(LogTemp, Warning, TEXT("InitNewPlayer called in TeamEliminationMode"));
-	AssignPlayerTeamInit(NewPlayerController);
+    UE_LOG(LogTemp, Warning, TEXT("InitNewPlayer called in ShooterGameMode"));
     return Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
 }
 
@@ -155,7 +154,7 @@ void AShooterGameMode::ResetPlayerNewRound(AController * NewPlayer)
 	}
 }
 
-ABotAIController* AShooterGameMode::SpawnBot(ETeamId TeamId)
+ABotAIController* AShooterGameMode::SpawnBot()
 {
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
@@ -164,13 +163,11 @@ ABotAIController* AShooterGameMode::SpawnBot(ETeamId TeamId)
     ABotAIController* Bot = GetWorld()->SpawnActor<ABotAIController>(ABotAIController::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
     if (!Bot) return nullptr;
 
-    // 2) Set team in PlayerState
     Bot->InitPlayerState();
 
 	AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
 	if (PS)
 	{
-		PS->SetTeamId(TeamId);
 		FName BotName = FName(*FString::Printf(TEXT("Bot_%d"), FMath::RandRange(1000, 9999)));
 		PS->SetPlayerName(BotName.ToString());
 	}
@@ -295,6 +292,15 @@ void AShooterGameMode::MoveSpectatorsOffDeadPawn(APawn* DeadPawn)
 
 bool AShooterGameMode::IsDamageAllowed(AController* Killer, AController* Victim) const
 {
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+    if (!GS)
+		return false;
+
+    if (GS->GetMatchState() == EMyMatchState::BUY_PHASE 
+        || GS->GetMatchState() == EMyMatchState::PRE_MATCH)
+    {
+		return false;
+    }
     // not allow same team
 	AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
 	AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;

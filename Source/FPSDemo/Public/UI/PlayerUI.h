@@ -31,13 +31,19 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* HpBar;
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* TotalAmmo;
+	UProgressBar* ArmorBar;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* RemainingAmmo;
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* CurrentAmmo;
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* MyTeamScore;
+	UTextBlock* FirstTeamScore;
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* OpponentTeamScore;
+	UTextBlock* SecondTeamScore;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* FirstTeamLb;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* SecondTeamLb;
 	UPROPERTY(meta = (BindWidget))
 	UImage* BloodScreen;
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
@@ -63,20 +69,20 @@ protected:
 	UTextBlock* HpValueLb;
 
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* PlayerNameLb;
+
+
+	UPROPERTY(meta = (BindWidget))
 	UImage* RifleIcon;
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* PistolIcon;
-
-	TArray<UGrenadeNodeUI*> Grenades;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenades")
 	TSubclassOf<UGrenadeNodeUI> GrenadeNodeClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
-
-	TArray<UWidget*> WeaponTextNumbers;
 
 	UPROPERTY(meta = (BindWidget))
 	UCrosshair* WBP_Crosshair;
@@ -105,8 +111,6 @@ protected:
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowMatchStateAnim;
 
-	void DoShowMatchStateToast(FText Txt);
-
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* NotiToastLb;
 	UPROPERTY(meta = (BindWidget))
@@ -122,9 +126,6 @@ protected:
 	UWidget* PhotonPlantedIcon;
 
 	UPROPERTY(meta = (BindWidget))
-	UWidget* ArmorPn;
-
-	UPROPERTY(meta = (BindWidget))
 	UTextBlock* AmmorPointLb;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
@@ -133,12 +134,26 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* KillMarkIcon;
 
+	UPROPERTY(meta = (BindWidget))
+	UImage* CurrentItemIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* AmmoPn;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* KillMarkAnim;
 
 	int RoundTimeEnd = 0;
 	bool bPlayedTenSec = false;
+	TArray<UGrenadeNodeUI*> Grenades;
+	TArray<UWidget*> WeaponTextNumbers;
+	FTimerHandle RoundClockTimerHandle;
+
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	void DoShowMatchStateToast(FText Txt);
+	void StartRoundClock();
+	void StopRoundClock();
+	void UpdateRoundClockOnce();
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
@@ -150,8 +165,8 @@ public:
 	void ShowPickupMessage(const FString& Message);
 	void HidePickupMessage();
 	void UpdateHealth(float CurrentHealth, float MaxHealth);
-	void UpdateAmmo(int CurrentAmmoValue, int TotalAmmoValue);
-	void UpdateTeamScores(int MyTeamPoints, int OpponentTeamPoints);
+	void UpdateAmmo(int CurrentAmmoValue, int RemainAmmoValue);
+	void UpdateTeamScores(int FirstScore, int SecondScore);
 	void OnHit();
 	void OnEnter();
 	void NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victem, const UItemConfig* WeaponTex, bool bIsHeadShot);
@@ -175,6 +190,7 @@ public:
 	void OnUpdateRoundTime(int TimeEnd);
 	void UpdateGameState(const EMyMatchState& State);
 	void ShowScoreboard(bool bShow);
-	void UpdateArmor(int AmmorPoints);
+	void UpdateArmor(int AmmorPoints, int MaxArmorPoints);
 	void ShowKillMark(bool bHeadShot = false);
+	void UpdatePlayerName(const FString& PlayerName);
 };

@@ -888,7 +888,13 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
     if (UEquipComponent* EC = Char->GetEquipComponent())
     {
         H_AmmoChanged = EC->OnAmmoChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
+		int CurrentAmmo, ReservedAmmo;
+		EC->GetCurrentAmmo(CurrentAmmo, ReservedAmmo);
+		PlayerUI->UpdateAmmo(CurrentAmmo, ReservedAmmo);
+
         H_ActiveItemChanged = EC->OnActiveItemChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateCurrentWeapon);
+		EItemId ActiveItemId = EC->GetActiveItemId();
+		PlayerUI->UpdateCurrentWeapon(ActiveItemId);
     }
 
     if (UInventoryComponent* Inv = Char->GetInventoryComponent())
@@ -896,6 +902,9 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
         H_SpikeChanged = Inv->OnSpikeChanged.AddUObject(this, &AMyPlayerController::HandleSpikeChanged);
         H_ThrowablesChanged = Inv->OnThrowablesChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
         PlayerUI->UpdateGrenades(Inv->GetThrowables());
+
+		H_ArmorChanged = Inv->OnArmorChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateArmor);
+		PlayerUI->UpdateArmor(Inv->GetArmorPoints(), Inv->GetArmorMaxPoints());
     }
 
     if (UPickupComponent* PC = Char->GetPickupComponent())
@@ -916,6 +925,8 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
     {
         H_AimingChanged = CamComp->OnAimingVisualsChanged.AddUObject(this, &AMyPlayerController::HandleAimingChanged);
 	}
+
+	PlayerUI->UpdatePlayerName(Char->GetPlayerName());
 }
 
 void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
@@ -948,8 +959,10 @@ void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
     {
         Inv->OnSpikeChanged.Remove(H_SpikeChanged);
         Inv->OnThrowablesChanged.Remove(H_ThrowablesChanged);
+		Inv->OnArmorChanged.Remove(H_ArmorChanged);
         H_SpikeChanged.Reset();
         H_ThrowablesChanged.Reset();
+		H_ArmorChanged.Reset();
     }
 
     if (UPickupComponent* PC = Char->GetPickupComponent())

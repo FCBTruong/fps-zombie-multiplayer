@@ -11,6 +11,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Pickup/PickupItem.h"
 #include "Characters/BaseCharacter.h"
+#include "Items/ArmorConfig.h"
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -198,19 +199,16 @@ void UInventoryComponent::ApplyArmorItem(EItemId ArmorItemId)
     if (!GetOwner() || !GetOwner()->HasAuthority())
         return;
 
-    // Keep your existing hard-coded test logic
-    if (ArmorItemId == EItemId::KEVLAR_VEST)
-    {
-        ArmorState.ArmorPoints = 100;
-        ArmorState.ArmorEfficiency = 0.4f;
-        ArmorState.ArmorRatio = 0.3f;
-    }
-    else
-    {
-        ArmorState.ArmorPoints = 100;
-        ArmorState.ArmorEfficiency = 0.3f;
-        ArmorState.ArmorRatio = 0.5f;
-    }
+	const UItemConfig* Data = GetItemConfig(ArmorItemId);
+	const UArmorConfig* ArmorData = Cast<UArmorConfig>(Data);
+
+    if (!ArmorData)
+		return;
+
+	ArmorState.ArmorEfficiency = ArmorData->ArmorEfficiency;
+	ArmorState.ArmorRatio = ArmorData->ArmorRatio;
+	ArmorState.ArmorMaxPoints = ArmorData->ArmorMaxPoints;
+	ArmorState.ArmorPoints = ArmorData->ArmorMaxPoints;
 
     OnRep_ArmorState();
 }
@@ -283,7 +281,7 @@ void UInventoryComponent::OnRep_Throwables()
 
 void UInventoryComponent::OnRep_ArmorState()
 {
-    OnArmorChanged.Broadcast(ArmorState.ArmorPoints);
+    OnArmorChanged.Broadcast(ArmorState.ArmorPoints, ArmorState.ArmorMaxPoints);
     OnInventoryChanged.Broadcast();
 }
 

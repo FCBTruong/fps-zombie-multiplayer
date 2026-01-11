@@ -16,7 +16,7 @@ class APickupItem;
 DECLARE_MULTICAST_DELEGATE(FOnInventoryChanged);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnAmmoDataChanged, EItemId, int /*InClip*/, int /*Reserve*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnThrowablesChanged, const TArray<EItemId>&);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnArmorChanged, int /*ArmorPoints*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnArmorChanged, int, int);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSpikeChanged, bool /*bHasSpike*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSlotWeaponChanged, EItemId /*ItemId*/);
 
@@ -73,6 +73,8 @@ public:
     APickupItem* DropItem(EItemId ItemId);
 	void OnBecomeHero(); // this will change melee to hero sword
     void OnBecomeZombie();
+	int GetArmorPoints() const { return ArmorState.ArmorPoints; }
+	int GetArmorMaxPoints() const { return ArmorState.ArmorMaxPoints; }
 
     void ClearInventory();
 public:

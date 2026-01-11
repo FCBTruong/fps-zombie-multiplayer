@@ -15,8 +15,8 @@
 void UMinimapRadarUI::NativeConstruct()
 {
 	Super::NativeConstruct();
-	UE_LOG(LogTemp, Warning, TEXT("MinimapccRadarUI: NativeTick called"));
-	
+
+
 	AActorManager* AM = AActorManager::Get(GetWorld());
 	if (!AM || !AM->MainPlane) return;
 
@@ -29,50 +29,43 @@ void UMinimapRadarUI::NativeConstruct()
 	{
 		MinimapSize = CvSlot->GetSize();
 	}
-	// log minimap size
-	UE_LOG(LogTemp, Warning, TEXT("MinimapccRadarUI Size: X=%f, Y=%f"), MinimapSize.X, MinimapSize.Y);
+
+	
+	CachedPC = GetOwningPlayer();
+	if (!CachedPC) return;
+
+	// Listen to player list changes
+	if (AShooterGameState* GS = Cast<AShooterGameState>(GetWorld()->GetGameState()))
+	{
+		GS->OnPlayerAdded.AddUObject(this, &UMinimapRadarUI::HandlePlayerAdded);
+		GS->OnPlayerRemoved.AddUObject(this, &UMinimapRadarUI::HandlePlayerRemoved);
+
+		for (APlayerState* PS : GS->PlayerArray)
+		{
+			HandlePlayerAdded(PS);
+		}
+	}
 }
 void UMinimapRadarUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	if (!MinimapImgPn) return;
 	
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-	if (!PC) return;
-	AActor* ViewTarget = PC->GetViewTarget();
-	if (!IsValid(ViewTarget)) return;
-
-	FVector WorldPos = ViewTarget->GetActorLocation();
-	FVector Offset = WorldPos - WorldOrigin;
-
-	float NormalizedX = (Offset.X + PlaneSize.X / 2) / PlaneSize.X;
-	float NormalizedY = (Offset.Y + PlaneSize.Y / 2) / PlaneSize.Y;
-	
-	float YawValue = FRotator::NormalizeAxis(ViewTarget->GetActorRotation().Yaw);
-	FWidgetTransform T;
-	T.Angle = -90 - YawValue;
-
-	float PivotX = NormalizedX;
-	float PivotY = NormalizedY;
-	FVector2D NewPivot(PivotX, PivotY);
-	FVector2D OldPivot = MinimapImgPn->GetRenderTransformPivot();
-	MinimapImgPn->SetRenderTransformPivot(NewPivot);
-	FVector2D OffsetPv = (OldPivot - NewPivot) * MinimapSize;
-	if (auto CanvasSlot = Cast<UCanvasPanelSlot>(MinimapImgPn->Slot))
-	{
-		CanvasSlot->SetPosition(CanvasSlot->GetPosition() + OffsetPv);
-	}
-	MinimapImgPn->SetRenderTransform(T);
+	if (!CachedPC) return;
+	PivotCurrentPawn();
 
 	UpdateBombAreaLabels();
-	UpdateTeammates();
+	UpdatePlayerDots();
 
 	// check if spike drop on map
 	auto Spike = UGameManager::Get(GetWorld())->GetPickupSpike();
+
+	if (!SpikeIcon) return;
+
 	if (Spike) {
 		SpikeIcon->SetVisibility(ESlateVisibility::Visible);
 		const FVector2D AbsSpike = WorldToMinimapAbsolute(Spike->GetActorLocation());
-		UpdateLabelPosition(AbsSpike, SpikeIcon);
+		ClampWidgetToMap(AbsSpike, SpikeIcon);
 	}
 	else {
 		SpikeIcon->SetVisibility(ESlateVisibility::Hidden);
@@ -89,11 +82,11 @@ void UMinimapRadarUI::UpdateBombAreaLabels()
 	FVector2D AbsPointB = B_PointGeo.GetAbsolutePosition() +
 		B_PointGeo.GetLocalSize() * 0.5f;
 
-	UpdateLabelPosition(AbsPointA, A_Lb);
-	UpdateLabelPosition(AbsPointB, B_Lb);
+	ClampWidgetToMap(AbsPointA, A_Lb);
+	ClampWidgetToMap(AbsPointB, B_Lb);
 }
 
-void UMinimapRadarUI::UpdateLabelPosition(const FVector2D& AbsPoint, UWidget * LabelWidget) {
+void UMinimapRadarUI::ClampWidgetToMap(const FVector2D& AbsPoint, UWidget * LabelWidget) {
 	const FGeometry& MainGeo = MainPn->GetCachedGeometry();
 
 	// 2) Convert to MainPn local space
@@ -125,18 +118,16 @@ void UMinimapRadarUI::UpdateLabelPosition(const FVector2D& AbsPoint, UWidget * L
 	}
 }
 
-
-void UMinimapRadarUI::UpdateTeammates()
+void UMinimapRadarUI::UpdatePlayerDots()
 {
 	if (!AActorManager::Get(GetWorld())) {
 		return;
 	}
+	if (!CachedPC) return;
 
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-	if (!PC) return;
 	ETeamId MyTeamId = ETeamId::None;
-	AMyPlayerState* MyPS = PC->GetPlayerState<AMyPlayerState>();
-	AActor* ViewTarget = PC->GetViewTarget();
+	AMyPlayerState* MyPS = CachedPC->GetPlayerState<AMyPlayerState>();
+	AActor* ViewTarget = CachedPC->GetViewTarget();
 	if (!ViewTarget || !MyPS) return;
 	
 	if (ABaseCharacter* ViewChar = Cast<ABaseCharacter>(ViewTarget))
@@ -146,89 +137,55 @@ void UMinimapRadarUI::UpdateTeammates()
 		{
 			bHasSpike = WC->HasSpike();
 		}
-
-		MyDot->UpdateData(
-			true,
-			!ViewChar->IsAlive(),
-			bHasSpike
-		);
 	}
 
 	if (MyPS) {
 		MyTeamId = MyPS->GetTeamId();
 	}
 
-	TArray<ABaseCharacter*> Players = UGameManager::Get(GetWorld())->GetRegisteredPlayers();
-	for (ABaseCharacter* PawnActor : Players)
+	for (auto& Pair : PlayerNodes)
 	{
-		if (!IsValid(PawnActor) || PawnActor->IsActorBeingDestroyed())
+		APlayerState* PS = Pair.Key.Get();
+		UPlayerMapDot* Dot = Pair.Value;
+
+		if (!PS || !Dot) continue;
+
+		AMyPlayerState* MyTeammatePS = Cast<AMyPlayerState>(PS);
+		if (!MyTeammatePS) continue;
+		if (MyTeammatePS->GetTeamId() != MyTeamId) {
+			// not teammate
+			Dot->SetVisibility(ESlateVisibility::Hidden);
 			continue;
-
-		// Must have PlayerState (replicated)
-		AMyPlayerState* TeamPS = PawnActor->GetPlayerState<AMyPlayerState>();
-		if (!TeamPS) continue;
-
-		// Skip self
-		if (PawnActor == ViewTarget) continue;
-
-		// Team filter
-		if (TeamPS->GetTeamId() != MyTeamId) continue;
-
-		// Calculate position on minimap
-		FVector WorldPos = PawnActor->GetActorLocation();
-		FRotator WorldRot = PawnActor->GetActorRotation();
-		FVector Offset = WorldPos - WorldOrigin;
-		float NormalizedX = (Offset.X + PlaneSize.X / 2) / PlaneSize.X;
-		float NormalizedY = (Offset.Y + PlaneSize.Y / 2) / PlaneSize.Y;
-		float MinimapX = NormalizedX * MinimapSize.X;
-		float MinimapY = NormalizedY * MinimapSize.Y;
-	
-		UUserWidget* TeammateWidget = nullptr;
-		if (TeammateWidgetsMap.Contains(TeamPS))
-		{
-			TeammateWidget = TeammateWidgetsMap[TeamPS];
 		}
-		else
-		{
-			// Create new widget
-			TeammateWidget = CreateWidget<UUserWidget>(GetWorld(), TeammateWidgetClass);
-			TeammateWidgetsMap.Add(TeamPS, TeammateWidget);
+		
+		Dot->SetVisibility(ESlateVisibility::Visible);
 
-			// Add to canvas
-			if (UCanvasPanel* Canvas = Cast<UCanvasPanel>(MainPn))
-			{
-				Canvas->AddChild(TeammateWidget);
-			}
+		APawn* Pawn = PS->GetPawn();
+		if (!Pawn) continue;
+
+		// World -> minimap
+		const FVector2D AbsSpike = WorldToMinimapAbsolute(Pawn->GetActorLocation());
+		ClampWidgetToMap(AbsSpike, Dot);
+
+		if (UCanvasPanelSlot* CvSlot = Cast<UCanvasPanelSlot>(Dot->Slot))
+		{
+			CvSlot->SetAlignment({ 0.5f, 0.5f });
 		}
-		if (PawnActor->IsAlive()) {
-			TeammateWidget->SetRenderTransformAngle(90 + WorldRot.Yaw + MinimapImgPn->GetRenderTransformAngle());
+
+		float AngleYaw = 0.f;
+		bool bIsSelf = false;
+		if (ViewTarget == Pawn)
+		{
+			bIsSelf = true;
+			// no need rotation
 		}
 		else {
-			TeammateWidget->SetRenderTransformAngle(0.f);
+			FRotator WorldRot = Pawn->GetActorRotation();
+			AngleYaw = 90 + WorldRot.Yaw + MinimapImgPn->GetRenderTransformAngle();
 		}
 
-		UPlayerMapDot* DotWidget = Cast<UPlayerMapDot>(TeammateWidget);
-
-		if (DotWidget)
-		{
-			bool bHasSpike = false;
-			if (UInventoryComponent* WC = PawnActor->GetInventoryComponent())
-			{
-				bHasSpike = WC->HasSpike();
-			}
-			DotWidget->UpdateData(false, !PawnActor->IsAlive(), bHasSpike);
-		}
-		// Update position
-		if (auto CvSlot = Cast<UCanvasPanelSlot>(TeammateWidget->Slot))
-		{
-			CvSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-			FVector2D Des = FVector2D(MinimapX, MinimapY);
-			//CvSlot->SetPosition(Des);
-
-			auto MinimapGeo = MinimapImgPn->GetCachedGeometry();
-			FVector2D AbsPoint = MinimapGeo.LocalToAbsolute(Des);
-			UpdateLabelPosition(AbsPoint, TeammateWidget);
-		}
+		Dot->SetRenderTransformAngle(AngleYaw);
+		Dot->UpdateData(bIsSelf, false, false);
 	}
 }
 
@@ -249,4 +206,56 @@ FVector2D UMinimapRadarUI::WorldToMinimapAbsolute(const FVector& WorldPos) const
 {
 	const FVector2D Local = WorldToMinimapLocal(WorldPos);
 	return MinimapImgPn->GetCachedGeometry().LocalToAbsolute(Local);
+}
+
+void UMinimapRadarUI::HandlePlayerAdded(APlayerState* NewPS)
+{
+	if (!NewPS || PlayerNodes.Contains(NewPS)) return;
+
+	UPlayerMapDot* Dot = CreateWidget<UPlayerMapDot>(GetWorld(), TeammateWidgetClass);
+	if (!Dot) return;
+
+	UE_LOG(LogTemp, Log, TEXT("MinimapRadarUI::HandlePlayerAdded: %s"), *NewPS->GetPlayerName());
+	MainPn->AddChild(Dot);
+	PlayerNodes.Add(NewPS, Dot);
+}
+
+void UMinimapRadarUI::HandlePlayerRemoved(APlayerState* RemovedPS)
+{
+	if (UPlayerMapDot** DotPtr = PlayerNodes.Find(RemovedPS))
+	{
+		if (*DotPtr)
+		{
+			(*DotPtr)->RemoveFromParent();
+		}
+		PlayerNodes.Remove(RemovedPS);
+	}
+}
+
+void UMinimapRadarUI::PivotCurrentPawn()
+{
+	AActor* ViewTarget = CachedPC->GetViewTarget();
+	if (!IsValid(ViewTarget)) return;
+
+	FVector WorldPos = ViewTarget->GetActorLocation();
+	FVector Offset = WorldPos - WorldOrigin;
+
+	float NormalizedX = (Offset.X + PlaneSize.X / 2) / PlaneSize.X;
+	float NormalizedY = (Offset.Y + PlaneSize.Y / 2) / PlaneSize.Y;
+
+	float YawValue = FRotator::NormalizeAxis(ViewTarget->GetActorRotation().Yaw);
+	FWidgetTransform T;
+	T.Angle = -90 - YawValue;
+
+	float PivotX = NormalizedX;
+	float PivotY = NormalizedY;
+	FVector2D NewPivot(PivotX, PivotY);
+	FVector2D OldPivot = MinimapImgPn->GetRenderTransformPivot();
+	MinimapImgPn->SetRenderTransformPivot(NewPivot);
+	FVector2D OffsetPv = (OldPivot - NewPivot) * MinimapSize;
+	if (auto CanvasSlot = Cast<UCanvasPanelSlot>(MinimapImgPn->Slot))
+	{
+		CanvasSlot->SetPosition(CanvasSlot->GetPosition() + OffsetPv);
+	}
+	MinimapImgPn->SetRenderTransform(T);
 }

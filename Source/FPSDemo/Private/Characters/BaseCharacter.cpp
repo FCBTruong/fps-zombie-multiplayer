@@ -892,8 +892,19 @@ void ABaseCharacter::PlayStunEffect(const float& Strength)
     if (!FlashMID) {
         return;
     }
+	
+    UE_LOG(
+        LogTemp,
+        Warning,
+        TEXT("PlayStunEffectPlaying [STUN][%s] Character=%s Strength=%f"),
+        HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT"),
+        *GetName(),
+        Strength
+    );
+
     if (CachedCharacterAsset->StunCurve)
     {
+		UE_LOG(LogTemp, Warning, TEXT("PlayStunEffectPlaying stun effect with Strength: %f"), Strength);
         float NewDuration = BaseStunDuration * Strength;
         // Restart the timeline from the beginning
         StunTimeline.SetPlayRate(BaseStunDuration / FMath::Max(NewDuration, 0.01f));
@@ -904,7 +915,7 @@ void ABaseCharacter::PlayStunEffect(const float& Strength)
 void ABaseCharacter::OnStunTimelineUpdate(float Value)
 {
 	// only if local owner is viewing this character
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
     if (!FlashMID || !PC || PC->GetViewTarget() != this)
         return;
 
@@ -919,7 +930,7 @@ void ABaseCharacter::OnStunTimelineFinished()
     if (FlashMID) {
         FlashMID->SetScalarParameterValue(
             TEXT("Intensity"),
-            0.0f
+            0.f
         );
 	}
 }
@@ -1505,14 +1516,14 @@ void ABaseCharacter::OnRep_SpeedMultiplier()
 	UpdateMaxWalkSpeed();
 }
 
-int ABaseCharacter::GetTeamId() const {
-    // for zombie mode
-	ECharacterRole R = GetCharacterRole();
-    if (R == ECharacterRole::Hero or R == ECharacterRole::Human) {
-        return FGameConstants::SODIER_TEAM_ID;
+ETeamId ABaseCharacter::GetTeamId() const
+{
+    if (const AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
+    {
+        return PS->GetTeamId();
     }
 
-	return FGameConstants::ZOMBIE_TEAM_ID;
+    return ETeamId::None;
 }
 
 void ABaseCharacter::RequestPrimaryActionPressed() {
@@ -1743,4 +1754,13 @@ bool ABaseCharacter::IsHero() const {
 
 bool ABaseCharacter::IsZombie() const {
     return GetCharacterRole() == ECharacterRole::Zombie;
+}
+
+FString ABaseCharacter::GetPlayerName() const {
+    if (const AMyPlayerState* PS = GetPlayerState<AMyPlayerState>())
+    {
+        return PS->GetPlayerName();
+    }
+    static const FString DefaultName = TEXT("Unknown");
+	return DefaultName;
 }

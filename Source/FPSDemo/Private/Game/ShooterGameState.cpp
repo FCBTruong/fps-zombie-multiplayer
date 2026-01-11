@@ -145,3 +145,29 @@ void AShooterGameState::SetMatchState(EMyMatchState NewState)
     CurrentMatchState = NewState;
     OnRep_MyMatchState(); // apply immediately on server
 }
+
+void AShooterGameState::AddPlayerState(APlayerState* PlayerState)
+{
+    Super::AddPlayerState(PlayerState);
+
+    OnPlayerAdded.Broadcast(PlayerState);
+
+    UE_LOG(LogTemp, Warning,
+        TEXT("AddPlayerState | HasAuthority=%d | NetMode=%d"),
+        HasAuthority(),
+        GetNetMode()
+    );
+}
+
+void AShooterGameState::RemovePlayerState(APlayerState* PlayerState)
+{
+    Super::RemovePlayerState(PlayerState);
+
+    OnPlayerRemoved.Broadcast(PlayerState);
+
+    UE_LOG(LogTemp, Warning,
+        TEXT("RemovePlayerState | HasAuthority=%d | NetMode=%d"),
+        HasAuthority(),
+        GetNetMode()
+    );
+}

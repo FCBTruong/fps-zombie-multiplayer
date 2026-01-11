@@ -45,7 +45,7 @@ public:
 	static constexpr int32 TimePerRound = 90; // seconds
 	void NotifySpikeDropped(ABaseCharacter* Player);
 	void NotifySpikePickedUp(ABaseCharacter* Player);
-	virtual void AssignPlayerTeamInit(APlayerController* NewPlayer) override;
+	virtual void AssignPlayerTeamInit(AController* NewPlayer) override;
 	
 	ASpike* GetPlantedSpike() const {
 		return PlantedSpike;

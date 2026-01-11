@@ -15,10 +15,10 @@ void AZombieMode::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("SpikeMode Game Started!"));
 	Super::StartPlay();
 
-	SpawnBot(ETeamId::None);
-	SpawnBot(ETeamId::None);
-	SpawnBot(ETeamId::None);
-	SpawnBot(ETeamId::None);
+	//SpawnBot();
+	/*SpawnBot();
+	SpawnBot();
+	SpawnBot();*/
 }
 
 void AZombieMode::StartRound()
@@ -31,17 +31,20 @@ void AZombieMode::StartRound()
 		GS->SetMatchState(EMyMatchState::BUY_PHASE);
 	}
 
-	int BuyTime = 3; // seconds
+	int BuyTime = 30; // seconds
 	int TimeBuyEnd = GetWorld()->GetTimeSeconds() + BuyTime;
 	GS->SetRoundEndTime(TimeBuyEnd);
 	ResetPlayers();
 
+	// debug playerarray size
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGHH: PlayerArray Size: %d"), GS->PlayerArray.Num());
 	// reassign team id
 	for (APlayerState* PS : GS->PlayerArray)
 	{
 		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
 		if (!MyPS) continue;
 		MyPS->SetTeamId(ETeamId::Soldier);
+		UE_LOG(LogTemp, Warning, TEXT("DEBUGHH: Player %s assigned to Soldier team"), *MyPS->GetName());
 	}
 
 	BotManager->OnStartRoundZombieMode();

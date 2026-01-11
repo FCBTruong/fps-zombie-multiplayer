@@ -37,7 +37,7 @@ void AThrownProjectileStun::MulticastExplode_Implementation(const FVector& Impac
     AMyPlayerController* PC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
     if (!PC) return;
 
-    APawn* Pawn = PC->GetPawn();
+    APawn* Pawn = Cast<APawn>(PC->GetViewTarget());
     if (!Pawn) return;
 
     // Eye/camera position + view rotation
