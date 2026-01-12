@@ -15,10 +15,10 @@ void AZombieMode::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("SpikeMode Game Started!"));
 	Super::StartPlay();
 
-	//SpawnBot();
-	/*SpawnBot();
 	SpawnBot();
-	SpawnBot();*/
+	SpawnBot();
+	SpawnBot();
+	SpawnBot();
 }
 
 void AZombieMode::StartRound()
@@ -31,11 +31,13 @@ void AZombieMode::StartRound()
 		GS->SetMatchState(EMyMatchState::BUY_PHASE);
 	}
 
-	int BuyTime = 30; // seconds
+	int BuyTime = 15; // seconds
 	int TimeBuyEnd = GetWorld()->GetTimeSeconds() + BuyTime;
 	GS->SetRoundEndTime(TimeBuyEnd);
 	ResetPlayers();
 
+	GS->SoldierNum = 0;
+	GS->ZombieNum = 0;
 	// debug playerarray size
 	UE_LOG(LogTemp, Warning, TEXT("DEBUGHH: PlayerArray Size: %d"), GS->PlayerArray.Num());
 	// reassign team id
@@ -44,6 +46,7 @@ void AZombieMode::StartRound()
 		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
 		if (!MyPS) continue;
 		MyPS->SetTeamId(ETeamId::Soldier);
+		GS->SoldierNum += 1;
 		UE_LOG(LogTemp, Warning, TEXT("DEBUGHH: Player %s assigned to Soldier team"), *MyPS->GetName());
 	}
 
@@ -81,14 +84,23 @@ void AZombieMode::EnterFightState()
 
 void AZombieMode::RandomZombie()
 {
+	// SERVER ONLY
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	const int32 NumZombies = 2;
+
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return;
-	auto PlayerStates = GS->PlayerArray;
 
-	// Build eligible list (valid PS + valid pawn + valid role comp)
+	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
+
 	TArray<AMyPlayerState*> Eligible;
 	Eligible.Reserve(PlayerStates.Num());
 
+	// Build eligible list
 	for (APlayerState* PS : PlayerStates)
 	{
 		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
@@ -99,7 +111,8 @@ void AZombieMode::RandomZombie()
 
 		URoleComponent* RoleComp = MyChar->GetRoleComponent();
 		if (!RoleComp) continue;
-
+		
+		if (RoleComp->GetRole() != ECharacterRole::Human) continue;
 		Eligible.Add(MyPS);
 	}
 
@@ -108,22 +121,41 @@ void AZombieMode::RandomZombie()
 		return;
 	}
 
-	const int32 ZombieIdx = FMath::RandRange(0, Eligible.Num() - 1);
-	AMyPlayerState* ZombiePS = Eligible[ZombieIdx];
-	if (!ZombiePS) return;
+	// Clamp number of zombies
+	const int32 ZombiesToPick = FMath::Min(NumZombies, Eligible.Num());
 
-	AController* Ctrl = Cast<AController>(ZombiePS->GetOwner());
-	if (!Ctrl) return;
-	BecomeZombie(Ctrl);
+	for (int32 i = 0; i < ZombiesToPick; ++i)
+	{
+		const int32 Index = FMath::RandRange(0, Eligible.Num() - 1);
+		AMyPlayerState* ZombiePS = Eligible[Index];
+		Eligible.RemoveAtSwap(Index);
+
+		if (!ZombiePS) continue;
+
+		AController* Ctrl = Cast<AController>(ZombiePS->GetOwner());
+		if (!Ctrl) continue;
+
+		BecomeZombie(Ctrl);
+	}
 }
+
 
 void AZombieMode::BecomeZombie(AController* Controller) {
 	UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeZombie called"));
 	// update team Id because now he is zombie
 	AMyPlayerState* PS = Controller->GetPlayerState<AMyPlayerState>();
-	if (PS) {
-		PS->SetTeamId(ETeamId::Zombie);
+	if (!PS) {
+		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in BecomeZombie"));
+		return;
 	}
+
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (GS) {
+		GS->SoldierNum -= 1;
+		GS->ZombieNum += 1;
+	}
+	PS->SetTeamId(ETeamId::Zombie);
+
 	if (ABaseCharacter* Character = Cast<ABaseCharacter>(Controller->GetPawn()))
 	{		
 		URoleComponent* RoleComp = Character->GetRoleComponent();

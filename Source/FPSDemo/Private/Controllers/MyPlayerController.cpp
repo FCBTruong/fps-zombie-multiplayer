@@ -36,6 +36,10 @@ void AMyPlayerController::BeginPlay()
 {
     Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: BeginPlay called"));
+    bShowMouseCursor = false;
+    FInputModeGameOnly InputMode;
+    SetInputMode(InputMode);
+
     AddDefaultInputMapping();
 
     APlayerCameraManager* PCM = this->PlayerCameraManager;

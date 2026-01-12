@@ -3,7 +3,6 @@
 #include "Components/InventoryComponent.h"
 #include "Game/GameManager.h"
 #include "Weapons/WeaponState.h"       
-#include "Structs/WeaponRuntimeData.h" 
 #include "Pickup/PickupData.h"
 #include "Game/ItemsManager.h"
 #include "Items/ItemConfig.h"
@@ -125,6 +124,7 @@ bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
                 RifleState.ItemId = ItemId;
                 RifleState.AmmoInClip = PickupData.AmmoInClip;
                 RifleState.AmmoReserve = PickupData.AmmoReserve;
+                RifleState.MaxAmmoInClip = FirearmData->MaxAmmoInClip;
                 OnRep_RifleState();
                 return true;
             }
@@ -134,6 +134,7 @@ bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
                 PistolState.ItemId = ItemId;
                 PistolState.AmmoInClip = PickupData.AmmoInClip;
                 PistolState.AmmoReserve = PickupData.AmmoReserve;
+                PistolState.MaxAmmoInClip = FirearmData->MaxAmmoInClip;
                 OnRep_PistolState();
                 return true;
             }

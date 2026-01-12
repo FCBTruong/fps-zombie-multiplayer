@@ -1472,11 +1472,6 @@ void ABaseCharacter::ApplyLoadoutByRole(ECharacterRole NewRole)
     {
         // human
 	}
-
-    const bool bSpikeMode = IsSpikeMode();
-    if (SpikeComp) {
-        SpikeComp->SetEnabled(bSpikeMode);
-	}
 }
 
 

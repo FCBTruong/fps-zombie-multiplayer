@@ -33,6 +33,7 @@ void USpikeComponent::BeginPlay()
 void USpikeComponent::RequestPlantSpike()
 {
     if (!IsEnabled()) {
+        UE_LOG(LogTemp, Log, TEXT("USpikeComponent::RequestPlantSpike called - not enabled"));
         return;
     }
 	UE_LOG(LogTemp, Log, TEXT("USpikeComponent::RequestPlantSpike called"));

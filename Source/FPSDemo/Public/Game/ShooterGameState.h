@@ -4,17 +4,8 @@
 #include "Pickup/PickupData.h"
 #include "Controllers/MyPlayerState.h"
 #include "Game/MyMatchState.h"
+#include "Data/MatchMode.h"
 #include "ShooterGameState.generated.h"
-
-UENUM(BlueprintType)
-enum class EMatchMode : uint8
-{
-	None,
-    Spike,
-    Zombie,
-    TeamElimination,
-	DeathMatch
-};
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateScore, int32, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRoundTime, int32)
@@ -68,6 +59,9 @@ protected:
     UFUNCTION()
 	void OnRep_BuyEndTime();
 
+    UFUNCTION()
+    void OnRep_TeamNumber();
+
     virtual void RemovePlayerState(APlayerState* PlayerState) override;
     virtual void AddPlayerState(APlayerState* PlayerState) override;
 public:
@@ -103,4 +97,9 @@ public:
     int GetBuyEndTime() const {
         return BuyEndTime;
 	}
+
+    UPROPERTY(ReplicatedUsing = OnRep_TeamNumber)
+    int SoldierNum;
+    UPROPERTY(ReplicatedUsing = OnRep_TeamNumber)
+    int ZombieNum;
 };

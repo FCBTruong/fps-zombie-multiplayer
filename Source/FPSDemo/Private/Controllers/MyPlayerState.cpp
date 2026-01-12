@@ -117,7 +117,7 @@ bool AMyPlayerState::CanBuyThisItem(const UItemConfig* Item) const
 
 void AMyPlayerState::OnRep_TeamId()
 {
-	
+
 }
 
 

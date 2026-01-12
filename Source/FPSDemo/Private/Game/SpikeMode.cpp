@@ -20,7 +20,6 @@ void ASpikeMode::StartPlay()
 	SpawnBot();
 	SpawnBot();
 	SpawnBot();
-	SpawnBot();
 
 	// get all controllers and assign teams
 	AShooterGameState* GS = GetGameState<AShooterGameState>();

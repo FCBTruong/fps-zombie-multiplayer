@@ -34,6 +34,6 @@ public:
 	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 
 	virtual EMatchMode GetMatchMode() const {
-		return EMatchMode::TeamElimination;
+		return EMatchMode::None;
 	}
 };

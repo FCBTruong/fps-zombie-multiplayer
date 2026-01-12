@@ -65,11 +65,20 @@ void AShooterGameState::Multicast_RoundResult_Implementation(ETeamId WinningTeam
         AMyPlayerController* MyPC = Cast<AMyPlayerController>(It->Get());
         if (MyPC && MyPC->GetPlayerUI())
         {
-			bool IsWinner = false;
-            if (MyPC->GetTeamId() == WinningTeam) {
-				IsWinner = true;
+            FText ResultText;
+            if (WinningTeam == ETeamId::Soldier) {
+                ResultText = FText::FromString("Solider Win");
             }
-			FText ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
+            else if (WinningTeam == ETeamId::Zombie) {
+                ResultText = FText::FromString("Zombie Win");
+            }
+            else {
+                bool IsWinner = false;
+                if (MyPC->GetTeamId() == WinningTeam) {
+                    IsWinner = true;
+                }
+                ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
+            }
 			MyPC->GetPlayerUI()->ShowMatchStateToast(ResultText, 1);
         }
     }
@@ -170,4 +179,9 @@ void AShooterGameState::RemovePlayerState(APlayerState* PlayerState)
         HasAuthority(),
         GetNetMode()
     );
+}
+
+void AShooterGameState::OnRep_TeamNumber()
+{
+    OnUpdateScore.Broadcast(SoldierNum, ZombieNum);
 }

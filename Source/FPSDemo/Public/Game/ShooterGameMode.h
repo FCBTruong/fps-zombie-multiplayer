@@ -19,7 +19,10 @@ class FPSDEMO_API AShooterGameMode : public AGameMode
 	GENERATED_BODY()
 public:
 	AShooterGameMode();
-
+	virtual void InitGame(
+		const FString& MapName,
+		const FString& Options,
+		FString& ErrorMessage) override;
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
@@ -59,4 +62,6 @@ protected:
 	bool bRoundStarted = false;
 
 	FTimerHandle TryStartMatchHandle;
+	int NumBotTeam1 = 0;
+	int NumBotTeam2 = 0;
 };

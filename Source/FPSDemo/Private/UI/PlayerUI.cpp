@@ -465,7 +465,7 @@ void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
             ShowMatchStateToast(FText::FromString("Buy Phase"), 0.f);
 			break;
         case EMyMatchState::ROUND_IN_PROGRESS:
-			ShowMatchStateToast(FText::FromString("Round In Progress"), 0.f);
+			//ShowMatchStateToast(FText::FromString("Round In Progress"), 0.f);
             break;
 		case EMyMatchState::SPIKE_PLANTED:
 			MatchTimeLb->SetVisibility(ESlateVisibility::Hidden);
@@ -474,7 +474,7 @@ void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
             ShowMatchStateToast(FText::FromString("Spike Planted!"), 0.f);
             break;
 		case EMyMatchState::ROUND_ENDED:
-            ShowMatchStateToast(FText::FromString("Round Ended"), 0.f);
+            //ShowMatchStateToast(FText::FromString("Round Ended"), 0.f);
 			break;
     }
 }

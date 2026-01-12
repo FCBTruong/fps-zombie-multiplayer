@@ -533,6 +533,7 @@ bool UWeaponFireComponent::CanReload() const {
 
 	// check action state
 	if (!ActionStateComp->CanReloadNow()) {
+		UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent: Cannot Reload - now"));
 		return false;
 	}
 
@@ -542,10 +543,12 @@ bool UWeaponFireComponent::CanReload() const {
 		return false;
 	}
 	if (State->AmmoInClip >= State->MaxAmmoInClip) {
+		UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent: Cannot Reload - max"));
 		return false;
 	}
 
 	if (!State || State->AmmoReserve <= 0) {
+		UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent: Cannot Reload - ammo reserver"));
 		return false;
 	}
 

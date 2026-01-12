@@ -5,11 +5,25 @@
 #include "Weapons/WeaponState.h"
 #include "Characters/BaseCharacter.h"
 #include "Game/ActorManager.h"
+#include "Kismet/GameplayStatics.h"
 
 AShooterGameMode::AShooterGameMode()
 {
     bDelayedStart = true;
     BotManager = MakeUnique<BotStateManager>();
+}
+
+void AShooterGameMode::InitGame(
+    const FString& MapName,
+    const FString& Options,
+    FString& ErrorMessage)
+{
+    Super::InitGame(MapName, Options, ErrorMessage);
+
+    NumBotTeam1 = UGameplayStatics::GetIntOption(Options, TEXT("BotT1"), 0);
+    NumBotTeam2 = UGameplayStatics::GetIntOption(Options, TEXT("BotT2"), 0);
+
+	UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode: InitGame called with BotT1=%d, BotT2=%d"), NumBotTeam1, NumBotTeam2);
 }
 
 void AShooterGameMode::StartPlay()
