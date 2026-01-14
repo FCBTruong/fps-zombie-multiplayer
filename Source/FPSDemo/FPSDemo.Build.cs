@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+using System.IO;
 using UnrealBuildTool;
 
 public class FPSDemo : ModuleRules
@@ -8,19 +9,26 @@ public class FPSDemo : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "PhysicsCore", "UMG", "Niagara"});
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore",
+				"EnhancedInput", "PhysicsCore", "UMG", "Niagara", "WebSockets" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
              "Slate",
 			 "SlateCore"
         });
 
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
-		// Uncomment if you are using online features
-		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
+        PublicIncludePaths.AddRange(new[]
+       {
+            Path.Combine(ModuleDirectory, "Proto")
+        });
 
-		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
-	}
+
+        PublicIncludePaths.Add(
+            Path.Combine(ModuleDirectory, "..", "..", "ThirdParty", "Protobuf", "include")
+        );
+
+        PublicAdditionalLibraries.Add(
+            Path.Combine(ModuleDirectory, "..", "..", "ThirdParty", "Protobuf", "lib", "libprotobuf.lib")
+        );
+    }
 }
