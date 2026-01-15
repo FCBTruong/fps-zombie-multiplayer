@@ -5,11 +5,22 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
 #include "Kismet/GameplayStatics.h"
+#include "Network/NetworkManager.h"
 
 void ULobbyUI::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	if (UNetworkManager* NetworkManager =
+		GetWorld()->GetGameInstance()->GetSubsystem<UNetworkManager>())
+	{
+		CachedNetworkManager = NetworkManager;
+
+		NetworkManager->OnCreateRoom.AddUObject(
+			this, &ULobbyUI::HandleCreateRoomSuccess);
+	}
+
+	CurrentRoomData.bIsActive = false;
 	CurrentRoomData.bHasStarted = false;
 	CurrentRoomData.Mode = EMatchMode::Spike;
 	CurrentRoomData.bIsSelfHost = true;
@@ -51,6 +62,11 @@ void ULobbyUI::NativeConstruct()
 	{
 		AddBotTeam2Btn->OnClicked.AddDynamic(this, &ULobbyUI::OnAddBotTeam2);
 	}
+	if (CreateRoomBtn) {
+		CreateRoomBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnCreateRoomClicked);
+	}
+
+
 
 	// get all objects of type URoomPlayerSlotUI
 	PlayerSlotUIs.Empty();
@@ -74,8 +90,24 @@ void ULobbyUI::NativeConstruct()
 		}
 	}
 
+	if (ListPn) {
+		ListPn->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	if (CreatePn) {
+		CreatePn->SetVisibility(ESlateVisibility::Visible);
+	}
+}
 
-	// update room data
+void ULobbyUI::OnCreateRoomClicked() {
+	if (UNetworkManager* NetworkManager =
+		GetWorld()->GetGameInstance()->GetSubsystem<UNetworkManager>())
+	{
+		game::net::Empty Empty;
+		NetworkManager->SendPacket(ECmdId::CREATE_ROOM, Empty);
+	}
+}
+
+void ULobbyUI::UpdateRoomData() {
 	for (int32 i = 0; i < PlayerSlotUIs.Num(); ++i)
 	{
 		const PlayerRoomInfo Info =
@@ -292,5 +324,14 @@ void ULobbyUI::OnDeletePlayer(int32 PlayerId)
 			CurrentRoomData.Players[i].PlayerId = -1; // mark as empty
 			break;
 		}
+	}
+}
+
+void ULobbyUI::HandleCreateRoomSuccess() {
+	if (ListPn) {
+		ListPn->SetVisibility(ESlateVisibility::Visible);
+	}
+	if (CreatePn) {
+		CreatePn->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }

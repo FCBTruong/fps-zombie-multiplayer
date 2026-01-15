@@ -3,11 +3,14 @@
 #include "Network/NetworkManager.h"
 #include "WebSocketsModule.h"
 #include "Async/Async.h"
-#include "game.pb.h"
+#include "Network/MyNetworkSettings.h"
 
 void UNetworkManager::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+    Dispatcher = MakeUnique<FPacketDispatcher>(this);
+    // log token
+	UE_LOG(LogTemp, Log, TEXT("Player Token: %s"), *Token);
     Connect();
 }
 
@@ -31,7 +34,17 @@ void UNetworkManager::Connect()
 {
     UE_LOG(LogTemp, Log, TEXT("Connecting to WebSocket server..."));
 
-    Socket = FWebSocketsModule::Get().CreateWebSocket(TEXT("ws://localhost:5044/ws"));
+    FString Url;
+
+#if UE_BUILD_SHIPPING
+    Url = GetDefault<UMyNetworkSettings>()->ProdWebSocketUrl;
+#else
+    Url = GetDefault<UMyNetworkSettings>()->DevWebSocketUrl;
+#endif
+
+	UE_LOG(LogTemp, Log, TEXT("WebSocket URL: %s"), *Url);
+
+    Socket = FWebSocketsModule::Get().CreateWebSocket(Url);
 
     Socket->OnConnected().AddUObject(this, &UNetworkManager::HandleConnected);
     Socket->OnConnectionError().AddUObject(this, &UNetworkManager::HandleConnectionError);
@@ -46,6 +59,7 @@ void UNetworkManager::Connect()
 void UNetworkManager::HandleConnected()
 {
     UE_LOG(LogTemp, Log, TEXT("WebSocket connected"));
+	OnNetworkConnected.Broadcast();
 }
 
 void UNetworkManager::HandleConnectionError(const FString& Error)
@@ -68,10 +82,63 @@ void UNetworkManager::OnRawMessage(const void* Data, SIZE_T Size, SIZE_T /*Bytes
         return;
     }
 
-    const uint32 CmdId = Packet.cmd_id();
-
-    AsyncTask(ENamedThreads::GameThread, [this, Envelope = std::move(Packet), CmdId]()
+    AsyncTask(ENamedThreads::GameThread,
+        [this, Packet = std::move(Packet)]()
         {
-            UE_LOG(LogTemp, Log, TEXT("Received Packet Seq: %u"), CmdId);
+            Dispatcher->Dispatch(Packet);
         });
+}
+
+void UNetworkManager::SendPacket(ECmdId CmdId, const google::protobuf::Message& Msg)
+{
+    if (!Socket.IsValid() || !Socket->IsConnected())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("UNetworkManager: WebSocket not connected"));
+        return;
+    }
+
+    // Serialize inner protobuf message
+    std::string Payload;
+    if (!Msg.SerializeToString(&Payload))
+    {
+        UE_LOG(LogTemp, Error, TEXT("UNetworkManager: Failed to serialize payload"));
+        return;
+    }
+
+    // Wrap into Packet
+    game::net::Packet Packet;
+    Packet.set_cmd_id(static_cast<int32>(CmdId));
+	Packet.set_token(TCHAR_TO_UTF8(*Token));
+    Packet.set_payload(Payload);
+
+    // Serialize Packet
+    std::string PacketBytes;
+    if (!Packet.SerializeToString(&PacketBytes))
+    {
+        UE_LOG(LogTemp, Error, TEXT("UNetworkManager: Failed to serialize Packet"));
+        return;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("UNetworkManager: Sending Packet CmdId: %d, Size: %d bytes"),
+        static_cast<int32>(CmdId),
+        static_cast<int32>(PacketBytes.size())
+	);
+
+    // Send binary WebSocket frame
+    Socket->Send(
+        (void*)PacketBytes.data(),
+        PacketBytes.size(),
+        /*bIsBinary=*/true
+    );
+}
+
+void UNetworkManager::HandleLoginSuccess(const FString& InToken)
+{
+    Token = InToken;
+    UE_LOG(LogTemp, Log, TEXT("Login successful, token saved"));
+    OnLoginSuccess.Broadcast();
+}
+
+void UNetworkManager::HandleCreateRoom() {
+
 }

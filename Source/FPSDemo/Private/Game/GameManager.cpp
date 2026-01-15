@@ -5,18 +5,23 @@
 #include "Pickup/PickupItem.h"
 #include "Game/ShooterGameState.h"
 #include "Characters/BaseCharacter.h"
-#include "Pickup/PickupItem.h"
 #include "Asset/CharacterAsset.h"
 #include "Game/GlobalDataAsset.h"
-#include "Characters/BaseCharacter.h"
+#include "Data/MySaveGame.h"
+#include "Kismet/GameplayStatics.h"
+#include "Utils/GameUtils.h"
 
 void UGameManager::Init()
 {
 	Super::Init();
-	CurrentPickupId = 1000;
-    UE_LOG(LogTemp, Warning, TEXT("ObjectAAA address = %p"), this);
 }
 
+void UGameManager::OnStart()
+{
+    Super::OnStart();
+    CurrentPickupId = 1000;
+    LoadOrCreateLocalInfo();
+}
 
 FPickupData UGameManager::GetDataPickupItem(int32 ItemOnMapId) {
    
@@ -114,4 +119,47 @@ void UGameManager::RegisterPlayer(ABaseCharacter* Pawn) {
 void UGameManager::UnregisterPlayer(ABaseCharacter* Pawn) {
     if (!Pawn) return;
     RegisteredPlayers.Remove(Pawn);
+}
+
+
+void UGameManager::LoadOrCreateLocalInfo()
+{
+    using namespace PlayerLocalInfoConst;
+
+    UMySaveGame* Save = nullptr;
+
+    if (UGameplayStatics::DoesSaveGameExist(SLOT, USER_INDEX))
+    {
+        Save = Cast<UMySaveGame>(
+            UGameplayStatics::LoadGameFromSlot(SLOT, USER_INDEX)
+        );
+    }
+
+    if (!Save)
+    {
+        Save = Cast<UMySaveGame>(
+            UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass())
+        );
+    }
+
+    if (!Save)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create SaveGame object"));
+        return;
+    }
+
+    if (Save->GuestId.IsEmpty())
+    {
+        Save->GuestId = GameUtils::GenerateMd5Token();
+    }
+
+    if (Save->PlayerName.IsEmpty())
+    {
+        Save->PlayerName = TEXT("Player");
+    }
+
+	GuestId = Save->GuestId;
+	PlayerName = Save->PlayerName;
+
+    UGameplayStatics::SaveGameToSlot(Save, SLOT, USER_INDEX);
 }

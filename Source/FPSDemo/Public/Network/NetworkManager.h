@@ -5,8 +5,14 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "IWebSocket.h"
+#include "Network/CmdId.h"
+#include "game.pb.h"
+#include "Network/PacketDispatcher.h"
 #include "NetworkManager.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnNetworkConnected);
+DECLARE_MULTICAST_DELEGATE(FOnLoginSuccess);
+DECLARE_MULTICAST_DELEGATE(FOnCreateRoom);
 
 UCLASS()
 class FPSDEMO_API UNetworkManager : public UGameInstanceSubsystem
@@ -16,9 +22,14 @@ class FPSDEMO_API UNetworkManager : public UGameInstanceSubsystem
 public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
-
+    void SendPacket(ECmdId CmdId, const google::protobuf::Message& Msg);
     void Connect();
+    void HandleLoginSuccess(const FString& InToken);
+    void HandleCreateRoom();
 
+    FOnNetworkConnected OnNetworkConnected;
+    FOnLoginSuccess OnLoginSuccess;
+    FOnCreateRoom OnCreateRoom;
 private:
     // UE 5.6 OnRawMessage signature is (const void*, SIZE_T, SIZE_T)
     void OnRawMessage(const void* Data, SIZE_T Size, SIZE_T BytesRemaining);
@@ -29,4 +40,6 @@ private:
 
 private:
     TSharedPtr<IWebSocket> Socket;
+    FString Token;
+    TUniquePtr<FPacketDispatcher> Dispatcher;
 };

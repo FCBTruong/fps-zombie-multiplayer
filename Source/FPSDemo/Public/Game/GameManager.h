@@ -12,6 +12,12 @@ class APickupItem;
 class UCharacterAsset;
 class ABaseCharacter;
 
+namespace PlayerLocalInfoConst
+{
+	static constexpr const TCHAR* SLOT = TEXT("PlayerLocalInfo");
+	static constexpr int32 USER_INDEX = 0;
+}
+
 /**
  * 
  */
@@ -26,6 +32,7 @@ private:
 	TWeakObjectPtr<APickupItem> PickupSpike;
 protected:
 	virtual void Init() override;
+	virtual void OnStart() override;
 public:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UGlobalDataAsset> GlobalData = nullptr;
@@ -47,4 +54,12 @@ public:
 	void SetPickupSpike(APickupItem* SpikeItem);
 	int CurrentPickupId;
 	static UGameManager* Get(UObject* WorldContextObject);
+
+	void LoadOrCreateLocalInfo();
+
+public:
+	UPROPERTY()
+	FString PlayerName;
+	UPROPERTY()
+	FString GuestId;
 };

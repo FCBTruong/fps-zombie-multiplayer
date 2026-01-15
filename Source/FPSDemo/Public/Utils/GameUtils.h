@@ -14,4 +14,5 @@ public:
 	~GameUtils();
 
 	static FString PointNumber(int32 Number);
+	static FString GenerateMd5Token();
 };

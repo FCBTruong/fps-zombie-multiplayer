@@ -6,6 +6,16 @@
 #include "GameFramework/PlayerController.h"
 #include "LobbyPlayerController.generated.h"
 
+UENUM(BlueprintType)
+enum class EUIPage : uint8
+{
+    None,
+    Loading,
+    Login,
+    Lobby,
+    InGameHUD
+};
+
 /**
  * 
  */
@@ -20,7 +30,20 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<class UUserWidget> LobbyWidgetClass;
 
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UUserWidget> LoginWidgetClass;
+
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UUserWidget> LoadingWidgetClass;
+
+    void SetUIPage(EUIPage NewPage);
 private:
-    UPROPERTY()
-    UUserWidget* LobbyWidget;
+    UPROPERTY(Transient)
+    TObjectPtr<UUserWidget> ActiveWidget = nullptr;
+    EUIPage CurrentUIPage = EUIPage::None;
+
+    TSubclassOf<UUserWidget> GetWidgetClassForPage(EUIPage Page) const;
+    void ApplyInputModeForPage(EUIPage Page);
+	void HandleNetworkConnected();
+    void HandleLoginSuccess();
 };

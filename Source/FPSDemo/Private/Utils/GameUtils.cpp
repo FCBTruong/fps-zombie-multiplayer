@@ -36,3 +36,11 @@ FString GameUtils::PointNumber(int32 Number)
 
     return Result;
 }
+
+FString GameUtils::GenerateMd5Token()
+{
+    const FString Raw =
+        FGuid::NewGuid().ToString(EGuidFormats::Digits) +
+        FPlatformMisc::GetLoginId();
+    return FMD5::HashAnsiString(*Raw);
+}

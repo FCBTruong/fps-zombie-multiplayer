@@ -17,6 +17,7 @@ namespace LobbyUIColor
 	static const FLinearColor Unselected = FLinearColor(0.733f, 0.733f, 0.733f, 1.0f); // #BBBBBBFF
 }
 
+class UNetworkManager;
 /**
  * 
  */
@@ -28,9 +29,14 @@ class FPSDEMO_API ULobbyUI : public UUserWidget
 protected:
 	virtual void NativeConstruct() override;
 
+	UPROPERTY(meta = (BindWidget))
+	UButton* CreateRoomBtn;
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* CreatePn;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* ListPn;
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* VsTxt;
@@ -55,8 +61,6 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* StartBtn;
-
-	RoomData CurrentRoomData;
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* BombModeTickIcon;
@@ -90,5 +94,14 @@ private:
 	void OnAddBotTeam1();
 	UFUNCTION()
 	void OnAddBotTeam2();
+
+	UFUNCTION()
+	void OnCreateRoomClicked();
+
 	void OnDeletePlayer(int32 PlayerId);
+	void UpdateRoomData();
+	void HandleCreateRoomSuccess();
+
+	FRoomData CurrentRoomData;
+	UNetworkManager* CachedNetworkManager;
 };

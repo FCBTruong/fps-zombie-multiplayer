@@ -15,8 +15,9 @@ struct PlayerRoomInfo
 /**
  * 
  */
-struct RoomData
+struct FRoomData
 {
+	bool bIsActive = false;
 	EMatchMode Mode = EMatchMode::Spike;
 	bool bHasStarted = false;
 	int32 OwnerId = -1; 
