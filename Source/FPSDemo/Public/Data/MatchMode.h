@@ -3,8 +3,8 @@
 UENUM(BlueprintType)
 enum class EMatchMode : uint8
 {
-	None,
-	Spike,
-	Zombie,
-	DeathMatch
+	None = 0,
+	Spike = 1,
+	Zombie = 2,
+	DeathMatch = 3
 };

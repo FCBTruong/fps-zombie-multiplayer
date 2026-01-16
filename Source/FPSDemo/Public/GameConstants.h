@@ -19,4 +19,6 @@ public:
 	static constexpr int32 INIT_HEALTH_SOLIDER = 100;
 	static constexpr int32 INIT_HEALTH_ZOMBIE = 500;
 	static constexpr int32 INIT_HEALTH_HERO = 600;
+
+	static constexpr int32 EMPTY_PLAYER_ID = -1;
 };

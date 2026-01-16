@@ -4,6 +4,7 @@
 #include "WebSocketsModule.h"
 #include "Async/Async.h"
 #include "Network/MyNetworkSettings.h"
+#include "Lobby/PlayerInfoManager.h"
 
 void UNetworkManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -54,6 +55,8 @@ void UNetworkManager::Connect()
     Socket->OnRawMessage().AddUObject(this, &UNetworkManager::OnRawMessage);
 
     Socket->Connect();
+
+	UE_LOG(LogTemp, Log, TEXT("WebSocket connection initiated"));
 }
 
 void UNetworkManager::HandleConnected()
@@ -132,13 +135,19 @@ void UNetworkManager::SendPacket(ECmdId CmdId, const google::protobuf::Message& 
     );
 }
 
-void UNetworkManager::HandleLoginSuccess(const FString& InToken)
+void UNetworkManager::HandleLoginSuccess(const game::net::LoginReply& Reply)
 {
-    Token = InToken;
+	Token = Reply.token().c_str();
+
+	UPlayerInfoManager::Get(GetWorld())->SetUserId(Reply.user_id());
+
     UE_LOG(LogTemp, Log, TEXT("Login successful, token saved"));
     OnLoginSuccess.Broadcast();
 }
 
-void UNetworkManager::HandleCreateRoom() {
-
+void UNetworkManager::RegisterListener(IPacketListener* Listener)
+{
+    if (Dispatcher) {
+        Dispatcher->RegisterListener(Listener);
+    }
 }

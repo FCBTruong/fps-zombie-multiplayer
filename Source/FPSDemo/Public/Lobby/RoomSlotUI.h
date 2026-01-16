@@ -4,23 +4,27 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Lobby/RoomData.h"
 #include "Components/Button.h"
-#include "LoginUI.generated.h"
+#include "RoomSlotUI.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FPSDEMO_API ULoginUI : public UUserWidget
+class FPSDEMO_API URoomSlotUI : public UUserWidget
 {
 	GENERATED_BODY()
 	
 public:
+	void Init(FRoomData Data);
+
 	virtual void NativeConstruct() override;
 
-protected:
 	UPROPERTY(meta = (BindWidget))
-	UButton* LoginBtn;
+	UButton* JoinBtn;
+
 private:
-	void TryLogin();
+	UFUNCTION()
+	void OnJoinBtnClicked();
 };

@@ -12,7 +12,6 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnNetworkConnected);
 DECLARE_MULTICAST_DELEGATE(FOnLoginSuccess);
-DECLARE_MULTICAST_DELEGATE(FOnCreateRoom);
 
 UCLASS()
 class FPSDEMO_API UNetworkManager : public UGameInstanceSubsystem
@@ -24,12 +23,12 @@ public:
     virtual void Deinitialize() override;
     void SendPacket(ECmdId CmdId, const google::protobuf::Message& Msg);
     void Connect();
-    void HandleLoginSuccess(const FString& InToken);
+    void HandleLoginSuccess(const game::net::LoginReply& Reply);
     void HandleCreateRoom();
+	void RegisterListener(IPacketListener* Listener);
 
     FOnNetworkConnected OnNetworkConnected;
     FOnLoginSuccess OnLoginSuccess;
-    FOnCreateRoom OnCreateRoom;
 private:
     // UE 5.6 OnRawMessage signature is (const void*, SIZE_T, SIZE_T)
     void OnRawMessage(const void* Data, SIZE_T Size, SIZE_T BytesRemaining);

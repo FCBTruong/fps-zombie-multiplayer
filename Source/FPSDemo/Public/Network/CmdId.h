@@ -8,5 +8,12 @@ enum class ECmdId : uint8 {
     LOGIN_REPLY = 2,
     CREATE_ROOM = 100,
     LEAVE_ROOM = 101,
-    JOIN_ROOM = 102
+    JOIN_ROOM = 102,
+    ROOM_INFO = 103,
+    KICK_PLAYER = 104,
+    SWITCH_SLOT = 105,
+    START_GAME = 106,
+    ADD_BOT = 107,
+    NEW_PLAYER_JOIN_ROOM = 108,
+    LIST_ROOM = 109,
 };

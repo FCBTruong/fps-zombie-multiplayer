@@ -127,8 +127,8 @@ ABaseCharacter::ABaseCharacter()
     }
     if (FpsPivot) {
         // set same eye position
-        BaseEyeHeight = 70;
-        CrouchedEyeHeight = 70;
+        BaseEyeHeight = 60;
+        CrouchedEyeHeight = 60;
 		FpsPivot->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
     }
     if (MeshFps)

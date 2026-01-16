@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Data/MatchMode.h"
+#include "GameConstants.h"
 
 struct PlayerRoomInfo
 {
     FString PlayerName;
-    int32 PlayerId = -1;    
+    int32 PlayerId = FGameConstants::EMPTY_PLAYER_ID;
 	bool bIsBot = false;
 };
 

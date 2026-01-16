@@ -7,8 +7,9 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Components/Button.h"
-#include "Lobby/RoomData.h"
 #include "Lobby/RoomPlayerSlotUI.h"
+#include "game.pb.h"
+#include "Components/VerticalBox.h"
 #include "LobbyUI.generated.h"
 
 namespace LobbyUIColor
@@ -18,6 +19,9 @@ namespace LobbyUIColor
 }
 
 class UNetworkManager;
+class URoomManager;
+class URoomSlotUI;
+
 /**
  * 
  */
@@ -28,6 +32,7 @@ class FPSDEMO_API ULobbyUI : public UUserWidget
 
 protected:
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* CreateRoomBtn;
@@ -73,9 +78,15 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* DedicatedTickIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	UVerticalBox* RoomListBox;
 	
 	UPROPERTY();
 	TArray<URoomPlayerSlotUI*> PlayerSlotUIs;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<URoomSlotUI> RoomSlotClass;
 private:
 	UFUNCTION()
 	void OnZombieModeClicked();
@@ -94,14 +105,20 @@ private:
 	void OnAddBotTeam1();
 	UFUNCTION()
 	void OnAddBotTeam2();
-
 	UFUNCTION()
 	void OnCreateRoomClicked();
 
-	void OnDeletePlayer(int32 PlayerId);
 	void UpdateRoomData();
-	void HandleCreateRoomSuccess();
 
-	FRoomData CurrentRoomData;
+	void RequestRoomList();
+	void UpdateRoomList();
+
+	void UpdateRoomSlot(int slotIdx);
+	void ShowRoomUI();
+	void ShowRoomListUI();
 	UNetworkManager* CachedNetworkManager;
+	URoomManager* CachedRoomMgr;
+
+private:
+	FTimerHandle RequestRoomListTimer;
 };

@@ -49,7 +49,8 @@ struct EmptyDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EmptyDefaultTypeInternal _Empty_default_instance_;
 PROTOBUF_CONSTEXPR HelloWorld::HelloWorld(
     ::_pbi::ConstantInitialized)
-  : message_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}){}
+  : message_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
+  , testxx_(int64_t{0}){}
 struct HelloWorldDefaultTypeInternal {
   PROTOBUF_CONSTEXPR HelloWorldDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
@@ -86,20 +87,137 @@ struct LoginReplyDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 LoginReplyDefaultTypeInternal _LoginReply_default_instance_;
-PROTOBUF_CONSTEXPR CreateRoom::CreateRoom(
+PROTOBUF_CONSTEXPR CreateRoomRequest::CreateRoomRequest(
     ::_pbi::ConstantInitialized){}
-struct CreateRoomDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CreateRoomDefaultTypeInternal()
+struct CreateRoomRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CreateRoomRequestDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CreateRoomDefaultTypeInternal() {}
+  ~CreateRoomRequestDefaultTypeInternal() {}
   union {
-    CreateRoom _instance;
+    CreateRoomRequest _instance;
   };
 };
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CreateRoomDefaultTypeInternal _CreateRoom_default_instance_;
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CreateRoomRequestDefaultTypeInternal _CreateRoomRequest_default_instance_;
+PROTOBUF_CONSTEXPR RoomInfoReply::RoomInfoReply(
+    ::_pbi::ConstantInitialized)
+  : players_()
+  , mode_(0u)
+  , owner_id_(0)
+  , has_started_(false)
+  , is_self_host_(false){}
+struct RoomInfoReplyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RoomInfoReplyDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~RoomInfoReplyDefaultTypeInternal() {}
+  union {
+    RoomInfoReply _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RoomInfoReplyDefaultTypeInternal _RoomInfoReply_default_instance_;
+PROTOBUF_CONSTEXPR PlayerRoomInfoReply::PlayerRoomInfoReply(
+    ::_pbi::ConstantInitialized)
+  : player_name_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
+  , avatar_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
+  , user_id_(0)
+  , is_bot_(false){}
+struct PlayerRoomInfoReplyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerRoomInfoReplyDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerRoomInfoReplyDefaultTypeInternal() {}
+  union {
+    PlayerRoomInfoReply _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerRoomInfoReplyDefaultTypeInternal _PlayerRoomInfoReply_default_instance_;
+PROTOBUF_CONSTEXPR KickPlayerRequest::KickPlayerRequest(
+    ::_pbi::ConstantInitialized)
+  : user_id_(0){}
+struct KickPlayerRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR KickPlayerRequestDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~KickPlayerRequestDefaultTypeInternal() {}
+  union {
+    KickPlayerRequest _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 KickPlayerRequestDefaultTypeInternal _KickPlayerRequest_default_instance_;
+PROTOBUF_CONSTEXPR AddBotRequest::AddBotRequest(
+    ::_pbi::ConstantInitialized)
+  : team_(0){}
+struct AddBotRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR AddBotRequestDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~AddBotRequestDefaultTypeInternal() {}
+  union {
+    AddBotRequest _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 AddBotRequestDefaultTypeInternal _AddBotRequest_default_instance_;
+PROTOBUF_CONSTEXPR NewPlayerJoinRoomReply::NewPlayerJoinRoomReply(
+    ::_pbi::ConstantInitialized)
+  : player_info_(nullptr)
+  , slot_idx_(0){}
+struct NewPlayerJoinRoomReplyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NewPlayerJoinRoomReplyDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NewPlayerJoinRoomReplyDefaultTypeInternal() {}
+  union {
+    NewPlayerJoinRoomReply _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NewPlayerJoinRoomReplyDefaultTypeInternal _NewPlayerJoinRoomReply_default_instance_;
+PROTOBUF_CONSTEXPR PlayerLeaveReply::PlayerLeaveReply(
+    ::_pbi::ConstantInitialized)
+  : slot_idx_(0){}
+struct PlayerLeaveReplyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PlayerLeaveReplyDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PlayerLeaveReplyDefaultTypeInternal() {}
+  union {
+    PlayerLeaveReply _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlayerLeaveReplyDefaultTypeInternal _PlayerLeaveReply_default_instance_;
+PROTOBUF_CONSTEXPR SwitchSlotRequest::SwitchSlotRequest(
+    ::_pbi::ConstantInitialized)
+  : slot_idx_(0){}
+struct SwitchSlotRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SwitchSlotRequestDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SwitchSlotRequestDefaultTypeInternal() {}
+  union {
+    SwitchSlotRequest _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SwitchSlotRequestDefaultTypeInternal _SwitchSlotRequest_default_instance_;
+PROTOBUF_CONSTEXPR SwitchSlotReply::SwitchSlotReply(
+    ::_pbi::ConstantInitialized)
+  : slot_idx_a_(0)
+  , slot_idx_b_(0){}
+struct SwitchSlotReplyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SwitchSlotReplyDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SwitchSlotReplyDefaultTypeInternal() {}
+  union {
+    SwitchSlotReply _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SwitchSlotReplyDefaultTypeInternal _SwitchSlotReply_default_instance_;
+PROTOBUF_CONSTEXPR ListRoomReply::ListRoomReply(
+    ::_pbi::ConstantInitialized)
+  : rooms_(){}
+struct ListRoomReplyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ListRoomReplyDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ListRoomReplyDefaultTypeInternal() {}
+  union {
+    ListRoomReply _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ListRoomReplyDefaultTypeInternal _ListRoomReply_default_instance_;
 }  // namespace net
 }  // namespace game
-static ::_pb::Metadata file_level_metadata_game_2eproto[6];
+static ::_pb::Metadata file_level_metadata_game_2eproto[15];
 static constexpr ::_pb::EnumDescriptor const** file_level_enum_descriptors_game_2eproto = nullptr;
 static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_game_2eproto = nullptr;
 
@@ -126,6 +244,7 @@ const uint32_t TableStruct_game_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pro
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::game::net::HelloWorld, message_),
+  PROTOBUF_FIELD_OFFSET(::game::net::HelloWorld, testxx_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::game::net::LoginRequest, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -144,19 +263,100 @@ const uint32_t TableStruct_game_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pro
   PROTOBUF_FIELD_OFFSET(::game::net::LoginReply, token_),
   PROTOBUF_FIELD_OFFSET(::game::net::LoginReply, user_id_),
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::game::net::CreateRoom, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::game::net::CreateRoomRequest, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, mode_),
+  PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, has_started_),
+  PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, owner_id_),
+  PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, is_self_host_),
+  PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, players_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::PlayerRoomInfoReply, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::PlayerRoomInfoReply, user_id_),
+  PROTOBUF_FIELD_OFFSET(::game::net::PlayerRoomInfoReply, player_name_),
+  PROTOBUF_FIELD_OFFSET(::game::net::PlayerRoomInfoReply, avatar_),
+  PROTOBUF_FIELD_OFFSET(::game::net::PlayerRoomInfoReply, is_bot_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::KickPlayerRequest, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::KickPlayerRequest, user_id_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::AddBotRequest, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::AddBotRequest, team_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::NewPlayerJoinRoomReply, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::NewPlayerJoinRoomReply, slot_idx_),
+  PROTOBUF_FIELD_OFFSET(::game::net::NewPlayerJoinRoomReply, player_info_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::PlayerLeaveReply, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::PlayerLeaveReply, slot_idx_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::SwitchSlotRequest, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::SwitchSlotRequest, slot_idx_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::SwitchSlotReply, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::SwitchSlotReply, slot_idx_a_),
+  PROTOBUF_FIELD_OFFSET(::game::net::SwitchSlotReply, slot_idx_b_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::ListRoomReply, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::ListRoomReply, rooms_),
 };
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, -1, sizeof(::game::net::Packet)},
   { 9, -1, -1, sizeof(::game::net::Empty)},
   { 15, -1, -1, sizeof(::game::net::HelloWorld)},
-  { 22, -1, -1, sizeof(::game::net::LoginRequest)},
-  { 31, -1, -1, sizeof(::game::net::LoginReply)},
-  { 39, -1, -1, sizeof(::game::net::CreateRoom)},
+  { 23, -1, -1, sizeof(::game::net::LoginRequest)},
+  { 32, -1, -1, sizeof(::game::net::LoginReply)},
+  { 40, -1, -1, sizeof(::game::net::CreateRoomRequest)},
+  { 46, -1, -1, sizeof(::game::net::RoomInfoReply)},
+  { 57, -1, -1, sizeof(::game::net::PlayerRoomInfoReply)},
+  { 67, -1, -1, sizeof(::game::net::KickPlayerRequest)},
+  { 74, -1, -1, sizeof(::game::net::AddBotRequest)},
+  { 81, -1, -1, sizeof(::game::net::NewPlayerJoinRoomReply)},
+  { 89, -1, -1, sizeof(::game::net::PlayerLeaveReply)},
+  { 96, -1, -1, sizeof(::game::net::SwitchSlotRequest)},
+  { 103, -1, -1, sizeof(::game::net::SwitchSlotReply)},
+  { 111, -1, -1, sizeof(::game::net::ListRoomReply)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -165,23 +365,48 @@ static const ::_pb::Message* const file_default_instances[] = {
   &::game::net::_HelloWorld_default_instance_._instance,
   &::game::net::_LoginRequest_default_instance_._instance,
   &::game::net::_LoginReply_default_instance_._instance,
-  &::game::net::_CreateRoom_default_instance_._instance,
+  &::game::net::_CreateRoomRequest_default_instance_._instance,
+  &::game::net::_RoomInfoReply_default_instance_._instance,
+  &::game::net::_PlayerRoomInfoReply_default_instance_._instance,
+  &::game::net::_KickPlayerRequest_default_instance_._instance,
+  &::game::net::_AddBotRequest_default_instance_._instance,
+  &::game::net::_NewPlayerJoinRoomReply_default_instance_._instance,
+  &::game::net::_PlayerLeaveReply_default_instance_._instance,
+  &::game::net::_SwitchSlotRequest_default_instance_._instance,
+  &::game::net::_SwitchSlotReply_default_instance_._instance,
+  &::game::net::_ListRoomReply_default_instance_._instance,
 };
 
 const char descriptor_table_protodef_game_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\ngame.proto\022\010game.net\"8\n\006Packet\022\r\n\005toke"
   "n\030\001 \001(\t\022\016\n\006cmd_id\030\002 \001(\005\022\017\n\007payload\030\003 \001(\014"
-  "\"\007\n\005Empty\"\035\n\nHelloWorld\022\017\n\007message\030\001 \001(\t"
-  "\"E\n\014LoginRequest\022\020\n\010guest_id\030\001 \001(\t\022\023\n\013pl"
-  "ayer_name\030\002 \001(\t\022\016\n\006avatar\030\003 \001(\t\",\n\nLogin"
-  "Reply\022\r\n\005token\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\005\"\014\n"
-  "\nCreateRoomB\013\252\002\010Game.Netb\006proto3"
+  "\"\007\n\005Empty\"-\n\nHelloWorld\022\017\n\007message\030\001 \001(\t"
+  "\022\016\n\006testxx\030\002 \001(\003\"E\n\014LoginRequest\022\020\n\010gues"
+  "t_id\030\001 \001(\t\022\023\n\013player_name\030\002 \001(\t\022\016\n\006avata"
+  "r\030\003 \001(\t\",\n\nLoginReply\022\r\n\005token\030\001 \001(\t\022\017\n\007"
+  "user_id\030\002 \001(\005\"\023\n\021CreateRoomRequest\"\212\001\n\rR"
+  "oomInfoReply\022\014\n\004mode\030\001 \001(\r\022\023\n\013has_starte"
+  "d\030\002 \001(\010\022\020\n\010owner_id\030\003 \001(\005\022\024\n\014is_self_hos"
+  "t\030\004 \001(\010\022.\n\007players\030\005 \003(\0132\035.game.net.Play"
+  "erRoomInfoReply\"[\n\023PlayerRoomInfoReply\022\017"
+  "\n\007user_id\030\001 \001(\005\022\023\n\013player_name\030\002 \001(\t\022\016\n\006"
+  "avatar\030\003 \001(\t\022\016\n\006is_bot\030\004 \001(\010\"$\n\021KickPlay"
+  "erRequest\022\017\n\007user_id\030\001 \001(\005\"\035\n\rAddBotRequ"
+  "est\022\014\n\004team\030\001 \001(\005\"^\n\026NewPlayerJoinRoomRe"
+  "ply\022\020\n\010slot_idx\030\001 \001(\005\0222\n\013player_info\030\002 \001"
+  "(\0132\035.game.net.PlayerRoomInfoReply\"$\n\020Pla"
+  "yerLeaveReply\022\020\n\010slot_idx\030\001 \001(\005\"%\n\021Switc"
+  "hSlotRequest\022\020\n\010slot_idx\030\001 \001(\005\"9\n\017Switch"
+  "SlotReply\022\022\n\nslot_idx_a\030\001 \001(\005\022\022\n\nslot_id"
+  "x_b\030\002 \001(\005\"7\n\rListRoomReply\022&\n\005rooms\030\001 \003("
+  "\0132\027.game.net.RoomInfoReplyB\013\252\002\010Game.Netb"
+  "\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_game_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_game_2eproto = {
-    false, false, 272, descriptor_table_protodef_game_2eproto,
+    false, false, 887, descriptor_table_protodef_game_2eproto,
     "game.proto",
-    &descriptor_table_game_2eproto_once, nullptr, 0, 6,
+    &descriptor_table_game_2eproto_once, nullptr, 0, 15,
     schemas, file_default_instances, TableStruct_game_2eproto::offsets,
     file_level_metadata_game_2eproto, file_level_enum_descriptors_game_2eproto,
     file_level_service_descriptors_game_2eproto,
@@ -521,6 +746,7 @@ HelloWorld::HelloWorld(const HelloWorld& from)
     message_.Set(from._internal_message(), 
       GetArenaForAllocation());
   }
+  testxx_ = from.testxx_;
   // @@protoc_insertion_point(copy_constructor:game.net.HelloWorld)
 }
 
@@ -529,6 +755,7 @@ message_.InitDefault();
 #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
   message_.Set("", GetArenaForAllocation());
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+testxx_ = int64_t{0};
 }
 
 HelloWorld::~HelloWorld() {
@@ -556,6 +783,7 @@ void HelloWorld::Clear() {
   (void) cached_has_bits;
 
   message_.ClearToEmpty();
+  testxx_ = int64_t{0};
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -572,6 +800,14 @@ const char* HelloWorld::_InternalParse(const char* ptr, ::_pbi::ParseContext* ct
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
           CHK_(::_pbi::VerifyUTF8(str, "game.net.HelloWorld.message"));
+        } else
+          goto handle_unusual;
+        continue;
+      // int64 testxx = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          testxx_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
         } else
           goto handle_unusual;
         continue;
@@ -614,6 +850,12 @@ uint8_t* HelloWorld::_InternalSerialize(
         1, this->_internal_message(), target);
   }
 
+  // int64 testxx = 2;
+  if (this->_internal_testxx() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(2, this->_internal_testxx(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -635,6 +877,11 @@ size_t HelloWorld::ByteSizeLong() const {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_message());
+  }
+
+  // int64 testxx = 2;
+  if (this->_internal_testxx() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_testxx());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
@@ -662,6 +909,9 @@ void HelloWorld::MergeFrom(const HelloWorld& from) {
   if (!from._internal_message().empty()) {
     _internal_set_message(from._internal_message());
   }
+  if (from._internal_testxx() != 0) {
+    _internal_set_testxx(from._internal_testxx());
+  }
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -685,6 +935,7 @@ void HelloWorld::InternalSwap(HelloWorld* other) {
       &message_, lhs_arena,
       &other->message_, rhs_arena
   );
+  swap(testxx_, other->testxx_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata HelloWorld::GetMetadata() const {
@@ -1207,30 +1458,30 @@ void LoginReply::InternalSwap(LoginReply* other) {
 
 // ===================================================================
 
-class CreateRoom::_Internal {
+class CreateRoomRequest::_Internal {
  public:
 };
 
-CreateRoom::CreateRoom(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+CreateRoomRequest::CreateRoomRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase(arena, is_message_owned) {
-  // @@protoc_insertion_point(arena_constructor:game.net.CreateRoom)
+  // @@protoc_insertion_point(arena_constructor:game.net.CreateRoomRequest)
 }
-CreateRoom::CreateRoom(const CreateRoom& from)
+CreateRoomRequest::CreateRoomRequest(const CreateRoomRequest& from)
   : ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase() {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  // @@protoc_insertion_point(copy_constructor:game.net.CreateRoom)
+  // @@protoc_insertion_point(copy_constructor:game.net.CreateRoomRequest)
 }
 
 
 
 
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData CreateRoom::_class_data_ = {
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData CreateRoomRequest::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::CopyImpl,
     ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::MergeImpl,
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*CreateRoom::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*CreateRoomRequest::GetClassData() const { return &_class_data_; }
 
 
 
@@ -1238,10 +1489,1881 @@ const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*CreateRoom::GetClassData() con
 
 
 
-::PROTOBUF_NAMESPACE_ID::Metadata CreateRoom::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata CreateRoomRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
       file_level_metadata_game_2eproto[5]);
+}
+
+// ===================================================================
+
+class RoomInfoReply::_Internal {
+ public:
+};
+
+RoomInfoReply::RoomInfoReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned),
+  players_(arena) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.RoomInfoReply)
+}
+RoomInfoReply::RoomInfoReply(const RoomInfoReply& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      players_(from.players_) {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::memcpy(&mode_, &from.mode_,
+    static_cast<size_t>(reinterpret_cast<char*>(&is_self_host_) -
+    reinterpret_cast<char*>(&mode_)) + sizeof(is_self_host_));
+  // @@protoc_insertion_point(copy_constructor:game.net.RoomInfoReply)
+}
+
+inline void RoomInfoReply::SharedCtor() {
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&mode_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&is_self_host_) -
+    reinterpret_cast<char*>(&mode_)) + sizeof(is_self_host_));
+}
+
+RoomInfoReply::~RoomInfoReply() {
+  // @@protoc_insertion_point(destructor:game.net.RoomInfoReply)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void RoomInfoReply::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+}
+
+void RoomInfoReply::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void RoomInfoReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.RoomInfoReply)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  players_.Clear();
+  ::memset(&mode_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&is_self_host_) -
+      reinterpret_cast<char*>(&mode_)) + sizeof(is_self_host_));
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* RoomInfoReply::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // uint32 mode = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          mode_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // bool has_started = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          has_started_ = (::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr) != 0);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int32 owner_id = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          owner_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // bool is_self_host = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
+          is_self_host_ = (::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr) != 0);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // repeated .game.net.PlayerRoomInfoReply players = 5;
+      case 5:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 42)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(_internal_add_players(), ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<42>(ptr));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* RoomInfoReply::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.RoomInfoReply)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // uint32 mode = 1;
+  if (this->_internal_mode() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt32ToArray(1, this->_internal_mode(), target);
+  }
+
+  // bool has_started = 2;
+  if (this->_internal_has_started() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(2, this->_internal_has_started(), target);
+  }
+
+  // int32 owner_id = 3;
+  if (this->_internal_owner_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(3, this->_internal_owner_id(), target);
+  }
+
+  // bool is_self_host = 4;
+  if (this->_internal_is_self_host() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(4, this->_internal_is_self_host(), target);
+  }
+
+  // repeated .game.net.PlayerRoomInfoReply players = 5;
+  for (unsigned i = 0,
+      n = static_cast<unsigned>(this->_internal_players_size()); i < n; i++) {
+    const auto& repfield = this->_internal_players(i);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+        InternalWriteMessage(5, repfield, repfield.GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.RoomInfoReply)
+  return target;
+}
+
+size_t RoomInfoReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.RoomInfoReply)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated .game.net.PlayerRoomInfoReply players = 5;
+  total_size += 1UL * this->_internal_players_size();
+  for (const auto& msg : this->players_) {
+    total_size +=
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+  }
+
+  // uint32 mode = 1;
+  if (this->_internal_mode() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_mode());
+  }
+
+  // int32 owner_id = 3;
+  if (this->_internal_owner_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_owner_id());
+  }
+
+  // bool has_started = 2;
+  if (this->_internal_has_started() != 0) {
+    total_size += 1 + 1;
+  }
+
+  // bool is_self_host = 4;
+  if (this->_internal_is_self_host() != 0) {
+    total_size += 1 + 1;
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData RoomInfoReply::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    RoomInfoReply::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*RoomInfoReply::GetClassData() const { return &_class_data_; }
+
+void RoomInfoReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<RoomInfoReply *>(to)->MergeFrom(
+      static_cast<const RoomInfoReply &>(from));
+}
+
+
+void RoomInfoReply::MergeFrom(const RoomInfoReply& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.RoomInfoReply)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  players_.MergeFrom(from.players_);
+  if (from._internal_mode() != 0) {
+    _internal_set_mode(from._internal_mode());
+  }
+  if (from._internal_owner_id() != 0) {
+    _internal_set_owner_id(from._internal_owner_id());
+  }
+  if (from._internal_has_started() != 0) {
+    _internal_set_has_started(from._internal_has_started());
+  }
+  if (from._internal_is_self_host() != 0) {
+    _internal_set_is_self_host(from._internal_is_self_host());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void RoomInfoReply::CopyFrom(const RoomInfoReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.RoomInfoReply)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool RoomInfoReply::IsInitialized() const {
+  return true;
+}
+
+void RoomInfoReply::InternalSwap(RoomInfoReply* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  players_.InternalSwap(&other->players_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RoomInfoReply, is_self_host_)
+      + sizeof(RoomInfoReply::is_self_host_)
+      - PROTOBUF_FIELD_OFFSET(RoomInfoReply, mode_)>(
+          reinterpret_cast<char*>(&mode_),
+          reinterpret_cast<char*>(&other->mode_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata RoomInfoReply::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[6]);
+}
+
+// ===================================================================
+
+class PlayerRoomInfoReply::_Internal {
+ public:
+};
+
+PlayerRoomInfoReply::PlayerRoomInfoReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.PlayerRoomInfoReply)
+}
+PlayerRoomInfoReply::PlayerRoomInfoReply(const PlayerRoomInfoReply& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  player_name_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    player_name_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_player_name().empty()) {
+    player_name_.Set(from._internal_player_name(), 
+      GetArenaForAllocation());
+  }
+  avatar_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    avatar_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_avatar().empty()) {
+    avatar_.Set(from._internal_avatar(), 
+      GetArenaForAllocation());
+  }
+  ::memcpy(&user_id_, &from.user_id_,
+    static_cast<size_t>(reinterpret_cast<char*>(&is_bot_) -
+    reinterpret_cast<char*>(&user_id_)) + sizeof(is_bot_));
+  // @@protoc_insertion_point(copy_constructor:game.net.PlayerRoomInfoReply)
+}
+
+inline void PlayerRoomInfoReply::SharedCtor() {
+player_name_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  player_name_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+avatar_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  avatar_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&user_id_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&is_bot_) -
+    reinterpret_cast<char*>(&user_id_)) + sizeof(is_bot_));
+}
+
+PlayerRoomInfoReply::~PlayerRoomInfoReply() {
+  // @@protoc_insertion_point(destructor:game.net.PlayerRoomInfoReply)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void PlayerRoomInfoReply::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  player_name_.Destroy();
+  avatar_.Destroy();
+}
+
+void PlayerRoomInfoReply::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void PlayerRoomInfoReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.PlayerRoomInfoReply)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  player_name_.ClearToEmpty();
+  avatar_.ClearToEmpty();
+  ::memset(&user_id_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&is_bot_) -
+      reinterpret_cast<char*>(&user_id_)) + sizeof(is_bot_));
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* PlayerRoomInfoReply::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // int32 user_id = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          user_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // string player_name = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          auto str = _internal_mutable_player_name();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "game.net.PlayerRoomInfoReply.player_name"));
+        } else
+          goto handle_unusual;
+        continue;
+      // string avatar = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
+          auto str = _internal_mutable_avatar();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "game.net.PlayerRoomInfoReply.avatar"));
+        } else
+          goto handle_unusual;
+        continue;
+      // bool is_bot = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 32)) {
+          is_bot_ = (::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr) != 0);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* PlayerRoomInfoReply::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.PlayerRoomInfoReply)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // int32 user_id = 1;
+  if (this->_internal_user_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_user_id(), target);
+  }
+
+  // string player_name = 2;
+  if (!this->_internal_player_name().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_player_name().data(), static_cast<int>(this->_internal_player_name().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "game.net.PlayerRoomInfoReply.player_name");
+    target = stream->WriteStringMaybeAliased(
+        2, this->_internal_player_name(), target);
+  }
+
+  // string avatar = 3;
+  if (!this->_internal_avatar().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_avatar().data(), static_cast<int>(this->_internal_avatar().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "game.net.PlayerRoomInfoReply.avatar");
+    target = stream->WriteStringMaybeAliased(
+        3, this->_internal_avatar(), target);
+  }
+
+  // bool is_bot = 4;
+  if (this->_internal_is_bot() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(4, this->_internal_is_bot(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.PlayerRoomInfoReply)
+  return target;
+}
+
+size_t PlayerRoomInfoReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.PlayerRoomInfoReply)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string player_name = 2;
+  if (!this->_internal_player_name().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_player_name());
+  }
+
+  // string avatar = 3;
+  if (!this->_internal_avatar().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_avatar());
+  }
+
+  // int32 user_id = 1;
+  if (this->_internal_user_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_user_id());
+  }
+
+  // bool is_bot = 4;
+  if (this->_internal_is_bot() != 0) {
+    total_size += 1 + 1;
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData PlayerRoomInfoReply::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    PlayerRoomInfoReply::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*PlayerRoomInfoReply::GetClassData() const { return &_class_data_; }
+
+void PlayerRoomInfoReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<PlayerRoomInfoReply *>(to)->MergeFrom(
+      static_cast<const PlayerRoomInfoReply &>(from));
+}
+
+
+void PlayerRoomInfoReply::MergeFrom(const PlayerRoomInfoReply& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.PlayerRoomInfoReply)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_player_name().empty()) {
+    _internal_set_player_name(from._internal_player_name());
+  }
+  if (!from._internal_avatar().empty()) {
+    _internal_set_avatar(from._internal_avatar());
+  }
+  if (from._internal_user_id() != 0) {
+    _internal_set_user_id(from._internal_user_id());
+  }
+  if (from._internal_is_bot() != 0) {
+    _internal_set_is_bot(from._internal_is_bot());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerRoomInfoReply::CopyFrom(const PlayerRoomInfoReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.PlayerRoomInfoReply)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool PlayerRoomInfoReply::IsInitialized() const {
+  return true;
+}
+
+void PlayerRoomInfoReply::InternalSwap(PlayerRoomInfoReply* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &player_name_, lhs_arena,
+      &other->player_name_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &avatar_, lhs_arena,
+      &other->avatar_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PlayerRoomInfoReply, is_bot_)
+      + sizeof(PlayerRoomInfoReply::is_bot_)
+      - PROTOBUF_FIELD_OFFSET(PlayerRoomInfoReply, user_id_)>(
+          reinterpret_cast<char*>(&user_id_),
+          reinterpret_cast<char*>(&other->user_id_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata PlayerRoomInfoReply::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[7]);
+}
+
+// ===================================================================
+
+class KickPlayerRequest::_Internal {
+ public:
+};
+
+KickPlayerRequest::KickPlayerRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.KickPlayerRequest)
+}
+KickPlayerRequest::KickPlayerRequest(const KickPlayerRequest& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  user_id_ = from.user_id_;
+  // @@protoc_insertion_point(copy_constructor:game.net.KickPlayerRequest)
+}
+
+inline void KickPlayerRequest::SharedCtor() {
+user_id_ = 0;
+}
+
+KickPlayerRequest::~KickPlayerRequest() {
+  // @@protoc_insertion_point(destructor:game.net.KickPlayerRequest)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void KickPlayerRequest::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+}
+
+void KickPlayerRequest::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void KickPlayerRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.KickPlayerRequest)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  user_id_ = 0;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* KickPlayerRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // int32 user_id = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          user_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* KickPlayerRequest::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.KickPlayerRequest)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // int32 user_id = 1;
+  if (this->_internal_user_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_user_id(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.KickPlayerRequest)
+  return target;
+}
+
+size_t KickPlayerRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.KickPlayerRequest)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // int32 user_id = 1;
+  if (this->_internal_user_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_user_id());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData KickPlayerRequest::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    KickPlayerRequest::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*KickPlayerRequest::GetClassData() const { return &_class_data_; }
+
+void KickPlayerRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<KickPlayerRequest *>(to)->MergeFrom(
+      static_cast<const KickPlayerRequest &>(from));
+}
+
+
+void KickPlayerRequest::MergeFrom(const KickPlayerRequest& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.KickPlayerRequest)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_user_id() != 0) {
+    _internal_set_user_id(from._internal_user_id());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void KickPlayerRequest::CopyFrom(const KickPlayerRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.KickPlayerRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool KickPlayerRequest::IsInitialized() const {
+  return true;
+}
+
+void KickPlayerRequest::InternalSwap(KickPlayerRequest* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(user_id_, other->user_id_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata KickPlayerRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[8]);
+}
+
+// ===================================================================
+
+class AddBotRequest::_Internal {
+ public:
+};
+
+AddBotRequest::AddBotRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.AddBotRequest)
+}
+AddBotRequest::AddBotRequest(const AddBotRequest& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  team_ = from.team_;
+  // @@protoc_insertion_point(copy_constructor:game.net.AddBotRequest)
+}
+
+inline void AddBotRequest::SharedCtor() {
+team_ = 0;
+}
+
+AddBotRequest::~AddBotRequest() {
+  // @@protoc_insertion_point(destructor:game.net.AddBotRequest)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void AddBotRequest::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+}
+
+void AddBotRequest::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void AddBotRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.AddBotRequest)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  team_ = 0;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* AddBotRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // int32 team = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          team_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* AddBotRequest::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.AddBotRequest)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // int32 team = 1;
+  if (this->_internal_team() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_team(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.AddBotRequest)
+  return target;
+}
+
+size_t AddBotRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.AddBotRequest)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // int32 team = 1;
+  if (this->_internal_team() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_team());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData AddBotRequest::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    AddBotRequest::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*AddBotRequest::GetClassData() const { return &_class_data_; }
+
+void AddBotRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<AddBotRequest *>(to)->MergeFrom(
+      static_cast<const AddBotRequest &>(from));
+}
+
+
+void AddBotRequest::MergeFrom(const AddBotRequest& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.AddBotRequest)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_team() != 0) {
+    _internal_set_team(from._internal_team());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void AddBotRequest::CopyFrom(const AddBotRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.AddBotRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool AddBotRequest::IsInitialized() const {
+  return true;
+}
+
+void AddBotRequest::InternalSwap(AddBotRequest* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(team_, other->team_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata AddBotRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[9]);
+}
+
+// ===================================================================
+
+class NewPlayerJoinRoomReply::_Internal {
+ public:
+  static const ::game::net::PlayerRoomInfoReply& player_info(const NewPlayerJoinRoomReply* msg);
+};
+
+const ::game::net::PlayerRoomInfoReply&
+NewPlayerJoinRoomReply::_Internal::player_info(const NewPlayerJoinRoomReply* msg) {
+  return *msg->player_info_;
+}
+NewPlayerJoinRoomReply::NewPlayerJoinRoomReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.NewPlayerJoinRoomReply)
+}
+NewPlayerJoinRoomReply::NewPlayerJoinRoomReply(const NewPlayerJoinRoomReply& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  if (from._internal_has_player_info()) {
+    player_info_ = new ::game::net::PlayerRoomInfoReply(*from.player_info_);
+  } else {
+    player_info_ = nullptr;
+  }
+  slot_idx_ = from.slot_idx_;
+  // @@protoc_insertion_point(copy_constructor:game.net.NewPlayerJoinRoomReply)
+}
+
+inline void NewPlayerJoinRoomReply::SharedCtor() {
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&player_info_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&slot_idx_) -
+    reinterpret_cast<char*>(&player_info_)) + sizeof(slot_idx_));
+}
+
+NewPlayerJoinRoomReply::~NewPlayerJoinRoomReply() {
+  // @@protoc_insertion_point(destructor:game.net.NewPlayerJoinRoomReply)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void NewPlayerJoinRoomReply::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  if (this != internal_default_instance()) delete player_info_;
+}
+
+void NewPlayerJoinRoomReply::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void NewPlayerJoinRoomReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.NewPlayerJoinRoomReply)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  if (GetArenaForAllocation() == nullptr && player_info_ != nullptr) {
+    delete player_info_;
+  }
+  player_info_ = nullptr;
+  slot_idx_ = 0;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* NewPlayerJoinRoomReply::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // int32 slot_idx = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          slot_idx_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // .game.net.PlayerRoomInfoReply player_info = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
+          ptr = ctx->ParseMessage(_internal_mutable_player_info(), ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* NewPlayerJoinRoomReply::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.NewPlayerJoinRoomReply)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // int32 slot_idx = 1;
+  if (this->_internal_slot_idx() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_slot_idx(), target);
+  }
+
+  // .game.net.PlayerRoomInfoReply player_info = 2;
+  if (this->_internal_has_player_info()) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(2, _Internal::player_info(this),
+        _Internal::player_info(this).GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.NewPlayerJoinRoomReply)
+  return target;
+}
+
+size_t NewPlayerJoinRoomReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.NewPlayerJoinRoomReply)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // .game.net.PlayerRoomInfoReply player_info = 2;
+  if (this->_internal_has_player_info()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *player_info_);
+  }
+
+  // int32 slot_idx = 1;
+  if (this->_internal_slot_idx() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_slot_idx());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData NewPlayerJoinRoomReply::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    NewPlayerJoinRoomReply::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*NewPlayerJoinRoomReply::GetClassData() const { return &_class_data_; }
+
+void NewPlayerJoinRoomReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<NewPlayerJoinRoomReply *>(to)->MergeFrom(
+      static_cast<const NewPlayerJoinRoomReply &>(from));
+}
+
+
+void NewPlayerJoinRoomReply::MergeFrom(const NewPlayerJoinRoomReply& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.NewPlayerJoinRoomReply)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_has_player_info()) {
+    _internal_mutable_player_info()->::game::net::PlayerRoomInfoReply::MergeFrom(from._internal_player_info());
+  }
+  if (from._internal_slot_idx() != 0) {
+    _internal_set_slot_idx(from._internal_slot_idx());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void NewPlayerJoinRoomReply::CopyFrom(const NewPlayerJoinRoomReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.NewPlayerJoinRoomReply)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool NewPlayerJoinRoomReply::IsInitialized() const {
+  return true;
+}
+
+void NewPlayerJoinRoomReply::InternalSwap(NewPlayerJoinRoomReply* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(NewPlayerJoinRoomReply, slot_idx_)
+      + sizeof(NewPlayerJoinRoomReply::slot_idx_)
+      - PROTOBUF_FIELD_OFFSET(NewPlayerJoinRoomReply, player_info_)>(
+          reinterpret_cast<char*>(&player_info_),
+          reinterpret_cast<char*>(&other->player_info_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata NewPlayerJoinRoomReply::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[10]);
+}
+
+// ===================================================================
+
+class PlayerLeaveReply::_Internal {
+ public:
+};
+
+PlayerLeaveReply::PlayerLeaveReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.PlayerLeaveReply)
+}
+PlayerLeaveReply::PlayerLeaveReply(const PlayerLeaveReply& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  slot_idx_ = from.slot_idx_;
+  // @@protoc_insertion_point(copy_constructor:game.net.PlayerLeaveReply)
+}
+
+inline void PlayerLeaveReply::SharedCtor() {
+slot_idx_ = 0;
+}
+
+PlayerLeaveReply::~PlayerLeaveReply() {
+  // @@protoc_insertion_point(destructor:game.net.PlayerLeaveReply)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void PlayerLeaveReply::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+}
+
+void PlayerLeaveReply::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void PlayerLeaveReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.PlayerLeaveReply)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  slot_idx_ = 0;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* PlayerLeaveReply::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // int32 slot_idx = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          slot_idx_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* PlayerLeaveReply::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.PlayerLeaveReply)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // int32 slot_idx = 1;
+  if (this->_internal_slot_idx() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_slot_idx(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.PlayerLeaveReply)
+  return target;
+}
+
+size_t PlayerLeaveReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.PlayerLeaveReply)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // int32 slot_idx = 1;
+  if (this->_internal_slot_idx() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_slot_idx());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData PlayerLeaveReply::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    PlayerLeaveReply::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*PlayerLeaveReply::GetClassData() const { return &_class_data_; }
+
+void PlayerLeaveReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<PlayerLeaveReply *>(to)->MergeFrom(
+      static_cast<const PlayerLeaveReply &>(from));
+}
+
+
+void PlayerLeaveReply::MergeFrom(const PlayerLeaveReply& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.PlayerLeaveReply)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_slot_idx() != 0) {
+    _internal_set_slot_idx(from._internal_slot_idx());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void PlayerLeaveReply::CopyFrom(const PlayerLeaveReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.PlayerLeaveReply)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool PlayerLeaveReply::IsInitialized() const {
+  return true;
+}
+
+void PlayerLeaveReply::InternalSwap(PlayerLeaveReply* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(slot_idx_, other->slot_idx_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata PlayerLeaveReply::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[11]);
+}
+
+// ===================================================================
+
+class SwitchSlotRequest::_Internal {
+ public:
+};
+
+SwitchSlotRequest::SwitchSlotRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.SwitchSlotRequest)
+}
+SwitchSlotRequest::SwitchSlotRequest(const SwitchSlotRequest& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  slot_idx_ = from.slot_idx_;
+  // @@protoc_insertion_point(copy_constructor:game.net.SwitchSlotRequest)
+}
+
+inline void SwitchSlotRequest::SharedCtor() {
+slot_idx_ = 0;
+}
+
+SwitchSlotRequest::~SwitchSlotRequest() {
+  // @@protoc_insertion_point(destructor:game.net.SwitchSlotRequest)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void SwitchSlotRequest::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+}
+
+void SwitchSlotRequest::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void SwitchSlotRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.SwitchSlotRequest)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  slot_idx_ = 0;
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* SwitchSlotRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // int32 slot_idx = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          slot_idx_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* SwitchSlotRequest::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.SwitchSlotRequest)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // int32 slot_idx = 1;
+  if (this->_internal_slot_idx() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_slot_idx(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.SwitchSlotRequest)
+  return target;
+}
+
+size_t SwitchSlotRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.SwitchSlotRequest)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // int32 slot_idx = 1;
+  if (this->_internal_slot_idx() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_slot_idx());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData SwitchSlotRequest::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    SwitchSlotRequest::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*SwitchSlotRequest::GetClassData() const { return &_class_data_; }
+
+void SwitchSlotRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<SwitchSlotRequest *>(to)->MergeFrom(
+      static_cast<const SwitchSlotRequest &>(from));
+}
+
+
+void SwitchSlotRequest::MergeFrom(const SwitchSlotRequest& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.SwitchSlotRequest)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_slot_idx() != 0) {
+    _internal_set_slot_idx(from._internal_slot_idx());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void SwitchSlotRequest::CopyFrom(const SwitchSlotRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.SwitchSlotRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool SwitchSlotRequest::IsInitialized() const {
+  return true;
+}
+
+void SwitchSlotRequest::InternalSwap(SwitchSlotRequest* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(slot_idx_, other->slot_idx_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata SwitchSlotRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[12]);
+}
+
+// ===================================================================
+
+class SwitchSlotReply::_Internal {
+ public:
+};
+
+SwitchSlotReply::SwitchSlotReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.SwitchSlotReply)
+}
+SwitchSlotReply::SwitchSlotReply(const SwitchSlotReply& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::memcpy(&slot_idx_a_, &from.slot_idx_a_,
+    static_cast<size_t>(reinterpret_cast<char*>(&slot_idx_b_) -
+    reinterpret_cast<char*>(&slot_idx_a_)) + sizeof(slot_idx_b_));
+  // @@protoc_insertion_point(copy_constructor:game.net.SwitchSlotReply)
+}
+
+inline void SwitchSlotReply::SharedCtor() {
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&slot_idx_a_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&slot_idx_b_) -
+    reinterpret_cast<char*>(&slot_idx_a_)) + sizeof(slot_idx_b_));
+}
+
+SwitchSlotReply::~SwitchSlotReply() {
+  // @@protoc_insertion_point(destructor:game.net.SwitchSlotReply)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void SwitchSlotReply::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+}
+
+void SwitchSlotReply::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void SwitchSlotReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.SwitchSlotReply)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::memset(&slot_idx_a_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&slot_idx_b_) -
+      reinterpret_cast<char*>(&slot_idx_a_)) + sizeof(slot_idx_b_));
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* SwitchSlotReply::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // int32 slot_idx_a = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          slot_idx_a_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int32 slot_idx_b = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          slot_idx_b_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* SwitchSlotReply::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.SwitchSlotReply)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // int32 slot_idx_a = 1;
+  if (this->_internal_slot_idx_a() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(1, this->_internal_slot_idx_a(), target);
+  }
+
+  // int32 slot_idx_b = 2;
+  if (this->_internal_slot_idx_b() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(2, this->_internal_slot_idx_b(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.SwitchSlotReply)
+  return target;
+}
+
+size_t SwitchSlotReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.SwitchSlotReply)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // int32 slot_idx_a = 1;
+  if (this->_internal_slot_idx_a() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_slot_idx_a());
+  }
+
+  // int32 slot_idx_b = 2;
+  if (this->_internal_slot_idx_b() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_slot_idx_b());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData SwitchSlotReply::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    SwitchSlotReply::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*SwitchSlotReply::GetClassData() const { return &_class_data_; }
+
+void SwitchSlotReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<SwitchSlotReply *>(to)->MergeFrom(
+      static_cast<const SwitchSlotReply &>(from));
+}
+
+
+void SwitchSlotReply::MergeFrom(const SwitchSlotReply& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.SwitchSlotReply)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_slot_idx_a() != 0) {
+    _internal_set_slot_idx_a(from._internal_slot_idx_a());
+  }
+  if (from._internal_slot_idx_b() != 0) {
+    _internal_set_slot_idx_b(from._internal_slot_idx_b());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void SwitchSlotReply::CopyFrom(const SwitchSlotReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.SwitchSlotReply)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool SwitchSlotReply::IsInitialized() const {
+  return true;
+}
+
+void SwitchSlotReply::InternalSwap(SwitchSlotReply* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SwitchSlotReply, slot_idx_b_)
+      + sizeof(SwitchSlotReply::slot_idx_b_)
+      - PROTOBUF_FIELD_OFFSET(SwitchSlotReply, slot_idx_a_)>(
+          reinterpret_cast<char*>(&slot_idx_a_),
+          reinterpret_cast<char*>(&other->slot_idx_a_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata SwitchSlotReply::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[13]);
+}
+
+// ===================================================================
+
+class ListRoomReply::_Internal {
+ public:
+};
+
+ListRoomReply::ListRoomReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned),
+  rooms_(arena) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.ListRoomReply)
+}
+ListRoomReply::ListRoomReply(const ListRoomReply& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      rooms_(from.rooms_) {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  // @@protoc_insertion_point(copy_constructor:game.net.ListRoomReply)
+}
+
+inline void ListRoomReply::SharedCtor() {
+}
+
+ListRoomReply::~ListRoomReply() {
+  // @@protoc_insertion_point(destructor:game.net.ListRoomReply)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void ListRoomReply::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+}
+
+void ListRoomReply::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void ListRoomReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.ListRoomReply)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  rooms_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* ListRoomReply::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // repeated .game.net.RoomInfoReply rooms = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(_internal_add_rooms(), ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* ListRoomReply::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.ListRoomReply)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // repeated .game.net.RoomInfoReply rooms = 1;
+  for (unsigned i = 0,
+      n = static_cast<unsigned>(this->_internal_rooms_size()); i < n; i++) {
+    const auto& repfield = this->_internal_rooms(i);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+        InternalWriteMessage(1, repfield, repfield.GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.ListRoomReply)
+  return target;
+}
+
+size_t ListRoomReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.ListRoomReply)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated .game.net.RoomInfoReply rooms = 1;
+  total_size += 1UL * this->_internal_rooms_size();
+  for (const auto& msg : this->rooms_) {
+    total_size +=
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ListRoomReply::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    ListRoomReply::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ListRoomReply::GetClassData() const { return &_class_data_; }
+
+void ListRoomReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<ListRoomReply *>(to)->MergeFrom(
+      static_cast<const ListRoomReply &>(from));
+}
+
+
+void ListRoomReply::MergeFrom(const ListRoomReply& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.ListRoomReply)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  rooms_.MergeFrom(from.rooms_);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ListRoomReply::CopyFrom(const ListRoomReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.ListRoomReply)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ListRoomReply::IsInitialized() const {
+  return true;
+}
+
+void ListRoomReply::InternalSwap(ListRoomReply* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  rooms_.InternalSwap(&other->rooms_);
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata ListRoomReply::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[14]);
 }
 
 // @@protoc_insertion_point(namespace_scope)
@@ -1268,9 +3390,45 @@ template<> PROTOBUF_NOINLINE ::game::net::LoginReply*
 Arena::CreateMaybeMessage< ::game::net::LoginReply >(Arena* arena) {
   return Arena::CreateMessageInternal< ::game::net::LoginReply >(arena);
 }
-template<> PROTOBUF_NOINLINE ::game::net::CreateRoom*
-Arena::CreateMaybeMessage< ::game::net::CreateRoom >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::game::net::CreateRoom >(arena);
+template<> PROTOBUF_NOINLINE ::game::net::CreateRoomRequest*
+Arena::CreateMaybeMessage< ::game::net::CreateRoomRequest >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::CreateRoomRequest >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::RoomInfoReply*
+Arena::CreateMaybeMessage< ::game::net::RoomInfoReply >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::RoomInfoReply >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::PlayerRoomInfoReply*
+Arena::CreateMaybeMessage< ::game::net::PlayerRoomInfoReply >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::PlayerRoomInfoReply >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::KickPlayerRequest*
+Arena::CreateMaybeMessage< ::game::net::KickPlayerRequest >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::KickPlayerRequest >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::AddBotRequest*
+Arena::CreateMaybeMessage< ::game::net::AddBotRequest >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::AddBotRequest >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::NewPlayerJoinRoomReply*
+Arena::CreateMaybeMessage< ::game::net::NewPlayerJoinRoomReply >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::NewPlayerJoinRoomReply >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::PlayerLeaveReply*
+Arena::CreateMaybeMessage< ::game::net::PlayerLeaveReply >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::PlayerLeaveReply >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::SwitchSlotRequest*
+Arena::CreateMaybeMessage< ::game::net::SwitchSlotRequest >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::SwitchSlotRequest >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::SwitchSlotReply*
+Arena::CreateMaybeMessage< ::game::net::SwitchSlotReply >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::SwitchSlotReply >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::ListRoomReply*
+Arena::CreateMaybeMessage< ::game::net::ListRoomReply >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::ListRoomReply >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

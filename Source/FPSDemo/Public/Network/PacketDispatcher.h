@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "game.pb.h"
+#include "PacketListener.h"
 
 class UNetworkManager;
 
@@ -17,10 +17,12 @@ public:
 
     // Entry point on GameThread
     void Dispatch(const game::net::Packet& Packet);
-
+    void RegisterListener(IPacketListener* Listener);
+    void DeregisterListener(IPacketListener* Listener);
 private:
     UNetworkManager* Owner;
 
     void HandleLoginReply(const std::string& Payload);
-    void HandleCreateRoom(const std::string& Payload);
+
+    TArray<IPacketListener*> Listeners;
 };

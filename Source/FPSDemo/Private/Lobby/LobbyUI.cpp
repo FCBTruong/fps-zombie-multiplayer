@@ -6,34 +6,40 @@
 #include "Blueprint/WidgetTree.h"
 #include "Kismet/GameplayStatics.h"
 #include "Network/NetworkManager.h"
+#include "Lobby/RoomManager.h"
+#include "Lobby/RoomSlotUI.h"
+#include "Lobby/RoomSlotUI.h"
 
 void ULobbyUI::NativeConstruct()
 {
 	Super::NativeConstruct();
+	UE_LOG(LogTemp, Warning, TEXT("LobbyUI: NativeConstruct called"));
 
+	UGameInstance* GI = GetWorld()->GetGameInstance();
+	if (!GI) {
+		return;
+	}
 	if (UNetworkManager* NetworkManager =
-		GetWorld()->GetGameInstance()->GetSubsystem<UNetworkManager>())
+		GI->GetSubsystem<UNetworkManager>())
 	{
 		CachedNetworkManager = NetworkManager;
-
-		NetworkManager->OnCreateRoom.AddUObject(
-			this, &ULobbyUI::HandleCreateRoomSuccess);
 	}
+	if (URoomManager* RoomManager = GI->GetSubsystem<URoomManager>()) {
+		CachedRoomMgr = RoomManager;
 
-	CurrentRoomData.bIsActive = false;
-	CurrentRoomData.bHasStarted = false;
-	CurrentRoomData.Mode = EMatchMode::Spike;
-	CurrentRoomData.bIsSelfHost = true;
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), 1 });
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), -1 });
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), -1 });
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), -1 });
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), -1 });
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), -1 });
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), -1 });
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), -1 });
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), -1 });
-	CurrentRoomData.Players.Add(PlayerRoomInfo{ TEXT("Player1"), -1 });
+		RoomManager->OnRoomInfoReceived.AddUObject(this, &ULobbyUI::UpdateRoomData);
+		RoomManager->OnUpdateRoomSlot.AddUObject(this, &ULobbyUI::UpdateRoomSlot);
+		RoomManager->OnUpdateRoomList.AddUObject(this, &ULobbyUI::UpdateRoomList);
+
+		RequestRoomList();
+		GetWorld()->GetTimerManager().SetTimer(
+			RequestRoomListTimer,
+			this,
+			&ULobbyUI::RequestRoomList,
+			3.0f,
+			true   // looping
+		);
+	}
 
 	if (ZombieModeBtn)
 	{
@@ -85,11 +91,34 @@ void ULobbyUI::NativeConstruct()
 			if (URoomPlayerSlotUI* SlotWidget = Cast<URoomPlayerSlotUI>(Widget))
 			{
 				PlayerSlotUIs.Add(SlotWidget);
-				SlotWidget->OnDeletePlayer.AddUObject(this, &ULobbyUI::OnDeletePlayer);
 			}
 		}
 	}
+	ShowRoomListUI();
+}
 
+void ULobbyUI::NativeDestruct()
+{
+	if (CachedRoomMgr)
+	{
+		CachedRoomMgr->OnRoomInfoReceived.RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
+void ULobbyUI::ShowRoomListUI()
+{
+	if (ListPn) {
+		ListPn->SetVisibility(ESlateVisibility::Visible);
+	}
+	if (CreatePn) {
+		CreatePn->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+void ULobbyUI::ShowRoomUI()
+{
 	if (ListPn) {
 		ListPn->SetVisibility(ESlateVisibility::Collapsed);
 	}
@@ -108,17 +137,22 @@ void ULobbyUI::OnCreateRoomClicked() {
 }
 
 void ULobbyUI::UpdateRoomData() {
+	if (!CachedRoomMgr->GetCurrentRoomData().bIsActive) {
+		ShowRoomListUI();
+		return;
+	}
+
+	SetMatchMode(CachedRoomMgr->GetCurrentRoomData().Mode);
+	SetHostMode(CachedRoomMgr->GetCurrentRoomData().bIsSelfHost);
+
 	for (int32 i = 0; i < PlayerSlotUIs.Num(); ++i)
 	{
-		const PlayerRoomInfo Info =
-			CurrentRoomData.Players.IsValidIndex(i)
-			? CurrentRoomData.Players[i]
-			: PlayerRoomInfo();
+		const PlayerRoomInfo Info = CachedRoomMgr->GetCurrentRoomData().Players[i];
 
-		PlayerSlotUIs[i]->SetPlayerInfo(Info);
+		PlayerSlotUIs[i]->SetPlayerInfo(Info, i);
 	}
-	SetMatchMode(CurrentRoomData.Mode);
-	SetHostMode(CurrentRoomData.bIsSelfHost);
+
+	ShowRoomUI();
 }
 
 void ULobbyUI::OnZombieModeClicked()
@@ -135,8 +169,6 @@ void ULobbyUI::OnBombModeClicked()
 
 void ULobbyUI::SetMatchMode(EMatchMode InMode)
 {
-	CurrentRoomData.Mode = InMode;
-
 	if (InMode == EMatchMode::Spike)
 	{
 		VsTxt->SetVisibility(ESlateVisibility::Visible);
@@ -188,7 +220,6 @@ void ULobbyUI::SetButtonNormalColor(UButton* Button, const FLinearColor& Color)
 
 void ULobbyUI::SetHostMode(bool bIsSelfHost)
 {
-	CurrentRoomData.bIsSelfHost = bIsSelfHost;
 	SetButtonNormalColor(
 		BtnSelfHost,
 		bIsSelfHost ? LobbyUIColor::Selected : LobbyUIColor::Unselected);
@@ -244,13 +275,13 @@ void ULobbyUI::OnStartGameClicked()
 
 	Options += FString::Printf(TEXT("?BotT1=%d"), NumBotTeam1);
 	Options += FString::Printf(TEXT("?BotT2=%d"), NumBotTeam2);
-	if (CurrentRoomData.Mode == EMatchMode::Spike)
+	if (CachedRoomMgr->GetCurrentRoomData().Mode == EMatchMode::Spike)
 	{
 		const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap")); 
 		UGameplayStatics::OpenLevel(this, MapName, /*bAbsolute*/ true, Options);
 		return;
 	}
-	else if (CurrentRoomData.Mode == EMatchMode::Zombie)
+	else if (CachedRoomMgr->GetCurrentRoomData().Mode == EMatchMode::Zombie)
 	{
 		const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap"));
 		UGameplayStatics::OpenLevel(this, MapName, /*bAbsolute*/ true, Options);
@@ -266,72 +297,59 @@ void ULobbyUI::OnStartGameClicked()
 void ULobbyUI::OnAddBotTeam1()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Add Bot Team 1 Clicked"));
-	URoomPlayerSlotUI* EmptySlot = nullptr;
-	// check from 0 -> 4 for team 1
-	for (int32 i = 0; i < 5; ++i)
-	{
-		auto PSlot = PlayerSlotUIs.IsValidIndex(i) ? PlayerSlotUIs[i] : nullptr;
-		if (PSlot && PSlot->IsEmpty())
-		{
-			EmptySlot = PSlot;
-			break;
-		}
-	}
-
-	if (EmptySlot)
-	{
-		PlayerRoomInfo BotInfo;
-		BotInfo.PlayerName = TEXT("Bot");
-		BotInfo.PlayerId = 1; // assign unique id
-		BotInfo.bIsBot = true;
-		EmptySlot->SetPlayerInfo(BotInfo);
-	}
+	CachedRoomMgr->RequestAddBot(URoomManager::TEAM_1);
 }
 
 void ULobbyUI::OnAddBotTeam2()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Add Bot Team 2 Clicked"));
-
-	URoomPlayerSlotUI* EmptySlot = nullptr;
-	// check from 5 -> 9 for team 2
-	for (int32 i = 5; i < 10; ++i)
-	{
-		auto PSlot = PlayerSlotUIs.IsValidIndex(i) ? PlayerSlotUIs[i] : nullptr;
-		if (PSlot && PSlot->IsEmpty())
-		{
-			EmptySlot = PSlot;
-			break;
-		}
-	}
-	if (EmptySlot)
-	{
-		PlayerRoomInfo BotInfo;
-		BotInfo.PlayerName = TEXT("Bot");
-		BotInfo.PlayerId = 1; // assign unique id
-		BotInfo.bIsBot = true;
-		EmptySlot->SetPlayerInfo(BotInfo);
-	}
+	CachedRoomMgr->RequestAddBot(URoomManager::TEAM_2);
 }
 
-void ULobbyUI::OnDeletePlayer(int32 PlayerId)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Delete Player Clicked: %d"), PlayerId);
-	// update current match data
-	for (int32 i = 0; i < CurrentRoomData.Players.Num(); ++i)
-	{
-		if (CurrentRoomData.Players[i].PlayerId == PlayerId)
-		{
-			CurrentRoomData.Players[i].PlayerId = -1; // mark as empty
-			break;
-		}
-	}
+void ULobbyUI::UpdateRoomSlot(int slotIdx) {
+	URoomPlayerSlotUI* PSlot = PlayerSlotUIs[slotIdx];
+	
+	auto Info = CachedRoomMgr->GetCurrentRoomData().Players[slotIdx];
+	PSlot->SetPlayerInfo(Info, slotIdx);
 }
 
-void ULobbyUI::HandleCreateRoomSuccess() {
-	if (ListPn) {
-		ListPn->SetVisibility(ESlateVisibility::Visible);
+void ULobbyUI::RequestRoomList() {
+	CachedRoomMgr->RequestRoomList();
+}
+
+void ULobbyUI::UpdateRoomList() {
+	if (!ListPn) {
+		return;
 	}
-	if (CreatePn) {
-		CreatePn->SetVisibility(ESlateVisibility::Collapsed);
+	if (!ListPn->IsVisible()) {
+		return;
 	}
+	if (!RoomListBox) {
+		return;
+	}
+
+	if (!RoomSlotClass)
+	{
+		return;
+	}
+
+	RoomListBox->ClearChildren();
+
+	const TArray<FRoomData>& Rooms = CachedRoomMgr->GetAvailableRooms();
+
+	for (const FRoomData& Room : Rooms)
+	{
+
+		URoomSlotUI* BoxWidget =
+			CreateWidget<URoomSlotUI>(GetWorld(), RoomSlotClass);
+
+		if (!BoxWidget)
+		{
+			continue;
+		}
+
+		BoxWidget->Init(Room);
+		RoomListBox->AddChild(BoxWidget);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Ulobby:UpdateRoomList"));
 }

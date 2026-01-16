@@ -12,12 +12,6 @@ class APickupItem;
 class UCharacterAsset;
 class ABaseCharacter;
 
-namespace PlayerLocalInfoConst
-{
-	static constexpr const TCHAR* SLOT = TEXT("PlayerLocalInfo");
-	static constexpr int32 USER_INDEX = 0;
-}
-
 /**
  * 
  */
@@ -54,12 +48,4 @@ public:
 	void SetPickupSpike(APickupItem* SpikeItem);
 	int CurrentPickupId;
 	static UGameManager* Get(UObject* WorldContextObject);
-
-	void LoadOrCreateLocalInfo();
-
-public:
-	UPROPERTY()
-	FString PlayerName;
-	UPROPERTY()
-	FString GuestId;
 };

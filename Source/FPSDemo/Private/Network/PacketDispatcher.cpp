@@ -11,19 +11,23 @@ FPacketDispatcher::FPacketDispatcher(UNetworkManager* InOwner)
 
 void FPacketDispatcher::Dispatch(const game::net::Packet& Packet)
 {
-    switch (static_cast<ECmdId>(Packet.cmd_id()))
+	ECmdId CmdId = static_cast<ECmdId>(Packet.cmd_id());
+	const std::string& Payload = Packet.payload();
+    switch (CmdId)
     {
     case ECmdId::LOGIN_REPLY:
         HandleLoginReply(Packet.payload());
-        break;
-    case ECmdId::CREATE_ROOM:
-        HandleCreateRoom(Packet.payload());
         break;
     default:
         UE_LOG(LogTemp, Warning,
             TEXT("Unhandled CmdId: %d"),
             Packet.cmd_id());
         break;
+    }
+
+    for (IPacketListener* Listener : Listeners)
+    {
+        Listener->OnPacketReceived(CmdId, Payload);
     }
 }
 
@@ -44,15 +48,24 @@ void FPacketDispatcher::HandleLoginReply(const std::string& Payload)
 		*Token);
 
     // Call back into NetworkManager
-    Owner->HandleLoginSuccess(Token);
+    Owner->HandleLoginSuccess(Reply);
 }   
 
-void FPacketDispatcher::HandleCreateRoom(const std::string& Payload)
+void FPacketDispatcher::RegisterListener(IPacketListener* Listener)
 {
-    game::net::CreateRoom Msg;
-    if (!Msg.ParseFromString(Payload))
+    if (!Listener)
         return;
 
-    Owner->HandleCreateRoom();
+    UE_LOG(
+        LogTemp,
+        Log,
+        TEXT("FPacketDispatcher: Registering listener")
+    );
+
+    Listeners.AddUnique(Listener);
 }
 
+void FPacketDispatcher::DeregisterListener(IPacketListener* Listener)
+{
+    Listeners.Remove(Listener);
+}
