@@ -12,6 +12,7 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnNetworkConnected);
 DECLARE_MULTICAST_DELEGATE(FOnLoginSuccess);
+DECLARE_MULTICAST_DELEGATE(FOnNetworkConnectError);
 
 UCLASS()
 class FPSDEMO_API UNetworkManager : public UGameInstanceSubsystem
@@ -24,10 +25,12 @@ public:
     void SendPacket(ECmdId CmdId, const google::protobuf::Message& Msg);
     void Connect();
     void HandleLoginSuccess(const game::net::LoginReply& Reply);
-    void HandleCreateRoom();
+	bool IsConnected() const;
 	void RegisterListener(IPacketListener* Listener);
+	bool IsConnecting() const { return bIsConnecting; }
 
     FOnNetworkConnected OnNetworkConnected;
+	FOnNetworkConnectError OnNetworkConnectError;
     FOnLoginSuccess OnLoginSuccess;
 private:
     // UE 5.6 OnRawMessage signature is (const void*, SIZE_T, SIZE_T)
@@ -40,5 +43,6 @@ private:
 private:
     TSharedPtr<IWebSocket> Socket;
     FString Token;
+	bool bIsConnecting = false;
     TUniquePtr<FPacketDispatcher> Dispatcher;
 };

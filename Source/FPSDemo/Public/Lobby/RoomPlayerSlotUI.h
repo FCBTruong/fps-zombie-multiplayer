@@ -33,15 +33,17 @@ protected:
 	UWidget* EmptyPn;
 
 	UPROPERTY(meta = (BindWidget))
+	UWidget* OwnerIcon;
+
+	UPROPERTY(meta = (BindWidget))
 	UButton* SwitchBtn;
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* DeleteBtn;	
 public:
-	void SetPlayerInfo(PlayerRoomInfo Info, int InSlotIdx);
+	void SetPlayerInfo(PlayerRoomInfo Info, int InSlotIdx, int OwnerId, bool IsGuestMode);
 	bool IsEmpty() const;
 	PlayerRoomInfo GetPlayerInfo() const { return  CachedPlayerInfo; }
-
 	FOnDeletePlayer OnDeletePlayer;
 private:
 	PlayerRoomInfo CachedPlayerInfo;

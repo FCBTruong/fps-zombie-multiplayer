@@ -12,6 +12,9 @@ FPacketDispatcher::FPacketDispatcher(UNetworkManager* InOwner)
 void FPacketDispatcher::Dispatch(const game::net::Packet& Packet)
 {
 	ECmdId CmdId = static_cast<ECmdId>(Packet.cmd_id());
+
+    UE_LOG(LogTemp, Log, TEXT("Received: CmdId = %d"), static_cast<int32>(CmdId));
+
 	const std::string& Payload = Packet.payload();
     switch (CmdId)
     {
@@ -19,9 +22,6 @@ void FPacketDispatcher::Dispatch(const game::net::Packet& Packet)
         HandleLoginReply(Packet.payload());
         break;
     default:
-        UE_LOG(LogTemp, Warning,
-            TEXT("Unhandled CmdId: %d"),
-            Packet.cmd_id());
         break;
     }
 

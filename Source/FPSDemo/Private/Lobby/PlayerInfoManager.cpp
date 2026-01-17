@@ -6,6 +6,7 @@
 #include "Data/MySaveGame.h"
 #include "Utils/GameUtils.h"
 #include "Network/NetworkManager.h"
+#include "GameConstants.h"
 
 UPlayerInfoManager::UPlayerInfoManager()
 {
@@ -128,8 +129,18 @@ void UPlayerInfoManager::LoadOrCreateLocalInfo()
         Save->PlayerName = TEXT("Player");
     }
 
+    if (Save->Avatar.IsEmpty())
+    {
+        int32 AvatarId = FGameConstants::AVATAR_IDS[
+            FMath::RandRange(0, UE_ARRAY_COUNT(FGameConstants::AVATAR_IDS) - 1)
+        ];
+
+        Save->Avatar = FString::FromInt(AvatarId);
+	}
+
     GuestId = Save->GuestId;
     PlayerName = Save->PlayerName;
+	Avatar = Save->Avatar;
 
     UGameplayStatics::SaveGameToSlot(Save, SLOT, USER_INDEX);
 }

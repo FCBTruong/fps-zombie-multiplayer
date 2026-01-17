@@ -45,5 +45,6 @@ private:
     TSubclassOf<UUserWidget> GetWidgetClassForPage(EUIPage Page) const;
     void ApplyInputModeForPage(EUIPage Page);
 	void HandleNetworkConnected();
+	void HandleNetworkConnectError();
     void HandleLoginSuccess();
 };

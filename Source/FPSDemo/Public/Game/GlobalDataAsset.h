@@ -9,6 +9,7 @@
 #include "GlobalDataAsset.generated.h"
 class UPlayerUI;
 class UBehaviorTree;
+class UPopupDialogUI;
 /**
  * 
  */
@@ -56,4 +57,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Fx")
 	TObjectPtr<UParticleSystem> MeleeHitFx;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UPopupDialogUI> PopupDialogUIClass;
 };

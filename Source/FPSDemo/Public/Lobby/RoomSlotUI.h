@@ -27,4 +27,5 @@ public:
 private:
 	UFUNCTION()
 	void OnJoinBtnClicked();
+	FRoomData CachedRoomData;
 };

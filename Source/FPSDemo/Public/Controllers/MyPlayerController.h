@@ -188,6 +188,7 @@ private:
     void ReleaseSlow();
     void HandleAimingChanged(bool bIsAiming);
     void Move(const FInputActionValue& Value);
+    void HandleEscapePressed();
     void OnLeftClickStart();
     void OnLeftClickRelease();
     void Jump();
@@ -214,5 +215,6 @@ private:
 
     void AddDefaultInputMapping();
     void RemoveDefaultInputMapping();
-
+    void EnterUIMode();
+    void EnterGameMode();
 };

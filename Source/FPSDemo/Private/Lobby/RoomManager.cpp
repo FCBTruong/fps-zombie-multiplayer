@@ -23,6 +23,7 @@ void URoomManager::OnPacketReceived(
 	const std::string& Payload
 )
 {
+
 	// Handle room-related packets here
     switch (CmdId)
     {
@@ -33,6 +34,8 @@ void URoomManager::OnPacketReceived(
             return;
         CurrentRoomData.bHasStarted = RoomInfoPkg.has_started();
         CurrentRoomData.bIsActive = true;
+		CurrentRoomData.OwnerId = RoomInfoPkg.owner_id();
+		CurrentRoomData.RoomId = RoomInfoPkg.room_id();
         CurrentRoomData.Mode = static_cast<EMatchMode>(RoomInfoPkg.mode());
         CurrentRoomData.bIsSelfHost = RoomInfoPkg.is_self_host();
 
@@ -43,6 +46,7 @@ void URoomManager::OnPacketReceived(
             Info.PlayerName = FString(ProtoPlayerInfo.player_name().c_str());
             Info.PlayerId = ProtoPlayerInfo.user_id();
             Info.bIsBot = ProtoPlayerInfo.is_bot();
+			Info.Avatar = FString(ProtoPlayerInfo.avatar().c_str());
             CurrentRoomData.Players.Add(Info);
         }
 
@@ -64,6 +68,7 @@ void URoomManager::OnPacketReceived(
             RoomData.Mode = static_cast<EMatchMode>(ProtoRoom.mode());
             RoomData.bHasStarted = ProtoRoom.has_started();
             RoomData.OwnerId = ProtoRoom.owner_id();
+			RoomData.RoomId = ProtoRoom.room_id();
             RoomData.Players.Empty();
             for (int j = 0; j < ProtoRoom.players_size(); ++j) {
                 const auto& ProtoPlayerInfo = ProtoRoom.players(j);
@@ -71,6 +76,7 @@ void URoomManager::OnPacketReceived(
                 Info.PlayerName = FString(ProtoPlayerInfo.player_name().c_str());
                 Info.PlayerId = ProtoPlayerInfo.user_id();
                 Info.bIsBot = ProtoPlayerInfo.is_bot();
+				Info.Avatar = FString(ProtoPlayerInfo.avatar().c_str());
                 RoomData.Players.Add(Info);
             }
             AvailableRooms.Add(RoomData);
@@ -80,9 +86,11 @@ void URoomManager::OnPacketReceived(
         break;
     }
     case ECmdId::KICK_PLAYER:
-        // Handle kick player response
+    {   // Handle kick player response
         break;
+    }
     case ECmdId::SWITCH_SLOT: {
+        UE_LOG(LogTemp, Warning, TEXT("debug::switch"));
         game::net::SwitchSlotReply Msg;
         if (!Msg.ParseFromString(Payload))
             return;
@@ -97,12 +105,19 @@ void URoomManager::OnPacketReceived(
 		}
         break;
     }
-    case ECmdId::LEAVE_ROOM:
+    case ECmdId::LEAVE_ROOM: {
+		CurrentRoomData = FRoomData(); // reset room data
+		OnRoomInfoReceived.Broadcast();
+        break;
+    }
+    case ECmdId::PLAYER_LEAVE_ROOM_NOTI:
     {
+        UE_LOG(LogTemp, Warning, TEXT("debug::I have left the room"));
         game::net::PlayerLeaveReply Msg;
         if (!Msg.ParseFromString(Payload))
             return;
 		int SlotIdx = Msg.slot_idx();
+       
         if (CurrentRoomData.Players.IsValidIndex(SlotIdx)) {
             // Clear the player info in that slot
             PlayerRoomInfo Info;
@@ -135,11 +150,37 @@ void URoomManager::OnPacketReceived(
             Info.PlayerName = FString(ProtoPlayerInfo.player_name().c_str());
             Info.PlayerId = ProtoPlayerInfo.user_id();
             Info.bIsBot = ProtoPlayerInfo.is_bot();
+			Info.Avatar = FString(ProtoPlayerInfo.avatar().c_str());
             CurrentRoomData.Players[SlotIdx] = Info;
 
             OnUpdateRoomSlot.Broadcast(SlotIdx);
         }
 		break;
+    }
+    case ECmdId::ROOM_UPDATE_GAME_MODE: {
+		game::net::ChangeGameModeReply Msg;
+		if (!Msg.ParseFromString(Payload))
+			return;
+
+		CurrentRoomData.Mode = static_cast<EMatchMode>(Msg.game_mode());
+		OnUpdateRoomGameMode.Broadcast();
+        break;
+    }
+    case ECmdId::ROOM_UPDATE_HOST_TYPE: {
+		game::net::ChangeHostTypeReply Msg;
+		if (!Msg.ParseFromString(Payload))
+			return;
+		CurrentRoomData.bIsSelfHost = Msg.is_self_host();
+		OnUpdateRoomHostType.Broadcast();
+        break;
+    }
+    case ECmdId::ROOM_UPDATE_OWNER: {
+		game::net::RoomUpdateOwnerReply Msg;
+        if (!Msg.ParseFromString(Payload))
+			return;
+		CurrentRoomData.OwnerId = Msg.new_owner_id();
+		OnUpdateRoomOwner.Broadcast();
+        break;
     }
     default:
         break;
@@ -162,10 +203,26 @@ URoomManager* URoomManager::Get(UWorld* World)
 
 void URoomManager::RequestKickPlayer(int PlayerId)
 {
-    if (NetworkManager) {
+    if (NetworkManager && NetworkManager->IsConnected()) {
         game::net::KickPlayerRequest Pkg;
 		Pkg.set_user_id(PlayerId);
         NetworkManager->SendPacket(ECmdId::KICK_PLAYER, Pkg);
+    }
+    else {
+		// offline mode
+        for (int i = 0; i < CurrentRoomData.Players.Num(); ++i)
+        {
+            if (CurrentRoomData.Players[i].PlayerId == PlayerId)
+            {
+                PlayerRoomInfo Info;
+                Info.PlayerName = TEXT("");
+                Info.PlayerId = FGameConstants::EMPTY_PLAYER_ID; // Indicate empty slot
+                Info.bIsBot = false;
+                CurrentRoomData.Players[i] = Info;
+                OnUpdateRoomSlot.Broadcast(i);
+                break;
+            }
+        }
     }
 }
 
@@ -179,17 +236,153 @@ void URoomManager::RequestSwitchSlot(int SlotIdx)
 }
 
 void URoomManager::RequestAddBot(int team) {
-    if (NetworkManager) {
+    if (NetworkManager && NetworkManager->IsConnected()) {
         game::net::AddBotRequest Pkg;
         Pkg.set_team(team);
         NetworkManager->SendPacket(ECmdId::ADD_BOT, Pkg);
+    }
+    else {
+		// offline mode
+
+        // find empty slot
+		int StartIdx = 0;
+        if (team == URoomManager::TEAM_2) {
+            StartIdx = 5;
+        }
+        for (int i = StartIdx; i < StartIdx + 5; ++i)
+        {
+            if (CurrentRoomData.Players[i].PlayerId == FGameConstants::EMPTY_PLAYER_ID)
+            {
+                PlayerRoomInfo Info;
+				Info.PlayerName = TEXT("Bot");
+				Info.Avatar = "100"; // default bot avatar
+                Info.PlayerId = FGameConstants::BOT_PLAYER_ID_START + i; // assign a bot id
+                Info.bIsBot = true;
+                CurrentRoomData.Players[i] = Info;
+                OnUpdateRoomSlot.Broadcast(i);
+                break;
+            }
+		}
     }
 }
 
 void URoomManager::RequestRoomList()
 {
-    if (NetworkManager) {
+    if (NetworkManager && NetworkManager->IsConnected()) {
         game::net::Empty Pkg;
         NetworkManager->SendPacket(ECmdId::LIST_ROOM, Pkg);
     }
+    else {
+		// offline mode
+    }
+}
+
+void URoomManager::RequestJoinRoom(int32 roomId)
+{
+    if (NetworkManager) {
+        game::net::JoinRoomRequest Pkg;
+        Pkg.set_room_id(roomId);
+        NetworkManager->SendPacket(ECmdId::JOIN_ROOM, Pkg);
+    }
+}
+
+bool URoomManager::IsMyRoom() const
+{
+    UPlayerInfoManager* PlayerInfoMgr = UPlayerInfoManager::Get(GetWorld());
+    if (!PlayerInfoMgr) {
+        return false;
+    }
+    return CurrentRoomData.OwnerId == PlayerInfoMgr->GetUserId();
+}
+
+void URoomManager::RequestLeaveRoom()
+{
+    if (NetworkManager && NetworkManager->IsConnected()) {
+        game::net::Empty Pkg;
+        NetworkManager->SendPacket(ECmdId::LEAVE_ROOM, Pkg);
+    }
+    else {
+		// offline mode
+		CurrentRoomData = FRoomData(); // reset room data
+		OnRoomInfoReceived.Broadcast();
+    }
+}
+
+void URoomManager::RequestStartGame()
+{
+    if (NetworkManager && NetworkManager->IsConnected()) {
+        game::net::Empty Pkg;
+        NetworkManager->SendPacket(ECmdId::START_GAME, Pkg);
+    }
+    else {
+		// offline mode
+    }
+}
+
+void URoomManager::RequestChangeGameMode(EMatchMode GameMode) {
+    if (NetworkManager && NetworkManager->IsConnected()) {
+        game::net::ChangeGameModeRequest Pkg;
+		Pkg.set_game_mode(static_cast<int32>(GameMode));
+        NetworkManager->SendPacket(ECmdId::ROOM_UPDATE_GAME_MODE, Pkg);
+    }
+    else {
+		// offline mode
+		CurrentRoomData.Mode = GameMode;
+		OnUpdateRoomGameMode.Broadcast();
+    }
+}
+
+void URoomManager::RequestChangeHostType(bool bIsSelfHost) {
+    if (NetworkManager && NetworkManager->IsConnected()) {
+        game::net::ChangeHostTypeRequest Pkg;
+        Pkg.set_is_self_host(bIsSelfHost);
+        NetworkManager->SendPacket(ECmdId::ROOM_UPDATE_HOST_TYPE, Pkg);
+    }
+    else {
+		// offline mode
+        CurrentRoomData.bIsSelfHost = bIsSelfHost;
+		OnUpdateRoomHostType.Broadcast();
+    }
+}
+
+void URoomManager::RequestCreateRoom() {
+    if (NetworkManager && NetworkManager->IsConnected()) {
+        game::net::Empty Empty;
+        NetworkManager->SendPacket(ECmdId::CREATE_ROOM, Empty);
+	}
+    else {
+		UE_LOG(LogTemp, Warning, TEXT("URoomManager::RequestCreateRoom: NetworkManager is not connected"));
+        CreateOfflineRoom();
+    }
+}
+
+void URoomManager::CreateOfflineRoom()
+{
+    CurrentRoomData = FRoomData();
+    CurrentRoomData.bIsActive = true;
+    CurrentRoomData.RoomId = 0;
+    CurrentRoomData.OwnerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();
+    CurrentRoomData.Mode = EMatchMode::Spike;
+    CurrentRoomData.bIsSelfHost = true;
+
+    CurrentRoomData.Players.Reserve(10);
+
+    for (int i = 0; i < 10; ++i)
+    {
+        PlayerRoomInfo Info;
+        if (i == 0) {
+            Info.PlayerName = UPlayerInfoManager::Get(GetWorld())->GetPlayerName();
+            Info.PlayerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();
+			Info.Avatar = UPlayerInfoManager::Get(GetWorld())->GetAvatar();
+            Info.bIsBot = false;
+        }
+        else {
+            Info.PlayerName = TEXT("");
+            Info.PlayerId = FGameConstants::EMPTY_PLAYER_ID;
+            Info.bIsBot = false;
+        }
+        CurrentRoomData.Players.Add(Info);
+    }
+
+    OnRoomInfoReceived.Broadcast();
 }

@@ -13,6 +13,9 @@ class UNetworkManager;
 DECLARE_MULTICAST_DELEGATE(FOnRoomInfoReceived);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRoomSlot, int /*SlotIdx*/);
 DECLARE_MULTICAST_DELEGATE(FOnUpdateRoomList);
+DECLARE_MULTICAST_DELEGATE(FOnUpdateRoomOwner);
+DECLARE_MULTICAST_DELEGATE(FOnUpdateRoomGameMode);
+DECLARE_MULTICAST_DELEGATE(FOnUpdateRoomHostType);
 /**
  * 
  */
@@ -32,12 +35,20 @@ public:
 	void RequestSwitchSlot(int SlotIdx);
 	void RequestAddBot(int team);
 	void RequestRoomList();
+	void RequestLeaveRoom();
+	void RequestStartGame();
+	void RequestChangeGameMode(EMatchMode GameMode);
+	void RequestChangeHostType(bool bIsSelfHost);
+	void RequestCreateRoom();
+
 	FRoomData GetCurrentRoomData() {
 		return CurrentRoomData;
 	}
 	TArray<FRoomData> GetAvailableRooms() {
 		return AvailableRooms;
 	}
+	void RequestJoinRoom(int32 roomId);
+	bool IsMyRoom() const;
 
 	static URoomManager* Get(UWorld* World);
 
@@ -47,8 +58,13 @@ public:
 	FOnRoomInfoReceived OnRoomInfoReceived;
 	FOnUpdateRoomSlot OnUpdateRoomSlot;
 	FOnUpdateRoomList OnUpdateRoomList;
+	FOnUpdateRoomOwner OnUpdateRoomOwner;
+	FOnUpdateRoomGameMode OnUpdateRoomGameMode;
+	FOnUpdateRoomHostType OnUpdateRoomHostType;
 private:
 	UNetworkManager* NetworkManager = nullptr;
 	FRoomData CurrentRoomData;
 	TArray<FRoomData> AvailableRooms;
+
+	void CreateOfflineRoom();
 };

@@ -8,7 +8,6 @@
 #include "Network/NetworkManager.h"
 #include "Lobby/RoomManager.h"
 #include "Lobby/RoomSlotUI.h"
-#include "Lobby/RoomSlotUI.h"
 
 void ULobbyUI::NativeConstruct()
 {
@@ -27,9 +26,12 @@ void ULobbyUI::NativeConstruct()
 	if (URoomManager* RoomManager = GI->GetSubsystem<URoomManager>()) {
 		CachedRoomMgr = RoomManager;
 
-		RoomManager->OnRoomInfoReceived.AddUObject(this, &ULobbyUI::UpdateRoomData);
+		RoomManager->OnRoomInfoReceived.AddUObject(this, &ULobbyUI::UpdateRoomState);
 		RoomManager->OnUpdateRoomSlot.AddUObject(this, &ULobbyUI::UpdateRoomSlot);
 		RoomManager->OnUpdateRoomList.AddUObject(this, &ULobbyUI::UpdateRoomList);
+		RoomManager->OnUpdateRoomOwner.AddUObject(this, &ULobbyUI::UpdateRoomOwner);
+		RoomManager->OnUpdateRoomGameMode.AddUObject(this, &ULobbyUI::UpdateRoomGameMode);
+		RoomManager->OnUpdateRoomHostType.AddUObject(this, &ULobbyUI::UpdateRoomHostType);
 
 		RequestRoomList();
 		GetWorld()->GetTimerManager().SetTimer(
@@ -49,13 +51,13 @@ void ULobbyUI::NativeConstruct()
 	{
 		BombModeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnBombModeClicked);
 	}
-	if (BtnSelfHost)
+	if (SelfHostBtn)
 	{
-		BtnSelfHost->OnClicked.AddDynamic(this, &ULobbyUI::OnSelfHostClicked);
+		SelfHostBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnSelfHostClicked);
 	}
-	if (BtnDedicatedServer)
+	if (DedicatedServerBtn)
 	{
-		BtnDedicatedServer->OnClicked.AddDynamic(this, &ULobbyUI::OnDedicatedServerClicked);
+		DedicatedServerBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnDedicatedServerClicked);
 	}
 	if (StartBtn) {
 		StartBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnStartGameClicked);
@@ -71,8 +73,12 @@ void ULobbyUI::NativeConstruct()
 	if (CreateRoomBtn) {
 		CreateRoomBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnCreateRoomClicked);
 	}
-
-
+	if (BackBtn) {
+		BackBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnBackClicked);
+	}
+	if (PracticeBtn) {
+		PracticeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnPracticeBtnClicked);
+	}
 
 	// get all objects of type URoomPlayerSlotUI
 	PlayerSlotUIs.Empty();
@@ -95,6 +101,15 @@ void ULobbyUI::NativeConstruct()
 		}
 	}
 	ShowRoomListUI();
+	UpdateRoomList();
+
+	bool bNetworkConnected = CachedNetworkManager && CachedNetworkManager->IsConnected();
+	NetworkStatusActiveIcon->SetVisibility(
+		bNetworkConnected ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	NetworkStatusInActiveIcon->SetVisibility(
+		bNetworkConnected ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	OfflineModeTxt->SetVisibility(
+		bNetworkConnected ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 }
 
 void ULobbyUI::NativeDestruct()
@@ -112,8 +127,8 @@ void ULobbyUI::ShowRoomListUI()
 	if (ListPn) {
 		ListPn->SetVisibility(ESlateVisibility::Visible);
 	}
-	if (CreatePn) {
-		CreatePn->SetVisibility(ESlateVisibility::Collapsed);
+	if (RoomPn) {
+		RoomPn->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 
@@ -122,34 +137,68 @@ void ULobbyUI::ShowRoomUI()
 	if (ListPn) {
 		ListPn->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	if (CreatePn) {
-		CreatePn->SetVisibility(ESlateVisibility::Visible);
+	if (RoomPn) {
+		RoomPn->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
 void ULobbyUI::OnCreateRoomClicked() {
-	if (UNetworkManager* NetworkManager =
-		GetWorld()->GetGameInstance()->GetSubsystem<UNetworkManager>())
-	{
-		game::net::Empty Empty;
-		NetworkManager->SendPacket(ECmdId::CREATE_ROOM, Empty);
+	if (CachedRoomMgr) {
+		CachedRoomMgr->RequestCreateRoom();
 	}
 }
 
-void ULobbyUI::UpdateRoomData() {
+void ULobbyUI::OnBackClicked() {
+	if (CachedRoomMgr &&
+		CachedRoomMgr->GetCurrentRoomData().bIsActive) {
+		// in room, leave room
+		CachedRoomMgr->RequestLeaveRoom();
+	}
+}
+
+void ULobbyUI::UpdateRoomState() {
 	if (!CachedRoomMgr->GetCurrentRoomData().bIsActive) {
 		ShowRoomListUI();
 		return;
 	}
 
-	SetMatchMode(CachedRoomMgr->GetCurrentRoomData().Mode);
-	SetHostMode(CachedRoomMgr->GetCurrentRoomData().bIsSelfHost);
+	RoomTitleLb->SetText(
+		FText::FromString(
+			FString::Printf(
+				TEXT("Room ID: %d"),
+				CachedRoomMgr->GetCurrentRoomData().RoomId
+			)
+		)
+	);	
+	UpdateRoomGameMode();
+	UpdateRoomHostType();
 
 	for (int32 i = 0; i < PlayerSlotUIs.Num(); ++i)
 	{
-		const PlayerRoomInfo Info = CachedRoomMgr->GetCurrentRoomData().Players[i];
+		UpdateRoomSlot(i);
+	}
 
-		PlayerSlotUIs[i]->SetPlayerInfo(Info, i);
+	if (CachedRoomMgr->IsMyRoom()) {
+		StartBtn->SetVisibility(ESlateVisibility::Visible);
+		AddBotTeam1Btn->SetVisibility(ESlateVisibility::Visible);
+		AddBotTeam2Btn->SetVisibility(ESlateVisibility::Visible);
+		
+		ZombieModeBtn->SetIsEnabled(true);
+		BombModeBtn->SetIsEnabled(true);
+		SelfHostBtn->SetIsEnabled(true);
+		DedicatedServerBtn->SetIsEnabled(true);
+		WaitingOwnerStartTxt->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	else {
+		StartBtn->SetVisibility(ESlateVisibility::Hidden);
+		AddBotTeam1Btn->SetVisibility(ESlateVisibility::Hidden);
+		AddBotTeam2Btn->SetVisibility(ESlateVisibility::Hidden);
+
+		ZombieModeBtn->SetIsEnabled(false);
+		BombModeBtn->SetIsEnabled(false);
+		SelfHostBtn->SetIsEnabled(false);
+		DedicatedServerBtn->SetIsEnabled(false);
+		WaitingOwnerStartTxt->SetVisibility(ESlateVisibility::Visible);
 	}
 
 	ShowRoomUI();
@@ -158,13 +207,13 @@ void ULobbyUI::UpdateRoomData() {
 void ULobbyUI::OnZombieModeClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Zombie Mode Clicked"));
-	SetMatchMode(EMatchMode::Zombie);
+	CachedRoomMgr->RequestChangeGameMode(EMatchMode::Zombie);
 }
 
 void ULobbyUI::OnBombModeClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Bomb Mode Clicked"));
-	SetMatchMode(EMatchMode::Spike);
+	CachedRoomMgr->RequestChangeGameMode(EMatchMode::Spike);
 }
 
 void ULobbyUI::SetMatchMode(EMatchMode InMode)
@@ -193,14 +242,13 @@ void ULobbyUI::SetMatchMode(EMatchMode InMode)
 
 void ULobbyUI::OnSelfHostClicked()
 {
-	// start self-hosted server
-	SetHostMode(true);
+	CachedRoomMgr->RequestChangeHostType(true);
 }
 
 void ULobbyUI::OnDedicatedServerClicked()
 {
 	// start dedicated server
-	SetHostMode(false);
+	CachedRoomMgr->RequestChangeHostType(false);
 }
 
 void ULobbyUI::SetButtonNormalColor(UButton* Button, const FLinearColor& Color)
@@ -221,10 +269,10 @@ void ULobbyUI::SetButtonNormalColor(UButton* Button, const FLinearColor& Color)
 void ULobbyUI::SetHostMode(bool bIsSelfHost)
 {
 	SetButtonNormalColor(
-		BtnSelfHost,
+		SelfHostBtn,
 		bIsSelfHost ? LobbyUIColor::Selected : LobbyUIColor::Unselected);
 	SetButtonNormalColor(
-		BtnDedicatedServer,
+		DedicatedServerBtn,
 		!bIsSelfHost ? LobbyUIColor::Selected : LobbyUIColor::Unselected);
 
 	SelfHostTickIcon->SetVisibility(
@@ -309,7 +357,9 @@ void ULobbyUI::UpdateRoomSlot(int slotIdx) {
 	URoomPlayerSlotUI* PSlot = PlayerSlotUIs[slotIdx];
 	
 	auto Info = CachedRoomMgr->GetCurrentRoomData().Players[slotIdx];
-	PSlot->SetPlayerInfo(Info, slotIdx);
+	int OwnerId = CachedRoomMgr->GetCurrentRoomData().OwnerId;
+	bool bIsGuest = !CachedRoomMgr->IsMyRoom();
+	PSlot->SetPlayerInfo(Info, slotIdx, OwnerId, bIsGuest);
 }
 
 void ULobbyUI::RequestRoomList() {
@@ -336,6 +386,16 @@ void ULobbyUI::UpdateRoomList() {
 
 	const TArray<FRoomData>& Rooms = CachedRoomMgr->GetAvailableRooms();
 
+	if (Rooms.Num() == 0)
+	{
+		EmptyRoomTxt->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		EmptyRoomTxt->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+
 	for (const FRoomData& Room : Rooms)
 	{
 
@@ -352,4 +412,24 @@ void ULobbyUI::UpdateRoomList() {
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Ulobby:UpdateRoomList"));
+}
+
+void ULobbyUI::UpdateRoomOwner() {
+	UpdateRoomState();
+}
+
+void ULobbyUI::UpdateRoomHostType() {
+	SetHostMode(CachedRoomMgr->GetCurrentRoomData().bIsSelfHost);
+}
+
+void ULobbyUI::UpdateRoomGameMode() {
+	SetMatchMode(CachedRoomMgr->GetCurrentRoomData().Mode);
+}
+
+void ULobbyUI::OnPracticeBtnClicked()
+{
+	UGameplayStatics::OpenLevel(
+		this,
+		FName(TEXT("/Game/Main/Maps/PracticeMap"))
+	);
 }

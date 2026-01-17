@@ -9,6 +9,7 @@
 void UNetworkManager::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+	bIsConnecting = false;
     Dispatcher = MakeUnique<FPacketDispatcher>(this);
     // log token
 	UE_LOG(LogTemp, Log, TEXT("Player Token: %s"), *Token);
@@ -27,12 +28,13 @@ void UNetworkManager::Deinitialize()
         Socket->Close();
         Socket.Reset();
     }
-
+	bIsConnecting = false;
     Super::Deinitialize();
 }
 
 void UNetworkManager::Connect()
 {
+	bIsConnecting = true;
     UE_LOG(LogTemp, Log, TEXT("Connecting to WebSocket server..."));
 
     FString Url;
@@ -61,13 +63,16 @@ void UNetworkManager::Connect()
 
 void UNetworkManager::HandleConnected()
 {
+	bIsConnecting = false;
     UE_LOG(LogTemp, Log, TEXT("WebSocket connected"));
 	OnNetworkConnected.Broadcast();
 }
 
 void UNetworkManager::HandleConnectionError(const FString& Error)
 {
+	bIsConnecting = false;
     UE_LOG(LogTemp, Error, TEXT("WebSocket connection error: %s"), *Error);
+    OnNetworkConnectError.Broadcast();
 }
 
 void UNetworkManager::HandleClosed(int32 StatusCode, const FString& Reason, bool bWasClean)
@@ -150,4 +155,9 @@ void UNetworkManager::RegisterListener(IPacketListener* Listener)
     if (Dispatcher) {
         Dispatcher->RegisterListener(Listener);
     }
+}
+
+bool UNetworkManager::IsConnected() const
+{
+    return Socket.IsValid() && Socket->IsConnected();
 }

@@ -25,12 +25,27 @@ void ALobbyPlayerController::BeginPlay()
 
         NetworkManager->OnLoginSuccess.AddUObject(
             this, &ALobbyPlayerController::HandleLoginSuccess);
+
+        NetworkManager->OnNetworkConnectError.AddUObject(
+            this, &ALobbyPlayerController::HandleNetworkConnectError);
+
+        if (NetworkManager->IsConnected()) {
+            HandleNetworkConnected();
+        }
+        else if (!NetworkManager->IsConnecting()){
+			NetworkManager->Connect();
+        }
     }
 }
 
 void ALobbyPlayerController::HandleNetworkConnected()
 {
     SetUIPage(EUIPage::Login);
+}
+
+void ALobbyPlayerController::HandleNetworkConnectError()
+{
+    SetUIPage(EUIPage::Lobby);
 }
 
 void ALobbyPlayerController::HandleLoginSuccess()

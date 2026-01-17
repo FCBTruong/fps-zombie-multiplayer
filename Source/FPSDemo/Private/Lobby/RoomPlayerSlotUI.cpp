@@ -4,6 +4,7 @@
 #include "Lobby/RoomPlayerSlotUI.h"
 #include "Lobby/PlayerInfoManager.h"
 #include "Lobby/RoomManager.h"
+#include "Utils/GameUtils.h"
 
 void URoomPlayerSlotUI::NativeConstruct()
 {
@@ -20,13 +21,14 @@ void URoomPlayerSlotUI::NativeConstruct()
 	}
 }
 
-void URoomPlayerSlotUI::SetPlayerInfo(PlayerRoomInfo Info, int InSlotIdx)
+void URoomPlayerSlotUI::SetPlayerInfo(PlayerRoomInfo Info, int InSlotIdx, int OwnerId, bool IsGuestMode)
 {
 	CachedPlayerInfo = Info;
 	SlotIdx = InSlotIdx;
 	// log UI
 	UE_LOG(LogTemp, Warning, TEXT("RoomPlayerSlotUI: Setting player info: ID=%d, Name=%s"), Info.PlayerId, *Info.PlayerName);
 	
+	OwnerIcon->SetVisibility(ESlateVisibility::Collapsed);
 	if (Info.PlayerId == FGameConstants::EMPTY_PLAYER_ID) // -1 indicates empty slot
 	{
 		EmptyPn->SetVisibility(ESlateVisibility::Visible);
@@ -43,8 +45,40 @@ void URoomPlayerSlotUI::SetPlayerInfo(PlayerRoomInfo Info, int InSlotIdx)
 		NameLb->SetText(FText::FromString(Info.PlayerName));
 		
 		bool bIsMe = Info.PlayerId == UPlayerInfoManager::Get(GetWorld())->GetUserId();
-		SwitchBtn->SetVisibility(bIsMe ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
-		DeleteBtn->SetVisibility(bIsMe ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+		SwitchBtn->SetVisibility(ESlateVisibility::Collapsed);
+
+		bool bIsRoomOwner = Info.PlayerId == OwnerId;
+		if (bIsRoomOwner) {
+			OwnerIcon->SetVisibility(ESlateVisibility::Visible);
+		}
+
+		if (bIsMe)
+		{
+			FSlateBrush Brush = AvatarImg->GetBrush();
+			Brush.OutlineSettings.Color = FLinearColor(
+				0x63 / 255.0f,
+				0x32 / 255.0f,
+				0x1A / 255.0f,
+				1.0f
+			);
+			AvatarImg->SetBrush(Brush);
+		}
+		else
+		{
+			FSlateBrush Brush = AvatarImg->GetBrush();
+			Brush.OutlineSettings.Color = FLinearColor::Black;
+			AvatarImg->SetBrush(Brush);
+		}
+
+		if (IsGuestMode) {
+			DeleteBtn->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		else {
+			DeleteBtn->SetVisibility(bIsMe ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+		}
+		
+		AvatarImg->SetBrushFromTexture(
+			GameUtils::GetTextureAvatar(Info.Avatar));
 	}
 }
 

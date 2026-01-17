@@ -27,6 +27,8 @@
 #include "Components/SpikeComponent.h"
 #include "UI/PlayerUI.h"
 #include "Components/CharCameraComponent.h"
+#include "Lobby/SceneManager.h"
+#include "Kismet/GameplayStatics.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -36,9 +38,7 @@ void AMyPlayerController::BeginPlay()
 {
     Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: BeginPlay called"));
-    bShowMouseCursor = false;
-    FInputModeGameOnly InputMode;
-    SetInputMode(InputMode);
+	EnterGameMode();
 
     AddDefaultInputMapping();
 
@@ -133,20 +133,14 @@ void AMyPlayerController::ToggleShop()
     {
         PlayerUI->OpenShop();
 
-        this->bShowMouseCursor = true;
-        SetIgnoreLookInput(true);
-        SetIgnoreMoveInput(true);
+		EnterUIMode();  
     }
     else
     {
         PlayerUI->CloseShop();
         this->bShowMouseCursor = false;
-        FInputModeGameOnly GameInput;
-        this->SetInputMode(GameInput);
-        this->bShowMouseCursor = false;
-
-        SetIgnoreLookInput(false);
-        SetIgnoreMoveInput(false);
+        
+		EnterGameMode();
 	}
 }
 
@@ -178,7 +172,7 @@ void AMyPlayerController::SetupInputComponent()
 
         if (IA_ESCAPE)
         {
-            EnhancedInput->BindAction(IA_ESCAPE, ETriggerEvent::Started, this, &AMyPlayerController::CloseShopIfOpen);
+            EnhancedInput->BindAction(IA_ESCAPE, ETriggerEvent::Started, this, &AMyPlayerController::HandleEscapePressed);
         }
 
         if (IA_MOVEMENT)
@@ -1075,3 +1069,55 @@ void AMyPlayerController::ServerTest_Implementation()
     
 }
 
+void AMyPlayerController::HandleEscapePressed()
+{
+    if (bIsShopOpen)
+    {
+        ToggleShop();
+        return;
+    }
+
+	// Show pause menu or other UI here
+	USceneManager* SceneMgr = USceneManager::Get(GetWorld());
+    if (SceneMgr)
+    {
+        UWorld* World = GetWorld();
+        EnterUIMode();
+        USceneManager::Get(GetWorld())->OpenPopupDialogOkCancel(
+            TEXT("Are you sure you want to quit?"),
+            [World]()
+            {
+                // OK pressed
+                UGameplayStatics::OpenLevel(
+                    World,
+                    FName(TEXT("/Game/Main/Maps/BootMap"))
+                );
+                UE_LOG(LogTemp, Log, TEXT("OK"));
+            },
+            [this]()
+            {
+				EnterGameMode();
+                // Cancel pressed
+                UE_LOG(LogTemp, Log, TEXT("Cancel"));
+            }
+        );
+	}
+}
+
+void AMyPlayerController::EnterUIMode()
+{
+    bShowMouseCursor = true;
+    SetInputMode(FInputModeUIOnly());
+
+    SetIgnoreLookInput(true);
+    SetIgnoreMoveInput(true);
+}
+
+void AMyPlayerController::EnterGameMode()
+{
+    bShowMouseCursor = false;
+    SetInputMode(FInputModeGameOnly());
+
+    SetIgnoreLookInput(false);
+    SetIgnoreMoveInput(false);
+}

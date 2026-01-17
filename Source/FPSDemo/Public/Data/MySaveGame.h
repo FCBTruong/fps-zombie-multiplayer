@@ -20,4 +20,7 @@ public:
 
     UPROPERTY()
     FString GuestId;
+
+    UPROPERTY()
+    FString Avatar;
 };

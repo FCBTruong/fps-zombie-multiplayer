@@ -38,13 +38,22 @@ protected:
 	UButton* CreateRoomBtn;
 
 	UPROPERTY(meta = (BindWidget))
-	UWidget* CreatePn;
+	UWidget* RoomPn;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* PracticeBtn;
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* ListPn;
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* VsTxt;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* RoomTitleLb;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* EmptyRoomTxt;
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* AddBotTeam1Btn;
@@ -59,10 +68,16 @@ protected:
 	UButton* BombModeBtn;
 
 	UPROPERTY(meta = (BindWidget))
-	UButton* BtnSelfHost;
+	UButton* SelfHostBtn;
 
 	UPROPERTY(meta = (BindWidget))
-	UButton* BtnDedicatedServer;
+	UButton* DedicatedServerBtn;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* WaitingOwnerStartTxt;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* BackBtn;
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* StartBtn;
@@ -78,6 +93,15 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* DedicatedTickIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* NetworkStatusActiveIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* NetworkStatusInActiveIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* OfflineModeTxt;
 
 	UPROPERTY(meta = (BindWidget))
 	UVerticalBox* RoomListBox;
@@ -107,8 +131,12 @@ private:
 	void OnAddBotTeam2();
 	UFUNCTION()
 	void OnCreateRoomClicked();
+	UFUNCTION()
+	void OnBackClicked();
+	UFUNCTION()
+	void OnPracticeBtnClicked();
 
-	void UpdateRoomData();
+	void UpdateRoomState();
 
 	void RequestRoomList();
 	void UpdateRoomList();
@@ -116,6 +144,10 @@ private:
 	void UpdateRoomSlot(int slotIdx);
 	void ShowRoomUI();
 	void ShowRoomListUI();
+	void UpdateRoomOwner();
+	void UpdateRoomHostType();
+	void UpdateRoomGameMode();
+
 	UNetworkManager* CachedNetworkManager;
 	URoomManager* CachedRoomMgr;
 

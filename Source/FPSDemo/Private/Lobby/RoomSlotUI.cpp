@@ -2,9 +2,10 @@
 
 
 #include "Lobby/RoomSlotUI.h"
+#include "Lobby/RoomManager.h"
 
 void URoomSlotUI::Init(FRoomData Data) {
-
+	CachedRoomData = Data;
 }
 
 void URoomSlotUI::NativeConstruct()
@@ -20,4 +21,5 @@ void URoomSlotUI::NativeConstruct()
 void URoomSlotUI::OnJoinBtnClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Join Button Clicked"));
+	URoomManager::Get(GetWorld())->RequestJoinRoom(CachedRoomData.RoomId);
 }
