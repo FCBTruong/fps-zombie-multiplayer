@@ -9,8 +9,11 @@ public class FPSDemo : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore",
-				"EnhancedInput", "PhysicsCore", "UMG", "Niagara", "WebSockets" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", 
+            "InputCore", "EnhancedInput", "PhysicsCore", "UMG", "Niagara", 
+            "WebSockets", 
+            "OnlineSubsystem",
+            "OnlineSubsystemUtils" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
              "Slate",

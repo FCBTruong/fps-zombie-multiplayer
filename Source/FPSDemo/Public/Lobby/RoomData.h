@@ -26,4 +26,5 @@ struct FRoomData
 	int32 OwnerId = -1; 
 	TArray<PlayerRoomInfo> Players;
 	bool bIsSelfHost = true;
+	FString JoinKey;
 };

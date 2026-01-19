@@ -20,4 +20,6 @@ enum class ECmdId : uint8 {
     ROOM_UPDATE_OWNER = 111,
     ROOM_UPDATE_GAME_MODE = 112,
     ROOM_UPDATE_HOST_TYPE = 113,
+    SELFHOST_READY = 114, // other players can join now
+    GAME_STARTED = 115,
 };

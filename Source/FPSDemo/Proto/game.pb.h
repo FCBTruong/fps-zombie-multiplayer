@@ -68,6 +68,9 @@ extern CreateRoomRequestDefaultTypeInternal _CreateRoomRequest_default_instance_
 class Empty;
 struct EmptyDefaultTypeInternal;
 extern EmptyDefaultTypeInternal _Empty_default_instance_;
+class GameStartedReply;
+struct GameStartedReplyDefaultTypeInternal;
+extern GameStartedReplyDefaultTypeInternal _GameStartedReply_default_instance_;
 class HelloWorld;
 struct HelloWorldDefaultTypeInternal;
 extern HelloWorldDefaultTypeInternal _HelloWorld_default_instance_;
@@ -120,6 +123,7 @@ template<> ::game::net::ChangeHostTypeReply* Arena::CreateMaybeMessage<::game::n
 template<> ::game::net::ChangeHostTypeRequest* Arena::CreateMaybeMessage<::game::net::ChangeHostTypeRequest>(Arena*);
 template<> ::game::net::CreateRoomRequest* Arena::CreateMaybeMessage<::game::net::CreateRoomRequest>(Arena*);
 template<> ::game::net::Empty* Arena::CreateMaybeMessage<::game::net::Empty>(Arena*);
+template<> ::game::net::GameStartedReply* Arena::CreateMaybeMessage<::game::net::GameStartedReply>(Arena*);
 template<> ::game::net::HelloWorld* Arena::CreateMaybeMessage<::game::net::HelloWorld>(Arena*);
 template<> ::game::net::JoinRoomRequest* Arena::CreateMaybeMessage<::game::net::JoinRoomRequest>(Arena*);
 template<> ::game::net::KickPlayerRequest* Arena::CreateMaybeMessage<::game::net::KickPlayerRequest>(Arena*);
@@ -1165,6 +1169,7 @@ class RoomInfoReply final :
 
   enum : int {
     kPlayersFieldNumber = 5,
+    kJoinKeyFieldNumber = 7,
     kModeFieldNumber = 1,
     kOwnerIdFieldNumber = 3,
     kHasStartedFieldNumber = 2,
@@ -1188,6 +1193,20 @@ class RoomInfoReply final :
   ::game::net::PlayerRoomInfoReply* add_players();
   const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::game::net::PlayerRoomInfoReply >&
       players() const;
+
+  // string join_key = 7;
+  void clear_join_key();
+  const std::string& join_key() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_join_key(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_join_key();
+  PROTOBUF_NODISCARD std::string* release_join_key();
+  void set_allocated_join_key(std::string* join_key);
+  private:
+  const std::string& _internal_join_key() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_join_key(const std::string& value);
+  std::string* _internal_mutable_join_key();
+  public:
 
   // uint32 mode = 1;
   void clear_mode();
@@ -1242,6 +1261,7 @@ class RoomInfoReply final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::game::net::PlayerRoomInfoReply > players_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr join_key_;
   uint32_t mode_;
   int32_t owner_id_;
   bool has_started_;
@@ -3335,6 +3355,122 @@ class ChangeGameModeReply final :
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_game_2eproto;
 };
+// -------------------------------------------------------------------
+
+class GameStartedReply final :
+    public ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase /* @@protoc_insertion_point(class_definition:game.net.GameStartedReply) */ {
+ public:
+  inline GameStartedReply() : GameStartedReply(nullptr) {}
+  explicit PROTOBUF_CONSTEXPR GameStartedReply(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  GameStartedReply(const GameStartedReply& from);
+  GameStartedReply(GameStartedReply&& from) noexcept
+    : GameStartedReply() {
+    *this = ::std::move(from);
+  }
+
+  inline GameStartedReply& operator=(const GameStartedReply& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GameStartedReply& operator=(GameStartedReply&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GameStartedReply& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const GameStartedReply* internal_default_instance() {
+    return reinterpret_cast<const GameStartedReply*>(
+               &_GameStartedReply_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    21;
+
+  friend void swap(GameStartedReply& a, GameStartedReply& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(GameStartedReply* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GameStartedReply* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GameStartedReply* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<GameStartedReply>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const GameStartedReply& from) {
+    ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::CopyImpl(this, from);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const GameStartedReply& from) {
+    ::PROTOBUF_NAMESPACE_ID::internal::ZeroFieldsBase::MergeImpl(this, from);
+  }
+  public:
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "game.net.GameStartedReply";
+  }
+  protected:
+  explicit GameStartedReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // @@protoc_insertion_point(class_scope:game.net.GameStartedReply)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  friend struct ::TableStruct_game_2eproto;
+};
 // ===================================================================
 
 
@@ -3918,6 +4054,56 @@ inline void RoomInfoReply::_internal_set_room_id(int32_t value) {
 inline void RoomInfoReply::set_room_id(int32_t value) {
   _internal_set_room_id(value);
   // @@protoc_insertion_point(field_set:game.net.RoomInfoReply.room_id)
+}
+
+// string join_key = 7;
+inline void RoomInfoReply::clear_join_key() {
+  join_key_.ClearToEmpty();
+}
+inline const std::string& RoomInfoReply::join_key() const {
+  // @@protoc_insertion_point(field_get:game.net.RoomInfoReply.join_key)
+  return _internal_join_key();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void RoomInfoReply::set_join_key(ArgT0&& arg0, ArgT... args) {
+ 
+ join_key_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.RoomInfoReply.join_key)
+}
+inline std::string* RoomInfoReply::mutable_join_key() {
+  std::string* _s = _internal_mutable_join_key();
+  // @@protoc_insertion_point(field_mutable:game.net.RoomInfoReply.join_key)
+  return _s;
+}
+inline const std::string& RoomInfoReply::_internal_join_key() const {
+  return join_key_.Get();
+}
+inline void RoomInfoReply::_internal_set_join_key(const std::string& value) {
+  
+  join_key_.Set(value, GetArenaForAllocation());
+}
+inline std::string* RoomInfoReply::_internal_mutable_join_key() {
+  
+  return join_key_.Mutable(GetArenaForAllocation());
+}
+inline std::string* RoomInfoReply::release_join_key() {
+  // @@protoc_insertion_point(field_release:game.net.RoomInfoReply.join_key)
+  return join_key_.Release();
+}
+inline void RoomInfoReply::set_allocated_join_key(std::string* join_key) {
+  if (join_key != nullptr) {
+    
+  } else {
+    
+  }
+  join_key_.SetAllocated(join_key, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (join_key_.IsDefault()) {
+    join_key_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.RoomInfoReply.join_key)
 }
 
 // -------------------------------------------------------------------
@@ -4506,9 +4692,15 @@ inline void ChangeGameModeReply::set_game_mode(int32_t value) {
   // @@protoc_insertion_point(field_set:game.net.ChangeGameModeReply.game_mode)
 }
 
+// -------------------------------------------------------------------
+
+// GameStartedReply
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

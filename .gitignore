@@ -76,3 +76,6 @@ Content/__ExternalActors__/
 Content/__ExternalObjects__/
 Content/ParagonYin/*
 Content/ParagonKwang/*
+
+# Secrets file
+/Config/DefaultEngineSecrets.ini

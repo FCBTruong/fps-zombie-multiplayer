@@ -292,6 +292,12 @@ static FString GameModeOption(EMatchMode Mode)
 
 void ULobbyUI::OnStartGameClicked()
 {
+	if (!CachedRoomMgr)
+	{
+		return;
+	}
+	CachedRoomMgr->RequestStartGame();
+	/*
 	int NumBotTeam1 = 0;
 	int NumBotTeam2 = 0;
 
@@ -326,20 +332,20 @@ void ULobbyUI::OnStartGameClicked()
 	if (CachedRoomMgr->GetCurrentRoomData().Mode == EMatchMode::Spike)
 	{
 		const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap")); 
-		UGameplayStatics::OpenLevel(this, MapName, /*bAbsolute*/ true, Options);
+		UGameplayStatics::OpenLevel(this, MapName, true, Options);
 		return;
 	}
 	else if (CachedRoomMgr->GetCurrentRoomData().Mode == EMatchMode::Zombie)
 	{
 		const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap"));
-		UGameplayStatics::OpenLevel(this, MapName, /*bAbsolute*/ true, Options);
+		UGameplayStatics::OpenLevel(this, MapName, true, Options);
 		return;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Start Game Clicked"));
 	UGameplayStatics::OpenLevel(
 		this,
 		FName(TEXT("Main/Maps/L_PlayGround"))
-	);
+	); */
 }
 
 void ULobbyUI::OnAddBotTeam1()

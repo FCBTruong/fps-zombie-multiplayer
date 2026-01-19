@@ -40,6 +40,7 @@ public:
 	void RequestChangeGameMode(EMatchMode GameMode);
 	void RequestChangeHostType(bool bIsSelfHost);
 	void RequestCreateRoom();
+	void NotifySelfHostReady();
 
 	FRoomData GetCurrentRoomData() {
 		return CurrentRoomData;
@@ -67,4 +68,6 @@ private:
 	TArray<FRoomData> AvailableRooms;
 
 	void CreateOfflineRoom();
+	void HandleGameStarted(const std::string& payload);
+	void HandleSelfHostReady(const std::string& payload);
 };

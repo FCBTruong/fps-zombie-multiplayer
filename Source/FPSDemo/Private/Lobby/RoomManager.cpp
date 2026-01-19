@@ -4,6 +4,8 @@
 #include "Lobby/RoomManager.h"
 #include "Network/NetworkManager.h"
 #include "Lobby/PlayerInfoManager.h"
+#include "Network/NetBoostrapSubsystem.h"
+#include "Kismet/GameplayStatics.h"
 
 void URoomManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -38,8 +40,9 @@ void URoomManager::OnPacketReceived(
 		CurrentRoomData.RoomId = RoomInfoPkg.room_id();
         CurrentRoomData.Mode = static_cast<EMatchMode>(RoomInfoPkg.mode());
         CurrentRoomData.bIsSelfHost = RoomInfoPkg.is_self_host();
+		CurrentRoomData.JoinKey = FString(RoomInfoPkg.join_key().c_str());
 
-        CurrentRoomData.Players.Empty();
+        CurrentRoomData.Players.Empty();    
         for (int i = 0; i < RoomInfoPkg.players_size(); ++i) {
             const auto& ProtoPlayerInfo = RoomInfoPkg.players(i);
             PlayerRoomInfo Info;
@@ -182,6 +185,16 @@ void URoomManager::OnPacketReceived(
 		OnUpdateRoomOwner.Broadcast();
         break;
     }
+    case ECmdId::GAME_STARTED:
+    {
+        HandleGameStarted(Payload);
+        break;
+    }
+    case ECmdId::SELFHOST_READY:
+    {
+		HandleSelfHostReady(Payload);
+        break;
+	}
     default:
         break;
     }
@@ -316,6 +329,53 @@ void URoomManager::RequestStartGame()
     }
     else {
 		// offline mode
+        UGameInstance* GI = GetWorld()->GetGameInstance();
+        if (!GI) return;
+
+        int NumBotTeam1 = 0;
+        int NumBotTeam2 = 0;
+
+        for (int32 i = 0; i < CurrentRoomData.Players.Num(); ++i)
+        {
+            auto Info = CurrentRoomData.Players[i];
+
+            if (Info.bIsBot)
+            {
+                if (i < 5)
+                {
+                    ++NumBotTeam1;
+                }
+                else
+                {
+                    ++NumBotTeam2;
+                }
+            }
+        }
+
+        UE_LOG(LogTemp, Warning, TEXT("Starting Game with %d bots in Team 1 and %d bots in Team 2"), NumBotTeam1, NumBotTeam2);
+
+
+        FString Options(TEXT("?listen?game=/Game/Main/Core/GM_Spike.GM_Spike_C"));
+
+        Options += FString::Printf(TEXT("?BotT1=%d"), NumBotTeam1);
+        Options += FString::Printf(TEXT("?BotT2=%d"), NumBotTeam2);
+        if (CurrentRoomData.Mode == EMatchMode::Spike)
+        {
+            const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap"));
+            UGameplayStatics::OpenLevel(this, MapName, true, Options);
+            return;
+        }
+        else if (CurrentRoomData.Mode == EMatchMode::Zombie)
+        {
+            const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap"));
+            UGameplayStatics::OpenLevel(this, MapName, true, Options);
+            return;
+        }
+        UE_LOG(LogTemp, Warning, TEXT("Start Game Clicked"));
+        UGameplayStatics::OpenLevel(
+            this,
+            FName(TEXT("Main/Maps/L_PlayGround"))
+        );
     }
 }
 
@@ -385,4 +445,62 @@ void URoomManager::CreateOfflineRoom()
     }
 
     OnRoomInfoReceived.Broadcast();
+}
+
+void URoomManager::HandleGameStarted(const std::string& payload)
+{
+    UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleGameStarted: Game is starting..."));
+    UGameInstance* GI = GetWorld()->GetGameInstance();
+    if (!GI) return;
+
+    // Turn on loading scene
+
+    if (!CurrentRoomData.bIsSelfHost) {
+        UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleGameStarted: Not self-host, skipping host startup."));
+        return;
+	}
+
+    if (IsMyRoom() == false) {
+        UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleGameStarted: Not my room, skipping host startup."));
+        return;
+	}
+
+    UNetBoostrapSubsystem* NetSubsystem =
+        GI->GetSubsystem<UNetBoostrapSubsystem>();
+    if (!NetSubsystem) return;
+    NetSubsystem->StartSelfHost(
+        TEXT("/Game/Main/Maps/GhostMallMap"),
+        FString::FromInt(CurrentRoomData.RoomId),
+        CurrentRoomData.JoinKey
+    );
+}
+
+void URoomManager::NotifySelfHostReady()
+{
+    if (NetworkManager && NetworkManager->IsConnected()) {
+        game::net::Empty Pkg;
+        NetworkManager->SendPacket(ECmdId::SELFHOST_READY, Pkg);
+    }
+}
+
+void URoomManager::HandleSelfHostReady(const std::string& payload)
+{
+    UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleSelfHostReady: Join Host now."));
+    if (IsMyRoom()) {
+        UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleSelfHostReady: Is self-host, no need to join."));
+        return;
+    }
+
+    // Turn off loading scene
+    // Travel to game map as client
+    UGameInstance* GI = GetWorld()->GetGameInstance();
+    if (!GI) return;
+    UNetBoostrapSubsystem* NetSubsystem =
+        GI->GetSubsystem<UNetBoostrapSubsystem>();
+    if (!NetSubsystem) return;
+        
+    NetSubsystem->JoinSelfHostByMatch(
+        FString::FromInt(CurrentRoomData.RoomId),
+        CurrentRoomData.JoinKey
+	);
 }
