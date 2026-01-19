@@ -1174,6 +1174,8 @@ class RoomInfoReply final :
     kOwnerIdFieldNumber = 3,
     kHasStartedFieldNumber = 2,
     kIsSelfHostFieldNumber = 4,
+    kEnableDedicatedServerFieldNumber = 8,
+    kEnableSelfhostFieldNumber = 9,
     kRoomIdFieldNumber = 6,
   };
   // repeated .game.net.PlayerRoomInfoReply players = 5;
@@ -1244,6 +1246,24 @@ class RoomInfoReply final :
   void _internal_set_is_self_host(bool value);
   public:
 
+  // bool enable_dedicated_server = 8;
+  void clear_enable_dedicated_server();
+  bool enable_dedicated_server() const;
+  void set_enable_dedicated_server(bool value);
+  private:
+  bool _internal_enable_dedicated_server() const;
+  void _internal_set_enable_dedicated_server(bool value);
+  public:
+
+  // bool enable_selfhost = 9;
+  void clear_enable_selfhost();
+  bool enable_selfhost() const;
+  void set_enable_selfhost(bool value);
+  private:
+  bool _internal_enable_selfhost() const;
+  void _internal_set_enable_selfhost(bool value);
+  public:
+
   // int32 room_id = 6;
   void clear_room_id();
   int32_t room_id() const;
@@ -1266,6 +1286,8 @@ class RoomInfoReply final :
   int32_t owner_id_;
   bool has_started_;
   bool is_self_host_;
+  bool enable_dedicated_server_;
+  bool enable_selfhost_;
   int32_t room_id_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_game_2eproto;
@@ -4104,6 +4126,46 @@ inline void RoomInfoReply::set_allocated_join_key(std::string* join_key) {
   }
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:game.net.RoomInfoReply.join_key)
+}
+
+// bool enable_dedicated_server = 8;
+inline void RoomInfoReply::clear_enable_dedicated_server() {
+  enable_dedicated_server_ = false;
+}
+inline bool RoomInfoReply::_internal_enable_dedicated_server() const {
+  return enable_dedicated_server_;
+}
+inline bool RoomInfoReply::enable_dedicated_server() const {
+  // @@protoc_insertion_point(field_get:game.net.RoomInfoReply.enable_dedicated_server)
+  return _internal_enable_dedicated_server();
+}
+inline void RoomInfoReply::_internal_set_enable_dedicated_server(bool value) {
+  
+  enable_dedicated_server_ = value;
+}
+inline void RoomInfoReply::set_enable_dedicated_server(bool value) {
+  _internal_set_enable_dedicated_server(value);
+  // @@protoc_insertion_point(field_set:game.net.RoomInfoReply.enable_dedicated_server)
+}
+
+// bool enable_selfhost = 9;
+inline void RoomInfoReply::clear_enable_selfhost() {
+  enable_selfhost_ = false;
+}
+inline bool RoomInfoReply::_internal_enable_selfhost() const {
+  return enable_selfhost_;
+}
+inline bool RoomInfoReply::enable_selfhost() const {
+  // @@protoc_insertion_point(field_get:game.net.RoomInfoReply.enable_selfhost)
+  return _internal_enable_selfhost();
+}
+inline void RoomInfoReply::_internal_set_enable_selfhost(bool value) {
+  
+  enable_selfhost_ = value;
+}
+inline void RoomInfoReply::set_enable_selfhost(bool value) {
+  _internal_set_enable_selfhost(value);
+  // @@protoc_insertion_point(field_set:game.net.RoomInfoReply.enable_selfhost)
 }
 
 // -------------------------------------------------------------------

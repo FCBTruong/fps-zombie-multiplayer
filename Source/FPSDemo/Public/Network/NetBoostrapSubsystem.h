@@ -18,7 +18,7 @@ class FPSDEMO_API UNetBoostrapSubsystem : public UGameInstanceSubsystem
 
 public:
     // Self-host (listen server, EOS P2P). Orchestrator decides members to join.
-    void StartSelfHost(const FString& Map, const FString& InMatchId, const FString& InJoinKey);
+    void StartSelfHost(const FName& Map, const FString& InMatchId, const FString& InJoinKey);
 
     // Dedicated server (public internet). Orchestrator provides IP:Port for clients.
     void JoinDedicated(const FString& ServerIpPort); // e.g. "12.34.56.78:7777"
@@ -26,7 +26,7 @@ public:
 private:
     IOnlineIdentityPtr Identity;
     IOnlineSessionPtr Session;
-    FString MapName;
+    FName MapName;
     TSharedPtr<FOnlineSessionSearch> Search;
     bool bIsHost = false;
     FString MatchId;

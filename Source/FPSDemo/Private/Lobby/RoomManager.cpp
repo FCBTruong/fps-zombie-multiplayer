@@ -41,6 +41,8 @@ void URoomManager::OnPacketReceived(
         CurrentRoomData.Mode = static_cast<EMatchMode>(RoomInfoPkg.mode());
         CurrentRoomData.bIsSelfHost = RoomInfoPkg.is_self_host();
 		CurrentRoomData.JoinKey = FString(RoomInfoPkg.join_key().c_str());
+		CurrentRoomData.bEnableDedicatedServer = RoomInfoPkg.enable_dedicated_server();
+		CurrentRoomData.bEnableSelfHost = RoomInfoPkg.enable_selfhost();
 
         CurrentRoomData.Players.Empty();    
         for (int i = 0; i < RoomInfoPkg.players_size(); ++i) {
@@ -361,20 +363,18 @@ void URoomManager::RequestStartGame()
         Options += FString::Printf(TEXT("?BotT2=%d"), NumBotTeam2);
         if (CurrentRoomData.Mode == EMatchMode::Spike)
         {
-            const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap"));
-            UGameplayStatics::OpenLevel(this, MapName, true, Options);
+            UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_GHOST_MALL_MAP, true, Options);
             return;
         }
         else if (CurrentRoomData.Mode == EMatchMode::Zombie)
         {
-            const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap"));
-            UGameplayStatics::OpenLevel(this, MapName, true, Options);
+            UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_GHOST_MALL_MAP, true, Options);
             return;
         }
         UE_LOG(LogTemp, Warning, TEXT("Start Game Clicked"));
         UGameplayStatics::OpenLevel(
             this,
-            FName(TEXT("Main/Maps/L_PlayGround"))
+            FGameConstants::LEVEL_PLAYGROUND
         );
     }
 }
@@ -453,6 +453,8 @@ void URoomManager::HandleGameStarted(const std::string& payload)
     UGameInstance* GI = GetWorld()->GetGameInstance();
     if (!GI) return;
 
+    UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_LOADING);
+
     // Turn on loading scene
 
     if (!CurrentRoomData.bIsSelfHost) {
@@ -469,7 +471,7 @@ void URoomManager::HandleGameStarted(const std::string& payload)
         GI->GetSubsystem<UNetBoostrapSubsystem>();
     if (!NetSubsystem) return;
     NetSubsystem->StartSelfHost(
-        TEXT("/Game/Main/Maps/GhostMallMap"),
+        FGameConstants::LEVEL_GHOST_MALL_MAP,
         FString::FromInt(CurrentRoomData.RoomId),
         CurrentRoomData.JoinKey
     );

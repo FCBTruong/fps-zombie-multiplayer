@@ -106,6 +106,8 @@ PROTOBUF_CONSTEXPR RoomInfoReply::RoomInfoReply(
   , owner_id_(0)
   , has_started_(false)
   , is_self_host_(false)
+  , enable_dedicated_server_(false)
+  , enable_selfhost_(false)
   , room_id_(0){}
 struct RoomInfoReplyDefaultTypeInternal {
   PROTOBUF_CONSTEXPR RoomInfoReplyDefaultTypeInternal()
@@ -366,6 +368,8 @@ const uint32_t TableStruct_game_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pro
   PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, players_),
   PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, room_id_),
   PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, join_key_),
+  PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, enable_dedicated_server_),
+  PROTOBUF_FIELD_OFFSET(::game::net::RoomInfoReply, enable_selfhost_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::game::net::PlayerRoomInfoReply, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -484,21 +488,21 @@ static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protode
   { 32, -1, -1, sizeof(::game::net::LoginReply)},
   { 40, -1, -1, sizeof(::game::net::CreateRoomRequest)},
   { 46, -1, -1, sizeof(::game::net::RoomInfoReply)},
-  { 59, -1, -1, sizeof(::game::net::PlayerRoomInfoReply)},
-  { 69, -1, -1, sizeof(::game::net::KickPlayerRequest)},
-  { 76, -1, -1, sizeof(::game::net::AddBotRequest)},
-  { 83, -1, -1, sizeof(::game::net::JoinRoomRequest)},
-  { 90, -1, -1, sizeof(::game::net::NewPlayerJoinRoomReply)},
-  { 98, -1, -1, sizeof(::game::net::PlayerLeaveReply)},
-  { 105, -1, -1, sizeof(::game::net::SwitchSlotRequest)},
-  { 112, -1, -1, sizeof(::game::net::SwitchSlotReply)},
-  { 120, -1, -1, sizeof(::game::net::ListRoomReply)},
-  { 127, -1, -1, sizeof(::game::net::RoomUpdateOwnerReply)},
-  { 134, -1, -1, sizeof(::game::net::ChangeGameModeRequest)},
-  { 141, -1, -1, sizeof(::game::net::ChangeHostTypeRequest)},
-  { 148, -1, -1, sizeof(::game::net::ChangeHostTypeReply)},
-  { 155, -1, -1, sizeof(::game::net::ChangeGameModeReply)},
-  { 162, -1, -1, sizeof(::game::net::GameStartedReply)},
+  { 61, -1, -1, sizeof(::game::net::PlayerRoomInfoReply)},
+  { 71, -1, -1, sizeof(::game::net::KickPlayerRequest)},
+  { 78, -1, -1, sizeof(::game::net::AddBotRequest)},
+  { 85, -1, -1, sizeof(::game::net::JoinRoomRequest)},
+  { 92, -1, -1, sizeof(::game::net::NewPlayerJoinRoomReply)},
+  { 100, -1, -1, sizeof(::game::net::PlayerLeaveReply)},
+  { 107, -1, -1, sizeof(::game::net::SwitchSlotRequest)},
+  { 114, -1, -1, sizeof(::game::net::SwitchSlotReply)},
+  { 122, -1, -1, sizeof(::game::net::ListRoomReply)},
+  { 129, -1, -1, sizeof(::game::net::RoomUpdateOwnerReply)},
+  { 136, -1, -1, sizeof(::game::net::ChangeGameModeRequest)},
+  { 143, -1, -1, sizeof(::game::net::ChangeHostTypeRequest)},
+  { 150, -1, -1, sizeof(::game::net::ChangeHostTypeReply)},
+  { 157, -1, -1, sizeof(::game::net::ChangeGameModeReply)},
+  { 164, -1, -1, sizeof(::game::net::GameStartedReply)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -533,35 +537,36 @@ const char descriptor_table_protodef_game_2eproto[] PROTOBUF_SECTION_VARIABLE(pr
   "\022\016\n\006testxx\030\002 \001(\003\"E\n\014LoginRequest\022\020\n\010gues"
   "t_id\030\001 \001(\t\022\023\n\013player_name\030\002 \001(\t\022\016\n\006avata"
   "r\030\003 \001(\t\",\n\nLoginReply\022\r\n\005token\030\001 \001(\t\022\017\n\007"
-  "user_id\030\002 \001(\005\"\023\n\021CreateRoomRequest\"\255\001\n\rR"
+  "user_id\030\002 \001(\005\"\023\n\021CreateRoomRequest\"\347\001\n\rR"
   "oomInfoReply\022\014\n\004mode\030\001 \001(\r\022\023\n\013has_starte"
   "d\030\002 \001(\010\022\020\n\010owner_id\030\003 \001(\005\022\024\n\014is_self_hos"
   "t\030\004 \001(\010\022.\n\007players\030\005 \003(\0132\035.game.net.Play"
   "erRoomInfoReply\022\017\n\007room_id\030\006 \001(\005\022\020\n\010join"
-  "_key\030\007 \001(\t\"[\n\023PlayerRoomInfoReply\022\017\n\007use"
-  "r_id\030\001 \001(\005\022\023\n\013player_name\030\002 \001(\t\022\016\n\006avata"
-  "r\030\003 \001(\t\022\016\n\006is_bot\030\004 \001(\010\"$\n\021KickPlayerReq"
-  "uest\022\017\n\007user_id\030\001 \001(\005\"\035\n\rAddBotRequest\022\014"
-  "\n\004team\030\001 \001(\005\"\"\n\017JoinRoomRequest\022\017\n\007room_"
-  "id\030\001 \001(\005\"^\n\026NewPlayerJoinRoomReply\022\020\n\010sl"
-  "ot_idx\030\001 \001(\005\0222\n\013player_info\030\002 \001(\0132\035.game"
-  ".net.PlayerRoomInfoReply\"$\n\020PlayerLeaveR"
-  "eply\022\020\n\010slot_idx\030\001 \001(\005\"%\n\021SwitchSlotRequ"
-  "est\022\020\n\010slot_idx\030\001 \001(\005\"9\n\017SwitchSlotReply"
-  "\022\022\n\nslot_idx_a\030\001 \001(\005\022\022\n\nslot_idx_b\030\002 \001(\005"
-  "\"7\n\rListRoomReply\022&\n\005rooms\030\001 \003(\0132\027.game."
-  "net.RoomInfoReply\",\n\024RoomUpdateOwnerRepl"
-  "y\022\024\n\014new_owner_id\030\001 \001(\005\"*\n\025ChangeGameMod"
-  "eRequest\022\021\n\tgame_mode\030\001 \001(\005\"-\n\025ChangeHos"
-  "tTypeRequest\022\024\n\014is_self_host\030\001 \001(\010\"+\n\023Ch"
-  "angeHostTypeReply\022\024\n\014is_self_host\030\001 \001(\010\""
-  "(\n\023ChangeGameModeReply\022\021\n\tgame_mode\030\001 \001("
-  "\005\"\022\n\020GameStartedReplyB\013\252\002\010Game.Netb\006prot"
-  "o3"
+  "_key\030\007 \001(\t\022\037\n\027enable_dedicated_server\030\010 "
+  "\001(\010\022\027\n\017enable_selfhost\030\t \001(\010\"[\n\023PlayerRo"
+  "omInfoReply\022\017\n\007user_id\030\001 \001(\005\022\023\n\013player_n"
+  "ame\030\002 \001(\t\022\016\n\006avatar\030\003 \001(\t\022\016\n\006is_bot\030\004 \001("
+  "\010\"$\n\021KickPlayerRequest\022\017\n\007user_id\030\001 \001(\005\""
+  "\035\n\rAddBotRequest\022\014\n\004team\030\001 \001(\005\"\"\n\017JoinRo"
+  "omRequest\022\017\n\007room_id\030\001 \001(\005\"^\n\026NewPlayerJ"
+  "oinRoomReply\022\020\n\010slot_idx\030\001 \001(\005\0222\n\013player"
+  "_info\030\002 \001(\0132\035.game.net.PlayerRoomInfoRep"
+  "ly\"$\n\020PlayerLeaveReply\022\020\n\010slot_idx\030\001 \001(\005"
+  "\"%\n\021SwitchSlotRequest\022\020\n\010slot_idx\030\001 \001(\005\""
+  "9\n\017SwitchSlotReply\022\022\n\nslot_idx_a\030\001 \001(\005\022\022"
+  "\n\nslot_idx_b\030\002 \001(\005\"7\n\rListRoomReply\022&\n\005r"
+  "ooms\030\001 \003(\0132\027.game.net.RoomInfoReply\",\n\024R"
+  "oomUpdateOwnerReply\022\024\n\014new_owner_id\030\001 \001("
+  "\005\"*\n\025ChangeGameModeRequest\022\021\n\tgame_mode\030"
+  "\001 \001(\005\"-\n\025ChangeHostTypeRequest\022\024\n\014is_sel"
+  "f_host\030\001 \001(\010\"+\n\023ChangeHostTypeReply\022\024\n\014i"
+  "s_self_host\030\001 \001(\010\"(\n\023ChangeGameModeReply"
+  "\022\021\n\tgame_mode\030\001 \001(\005\"\022\n\020GameStartedReplyB"
+  "\013\252\002\010Game.Netb\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_game_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_game_2eproto = {
-    false, false, 1202, descriptor_table_protodef_game_2eproto,
+    false, false, 1260, descriptor_table_protodef_game_2eproto,
     "game.proto",
     &descriptor_table_game_2eproto_once, nullptr, 0, 22,
     schemas, file_default_instances, TableStruct_game_2eproto::offsets,
@@ -1795,6 +1800,22 @@ const char* RoomInfoReply::_InternalParse(const char* ptr, ::_pbi::ParseContext*
         } else
           goto handle_unusual;
         continue;
+      // bool enable_dedicated_server = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 64)) {
+          enable_dedicated_server_ = (::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr) != 0);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // bool enable_selfhost = 9;
+      case 9:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 72)) {
+          enable_selfhost_ = (::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr) != 0);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
       default:
         goto handle_unusual;
     }  // switch
@@ -1872,6 +1893,18 @@ uint8_t* RoomInfoReply::_InternalSerialize(
         7, this->_internal_join_key(), target);
   }
 
+  // bool enable_dedicated_server = 8;
+  if (this->_internal_enable_dedicated_server() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(8, this->_internal_enable_dedicated_server(), target);
+  }
+
+  // bool enable_selfhost = 9;
+  if (this->_internal_enable_selfhost() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(9, this->_internal_enable_selfhost(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -1922,6 +1955,16 @@ size_t RoomInfoReply::ByteSizeLong() const {
     total_size += 1 + 1;
   }
 
+  // bool enable_dedicated_server = 8;
+  if (this->_internal_enable_dedicated_server() != 0) {
+    total_size += 1 + 1;
+  }
+
+  // bool enable_selfhost = 9;
+  if (this->_internal_enable_selfhost() != 0) {
+    total_size += 1 + 1;
+  }
+
   // int32 room_id = 6;
   if (this->_internal_room_id() != 0) {
     total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_room_id());
@@ -1964,6 +2007,12 @@ void RoomInfoReply::MergeFrom(const RoomInfoReply& from) {
   }
   if (from._internal_is_self_host() != 0) {
     _internal_set_is_self_host(from._internal_is_self_host());
+  }
+  if (from._internal_enable_dedicated_server() != 0) {
+    _internal_set_enable_dedicated_server(from._internal_enable_dedicated_server());
+  }
+  if (from._internal_enable_selfhost() != 0) {
+    _internal_set_enable_selfhost(from._internal_enable_selfhost());
   }
   if (from._internal_room_id() != 0) {
     _internal_set_room_id(from._internal_room_id());

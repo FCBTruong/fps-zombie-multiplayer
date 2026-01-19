@@ -19,6 +19,7 @@
 #include "PlayerUI.generated.h"
 
 class UItemConfig;
+class UMinimapRadarUI;
 /**
  * 
  */
@@ -71,6 +72,8 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* PlayerNameLb;
 
+	UPROPERTY(meta = (BindWidget))
+	UWidget* MatchInfoPn;
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* RifleIcon;
@@ -161,6 +164,9 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UScopeUI* ScopeUI;
 
+	UPROPERTY(meta = (BindWidget))
+	UMinimapRadarUI* RadarWidget;
+
 	void NativeConstruct() override;
 	void ShowPickupMessage(const FString& Message);
 	void HidePickupMessage();
@@ -193,4 +199,6 @@ public:
 	void UpdateArmor(int AmmorPoints, int MaxArmorPoints);
 	void ShowKillMark(bool bHeadShot = false);
 	void UpdatePlayerName(const FString& PlayerName);
+	void SetRadarVisible(bool bVisible);
+	void SetMatchInfoPnVisible(bool bVisible);
 };

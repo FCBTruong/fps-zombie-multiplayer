@@ -185,8 +185,8 @@ void ULobbyUI::UpdateRoomState() {
 		
 		ZombieModeBtn->SetIsEnabled(true);
 		BombModeBtn->SetIsEnabled(true);
-		SelfHostBtn->SetIsEnabled(true);
-		DedicatedServerBtn->SetIsEnabled(true);
+		SelfHostBtn->SetIsEnabled(CachedRoomMgr->GetCurrentRoomData().bEnableSelfHost);
+		DedicatedServerBtn->SetIsEnabled(CachedRoomMgr->GetCurrentRoomData().bEnableDedicatedServer);
 		WaitingOwnerStartTxt->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	else {
@@ -331,20 +331,20 @@ void ULobbyUI::OnStartGameClicked()
 	Options += FString::Printf(TEXT("?BotT2=%d"), NumBotTeam2);
 	if (CachedRoomMgr->GetCurrentRoomData().Mode == EMatchMode::Spike)
 	{
-		const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap")); 
+		const FName MapName(TEXT("/Game/Main/Levels/GhostMallMap")); 
 		UGameplayStatics::OpenLevel(this, MapName, true, Options);
 		return;
 	}
 	else if (CachedRoomMgr->GetCurrentRoomData().Mode == EMatchMode::Zombie)
 	{
-		const FName MapName(TEXT("/Game/Main/Maps/GhostMallMap"));
+		const FName MapName(TEXT("/Game/Main/Levels/GhostMallMap"));
 		UGameplayStatics::OpenLevel(this, MapName, true, Options);
 		return;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Start Game Clicked"));
 	UGameplayStatics::OpenLevel(
 		this,
-		FName(TEXT("Main/Maps/L_PlayGround"))
+		FName(TEXT("Main/Levels/L_PlayGround"))
 	); */
 }
 
@@ -436,6 +436,6 @@ void ULobbyUI::OnPracticeBtnClicked()
 {
 	UGameplayStatics::OpenLevel(
 		this,
-		FName(TEXT("/Game/Main/Maps/PracticeMap"))
+		FGameConstants::LEVEL_PRACTICE
 	);
 }

@@ -10,6 +10,7 @@
 #include "Items/FirearmConfig.h"
 #include "Game/GlobalDataAsset.h"
 #include <Kismet/GameplayStatics.h>
+#include "UI/MinimapRadarUI.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -628,5 +629,24 @@ void UPlayerUI::UpdateRoundClockOnce()
 void UPlayerUI::UpdatePlayerName(const FString& PlayerName) {
     if (PlayerNameLb) {
         PlayerNameLb->SetText(FText::FromString(PlayerName));
+    }
+}
+
+void UPlayerUI::SetRadarVisible(bool bVisible)
+{
+    if (!RadarWidget) return;
+
+    RadarWidget->SetVisibility(
+        bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
+    );
+}
+
+void UPlayerUI::SetMatchInfoPnVisible(bool bVisible)
+{
+    if (MatchInfoPn)
+    {
+        MatchInfoPn->SetVisibility(
+            bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
+        );
     }
 }

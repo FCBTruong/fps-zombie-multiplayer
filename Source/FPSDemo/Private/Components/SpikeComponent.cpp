@@ -198,7 +198,9 @@ void USpikeComponent::FinishPlantSpike()
     }
     ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (!Character)
+    {
         return;
+    }
 
     if (!ActionStateComp || !InventoryComp) {
         return;
@@ -209,7 +211,9 @@ void USpikeComponent::FinishPlantSpike()
     }
 
     if (!InventoryComp->HasSpike())
+    {
         return;
+    }
 
 	UnlockMovement();
 
@@ -217,7 +221,9 @@ void USpikeComponent::FinishPlantSpike()
         Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
 
     if (!SpikeGM)
+    {
         return;
+    }
 
     FVector PlantLocation =
         Character->GetActorLocation() +

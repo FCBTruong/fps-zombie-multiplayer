@@ -27,4 +27,6 @@ struct FRoomData
 	TArray<PlayerRoomInfo> Players;
 	bool bIsSelfHost = true;
 	FString JoinKey;
+	bool bEnableDedicatedServer = false;
+	bool bEnableSelfHost = true;
 };

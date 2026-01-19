@@ -29,6 +29,7 @@
 #include "Components/CharCameraComponent.h"
 #include "Lobby/SceneManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Practice/PracticeGameMode.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -70,6 +71,16 @@ void AMyPlayerController::BeginPlay()
             PlayerUI->CloseShop();
             bIsShopOpen = false;
             RebindAll();
+        }
+
+        AGameModeBase* GM = GetWorld()->GetAuthGameMode();
+        if (GM) {
+            APracticeGameMode* PracticeGM = Cast<APracticeGameMode>(GM);
+            if (PracticeGM)
+            {
+				PlayerUI->SetRadarVisible(false);
+				PlayerUI->SetMatchInfoPnVisible(false);
+            }
         }
     }
 }
@@ -1090,7 +1101,7 @@ void AMyPlayerController::HandleEscapePressed()
                 // OK pressed
                 UGameplayStatics::OpenLevel(
                     World,
-                    FName(TEXT("/Game/Main/Maps/BootMap"))
+                    FGameConstants::LEVEL_LOBBY
                 );
                 UE_LOG(LogTemp, Log, TEXT("OK"));
             },

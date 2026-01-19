@@ -24,4 +24,11 @@ public:
 	static constexpr int32 BOT_PLAYER_ID_START = 100000;
 
 	static constexpr int32 AVATAR_IDS[] = { 14, 15, 16, 17, 18, 20, 21 };
+
+    static const FName LEVEL_LOADING_SCREEN;
+    static const FName LEVEL_PLAYGROUND;
+    static const FName LEVEL_LOBBY;
+    static const FName LEVEL_GHOST_MALL_MAP;
+    static const FName LEVEL_PRACTICE;
+    static const FName LEVEL_LOADING;
 };

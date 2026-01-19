@@ -198,13 +198,17 @@ void UInventoryComponent::SetHasSpike(bool bNewHasSpike)
 void UInventoryComponent::ApplyArmorItem(EItemId ArmorItemId)
 {
     if (!GetOwner() || !GetOwner()->HasAuthority())
+    {
         return;
+    }
 
 	const UItemConfig* Data = GetItemConfig(ArmorItemId);
 	const UArmorConfig* ArmorData = Cast<UArmorConfig>(Data);
 
     if (!ArmorData)
-		return;
+    {
+        return;
+    }
 
 	ArmorState.ArmorEfficiency = ArmorData->ArmorEfficiency;
 	ArmorState.ArmorRatio = ArmorData->ArmorRatio;

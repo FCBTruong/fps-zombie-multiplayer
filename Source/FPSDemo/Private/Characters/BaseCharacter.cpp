@@ -757,11 +757,17 @@ void ABaseCharacter::ApplyRealDeath(bool bDropInventory)
     GetCharacterMovement()->DisableMovement();
 
     if (AAIController* AI = Cast<AAIController>(GetController()))
+    {
         if (UBrainComponent* Brain = AI->GetBrainComponent())
+        {
             Brain->StopLogic(TEXT("Bot died"));
+        }
+    }
 
     if (bDropInventory && InventoryComp)
+    {
         InventoryComp->DropAllItems();
+    }
 
     MulticastCharacterDeath(); // NetMulticast trong Character
 }
@@ -1012,10 +1018,14 @@ void ABaseCharacter::PlayFootstepSound()
 
     // OFF when slow
     if (Speed < ABaseCharacter::FOOTSTEP_SPEED_MIN)
+    {
         return;
+    }
 
     if (!bGrounded)
+    {
         return;
+    }
 
     // Play at actor's feet
 	AudioComp->PlayFootstep();

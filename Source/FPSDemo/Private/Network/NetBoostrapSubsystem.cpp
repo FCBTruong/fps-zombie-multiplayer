@@ -20,7 +20,7 @@ bool UNetBoostrapSubsystem::InitOSS()
     return Identity.IsValid() && Session.IsValid();
 }
 
-void UNetBoostrapSubsystem::StartSelfHost(const FString& Map, const FString& InMatchId, const FString& InJoinKey)
+void UNetBoostrapSubsystem::StartSelfHost(const FName& Map, const FString& InMatchId, const FString& InJoinKey)
 {
 	UE_LOG(LogTemp, Log, TEXT("DEBUG: StartSelfHost called"));
     bIsHost = true;
@@ -176,13 +176,7 @@ void UNetBoostrapSubsystem::OnHostMapLoaded(UWorld* LoadedWorld)
 
 void UNetBoostrapSubsystem::OpenListen()
 {
-    if (MapName.IsEmpty())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MapName empty, defaulting to FPSMap"));
-        MapName = TEXT("FPSMap");
-    }
-
-    UGameplayStatics::OpenLevel(GetWorld(), FName(*MapName), true, TEXT("listen"));
+    UGameplayStatics::OpenLevel(GetWorld(), MapName, true, TEXT("listen"));
 }
 
 void UNetBoostrapSubsystem::OnJoinComplete(FName, EOnJoinSessionCompleteResult::Type Result)
