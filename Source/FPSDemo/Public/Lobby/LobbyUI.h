@@ -21,6 +21,7 @@ namespace LobbyUIColor
 class UNetworkManager;
 class URoomManager;
 class URoomSlotUI;
+class UChatUI;
 
 /**
  * 
@@ -29,6 +30,9 @@ UCLASS()
 class FPSDEMO_API ULobbyUI : public UUserWidget
 {
 	GENERATED_BODY()
+
+public:
+	void ToggleChat();
 
 protected:
 	virtual void NativeConstruct() override;
@@ -105,6 +109,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UVerticalBox* RoomListBox;
+
+	UPROPERTY(meta = (BindWidget))
+	UChatUI* ChatWidget;
 	
 	UPROPERTY();
 	TArray<URoomPlayerSlotUI*> PlayerSlotUIs;

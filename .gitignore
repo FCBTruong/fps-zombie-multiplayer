@@ -79,3 +79,6 @@ Content/ParagonKwang/*
 
 # Secrets file
 /Config/DefaultEngineSecrets.ini
+
+!ThirdParty/**/*.lib
+!ThirdParty/**/*.a

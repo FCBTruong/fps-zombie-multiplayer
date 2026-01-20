@@ -62,6 +62,12 @@ extern ChangeHostTypeReplyDefaultTypeInternal _ChangeHostTypeReply_default_insta
 class ChangeHostTypeRequest;
 struct ChangeHostTypeRequestDefaultTypeInternal;
 extern ChangeHostTypeRequestDefaultTypeInternal _ChangeHostTypeRequest_default_instance_;
+class ChatInRoomReply;
+struct ChatInRoomReplyDefaultTypeInternal;
+extern ChatInRoomReplyDefaultTypeInternal _ChatInRoomReply_default_instance_;
+class ChatInRoomRequest;
+struct ChatInRoomRequestDefaultTypeInternal;
+extern ChatInRoomRequestDefaultTypeInternal _ChatInRoomRequest_default_instance_;
 class CreateRoomRequest;
 struct CreateRoomRequestDefaultTypeInternal;
 extern CreateRoomRequestDefaultTypeInternal _CreateRoomRequest_default_instance_;
@@ -121,6 +127,8 @@ template<> ::game::net::ChangeGameModeReply* Arena::CreateMaybeMessage<::game::n
 template<> ::game::net::ChangeGameModeRequest* Arena::CreateMaybeMessage<::game::net::ChangeGameModeRequest>(Arena*);
 template<> ::game::net::ChangeHostTypeReply* Arena::CreateMaybeMessage<::game::net::ChangeHostTypeReply>(Arena*);
 template<> ::game::net::ChangeHostTypeRequest* Arena::CreateMaybeMessage<::game::net::ChangeHostTypeRequest>(Arena*);
+template<> ::game::net::ChatInRoomReply* Arena::CreateMaybeMessage<::game::net::ChatInRoomReply>(Arena*);
+template<> ::game::net::ChatInRoomRequest* Arena::CreateMaybeMessage<::game::net::ChatInRoomRequest>(Arena*);
 template<> ::game::net::CreateRoomRequest* Arena::CreateMaybeMessage<::game::net::CreateRoomRequest>(Arena*);
 template<> ::game::net::Empty* Arena::CreateMaybeMessage<::game::net::Empty>(Arena*);
 template<> ::game::net::GameStartedReply* Arena::CreateMaybeMessage<::game::net::GameStartedReply>(Arena*);
@@ -3493,6 +3501,318 @@ class GameStartedReply final :
   typedef void DestructorSkippable_;
   friend struct ::TableStruct_game_2eproto;
 };
+// -------------------------------------------------------------------
+
+class ChatInRoomRequest final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:game.net.ChatInRoomRequest) */ {
+ public:
+  inline ChatInRoomRequest() : ChatInRoomRequest(nullptr) {}
+  ~ChatInRoomRequest() override;
+  explicit PROTOBUF_CONSTEXPR ChatInRoomRequest(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ChatInRoomRequest(const ChatInRoomRequest& from);
+  ChatInRoomRequest(ChatInRoomRequest&& from) noexcept
+    : ChatInRoomRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline ChatInRoomRequest& operator=(const ChatInRoomRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ChatInRoomRequest& operator=(ChatInRoomRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ChatInRoomRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ChatInRoomRequest* internal_default_instance() {
+    return reinterpret_cast<const ChatInRoomRequest*>(
+               &_ChatInRoomRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    22;
+
+  friend void swap(ChatInRoomRequest& a, ChatInRoomRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ChatInRoomRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ChatInRoomRequest* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ChatInRoomRequest* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ChatInRoomRequest>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ChatInRoomRequest& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ChatInRoomRequest& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ChatInRoomRequest* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "game.net.ChatInRoomRequest";
+  }
+  protected:
+  explicit ChatInRoomRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMessFieldNumber = 1,
+  };
+  // string mess = 1;
+  void clear_mess();
+  const std::string& mess() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_mess(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_mess();
+  PROTOBUF_NODISCARD std::string* release_mess();
+  void set_allocated_mess(std::string* mess);
+  private:
+  const std::string& _internal_mess() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_mess(const std::string& value);
+  std::string* _internal_mutable_mess();
+  public:
+
+  // @@protoc_insertion_point(class_scope:game.net.ChatInRoomRequest)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr mess_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_game_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ChatInRoomReply final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:game.net.ChatInRoomReply) */ {
+ public:
+  inline ChatInRoomReply() : ChatInRoomReply(nullptr) {}
+  ~ChatInRoomReply() override;
+  explicit PROTOBUF_CONSTEXPR ChatInRoomReply(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ChatInRoomReply(const ChatInRoomReply& from);
+  ChatInRoomReply(ChatInRoomReply&& from) noexcept
+    : ChatInRoomReply() {
+    *this = ::std::move(from);
+  }
+
+  inline ChatInRoomReply& operator=(const ChatInRoomReply& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ChatInRoomReply& operator=(ChatInRoomReply&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ChatInRoomReply& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ChatInRoomReply* internal_default_instance() {
+    return reinterpret_cast<const ChatInRoomReply*>(
+               &_ChatInRoomReply_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    23;
+
+  friend void swap(ChatInRoomReply& a, ChatInRoomReply& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ChatInRoomReply* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ChatInRoomReply* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ChatInRoomReply* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ChatInRoomReply>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ChatInRoomReply& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ChatInRoomReply& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ChatInRoomReply* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "game.net.ChatInRoomReply";
+  }
+  protected:
+  explicit ChatInRoomReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kSenderFieldNumber = 1,
+    kMessFieldNumber = 2,
+  };
+  // string sender = 1;
+  void clear_sender();
+  const std::string& sender() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_sender(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_sender();
+  PROTOBUF_NODISCARD std::string* release_sender();
+  void set_allocated_sender(std::string* sender);
+  private:
+  const std::string& _internal_sender() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_sender(const std::string& value);
+  std::string* _internal_mutable_sender();
+  public:
+
+  // string mess = 2;
+  void clear_mess();
+  const std::string& mess() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_mess(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_mess();
+  PROTOBUF_NODISCARD std::string* release_mess();
+  void set_allocated_mess(std::string* mess);
+  private:
+  const std::string& _internal_mess() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_mess(const std::string& value);
+  std::string* _internal_mutable_mess();
+  public:
+
+  // @@protoc_insertion_point(class_scope:game.net.ChatInRoomReply)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr sender_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr mess_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_game_2eproto;
+};
 // ===================================================================
 
 
@@ -4758,9 +5078,171 @@ inline void ChangeGameModeReply::set_game_mode(int32_t value) {
 
 // GameStartedReply
 
+// -------------------------------------------------------------------
+
+// ChatInRoomRequest
+
+// string mess = 1;
+inline void ChatInRoomRequest::clear_mess() {
+  mess_.ClearToEmpty();
+}
+inline const std::string& ChatInRoomRequest::mess() const {
+  // @@protoc_insertion_point(field_get:game.net.ChatInRoomRequest.mess)
+  return _internal_mess();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ChatInRoomRequest::set_mess(ArgT0&& arg0, ArgT... args) {
+ 
+ mess_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.ChatInRoomRequest.mess)
+}
+inline std::string* ChatInRoomRequest::mutable_mess() {
+  std::string* _s = _internal_mutable_mess();
+  // @@protoc_insertion_point(field_mutable:game.net.ChatInRoomRequest.mess)
+  return _s;
+}
+inline const std::string& ChatInRoomRequest::_internal_mess() const {
+  return mess_.Get();
+}
+inline void ChatInRoomRequest::_internal_set_mess(const std::string& value) {
+  
+  mess_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ChatInRoomRequest::_internal_mutable_mess() {
+  
+  return mess_.Mutable(GetArenaForAllocation());
+}
+inline std::string* ChatInRoomRequest::release_mess() {
+  // @@protoc_insertion_point(field_release:game.net.ChatInRoomRequest.mess)
+  return mess_.Release();
+}
+inline void ChatInRoomRequest::set_allocated_mess(std::string* mess) {
+  if (mess != nullptr) {
+    
+  } else {
+    
+  }
+  mess_.SetAllocated(mess, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (mess_.IsDefault()) {
+    mess_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.ChatInRoomRequest.mess)
+}
+
+// -------------------------------------------------------------------
+
+// ChatInRoomReply
+
+// string sender = 1;
+inline void ChatInRoomReply::clear_sender() {
+  sender_.ClearToEmpty();
+}
+inline const std::string& ChatInRoomReply::sender() const {
+  // @@protoc_insertion_point(field_get:game.net.ChatInRoomReply.sender)
+  return _internal_sender();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ChatInRoomReply::set_sender(ArgT0&& arg0, ArgT... args) {
+ 
+ sender_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.ChatInRoomReply.sender)
+}
+inline std::string* ChatInRoomReply::mutable_sender() {
+  std::string* _s = _internal_mutable_sender();
+  // @@protoc_insertion_point(field_mutable:game.net.ChatInRoomReply.sender)
+  return _s;
+}
+inline const std::string& ChatInRoomReply::_internal_sender() const {
+  return sender_.Get();
+}
+inline void ChatInRoomReply::_internal_set_sender(const std::string& value) {
+  
+  sender_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ChatInRoomReply::_internal_mutable_sender() {
+  
+  return sender_.Mutable(GetArenaForAllocation());
+}
+inline std::string* ChatInRoomReply::release_sender() {
+  // @@protoc_insertion_point(field_release:game.net.ChatInRoomReply.sender)
+  return sender_.Release();
+}
+inline void ChatInRoomReply::set_allocated_sender(std::string* sender) {
+  if (sender != nullptr) {
+    
+  } else {
+    
+  }
+  sender_.SetAllocated(sender, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (sender_.IsDefault()) {
+    sender_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.ChatInRoomReply.sender)
+}
+
+// string mess = 2;
+inline void ChatInRoomReply::clear_mess() {
+  mess_.ClearToEmpty();
+}
+inline const std::string& ChatInRoomReply::mess() const {
+  // @@protoc_insertion_point(field_get:game.net.ChatInRoomReply.mess)
+  return _internal_mess();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ChatInRoomReply::set_mess(ArgT0&& arg0, ArgT... args) {
+ 
+ mess_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.ChatInRoomReply.mess)
+}
+inline std::string* ChatInRoomReply::mutable_mess() {
+  std::string* _s = _internal_mutable_mess();
+  // @@protoc_insertion_point(field_mutable:game.net.ChatInRoomReply.mess)
+  return _s;
+}
+inline const std::string& ChatInRoomReply::_internal_mess() const {
+  return mess_.Get();
+}
+inline void ChatInRoomReply::_internal_set_mess(const std::string& value) {
+  
+  mess_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ChatInRoomReply::_internal_mutable_mess() {
+  
+  return mess_.Mutable(GetArenaForAllocation());
+}
+inline std::string* ChatInRoomReply::release_mess() {
+  // @@protoc_insertion_point(field_release:game.net.ChatInRoomReply.mess)
+  return mess_.Release();
+}
+inline void ChatInRoomReply::set_allocated_mess(std::string* mess) {
+  if (mess != nullptr) {
+    
+  } else {
+    
+  }
+  mess_.SetAllocated(mess, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (mess_.IsDefault()) {
+    mess_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.ChatInRoomReply.mess)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

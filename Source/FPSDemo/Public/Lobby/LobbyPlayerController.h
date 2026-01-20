@@ -26,6 +26,7 @@ class FPSDEMO_API ALobbyPlayerController : public APlayerController
 
 protected:
     virtual void BeginPlay() override;
+	virtual void SetupInputComponent() override;
 
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<class UUserWidget> LobbyWidgetClass;
@@ -47,4 +48,5 @@ private:
 	void HandleNetworkConnected();
 	void HandleNetworkConnectError();
     void HandleLoginSuccess();
+    void OnToggleChatPressed();
 };

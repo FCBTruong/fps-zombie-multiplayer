@@ -8,6 +8,7 @@
 #include "Network/NetworkManager.h"
 #include "Lobby/RoomManager.h"
 #include "Lobby/RoomSlotUI.h"
+#include "Chat/ChatUI.h"
 
 void ULobbyUI::NativeConstruct()
 {
@@ -297,55 +298,6 @@ void ULobbyUI::OnStartGameClicked()
 		return;
 	}
 	CachedRoomMgr->RequestStartGame();
-	/*
-	int NumBotTeam1 = 0;
-	int NumBotTeam2 = 0;
-
-	for (int32 i = 0; i < PlayerSlotUIs.Num(); ++i)
-	{
-		auto PSlot = PlayerSlotUIs.IsValidIndex(i) ? PlayerSlotUIs[i] : nullptr;
-		if (PSlot && !PSlot->IsEmpty())
-		{
-			PlayerRoomInfo Info = PSlot->GetPlayerInfo();
-		
-			if (Info.bIsBot)
-			{
-				if (i < 5)
-				{
-					++NumBotTeam1;
-				}
-				else
-				{
-					++NumBotTeam2;
-				}
-			}
-		}
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Starting Game with %d bots in Team 1 and %d bots in Team 2"), NumBotTeam1, NumBotTeam2);
-	
-
-	FString Options(TEXT("?listen?game=/Game/Main/Core/GM_Spike.GM_Spike_C"));
-
-	Options += FString::Printf(TEXT("?BotT1=%d"), NumBotTeam1);
-	Options += FString::Printf(TEXT("?BotT2=%d"), NumBotTeam2);
-	if (CachedRoomMgr->GetCurrentRoomData().Mode == EMatchMode::Spike)
-	{
-		const FName MapName(TEXT("/Game/Main/Levels/GhostMallMap")); 
-		UGameplayStatics::OpenLevel(this, MapName, true, Options);
-		return;
-	}
-	else if (CachedRoomMgr->GetCurrentRoomData().Mode == EMatchMode::Zombie)
-	{
-		const FName MapName(TEXT("/Game/Main/Levels/GhostMallMap"));
-		UGameplayStatics::OpenLevel(this, MapName, true, Options);
-		return;
-	}
-	UE_LOG(LogTemp, Warning, TEXT("Start Game Clicked"));
-	UGameplayStatics::OpenLevel(
-		this,
-		FName(TEXT("Main/Levels/L_PlayGround"))
-	); */
 }
 
 void ULobbyUI::OnAddBotTeam1()
@@ -438,4 +390,13 @@ void ULobbyUI::OnPracticeBtnClicked()
 		this,
 		FGameConstants::LEVEL_PRACTICE
 	);
+}
+
+void ULobbyUI::ToggleChat()
+{
+	UE_LOG(LogTemp, Warning, TEXT("LobbyUI: ToggleChat called"));
+	if (ChatWidget)
+	{
+		ChatWidget->OpenChat();
+	}
 }

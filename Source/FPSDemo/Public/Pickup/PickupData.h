@@ -9,7 +9,7 @@ struct FPickupData
     GENERATED_BODY()
 
     UPROPERTY() int32 Id = 0;
-    UPROPERTY() EItemId ItemId;
+    UPROPERTY() EItemId ItemId = EItemId::NONE;
     UPROPERTY() int32 Amount = 0;
 	UPROPERTY() int32 AmmoInClip = 0;
 	UPROPERTY() int32 AmmoReserve = 0;

@@ -4,6 +4,7 @@
 #include "Lobby/LobbyPlayerController.h"
 #include "Blueprint/UserWidget.h"
 #include "Network/NetworkManager.h"
+#include "Lobby/LobbyUI.h"
 
 void ALobbyPlayerController::BeginPlay()
 {
@@ -124,9 +125,11 @@ void ALobbyPlayerController::ApplyInputModeForPage(EUIPage Page)
 
     if (bIsMenuPage && ActiveWidget)
     {
-        FInputModeUIOnly Mode;
+        FInputModeGameAndUI Mode;
         Mode.SetWidgetToFocus(ActiveWidget->TakeWidget());
         Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        Mode.SetHideCursorDuringCapture(false);
+
         SetInputMode(Mode);
         bShowMouseCursor = true;
     }
@@ -136,4 +139,23 @@ void ALobbyPlayerController::ApplyInputModeForPage(EUIPage Page)
         SetInputMode(Mode);
         bShowMouseCursor = false;
     }
+}
+
+void ALobbyPlayerController::SetupInputComponent()
+{
+    Super::SetupInputComponent();
+    
+    InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &ALobbyPlayerController::OnToggleChatPressed);
+}
+
+void ALobbyPlayerController::OnToggleChatPressed()
+{
+	UE_LOG(LogTemp, Log, TEXT("Toggle chat pressed"));
+    if (ActiveWidget)
+    {
+        if (ULobbyUI* LobbyWidget = Cast<ULobbyUI>(ActiveWidget))
+        {
+            LobbyWidget->ToggleChat();
+        }
+	}
 }
