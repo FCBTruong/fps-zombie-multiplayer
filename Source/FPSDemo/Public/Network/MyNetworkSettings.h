@@ -20,4 +20,10 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, Category = "Network")
 	FString ProdWebSocketUrl;
+
+	UPROPERTY(Config, EditAnywhere, Category = "Network")
+	FString DevRESTUrl;
+
+	UPROPERTY(Config, EditAnywhere, Category = "Network")
+	FString ProdRESTUrl;
 };

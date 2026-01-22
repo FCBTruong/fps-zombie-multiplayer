@@ -6,6 +6,7 @@
 #include "GameFramework/GameMode.h"
 #include "Controllers/BotAIController.h"
 #include "Bot/BotStateManager.h"
+#include "Lobby/RoomData.h"
 #include "ShooterGameMode.generated.h"
 
 class UItemConfig;
@@ -60,8 +61,7 @@ protected:
 	TArray<TWeakObjectPtr<AActor>> Corpses;
 
 	bool bRoundStarted = false;
+	int RoomId = 0;
 
 	FTimerHandle TryStartMatchHandle;
-	int NumBotTeam1 = 0;
-	int NumBotTeam2 = 0;
 };

@@ -4,8 +4,8 @@
 #include "Lobby/RoomManager.h"
 #include "Network/NetworkManager.h"
 #include "Lobby/PlayerInfoManager.h"
-#include "Network/NetBoostrapSubsystem.h"
 #include "Kismet/GameplayStatics.h"
+#include "Game/GameManager.h"
 
 void URoomManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -330,52 +330,10 @@ void URoomManager::RequestStartGame()
         NetworkManager->SendPacket(ECmdId::START_GAME, Pkg);
     }
     else {
-		// offline mode
-        UGameInstance* GI = GetWorld()->GetGameInstance();
-        if (!GI) return;
-
-        int NumBotTeam1 = 0;
-        int NumBotTeam2 = 0;
-
-        for (int32 i = 0; i < CurrentRoomData.Players.Num(); ++i)
-        {
-            auto Info = CurrentRoomData.Players[i];
-
-            if (Info.bIsBot)
-            {
-                if (i < 5)
-                {
-                    ++NumBotTeam1;
-                }
-                else
-                {
-                    ++NumBotTeam2;
-                }
-            }
+		UGameManager* GameMgr = UGameManager::Get(GetWorld());
+        if (GameMgr) {
+            GameMgr->StartMatch();
         }
-
-        UE_LOG(LogTemp, Warning, TEXT("Starting Game with %d bots in Team 1 and %d bots in Team 2"), NumBotTeam1, NumBotTeam2);
-
-
-        FString Options(TEXT("?listen?game=/Game/Main/Core/GM_Spike.GM_Spike_C"));
-
-        Options += FString::Printf(TEXT("?BotT1=%d"), NumBotTeam1);
-        Options += FString::Printf(TEXT("?BotT2=%d"), NumBotTeam2);
-        if (CurrentRoomData.Mode == EMatchMode::Spike)
-        {
-            UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_GHOST_MALL_MAP, true, Options);
-            return;
-        }
-        else if (CurrentRoomData.Mode == EMatchMode::Zombie)
-        {
-            UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_GHOST_MALL_MAP, true, Options);
-            return;
-        }
-        UE_LOG(LogTemp, Warning, TEXT("Start Game Clicked"));
-        UGameplayStatics::OpenLevel(
-            this,
-            FGameConstants::LEVEL_PLAYGROUND
-        );
     }
 }
 
@@ -454,35 +412,6 @@ void URoomManager::HandleGameStarted(const std::string& payload)
     if (!GI) return;
 
     UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_LOADING);
-
-    // Turn on loading scene
-
-    if (!CurrentRoomData.bIsSelfHost) {
-        UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleGameStarted: Not self-host, skipping host startup."));
-        return;
-	}
-
-    if (IsMyRoom() == false) {
-        UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleGameStarted: Not my room, skipping host startup."));
-        return;
-	}
-
-    UNetBoostrapSubsystem* NetSubsystem =
-        GI->GetSubsystem<UNetBoostrapSubsystem>();
-    if (!NetSubsystem) return;
-    NetSubsystem->StartSelfHost(
-        FGameConstants::LEVEL_GHOST_MALL_MAP,
-        FString::FromInt(CurrentRoomData.RoomId),
-        CurrentRoomData.JoinKey
-    );
-}
-
-void URoomManager::NotifySelfHostReady()
-{
-    if (NetworkManager && NetworkManager->IsConnected()) {
-        game::net::Empty Pkg;
-        NetworkManager->SendPacket(ECmdId::SELFHOST_READY, Pkg);
-    }
 }
 
 void URoomManager::HandleSelfHostReady(const std::string& payload)
@@ -495,14 +424,18 @@ void URoomManager::HandleSelfHostReady(const std::string& payload)
 
     // Turn off loading scene
     // Travel to game map as client
+
+    GetWorld()->GetTimerManager().SetTimer(
+        JoinRetryTimer,
+        this,
+        &URoomManager::TryJoinRoom,
+        3.0f,
+        false
+    );
+}
+
+void URoomManager::TryJoinRoom()
+{
     UGameInstance* GI = GetWorld()->GetGameInstance();
     if (!GI) return;
-    UNetBoostrapSubsystem* NetSubsystem =
-        GI->GetSubsystem<UNetBoostrapSubsystem>();
-    if (!NetSubsystem) return;
-        
-    NetSubsystem->JoinSelfHostByMatch(
-        FString::FromInt(CurrentRoomData.RoomId),
-        CurrentRoomData.JoinKey
-	);
 }

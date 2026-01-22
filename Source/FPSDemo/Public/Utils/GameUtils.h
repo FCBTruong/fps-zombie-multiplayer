@@ -16,5 +16,4 @@ public:
 
 	static FString PointNumber(int32 Number);
 	static FString GenerateMd5Token();
-	static UTexture2D* GetTextureAvatar (const FString& AvatarId);
 };

@@ -44,14 +44,3 @@ FString GameUtils::GenerateMd5Token()
         FPlatformMisc::GetLoginId();
     return FMD5::HashAnsiString(*Raw);
 }
-
-UTexture2D* GameUtils::GetTextureAvatar(const FString& AvatarId)
-{
-    const FString Path = FString::Printf(
-        TEXT("/Game/Main/Asset/Avatars/avatar_%s.avatar_%s"),
-        *AvatarId,
-        *AvatarId
-    );
-
-    return LoadObject<UTexture2D>(nullptr, *Path);
-}

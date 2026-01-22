@@ -5,6 +5,7 @@
 #include "Lobby/PlayerInfoManager.h"
 #include "Lobby/RoomManager.h"
 #include "Utils/GameUtils.h"
+#include "ContentRegistrySubsystem.h"
 
 void URoomPlayerSlotUI::NativeConstruct()
 {
@@ -77,8 +78,10 @@ void URoomPlayerSlotUI::SetPlayerInfo(PlayerRoomInfo Info, int InSlotIdx, int Ow
 			DeleteBtn->SetVisibility(bIsMe ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 		}
 		
+		UContentRegistrySubsystem* Registry =
+			GetGameInstance()->GetSubsystem<UContentRegistrySubsystem>();
 		AvatarImg->SetBrushFromTexture(
-			GameUtils::GetTextureAvatar(Info.Avatar));
+			Registry->GetAvatarTextureById(Info.Avatar));
 	}
 }
 

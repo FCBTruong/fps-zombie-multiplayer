@@ -8,16 +8,25 @@
 #include "Asset/CharacterAsset.h"
 #include "Game/GlobalDataAsset.h"
 #include "Kismet/GameplayStatics.h"
+#include "Network/DedicatedServerClient.h"
+#include "Lobby/RoomManager.h"
 
 void UGameManager::Init()
 {
 	Super::Init();
+	DsClient = MakeUnique<DedicatedServerClient>();
 }
 
 void UGameManager::OnStart()
 {
     Super::OnStart();
     CurrentPickupId = 1000;
+
+    // Dedicated server: request match data, then travel/open level
+    if (IsRunningDedicatedServer())
+    {
+        RequestMatchDataAndStart();
+    }
 }
 
 FPickupData UGameManager::GetDataPickupItem(int32 ItemOnMapId) {
@@ -116,4 +125,65 @@ void UGameManager::RegisterPlayer(ABaseCharacter* Pawn) {
 void UGameManager::UnregisterPlayer(ABaseCharacter* Pawn) {
     if (!Pawn) return;
     RegisteredPlayers.Remove(Pawn);
+}
+
+void UGameManager::RequestMatchDataAndStart()
+{
+	UE_LOG(LogTemp, Log, TEXT("UGameManager::RequestMatchDataAndStart: Requesting match data from backend server"));
+    // For dedicated server: request match data from backend server, then travel to game level
+    if (!DsClient) {
+        UE_LOG(LogTemp, Error, TEXT("UGameManager::RequestMatchDataAndStart: DsClient is null"));
+        return;
+	}
+    DsClient->GetMatchInfo(
+        [this](bool bOk, const FString& ResponseBody)
+        {
+            if (!bOk)
+            {
+                UE_LOG(LogTemp, Error, TEXT("UGameManager::RequestMatchDataAndStart: Failed to get match info"));
+                return;
+            }
+            UE_LOG(LogTemp, Log, TEXT("UGameManager::RequestMatchDataAndStart: Received match info: %s"), *ResponseBody);
+        }
+    );
+}
+
+void UGameManager::StartMatch()
+{
+	UE_LOG(LogTemp, Log, TEXT("UGameManager::StartMatch: Starting match, traveling to game level"));
+    // get match, room data
+    URoomManager* RoomMgr = URoomManager::Get(GetWorld());
+    // get current room data
+    const FRoomData& RoomData = RoomMgr->GetCurrentRoomData();
+    FString Options;
+
+    if (!IsRunningDedicatedServer())
+    {
+        Options += TEXT("?listen"); // only for listen server (client-host)
+    }
+
+    if (IsRunningDedicatedServer())
+    {
+        Options += FString::Printf(TEXT("?DedicatedServer=1"));
+	}
+    else {
+		Options += FString::Printf(TEXT("?DedicatedServer=0"));
+    }
+    if (RoomData.Mode == EMatchMode::Spike)
+    {
+		Options += FString::Printf(TEXT("?game=/Game/Main/Core/GM_Spike.GM_Spike_C"));
+        UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_GHOST_MALL_MAP, true, Options);
+        return;
+    }
+    else if (RoomData.Mode == EMatchMode::Zombie)
+    {
+        Options += FString::Printf(TEXT("?game=/Game/Main/Core/GM_Zombie.GM_Zombie_C"));
+        UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_GHOST_MALL_MAP, true, Options);
+        return;
+    }
+    UE_LOG(LogTemp, Warning, TEXT("Start Game Clicked"));
+    UGameplayStatics::OpenLevel(
+        this,
+        FGameConstants::LEVEL_PLAYGROUND
+    );
 }

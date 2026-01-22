@@ -40,14 +40,19 @@ public:
 	void RequestChangeGameMode(EMatchMode GameMode);
 	void RequestChangeHostType(bool bIsSelfHost);
 	void RequestCreateRoom();
-	void NotifySelfHostReady();
 
-	FRoomData GetCurrentRoomData() {
+	const FRoomData& GetCurrentRoomData() {
 		return CurrentRoomData;
 	}
-	TArray<FRoomData> GetAvailableRooms() {
+	const TArray<FRoomData>& GetAvailableRooms() const
+	{
 		return AvailableRooms;
 	}
+
+	bool HasCurrentRoom() const {
+		return CurrentRoomData.bIsActive;
+	}
+
 	void RequestJoinRoom(int32 roomId);
 	bool IsMyRoom() const;
 
@@ -70,4 +75,7 @@ private:
 	void CreateOfflineRoom();
 	void HandleGameStarted(const std::string& payload);
 	void HandleSelfHostReady(const std::string& payload);
+	void TryJoinRoom();
+
+	FTimerHandle JoinRetryTimer;
 };

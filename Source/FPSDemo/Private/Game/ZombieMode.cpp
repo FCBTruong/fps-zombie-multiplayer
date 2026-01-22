@@ -15,10 +15,6 @@ void AZombieMode::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("SpikeMode Game Started!"));
 	Super::StartPlay();
 
-	SpawnBot();
-	SpawnBot();
-	SpawnBot();
-	SpawnBot();
 }
 
 void AZombieMode::StartRound()

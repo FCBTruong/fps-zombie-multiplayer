@@ -6,6 +6,7 @@
 #include "Characters/BaseCharacter.h"
 #include "Game/ActorManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Lobby/RoomManager.h"
 
 AShooterGameMode::AShooterGameMode()
 {
@@ -19,11 +20,6 @@ void AShooterGameMode::InitGame(
     FString& ErrorMessage)
 {
     Super::InitGame(MapName, Options, ErrorMessage);
-
-    NumBotTeam1 = UGameplayStatics::GetIntOption(Options, TEXT("BotT1"), 0);
-    NumBotTeam2 = UGameplayStatics::GetIntOption(Options, TEXT("BotT2"), 0);
-
-	UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode: InitGame called with BotT1=%d, BotT2=%d"), NumBotTeam1, NumBotTeam2);
 }
 
 void AShooterGameMode::StartPlay()
@@ -42,8 +38,6 @@ void AShooterGameMode::StartPlay()
     GS->SetMatchMode(GetMatchMode());
     BotManager->SetMatchMode(GetMatchMode());
 
-    bDelayedStart = true;
-
 	// call start round after short delay
     GetWorldTimerManager().SetTimer(
         TryStartMatchHandle,
@@ -52,6 +46,28 @@ void AShooterGameMode::StartPlay()
         3.0f,
         false
 	);
+
+    // Get RoomData from RoomManager
+    URoomManager* RoomMgr = URoomManager::Get(GetWorld());
+    // get current room data
+    const FRoomData& RoomData = RoomMgr->GetCurrentRoomData();
+
+    for (const PlayerRoomInfo& Player : RoomData.Players)
+    {
+        if (Player.PlayerId == FGameConstants::EMPTY_PLAYER_ID) {
+            continue;
+        }
+        if (!Player.bIsBot)
+        {
+            continue;
+        }
+
+        ABotAIController* BotController = SpawnBot();
+        if (BotController)
+        {
+            //BotController->SetTeamId(Player.TeamId);
+        }
+    }
 }
 
 void AShooterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

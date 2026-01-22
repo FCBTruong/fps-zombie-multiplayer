@@ -11,6 +11,7 @@ class UGlobalDataAsset;
 class APickupItem;
 class UCharacterAsset;
 class ABaseCharacter;
+class DedicatedServerClient;
 
 /**
  * 
@@ -27,6 +28,7 @@ private:
 protected:
 	virtual void Init() override;
 	virtual void OnStart() override;
+	void RequestMatchDataAndStart();
 public:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UGlobalDataAsset> GlobalData = nullptr;
@@ -48,4 +50,7 @@ public:
 	void SetPickupSpike(APickupItem* SpikeItem);
 	int CurrentPickupId;
 	static UGameManager* Get(UObject* WorldContextObject);
+	TUniquePtr<DedicatedServerClient> DsClient;
+
+	void StartMatch();
 };

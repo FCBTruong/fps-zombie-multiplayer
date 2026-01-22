@@ -82,3 +82,5 @@ Content/ParagonKwang/*
 
 !ThirdParty/**/*.lib
 !ThirdParty/**/*.a
+
+ArchivedBuilds/*

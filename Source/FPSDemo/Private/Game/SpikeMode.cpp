@@ -9,17 +9,12 @@
 #include "Characters/BaseCharacter.h"
 #include "Engine/TargetPoint.h"
 #include "Bot/BotStateManager.h"
-#include "Characters/BaseCharacter.h"
 #include "Pickup/PickupItem.h"
 
 void ASpikeMode::StartPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("SpikeMode Game Started!"));
 	Super::StartPlay();
-	
-	SpawnBot();
-	SpawnBot();
-	SpawnBot();
 
 	// get all controllers and assign teams
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
