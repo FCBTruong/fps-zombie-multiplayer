@@ -84,3 +84,5 @@ Content/ParagonKwang/*
 !ThirdParty/**/*.a
 
 ArchivedBuilds/*
+
+Plugins/GameLiftPlugin/*

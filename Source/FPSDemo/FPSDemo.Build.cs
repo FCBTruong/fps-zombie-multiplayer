@@ -11,15 +11,18 @@ public class FPSDemo : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", 
             "InputCore", "EnhancedInput", "PhysicsCore", "UMG", "Niagara", 
-            "WebSockets" });
+            "WebSockets", "GameLiftServerSDK" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
-             "Slate",
-			 "SlateCore"
+            "Slate",
+			"SlateCore",
+            "HTTP",
+            "Json",
+            "JsonUtilities"
         });
 
         PublicIncludePaths.AddRange(new[]
-       {
+        {
             Path.Combine(ModuleDirectory, "Proto")
         });
 
@@ -42,5 +45,13 @@ public class FPSDemo : ModuleRules
             );
         }
 
+        if (Target.Type == TargetType.Server)
+        {
+            PublicDependencyModuleNames.Add("GameLiftServerSDK");
+        }
+        else
+        {
+            PublicDefinitions.Add("WITH_GAMELIFT=0");
+        }
     }
 }

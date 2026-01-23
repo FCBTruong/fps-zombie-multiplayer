@@ -10,6 +10,10 @@ DedicatedServerClient::DedicatedServerClient()
 #endif
 }
 
+DedicatedServerClient::~DedicatedServerClient()
+{
+}
+
 void DedicatedServerClient::SetBearerToken(const FString& InBearerToken)
 {
     BearerToken = InBearerToken;
@@ -68,24 +72,68 @@ void DedicatedServerClient::GetMatchInfo(TFunction<void(bool bOk, const FString&
     SendJsonRequest(TEXT("/ds/match/info"), TEXT("GET"), TEXT(""), MoveTemp(Callback));
 }
 
-void DedicatedServerClient::NotifyReady(const FString& ServerInstanceId, TFunction<void(bool bOk, const FString& ResponseBody)> Callback)
+void DedicatedServerClient::NotifyReady( TFunction<void(bool bOk, const FString& ResponseBody)> Callback)
 {
     // POST /ds/ready
-    const FString Body = FString::Printf(TEXT("{\"serverInstanceId\":\"%s\"}"), *ServerInstanceId);
-    SendJsonRequest(TEXT("/ds/ready"), TEXT("POST"), Body, MoveTemp(Callback));
+    SendJsonRequest(TEXT("/ds/ready"), TEXT("POST"), {}, MoveTemp(Callback));
 }
 
 void DedicatedServerClient::NotifyFinish(
-    const FString& ServerInstanceId,
     const FString& EventId,
     const FString& ResultJson,
     TFunction<void(bool bOk, const FString& ResponseBody)> Callback)
 {
     // POST /ds/finish
-    // ResultJson should already be a JSON object string (e.g. {"winnerTeam":1})
-    const FString Body = FString::Printf(
-        TEXT("{\"serverInstanceId\":\"%s\",\"eventId\":\"%s\",\"result\":%s}"),
-        *ServerInstanceId, *EventId, *ResultJson);
+    SendJsonRequest(TEXT("/ds/finish"), TEXT("POST"), {}, MoveTemp(Callback));
+}
 
-    SendJsonRequest(TEXT("/ds/finish"), TEXT("POST"), Body, MoveTemp(Callback));
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+
+bool DedicatedServerClient::ParseMatchInfo(const FString& JsonString, FRoomData& OutMatchInfo)
+{
+    TSharedPtr<FJsonObject> RootObj;
+    const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
+
+    if (!FJsonSerializer::Deserialize(Reader, RootObj) || !RootObj.IsValid())
+    {
+        return false;
+    }
+
+    // mode
+    OutMatchInfo.Mode = static_cast<EMatchMode>(RootObj->GetIntegerField(TEXT("mode")));
+
+    // players
+    OutMatchInfo.Players.Reset();
+
+    const TArray<TSharedPtr<FJsonValue>>* PlayersArrayPtr = nullptr;
+    if (RootObj->TryGetArrayField(TEXT("players"), PlayersArrayPtr) && PlayersArrayPtr)
+    {
+        for (const TSharedPtr<FJsonValue>& Val : *PlayersArrayPtr)
+        {
+            const TSharedPtr<FJsonObject> PlayerObj = Val->AsObject();
+            if (!PlayerObj.IsValid())
+            {
+                continue;
+            }
+
+            PlayerRoomInfo Slot;
+            Slot.PlayerId = PlayerObj->GetIntegerField(TEXT("userId"));
+
+            // Use TryGet... to avoid crashes if fields are missing
+            PlayerObj->TryGetStringField(TEXT("playerName"), Slot.PlayerName);
+            PlayerObj->TryGetStringField(TEXT("avatar"), Slot.Avatar);
+
+            bool bBot = false;
+            if (PlayerObj->TryGetBoolField(TEXT("isBot"), bBot))
+            {
+                Slot.bIsBot = bBot;
+            }
+
+            OutMatchInfo.Players.Add(MoveTemp(Slot));
+        }
+    }
+
+    return true;
 }

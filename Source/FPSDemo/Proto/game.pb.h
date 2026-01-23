@@ -107,6 +107,9 @@ extern PlayerLeaveReplyDefaultTypeInternal _PlayerLeaveReply_default_instance_;
 class PlayerRoomInfoReply;
 struct PlayerRoomInfoReplyDefaultTypeInternal;
 extern PlayerRoomInfoReplyDefaultTypeInternal _PlayerRoomInfoReply_default_instance_;
+class PlayerSessionReply;
+struct PlayerSessionReplyDefaultTypeInternal;
+extern PlayerSessionReplyDefaultTypeInternal _PlayerSessionReply_default_instance_;
 class RoomInfoReply;
 struct RoomInfoReplyDefaultTypeInternal;
 extern RoomInfoReplyDefaultTypeInternal _RoomInfoReply_default_instance_;
@@ -142,6 +145,7 @@ template<> ::game::net::NewPlayerJoinRoomReply* Arena::CreateMaybeMessage<::game
 template<> ::game::net::Packet* Arena::CreateMaybeMessage<::game::net::Packet>(Arena*);
 template<> ::game::net::PlayerLeaveReply* Arena::CreateMaybeMessage<::game::net::PlayerLeaveReply>(Arena*);
 template<> ::game::net::PlayerRoomInfoReply* Arena::CreateMaybeMessage<::game::net::PlayerRoomInfoReply>(Arena*);
+template<> ::game::net::PlayerSessionReply* Arena::CreateMaybeMessage<::game::net::PlayerSessionReply>(Arena*);
 template<> ::game::net::RoomInfoReply* Arena::CreateMaybeMessage<::game::net::RoomInfoReply>(Arena*);
 template<> ::game::net::RoomUpdateOwnerReply* Arena::CreateMaybeMessage<::game::net::RoomUpdateOwnerReply>(Arena*);
 template<> ::game::net::SwitchSlotReply* Arena::CreateMaybeMessage<::game::net::SwitchSlotReply>(Arena*);
@@ -3813,6 +3817,181 @@ class ChatInRoomReply final :
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_game_2eproto;
 };
+// -------------------------------------------------------------------
+
+class PlayerSessionReply final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:game.net.PlayerSessionReply) */ {
+ public:
+  inline PlayerSessionReply() : PlayerSessionReply(nullptr) {}
+  ~PlayerSessionReply() override;
+  explicit PROTOBUF_CONSTEXPR PlayerSessionReply(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  PlayerSessionReply(const PlayerSessionReply& from);
+  PlayerSessionReply(PlayerSessionReply&& from) noexcept
+    : PlayerSessionReply() {
+    *this = ::std::move(from);
+  }
+
+  inline PlayerSessionReply& operator=(const PlayerSessionReply& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PlayerSessionReply& operator=(PlayerSessionReply&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const PlayerSessionReply& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const PlayerSessionReply* internal_default_instance() {
+    return reinterpret_cast<const PlayerSessionReply*>(
+               &_PlayerSessionReply_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    24;
+
+  friend void swap(PlayerSessionReply& a, PlayerSessionReply& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(PlayerSessionReply* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PlayerSessionReply* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PlayerSessionReply* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<PlayerSessionReply>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const PlayerSessionReply& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const PlayerSessionReply& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(PlayerSessionReply* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "game.net.PlayerSessionReply";
+  }
+  protected:
+  explicit PlayerSessionReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kIpFieldNumber = 1,
+    kPlayerSessionIdFieldNumber = 3,
+    kPortFieldNumber = 2,
+  };
+  // string Ip = 1;
+  void clear_ip();
+  const std::string& ip() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_ip(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_ip();
+  PROTOBUF_NODISCARD std::string* release_ip();
+  void set_allocated_ip(std::string* ip);
+  private:
+  const std::string& _internal_ip() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_ip(const std::string& value);
+  std::string* _internal_mutable_ip();
+  public:
+
+  // string PlayerSessionId = 3;
+  void clear_playersessionid();
+  const std::string& playersessionid() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_playersessionid(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_playersessionid();
+  PROTOBUF_NODISCARD std::string* release_playersessionid();
+  void set_allocated_playersessionid(std::string* playersessionid);
+  private:
+  const std::string& _internal_playersessionid() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_playersessionid(const std::string& value);
+  std::string* _internal_mutable_playersessionid();
+  public:
+
+  // int32 Port = 2;
+  void clear_port();
+  int32_t port() const;
+  void set_port(int32_t value);
+  private:
+  int32_t _internal_port() const;
+  void _internal_set_port(int32_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:game.net.PlayerSessionReply)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr ip_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr playersessionid_;
+  int32_t port_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_game_2eproto;
+};
 // ===================================================================
 
 
@@ -5236,9 +5415,135 @@ inline void ChatInRoomReply::set_allocated_mess(std::string* mess) {
   // @@protoc_insertion_point(field_set_allocated:game.net.ChatInRoomReply.mess)
 }
 
+// -------------------------------------------------------------------
+
+// PlayerSessionReply
+
+// string Ip = 1;
+inline void PlayerSessionReply::clear_ip() {
+  ip_.ClearToEmpty();
+}
+inline const std::string& PlayerSessionReply::ip() const {
+  // @@protoc_insertion_point(field_get:game.net.PlayerSessionReply.Ip)
+  return _internal_ip();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void PlayerSessionReply::set_ip(ArgT0&& arg0, ArgT... args) {
+ 
+ ip_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.PlayerSessionReply.Ip)
+}
+inline std::string* PlayerSessionReply::mutable_ip() {
+  std::string* _s = _internal_mutable_ip();
+  // @@protoc_insertion_point(field_mutable:game.net.PlayerSessionReply.Ip)
+  return _s;
+}
+inline const std::string& PlayerSessionReply::_internal_ip() const {
+  return ip_.Get();
+}
+inline void PlayerSessionReply::_internal_set_ip(const std::string& value) {
+  
+  ip_.Set(value, GetArenaForAllocation());
+}
+inline std::string* PlayerSessionReply::_internal_mutable_ip() {
+  
+  return ip_.Mutable(GetArenaForAllocation());
+}
+inline std::string* PlayerSessionReply::release_ip() {
+  // @@protoc_insertion_point(field_release:game.net.PlayerSessionReply.Ip)
+  return ip_.Release();
+}
+inline void PlayerSessionReply::set_allocated_ip(std::string* ip) {
+  if (ip != nullptr) {
+    
+  } else {
+    
+  }
+  ip_.SetAllocated(ip, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (ip_.IsDefault()) {
+    ip_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.PlayerSessionReply.Ip)
+}
+
+// int32 Port = 2;
+inline void PlayerSessionReply::clear_port() {
+  port_ = 0;
+}
+inline int32_t PlayerSessionReply::_internal_port() const {
+  return port_;
+}
+inline int32_t PlayerSessionReply::port() const {
+  // @@protoc_insertion_point(field_get:game.net.PlayerSessionReply.Port)
+  return _internal_port();
+}
+inline void PlayerSessionReply::_internal_set_port(int32_t value) {
+  
+  port_ = value;
+}
+inline void PlayerSessionReply::set_port(int32_t value) {
+  _internal_set_port(value);
+  // @@protoc_insertion_point(field_set:game.net.PlayerSessionReply.Port)
+}
+
+// string PlayerSessionId = 3;
+inline void PlayerSessionReply::clear_playersessionid() {
+  playersessionid_.ClearToEmpty();
+}
+inline const std::string& PlayerSessionReply::playersessionid() const {
+  // @@protoc_insertion_point(field_get:game.net.PlayerSessionReply.PlayerSessionId)
+  return _internal_playersessionid();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void PlayerSessionReply::set_playersessionid(ArgT0&& arg0, ArgT... args) {
+ 
+ playersessionid_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.PlayerSessionReply.PlayerSessionId)
+}
+inline std::string* PlayerSessionReply::mutable_playersessionid() {
+  std::string* _s = _internal_mutable_playersessionid();
+  // @@protoc_insertion_point(field_mutable:game.net.PlayerSessionReply.PlayerSessionId)
+  return _s;
+}
+inline const std::string& PlayerSessionReply::_internal_playersessionid() const {
+  return playersessionid_.Get();
+}
+inline void PlayerSessionReply::_internal_set_playersessionid(const std::string& value) {
+  
+  playersessionid_.Set(value, GetArenaForAllocation());
+}
+inline std::string* PlayerSessionReply::_internal_mutable_playersessionid() {
+  
+  return playersessionid_.Mutable(GetArenaForAllocation());
+}
+inline std::string* PlayerSessionReply::release_playersessionid() {
+  // @@protoc_insertion_point(field_release:game.net.PlayerSessionReply.PlayerSessionId)
+  return playersessionid_.Release();
+}
+inline void PlayerSessionReply::set_allocated_playersessionid(std::string* playersessionid) {
+  if (playersessionid != nullptr) {
+    
+  } else {
+    
+  }
+  playersessionid_.SetAllocated(playersessionid, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (playersessionid_.IsDefault()) {
+    playersessionid_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.PlayerSessionReply.PlayerSessionId)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

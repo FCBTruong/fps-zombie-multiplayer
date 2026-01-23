@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  fps-demo-server:
+    image: fps-demo-server
+    container_name: fps-demo-server
+    restart: unless-stopped
+
+    ports:
+      - "7777:7777/udp"
+      - "7777:7777/tcp"
+
+    working_dir: /opt/FPSDemo
+    entrypoint: ["./FPSDemoServer.sh"]
+
+    tty: true
+    stdin_open: true

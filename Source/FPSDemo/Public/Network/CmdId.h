@@ -23,4 +23,5 @@ enum class ECmdId : uint8 {
     SELFHOST_READY = 114, // other players can join now
     GAME_STARTED = 115,
 	CHAT_IN_ROOM = 116,
+    PLAYER_SESSION = 117
 };

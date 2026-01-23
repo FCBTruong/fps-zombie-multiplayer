@@ -21,12 +21,6 @@ void UGameManager::OnStart()
 {
     Super::OnStart();
     CurrentPickupId = 1000;
-
-    // Dedicated server: request match data, then travel/open level
-    if (IsRunningDedicatedServer())
-    {
-        RequestMatchDataAndStart();
-    }
 }
 
 FPickupData UGameManager::GetDataPickupItem(int32 ItemOnMapId) {
@@ -143,6 +137,16 @@ void UGameManager::RequestMatchDataAndStart()
                 UE_LOG(LogTemp, Error, TEXT("UGameManager::RequestMatchDataAndStart: Failed to get match info"));
                 return;
             }
+			FRoomData RoomData;
+            DedicatedServerClient::ParseMatchInfo(ResponseBody, RoomData);
+
+			URoomManager* RoomMgr = URoomManager::Get(GetWorld());
+            if (RoomMgr)
+            {
+				RoomMgr->SetCurrentRoomData(RoomData);
+				StartMatch();
+            }
+
             UE_LOG(LogTemp, Log, TEXT("UGameManager::RequestMatchDataAndStart: Received match info: %s"), *ResponseBody);
         }
     );
@@ -186,4 +190,13 @@ void UGameManager::StartMatch()
         this,
         FGameConstants::LEVEL_PLAYGROUND
     );
+}
+
+void UGameManager::InitFromGameLift(
+    const FString& InRoomId,
+    const FString& InMode,
+    const FString& InToken)
+{
+	DsClient->SetBearerToken(InToken);
+    RequestMatchDataAndStart();
 }

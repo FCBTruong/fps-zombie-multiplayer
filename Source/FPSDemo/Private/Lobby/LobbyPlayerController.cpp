@@ -5,6 +5,12 @@
 #include "Blueprint/UserWidget.h"
 #include "Network/NetworkManager.h"
 #include "Lobby/LobbyUI.h"
+#include "Game/MyCheatManager.h"
+
+ALobbyPlayerController::ALobbyPlayerController()
+{
+    CheatClass = UMyCheatManager::StaticClass();
+}
 
 void ALobbyPlayerController::BeginPlay()
 {

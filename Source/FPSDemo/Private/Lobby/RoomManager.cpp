@@ -197,6 +197,11 @@ void URoomManager::OnPacketReceived(
 		HandleSelfHostReady(Payload);
         break;
 	}
+    case ECmdId::PLAYER_SESSION:
+    {
+        HandlePlayerSession(Payload);
+        break;
+    }
     default:
         break;
     }
@@ -432,6 +437,25 @@ void URoomManager::HandleSelfHostReady(const std::string& payload)
         3.0f,
         false
     );
+}
+
+void URoomManager::HandlePlayerSession(const std::string& payload)
+{
+    game::net::PlayerSessionReply Msg;
+    if (!Msg.ParseFromString(payload))
+        return;
+
+	auto IpAddress = FString(Msg.ip().c_str());
+	auto Port = Msg.port();
+	UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandlePlayerSession: Received session info. IP: %s, Port: %d"), *IpAddress, Port);
+	auto SessionId = Msg.playersessionid().c_str();
+	UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandlePlayerSession: Player Session ID: %s"), *FString(SessionId));
+
+    UGameInstance* GI = GetWorld()->GetGameInstance();
+    if (!GI) return;
+    FString URL = FString::Printf(TEXT("%s:%d?PlayerSessionId=%s"), *IpAddress, Port, *FString(SessionId));
+    UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandlePlayerSession: Traveling to %s"), *URL);
+	GI->GetFirstLocalPlayerController()->ClientTravel(URL, TRAVEL_Absolute);
 }
 
 void URoomManager::TryJoinRoom()

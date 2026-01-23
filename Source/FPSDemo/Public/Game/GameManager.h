@@ -5,13 +5,13 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Pickup/PickupData.h"
+#include "Network/DedicatedServerClient.h"
 #include "GameManager.generated.h"
 
 class UGlobalDataAsset;
 class APickupItem;
 class UCharacterAsset;
 class ABaseCharacter;
-class DedicatedServerClient;
 
 /**
  * 
@@ -53,4 +53,8 @@ public:
 	TUniquePtr<DedicatedServerClient> DsClient;
 
 	void StartMatch();
+	void InitFromGameLift(
+		const FString& InRoomId,
+		const FString& InMode,
+		const FString& InToken);
 };

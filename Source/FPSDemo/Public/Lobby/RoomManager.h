@@ -44,6 +44,9 @@ public:
 	const FRoomData& GetCurrentRoomData() {
 		return CurrentRoomData;
 	}
+	void SetCurrentRoomData(const FRoomData& NewData) {
+		CurrentRoomData = NewData;
+	}
 	const TArray<FRoomData>& GetAvailableRooms() const
 	{
 		return AvailableRooms;
@@ -75,6 +78,7 @@ private:
 	void CreateOfflineRoom();
 	void HandleGameStarted(const std::string& payload);
 	void HandleSelfHostReady(const std::string& payload);
+	void HandlePlayerSession(const std::string& payload);
 	void TryJoinRoom();
 
 	FTimerHandle JoinRetryTimer;

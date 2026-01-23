@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Lobby/RoomData.h"
 #include "Http.h"
 /**
  * 
@@ -11,14 +12,14 @@ class FPSDEMO_API DedicatedServerClient
 {
 public:
     DedicatedServerClient();
-
+    ~DedicatedServerClient();
     void GetMatchInfo(TFunction<void(bool bOk, const FString& ResponseBody)> Callback);
-    void NotifyReady(const FString& ServerInstanceId, TFunction<void(bool bOk, const FString& ResponseBody)> Callback);
-    void NotifyFinish(const FString& ServerInstanceId, const FString& EventId, const FString& ResultJson,
+    void NotifyReady(TFunction<void(bool bOk, const FString& ResponseBody)> Callback);
+    void NotifyFinish(const FString& EventId, const FString& ResultJson,
         TFunction<void(bool bOk, const FString& ResponseBody)> Callback);
 
     void SetBearerToken(const FString& InBearerToken);
-
+    static bool ParseMatchInfo(const FString& JsonString, FRoomData& OutMatchInfo);
 private:
     FString BaseUrl;
     FString BearerToken;

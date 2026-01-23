@@ -18,4 +18,7 @@ public:
 	UFUNCTION(exec) void Live();
 
 	UFUNCTION(exec) void Cmd(int id);
+
+	UFUNCTION(Exec)
+	void BecomeDC();
 };

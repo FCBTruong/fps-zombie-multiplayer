@@ -7,6 +7,7 @@
 #include "Components/HealthComponent.h"
 #include "Controllers/MyPlayerController.h"
 #include "UI/PlayerUI.h"
+#include "Kismet/GameplayStatics.h"
 
 
 void UMyCheatManager::Live() {
@@ -33,4 +34,15 @@ void UMyCheatManager::Cmd(int Id) {
         PC->GetPlayerUI()->ShowNotiToast(FText::FromString("You got me!!"));
         break;
     }
+}
+
+
+void UMyCheatManager::BecomeDC()
+{
+    UE_LOG(LogTemp, Warning, TEXT("CheatManager: BecomeDC called"));
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    // Loads map named "Entry" (must be in Project Settings -> Packaging -> Maps to Cook, or referenced)
+    UGameplayStatics::OpenLevel(World, FName(TEXT("/Game/Main/Levels/L_DedicatedServer")));
 }
