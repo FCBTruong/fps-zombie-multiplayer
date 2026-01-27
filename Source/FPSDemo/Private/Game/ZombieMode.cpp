@@ -32,8 +32,6 @@ void AZombieMode::StartRound()
 	GS->SetRoundEndTime(TimeBuyEnd);
 	ResetPlayers();
 
-	GS->SoldierNum = 0;
-	GS->ZombieNum = 0;
 	// debug playerarray size
 	UE_LOG(LogTemp, Warning, TEXT("DEBUGHH: PlayerArray Size: %d"), GS->PlayerArray.Num());
 	// reassign team id
@@ -42,7 +40,6 @@ void AZombieMode::StartRound()
 		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
 		if (!MyPS) continue;
 		MyPS->SetTeamId(ETeamId::Soldier);
-		GS->SoldierNum += 1;
 		UE_LOG(LogTemp, Warning, TEXT("DEBUGHH: Player %s assigned to Soldier team"), *MyPS->GetName());
 	}
 
@@ -147,8 +144,7 @@ void AZombieMode::BecomeZombie(AController* Controller) {
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (GS) {
-		GS->SoldierNum -= 1;
-		GS->ZombieNum += 1;
+
 	}
 	PS->SetTeamId(ETeamId::Zombie);
 

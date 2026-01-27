@@ -166,7 +166,6 @@ private:
 private:
     UPROPERTY(Transient)
     TObjectPtr<UPlayerUI> PlayerUI;
-    void ApplyFlash(const float& Strength);
     void ToggleShop();
     void HandleSpikeChanged(bool bHasSpike);
     void NotifyItemPickedUp(EItemId ItemId);
@@ -217,4 +216,5 @@ private:
     void RemoveDefaultInputMapping();
     void EnterUIMode();
     void EnterGameMode();
+    void OnAmmoChanged(int32 Clip, int32 Reserve);
 };

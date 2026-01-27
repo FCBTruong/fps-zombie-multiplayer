@@ -40,12 +40,18 @@ protected:
 
     UPROPERTY(ReplicatedUsing = OnRep_BuyEndTime)
     int BuyEndTime = -1;
+
+    UPROPERTY(ReplicatedUsing = OnRep_CurrentRound)
+    int CurrentRound = -1;
     
     UFUNCTION()
     void OnRep_Score();
 
 	UFUNCTION()
 	void OnRep_RoundEndTime();
+
+    UFUNCTION()
+	void OnRep_CurrentRound();
 
 	UFUNCTION()
 	void OnRep_MyMatchState();
@@ -58,9 +64,6 @@ protected:
 
     UFUNCTION()
 	void OnRep_BuyEndTime();
-
-    UFUNCTION()
-    void OnRep_TeamNumber();
 
     virtual void RemovePlayerState(APlayerState* PlayerState) override;
     virtual void AddPlayerState(APlayerState* PlayerState) override;
@@ -89,6 +92,9 @@ public:
     void SetRoundEndTime(int NewRoundEndTime) {
         RoundEndTime = NewRoundEndTime;
 	}
+    void SetRoundRemainingTime(int TimeRemaining) {
+        RoundEndTime = GetWorld()->GetTimeSeconds() + TimeRemaining;
+    }   
     void SetMatchMode(EMatchMode NewMode);
 	EMatchMode GetMatchMode() const { return MatchMode; }
     void SetBuyEndTime(int NewBuyEndTime) {
@@ -97,9 +103,18 @@ public:
     int GetBuyEndTime() const {
         return BuyEndTime;
 	}
+    int GetTeamAScore() const {
+		return TeamAScore;
+	}
+	int GetTeamBScore() const {
+		return TeamBScore;
+	}
+    int GetCurrentRound() const {
+        return CurrentRound;
+    }
+    void SetCurrentRound(int NewRound) {
+        CurrentRound = NewRound;
+	}
 
-    UPROPERTY(ReplicatedUsing = OnRep_TeamNumber)
-    int SoldierNum;
-    UPROPERTY(ReplicatedUsing = OnRep_TeamNumber)
-    int ZombieNum;
+    float GetRemainingRoundTime() const;
 };

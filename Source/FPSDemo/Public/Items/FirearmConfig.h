@@ -72,6 +72,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Sound")
 	USoundBase* DryFireSound = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Sound")
+	USoundBase* ReloadMagSound = nullptr;
+
 	// ===== Recoil =====
 	// Base accuracy (deg)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Recoil")

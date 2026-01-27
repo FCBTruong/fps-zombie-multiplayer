@@ -601,10 +601,9 @@ void UWeaponFireComponent::MulticastReload_Implementation()
 		}
 	}
 
-	/*if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(Equip))
-	{
-		Firearm->PlayReloadSound();
-	}*/
+	if (AudioComp) {
+		AudioComp->PlaySound3D(CurrentFirearmConfig->ReloadMagSound);
+	}
 }
 
 void UWeaponFireComponent::OnFinishedReload()

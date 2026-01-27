@@ -599,7 +599,6 @@ void ABaseCharacter::UpdateMaxWalkSpeed() {
         }
     }
 	Speed *= SpeedMultiplier;
-    Speed *= 1.2; // for zombie mode TODO: check later
 	GetCharacterMovement()->MaxWalkSpeed = Speed;
 }
 
@@ -924,6 +923,8 @@ void ABaseCharacter::OnStunTimelineUpdate(float Value)
     APlayerController* PC = GetWorld()->GetFirstPlayerController();
     if (!FlashMID || !PC || PC->GetViewTarget() != this)
         return;
+
+	UE_LOG(LogTemp, Warning, TEXT("OnStunTimelineUpdate called with Value: %f"), Value);
 
     FlashMID->SetScalarParameterValue(
         TEXT("Intensity"),

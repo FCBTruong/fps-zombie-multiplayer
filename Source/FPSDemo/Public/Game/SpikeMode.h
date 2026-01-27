@@ -41,7 +41,8 @@ public:
 	}
 	void DefuseSpike(AController* Defuser);
 	void SpikeExploded();
-	static constexpr int32 ScoreToWin = 9;
+	static constexpr int32 ScoreToWin = 7;
+	static constexpr int32 RoundToSwapSides = 6;
 	static constexpr int32 TimePerRound = 90; // seconds
 	void NotifySpikeDropped(ABaseCharacter* Player);
 	void NotifySpikePickedUp(ABaseCharacter* Player);
@@ -53,4 +54,8 @@ public:
 	virtual EMatchMode GetMatchMode() const {
 		return EMatchMode::Spike;
 	}
+
+private:
+	void SwapTeams();
+	void GenerateInitialWeapons();
 };

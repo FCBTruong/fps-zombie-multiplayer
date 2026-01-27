@@ -24,6 +24,7 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterGameState, CurrentMatchState);
     DOREPLIFETIME(AShooterGameState, MatchMode);
 	DOREPLIFETIME(AShooterGameState, BuyEndTime);
+	DOREPLIFETIME(AShooterGameState, CurrentRound);
 }
 
 
@@ -181,7 +182,17 @@ void AShooterGameState::RemovePlayerState(APlayerState* PlayerState)
     );
 }
 
-void AShooterGameState::OnRep_TeamNumber()
+float AShooterGameState::GetRemainingRoundTime() const
 {
-    OnUpdateScore.Broadcast(SoldierNum, ZombieNum);
+    if (RoundEndTime < 0) {
+        return 0.f;
+    }
+    int32 CurrentTime = GetWorld()->GetTimeSeconds();
+    int32 RemainingTime = RoundEndTime - CurrentTime;
+    return FMath::Max(0, RemainingTime);
+}
+
+void AShooterGameState::OnRep_CurrentRound()
+{
+    
 }

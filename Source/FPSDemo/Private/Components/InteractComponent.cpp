@@ -64,12 +64,12 @@ void UInteractComponent::TraceForPickup()
 // Deprecated
 void UInteractComponent::TryPickup()
 {
-	/*UE_LOG(LogTemp, Warning, TEXT("pressed pickup"));
+	UE_LOG(LogTemp, Warning, TEXT("pressed pickup"));
 	if (FocusedPickup)
 	{
 		if (auto PickupComp = GetOwner()->FindComponentByClass<UPickupComponent>())
 		{
 			PickupComp->PickupItem(FocusedPickup);
 		}
-	}*/
+	}
 }

@@ -19,41 +19,65 @@ void AShooterGameMode::InitGame(
     const FString& Options,
     FString& ErrorMessage)
 {
+	UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode: InitGame called"));
     Super::InitGame(MapName, Options, ErrorMessage);
+
+    AActorManager* ActorMgr = AActorManager::Get(GetWorld());
+    BotManager->Initialize(ActorMgr);
 }
 
 void AShooterGameMode::StartPlay()
 {
     Super::StartPlay();
 
-	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
-	BotManager->Initialize(ActorMgr);
-
     UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode:Game Started!"));
 
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-    if (!GS)
-        return;
-
-    GS->SetMatchMode(GetMatchMode());
-    BotManager->SetMatchMode(GetMatchMode());
-
 	// call start round after short delay
-    GetWorldTimerManager().SetTimer(
+    /*GetWorldTimerManager().SetTimer(
         TryStartMatchHandle,
         this,
         &AShooterGameMode::StartRound,
-        3.0f,
+        1.0f,
         false
-	);
+	);*/
+	
+    AShooterGameState* GS = GetGameState<AShooterGameState>();
+    if (!GS)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GameState is null in InitGame"));
+        return;
+    }
 
-    // Get RoomData from RoomManager
+    GS->SetMatchMode(GetMatchMode());
+    GS->SetCurrentRound(0);
+    BotManager->SetMatchMode(GetMatchMode());
+
     URoomManager* RoomMgr = URoomManager::Get(GetWorld());
     // get current room data
     const FRoomData& RoomData = RoomMgr->GetCurrentRoomData();
 
+    // if is editor, dedicated server, hardcode edit it
+    if (GIsEditor) {
+        FRoomData& RoomDataMutable = RoomMgr->GetCurrentRoomDataMutable();
+
+        for (int i = 0; i < 10; i++) {
+            PlayerRoomInfo P = {};
+            P.PlayerId = FGameConstants::EMPTY_PLAYER_ID;
+			RoomDataMutable.Players.Add(P);
+        }
+        RoomDataMutable.Players[3].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 2;
+        RoomDataMutable.Players[3].bIsBot = true;
+
+        RoomDataMutable.Players[6].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
+        RoomDataMutable.Players[6].bIsBot = true;
+
+		UE_LOG(LogTemp, Warning, TEXT("Editor mode: Added 2 bots to room data"));
+    }
+
+    int idx = 0;
     for (const PlayerRoomInfo& Player : RoomData.Players)
     {
+		UE_LOG(LogTemp, Warning, TEXT("Player ID: %d, IsBot: %d"), Player.PlayerId, Player.bIsBot);
         if (Player.PlayerId == FGameConstants::EMPTY_PLAYER_ID) {
             continue;
         }
@@ -62,12 +86,22 @@ void AShooterGameMode::StartPlay()
             continue;
         }
 
-        ABotAIController* BotController = SpawnBot();
+		bool bIsTeamA = (idx < 5); // At the moment, first 5 slots are team A, last 5 slots are team B
+		idx++;
+
+        ABotAIController* BotController = SpawnBot(bIsTeamA);
         if (BotController)
         {
             //BotController->SetTeamId(Player.TeamId);
         }
     }
+}
+
+void AShooterGameMode::StartMatch()
+{
+    UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode: StartMatch called"));
+    Super::StartMatch();
+    StartRound();
 }
 
 void AShooterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -86,6 +120,8 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player Logged In: %s"), *GetNameSafe(NewPlayer));
     Super::PostLogin(NewPlayer);
+
+    bIsAllPlayersJoined = true;
 }
 
 
@@ -151,6 +187,7 @@ void AShooterGameMode::ResetPlayers()
                 Controller->UnPossess();
                 bool R = P->Destroy();
             }
+			Controller->StartSpot = nullptr;
             RestartPlayer(Controller);
         }
 
@@ -184,7 +221,7 @@ void AShooterGameMode::ResetPlayerNewRound(AController * NewPlayer)
 	}
 }
 
-ABotAIController* AShooterGameMode::SpawnBot()
+ABotAIController* AShooterGameMode::SpawnBot(bool IsTeamA)
 {
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
@@ -200,6 +237,19 @@ ABotAIController* AShooterGameMode::SpawnBot()
 	{
 		FName BotName = FName(*FString::Printf(TEXT("Bot_%d"), FMath::RandRange(1000, 9999)));
 		PS->SetPlayerName(BotName.ToString());
+
+        if (GetMatchMode() == EMatchMode::Spike) {
+            // in spike mode, team A is attacker, team B is defender
+            if (IsTeamA) {
+                PS->SetTeamId(ETeamId::Attacker);
+            }
+            else {
+                PS->SetTeamId(ETeamId::Defender);
+            }
+        }
+        else {
+            
+		}
 	}
 
     if (BotManager)
@@ -281,6 +331,7 @@ void AShooterGameMode::HandleMatchHasStarted()
 bool AShooterGameMode::ReadyToStartMatch_Implementation()
 {
     if (GetNumPlayers() <= 0) return false;
+	if (!bIsAllPlayersJoined) return false;
     return true;
 }
 
@@ -289,6 +340,9 @@ void AShooterGameMode::StartRound() {
 
     AActorManager* AM = AActorManager::Get(GetWorld());
     AM->ResetPlayerStartsUsage();
+
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	GS->SetCurrentRound(GS->GetCurrentRound() + 1);
 }
 
 void AShooterGameMode::EndRound(ETeamId WinningTeam)
@@ -332,10 +386,10 @@ bool AShooterGameMode::IsDamageAllowed(AController* Killer, AController* Victim)
 		return false;
     }
     // not allow same team
-	AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
+	/*AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
 	AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
     if (KillerPS && VictimPS && KillerPS->GetTeamId() == VictimPS->GetTeamId()) {
         return false;
-	}
+	}*/
 	return true;
 }

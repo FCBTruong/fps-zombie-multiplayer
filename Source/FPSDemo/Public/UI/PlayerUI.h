@@ -30,6 +30,8 @@ class FPSDEMO_API UPlayerUI : public UUserWidget
 
 protected:
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* RoundLb;
+	UPROPERTY(meta = (BindWidget))
 	UProgressBar* HpBar;
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* ArmorBar;
@@ -51,10 +53,6 @@ protected:
 	UWidgetAnimation* GetHitAnim;
 	UPROPERTY(meta = (BindWidget))
 	UStackBox* KillNotifyStack;
-	UPROPERTY(meta = (BindWidget))
-	UImage* FlashScreen;
-	UPROPERTY(meta = (BindWidgetAnim), Transient)
-	UWidgetAnimation* FlashScreenAnim;
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowWeaponNumbers;
 
@@ -107,9 +105,14 @@ protected:
 	UWidgetAnimation* StartDefuseSpikeAnim;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* MatchStateLb;
+	UTextBlock* MatchToastLb;
 	UPROPERTY(meta = (BindWidget))
 	UWidget* MatchToastPn;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* MatchStatePn;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* MatchStateTxt;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowMatchStateAnim;
@@ -176,8 +179,6 @@ public:
 	void OnHit();
 	void OnEnter();
 	void NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victem, const UItemConfig* WeaponTex, bool bIsHeadShot);
-	void ApplyFlashEffect(const float& Strength);
-	void FadeOutFlashEffect();
 	void OpenShop();
 	void CloseShop();
 	void ShowIconGrenade(EItemId ItemId, bool bShow);

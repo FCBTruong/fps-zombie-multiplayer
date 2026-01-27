@@ -25,6 +25,7 @@ public:
 		const FString& Options,
 		FString& ErrorMessage) override;
 	virtual void StartPlay() override;
+	virtual void StartMatch() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
 	virtual void AssignPlayerTeamInit(AController* NewPlayer);
@@ -33,7 +34,7 @@ public:
 	virtual void RestartPlayer(AController* NewPlayer) override;
 	virtual void ResetPlayerNewRound(AController* NewPlayer);
 	virtual void ResetPlayers();
-	virtual ABotAIController* SpawnBot();
+	virtual ABotAIController* SpawnBot(bool IsTeamA);
 	virtual bool CheckAllTeamDead(ETeamId TeamId);
 	virtual void AutoBuyForBots();
 	virtual void SavePlayersGunsForNextRound();
@@ -62,6 +63,7 @@ protected:
 
 	bool bRoundStarted = false;
 	int RoomId = 0;
+	bool bIsAllPlayersJoined = false;
 
 	FTimerHandle TryStartMatchHandle;
 };

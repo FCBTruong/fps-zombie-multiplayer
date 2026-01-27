@@ -65,6 +65,9 @@ void AActorManager::BeginPlay()
         {
             ZombieDefenseLocations.Add(TargetPoint);
         }
+        else if (TargetPoint->ActorHasTag(TEXT("DefenderWeaponInitPos"))) {
+            DefenderWeaponInitPos = TargetPoint->GetActorLocation();
+        }
     }
 
     UGameplayStatics::GetAllActorsOfClass(

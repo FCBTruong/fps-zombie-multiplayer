@@ -77,4 +77,5 @@ public:
 	static AActorManager* Get(UObject* WorldContextObject);
 	FVector GetRandomHoldLocationNearBombSite(FName BombSiteName) const;
 	FVector GetRandomScoutLocation() const;
+	FVector DefenderWeaponInitPos;
 };

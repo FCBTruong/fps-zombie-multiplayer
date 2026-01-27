@@ -40,6 +40,7 @@ void DedicatedServerClient::SendJsonRequest(
     const FString Url = BaseUrl.EndsWith(TEXT("/")) ? (BaseUrl.LeftChop(1) + Path) : (BaseUrl + Path);
     Req->SetURL(Url);
     Req->SetVerb(Verb);
+	UE_LOG(LogTemp, Log, TEXT("DedicatedServerClient::SendJsonRequest: %s %s"), *Verb, *Url);
 
     ApplyCommonHeaders(Req, BearerToken);
 

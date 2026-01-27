@@ -44,6 +44,9 @@ public:
 	const FRoomData& GetCurrentRoomData() {
 		return CurrentRoomData;
 	}
+	FRoomData& GetCurrentRoomDataMutable() {
+		return CurrentRoomData;
+	}
 	void SetCurrentRoomData(const FRoomData& NewData) {
 		CurrentRoomData = NewData;
 	}

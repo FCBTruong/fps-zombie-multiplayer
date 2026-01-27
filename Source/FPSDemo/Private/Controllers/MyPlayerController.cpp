@@ -123,14 +123,6 @@ void AMyPlayerController::OnRep_Pawn()
     }
 }
 
-void AMyPlayerController::ApplyFlash(const float& Strength)
-{
-    if (PlayerUI)
-    {
-        PlayerUI->ApplyFlashEffect(Strength);
-    }
-}
-
 void AMyPlayerController::ToggleShop()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Toggling shop UI"));
@@ -161,7 +153,7 @@ void AMyPlayerController::SetupInputComponent()
 
     if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent))
     {
-        if (IA_SHOP)
+       /* if (IA_SHOP)
         {
             EnhancedInput->BindAction(
                 IA_SHOP,
@@ -169,7 +161,7 @@ void AMyPlayerController::SetupInputComponent()
                 this,
                 &AMyPlayerController::ToggleShop
             );
-        }
+        }*/
 
         if (IA_TEST)
         {
@@ -320,6 +312,11 @@ void AMyPlayerController::Move(const FInputActionValue& Value)
 
     FVector2D MoveInput = Value.Get<FVector2D>();
 
+	AShooterGameState* SGS = GetWorld()->GetGameState<AShooterGameState>();
+    if (SGS->GetMatchState() == EMyMatchState::BUY_PHASE) {
+        return;
+    }
+
     const FRotator ControlRot = this->GetControlRotation();
     const FRotator YawRot(0, ControlRot.Yaw, 0);
 
@@ -449,7 +446,8 @@ void AMyPlayerController::Pickup() {
     }
     if (UInteractComponent* IC = MyChar->FindComponentByClass<UInteractComponent>())
     {
-        // Deprecated: direct call without Enhanced Input
+		UE_LOG(LogTemp, Warning, TEXT("Pickup: TryPickup called"));
+		IC->TryPickup();
     }
 }
 
@@ -896,7 +894,7 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
 
     if (UEquipComponent* EC = Char->GetEquipComponent())
     {
-        H_AmmoChanged = EC->OnAmmoChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateAmmo);
+        H_AmmoChanged = EC->OnAmmoChanged.AddUObject(this, &AMyPlayerController::OnAmmoChanged);
 		int CurrentAmmo, ReservedAmmo;
 		EC->GetCurrentAmmo(CurrentAmmo, ReservedAmmo);
 		PlayerUI->UpdateAmmo(CurrentAmmo, ReservedAmmo);
@@ -1008,6 +1006,10 @@ void AMyPlayerController::BindGameState(AShooterGameState* GS)
     H_UpdateScore = GS->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::UpdateTeamScores);
     H_UpdateRoundTime = GS->OnUpdateRoundTime.AddUObject(PlayerUI, &UPlayerUI::OnUpdateRoundTime);
     H_UpdateMatchState = GS->OnUpdateMatchState.AddUObject(PlayerUI, &UPlayerUI::UpdateGameState);
+
+	PlayerUI->UpdateTeamScores(GS->GetTeamAScore(), GS->GetTeamBScore());
+    PlayerUI->OnUpdateRoundTime(GS->GetRemainingRoundTime());
+	PlayerUI->UpdateGameState(GS->GetMatchState());
 }
 
 void AMyPlayerController::UnbindGameState(AShooterGameState* GS)
@@ -1131,4 +1133,14 @@ void AMyPlayerController::EnterGameMode()
 
     SetIgnoreLookInput(false);
     SetIgnoreMoveInput(false);
+}
+
+void AMyPlayerController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current active weapon
+{
+	PlayerUI->UpdateAmmo(Clip, Reserve);
+    UE_LOG(LogTemp, Warning, TEXT("BotAIController::OnAmmoChanged: Clip=%d, Reserve=%d"), Clip, Reserve);
+    if (Clip <= 0 && Reserve > 0)
+    {
+        StartReload();
+    }   
 }

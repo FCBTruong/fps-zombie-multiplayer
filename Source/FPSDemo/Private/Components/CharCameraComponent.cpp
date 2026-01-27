@@ -47,6 +47,17 @@ void UCharCameraComponent::Initialize(
         CameraFps->SetFirstPersonScale(FIRST_PERSON_SCALE);
 		CameraFps->SetFirstPersonFieldOfView(DefaultFpsFov);
     }
+    if (CameraBoom) {
+        CameraBoom->bUsePawnControlRotation = true; // camera rotates with mouse
+        CameraBoom->bInheritYaw = true;
+        CameraBoom->bInheritPitch = true;
+        CameraBoom->bInheritRoll = false;
+        CameraBoom->SetRelativeLocation(FVector(0, 30, 100));
+		CameraBoom->TargetArmLength = 300.f;
+    }
+    if (CameraTps) {
+        CameraTps->bUsePawnControlRotation = false; // camera does not rotate with mouse
+	}   
 	UE_LOG(LogTemp, Warning, TEXT("UCharCameraComponent::Initialize called"));
 }
 
@@ -69,8 +80,6 @@ void UCharCameraComponent::BeginPlay()
 {
     Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("UCharCameraComponent::BeginPlay called"));
-  
-	CameraBoom->bInheritYaw = false;
 }
 
 bool UCharCameraComponent::IsFPS() const

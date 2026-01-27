@@ -37,6 +37,7 @@ void UPlayerUI::NativeConstruct()
 		EMatchMode CurrentMatchMode = GS->GetMatchMode();
         if (CurrentMatchMode == EMatchMode::Zombie)
         {
+			RoundLb->SetVisibility(ESlateVisibility::Visible);
             if (FirstTeamLb)
             {
                 FirstTeamLb->SetText(FText::FromString(TEXT("Soldier")));
@@ -48,6 +49,7 @@ void UPlayerUI::NativeConstruct()
         }
         else if (CurrentMatchMode == EMatchMode::Spike)
         {
+			RoundLb->SetVisibility(ESlateVisibility::Hidden);
             if (FirstTeamLb)
             {
                 FirstTeamLb->SetText(FText::FromString(TEXT("Attacker")));
@@ -128,7 +130,6 @@ void UPlayerUI::OnEnter()
     ShowPickupMessage(TEXT(""));
 
     KillNotifyStack->ClearChildren();
-	FlashScreen->SetVisibility(ESlateVisibility::Hidden);
 
 	ShowIconGrenade(EItemId::GRENADE_FRAG_BASIC, true);
 	ShowIconGrenade(EItemId::GRENADE_SMOKE, false);
@@ -167,33 +168,6 @@ void UPlayerUI::NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* V
             );
         }
     }
-}
-
-void UPlayerUI::ApplyFlashEffect(const float& Strength)
-{
-    FlashScreen->SetVisibility(ESlateVisibility::Visible);
-    FLinearColor CurrentColor = FlashScreen->GetColorAndOpacity();
-    CurrentColor.A = 1.0f;
-    FlashScreen->SetColorAndOpacity(CurrentColor);
-    UE_LOG(LogTemp, Warning, TEXT("Applying flash effect with strength: %f"), Strength);
-
-    // Wait 3 seconds, then run FadeOutFlashEffect()
-    FTimerHandle TimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(
-        TimerHandle,
-        this,
-        &UPlayerUI::FadeOutFlashEffect,
-        3.0f,
-        false
-    );
-}
-
-void UPlayerUI::FadeOutFlashEffect()
-{
-    if (FlashScreenAnim)
-    {
-        PlayAnimation(FlashScreenAnim);
-	}
 }
 
 void UPlayerUI::OpenShop()
@@ -428,9 +402,9 @@ void UPlayerUI::ShowMatchStateToast(FText Txt, float Delay)
 }
 void UPlayerUI::DoShowMatchStateToast(FText Txt)
 {
-    if (MatchStateLb)
+    if (MatchToastLb)
     {
-        MatchStateLb->SetText(Txt);
+        MatchToastLb->SetText(Txt);
         MatchToastPn->SetVisibility(ESlateVisibility::Visible);
         PlayAnimation(ShowMatchStateAnim);
     }
@@ -455,15 +429,18 @@ void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
 	PhotonPlantedIcon->SetVisibility(ESlateVisibility::Hidden);
 	MatchTimeLb->SetVisibility(ESlateVisibility::Visible);
     bPlayedTenSec = false;
+	MatchStatePn->SetVisibility(ESlateVisibility::Hidden);
     switch (State) {
         case EMyMatchState::PRE_MATCH:
-            ShowMatchStateToast(FText::FromString("Prepare for battle!"), 0.f);
+			MatchStatePn->SetVisibility(ESlateVisibility::Visible);
+			MatchStateTxt->SetText(FText::FromString("Waiting for other players…"));
 			break;
         case EMyMatchState::ROUND_START:
 			ShowMatchStateToast(FText::FromString("Round Started!"), 0.f);
             break;
         case EMyMatchState::BUY_PHASE:
-            ShowMatchStateToast(FText::FromString("Buy Phase"), 0.f);
+			MatchStatePn->SetVisibility(ESlateVisibility::Visible);
+			MatchStateTxt->SetText(FText::FromString("Buy Phase (Press B to Open Shop)"));
 			break;
         case EMyMatchState::ROUND_IN_PROGRESS:
 			//ShowMatchStateToast(FText::FromString("Round In Progress"), 0.f);

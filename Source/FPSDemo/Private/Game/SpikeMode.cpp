@@ -67,6 +67,7 @@ void ASpikeMode::DefuseSpike(AController* Defuser)
 void ASpikeMode::EndRound(ETeamId WinningTeam)
 {
 	Super::EndRound(WinningTeam);
+	SwapTeams();
 	
 	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
 
@@ -80,6 +81,9 @@ void ASpikeMode::EndRound(ETeamId WinningTeam)
 	if (GS->GetScoreTeam(WinningTeam) >= ScoreToWin) {
 		EndGame(WinningTeam);
 		return;
+	}
+	if (GS->GetCurrentRound() == RoundToSwapSides) {
+		SwapTeams();
 	}
 
 	// save guns for next round if player is alive	
@@ -137,7 +141,11 @@ void ASpikeMode::StartRound()
 		BotManager->OnStartRound(PickupActor);
 	}
 	
+	int BuyPhaseTime = 1; // seconds
 	GS->SetMatchState(EMyMatchState::BUY_PHASE);
+	GS->SetRoundRemainingTime(BuyPhaseTime);
+
+	GenerateInitialWeapons();
 	// auto buy for bots
 	AutoBuyForBots();
 
@@ -146,22 +154,21 @@ void ASpikeMode::StartRound()
 		RoundTimerHandle,
 		[this]()
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Buy phase ended, round in progress"));
 			AShooterGameState* GSInner = GetGameState<AShooterGameState>();
+			int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
+			GSInner->SetRoundEndTime(TimeEnd);
 			GSInner->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
+
+			GetWorld()->GetTimerManager().SetTimer(
+				RoundTimerHandle,
+				this,
+				&ASpikeMode::OnRoundTimeExpired,
+				TimePerRound,
+				false
+			);
 		},
-		3.0f,
-		false
-	);
-
-	int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
-	GS->SetRoundEndTime(TimeEnd);
-
-
-	GetWorld()->GetTimerManager().SetTimer(
-		RoundTimerHandle,
-		this,
-		&ASpikeMode::OnRoundTimeExpired,
-		TimePerRound,
+		BuyPhaseTime,
 		false
 	);
 }
@@ -183,7 +190,7 @@ void ASpikeMode::SpikeExploded()
 
 AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 {
-	UE_LOG(LogTemp, Warning, TEXT("DEBUGXX: ChoosePlayerStart_Implementation..."));
+	UE_LOG(LogTemp, Warning, TEXT("Choosing player start for player %s"), *Player->GetName());
 	AMyPlayerState* PS = Player->GetPlayerState<AMyPlayerState>();
 
 	if (!PS) {
@@ -191,10 +198,7 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 		return Super::ChoosePlayerStart_Implementation(Player); // fallback
 	}
 
-
 	ETeamId TeamId = PS->GetTeamId();
-
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	AActorManager* AM = AActorManager::Get(GetWorld());
 
 	if (TeamId == ETeamId::Attacker)
@@ -361,4 +365,67 @@ void ASpikeMode::AssignPlayerTeamInit(AController* NewPlayer)
 	}
 
 	PS->SetTeamId(AssignedTeam);
+}
+
+void ASpikeMode::SwapTeams()
+{
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) {
+		UE_LOG(LogTemp, Warning, TEXT("GameState is null in SwapTeams"));
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Swapping teams..."));
+	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
+	for (APlayerState* ExistingPS : PlayerStates)
+	{
+		if (!ExistingPS) continue;
+		AMyPlayerState* MyExistingPS = Cast<AMyPlayerState>(ExistingPS);
+		if (MyExistingPS)
+		{
+			ETeamId CurrentTeam = MyExistingPS->GetTeamId();
+			ETeamId NewTeam = (CurrentTeam == ETeamId::Attacker) ? ETeamId::Defender : ETeamId::Attacker;
+			UE_LOG(LogTemp, Warning, TEXT("Changing player %s from team %d to team %d"), *MyExistingPS->GetName(), static_cast<int32>(CurrentTeam), static_cast<int32>(NewTeam));
+			MyExistingPS->SetTeamId(NewTeam);
+		}
+	}
+}
+
+void ASpikeMode::GenerateInitialWeapons()
+{
+	AActorManager* AM = AActorManager::Get(GetWorld());
+	UGameManager* GMR = UGameManager::Get(GetWorld());
+	if (!AM || !GMR) return;
+
+	// Weapon list
+	TArray<EItemId> Items = {
+		EItemId::RIFLE_AK_47,
+		EItemId::RIFLE_RUSSIAN_AS_VAL,
+		EItemId::RIFLE_M16A,
+		EItemId::RIFLE_QBZ,
+		EItemId::GRENADE_FRAG_BASIC,
+		EItemId::GRENADE_INCENDIARY,
+		EItemId::GRENADE_SMOKE,
+		EItemId::GRENADE_STUN
+	};
+
+	const float Distance = 120.0f;
+	FVector CenterPos = AM->DefenderWeaponInitPos;
+
+	// Center the row
+	int32 Count = Items.Num();
+	float StartOffset = -((Count - 1) * Distance) * 0.5f;
+
+	for (int32 i = 0; i < Count; ++i)
+	{
+		FPickupData P;
+		P.Id = GMR->GetNextItemOnMapId();
+		P.ItemId = Items[i];
+		P.Amount = 1;
+
+		// Offset along X axis
+		P.Location = CenterPos + FVector(0.f, StartOffset + i * Distance, 0.f);
+
+		APickupItem* PickupActor = GMR->CreatePickupActor(P);
+		UE_LOG(LogTemp, Warning, TEXT("Pickup %d address = %p"), i, PickupActor);
+	}
 }
