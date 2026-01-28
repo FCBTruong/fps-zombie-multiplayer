@@ -10,6 +10,9 @@
 #include "Engine/TargetPoint.h"
 #include "Bot/BotStateManager.h"
 #include "Pickup/PickupItem.h"
+#include "Game/ItemsManager.h"
+#include "Items/FirearmConfig.h"
+#include "Items/ItemConfig.h"
 
 void ASpikeMode::StartPlay()
 {
@@ -141,9 +144,9 @@ void ASpikeMode::StartRound()
 		BotManager->OnStartRound(PickupActor);
 	}
 	
-	int BuyPhaseTime = 1; // seconds
-	GS->SetMatchState(EMyMatchState::BUY_PHASE);
-	GS->SetRoundRemainingTime(BuyPhaseTime);
+	int BuyPhaseTime = 0; // seconds
+	//GS->SetMatchState(EMyMatchState::BUY_PHASE);
+	//GS->SetRoundRemainingTime(BuyPhaseTime);
 
 	GenerateInitialWeapons();
 	// auto buy for bots
@@ -402,6 +405,7 @@ void ASpikeMode::GenerateInitialWeapons()
 		EItemId::RIFLE_RUSSIAN_AS_VAL,
 		EItemId::RIFLE_M16A,
 		EItemId::RIFLE_QBZ,
+		EItemId::SNIPER_BOLT_R,
 		EItemId::GRENADE_FRAG_BASIC,
 		EItemId::GRENADE_INCENDIARY,
 		EItemId::GRENADE_SMOKE,
@@ -415,12 +419,22 @@ void ASpikeMode::GenerateInitialWeapons()
 	int32 Count = Items.Num();
 	float StartOffset = -((Count - 1) * Distance) * 0.5f;
 
+	auto ItemsManager = UItemsManager::Get(GetWorld());
 	for (int32 i = 0; i < Count; ++i)
 	{
 		FPickupData P;
 		P.Id = GMR->GetNextItemOnMapId();
 		P.ItemId = Items[i];
 		P.Amount = 1;
+
+		const UItemConfig* ItemConfig = ItemsManager->GetItemById(Items[i]);
+		const UFirearmConfig* FirearmConfig = Cast<UFirearmConfig>(ItemConfig);
+		if (FirearmConfig)
+		{
+			P.AmmoInClip = FirearmConfig->MaxAmmoInClip;
+			P.AmmoReserve = FirearmConfig->MaxAmmoInClip * 2;
+		}
+
 
 		// Offset along X axis
 		P.Location = CenterPos + FVector(0.f, StartOffset + i * Distance, 0.f);

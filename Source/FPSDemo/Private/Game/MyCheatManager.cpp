@@ -33,6 +33,9 @@ void UMyCheatManager::Cmd(int Id) {
     case 3:
         PC->GetPlayerUI()->ShowNotiToast(FText::FromString("You got me!!"));
         break;
+    case 4:
+        PC->Test();
+        break;
     }
 }
 

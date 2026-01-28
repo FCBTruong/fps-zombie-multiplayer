@@ -309,13 +309,8 @@ void AMyPlayerController::Move(const FInputActionValue& Value)
     ABaseCharacter* MyChar = GetMyChar();
 
 	if (!MyChar) return;
-
+   
     FVector2D MoveInput = Value.Get<FVector2D>();
-
-	AShooterGameState* SGS = GetWorld()->GetGameState<AShooterGameState>();
-    if (SGS->GetMatchState() == EMyMatchState::BUY_PHASE) {
-        return;
-    }
 
     const FRotator ControlRot = this->GetControlRotation();
     const FRotator YawRot(0, ControlRot.Yaw, 0);
@@ -1079,7 +1074,16 @@ void AMyPlayerController::Test() {
 
 void AMyPlayerController::ServerTest_Implementation()
 {
-    
+    ASpikeMode* GM = GetWorld()->GetAuthGameMode<ASpikeMode>();
+    if (GM) {
+        if (GM->GetPlantedSpike()) {
+            CurrentSpectateTarget = GM->GetPlantedSpike();
+            if (CurrentSpectateTarget.IsValid()) {
+                ClientSetSpectateViewTarget(CurrentSpectateTarget.Get(), 0.3f);
+            }
+            return;
+        }
+    }
 }
 
 void AMyPlayerController::HandleEscapePressed()

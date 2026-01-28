@@ -109,7 +109,10 @@ bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
 
     const EItemId ItemId = PickupData.ItemId;
     const UItemConfig* Data = GetItemConfig(ItemId);
-    if (!Data) return false;
+    if (!Data) {
+		UE_LOG(LogTemp, Warning, TEXT("UInventoryComponent::AddItemInternal: Invalid ItemId %d"), static_cast<int32>(ItemId));
+        return false;
+    }
 
     EItemType ItemType = Data->GetItemType();
     switch (ItemType)
@@ -120,7 +123,10 @@ bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
             
             if (FirearmData->FirearmType == EFirearmType::Rifle)
             {
-                if (RifleState.ItemId != EItemId::NONE) return false;
+                if (RifleState.ItemId != EItemId::NONE) {
+					DropItem(RifleState.ItemId);
+                    //return false;
+                }
                 RifleState.ItemId = ItemId;
                 RifleState.AmmoInClip = PickupData.AmmoInClip;
                 RifleState.AmmoReserve = PickupData.AmmoReserve;

@@ -103,6 +103,10 @@ void USpikeComponent::ServerStartPlantSpike_Implementation()
 // this function should be called only on server
 void USpikeComponent::StartPlant_Internal()
 {
+    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
+    if (!Character)
+        return;
+
     if (!IsEnabled()) {
         return;
     }
@@ -122,9 +126,6 @@ void USpikeComponent::StartPlant_Internal()
 		return;
 
 	UE_LOG(LogTemp, Log, TEXT("USpikeComponent::StartPlant_Internal called"));
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character)
-        return;
 
     UInventoryComponent* Inventory = Character->GetInventoryComponent();
     if (!Inventory || !Inventory->HasSpike())
@@ -243,10 +244,21 @@ void USpikeComponent::FinishPlantSpike()
 
 bool USpikeComponent::CanPlantHere() const
 {
+  /*  if (true) {
+        return true;
+    }*/
     ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
     if (!Character)
         return false;
 
+    if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
+    {
+        if (!MoveComp->IsMovingOnGround())
+			return false;
+        if (MoveComp->IsFalling()) {
+			return false;
+        }
+    }
     AActorManager* ActorManager = AActorManager::Get(GetWorld());
     if (!ActorManager)
         return false;

@@ -67,9 +67,21 @@ void UInteractComponent::TryPickup()
 	UE_LOG(LogTemp, Warning, TEXT("pressed pickup"));
 	if (FocusedPickup)
 	{
+		ServerTryPickup(FocusedPickup);
 		if (auto PickupComp = GetOwner()->FindComponentByClass<UPickupComponent>())
 		{
-			PickupComp->PickupItem(FocusedPickup);
+			PickupComp->PickupItem(FocusedPickup, true);
+		}
+	}
+}
+
+void UInteractComponent::ServerTryPickup_Implementation(APickupItem* Item)
+{
+	if (Item)
+	{
+		if (auto PickupComp = GetOwner()->FindComponentByClass<UPickupComponent>())
+		{
+			PickupComp->PickupItem(Item, true);
 		}
 	}
 }

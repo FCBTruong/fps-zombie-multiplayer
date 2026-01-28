@@ -7,6 +7,7 @@
 #include "Game/GameManager.h"
 #include "Characters/BaseCharacter.h"
 #include "Game/SpikeMode.h"
+#include "Components/EquipComponent.h"
 
 // Sets default values for this component's properties
 UPickupComponent::UPickupComponent()
@@ -35,7 +36,7 @@ void UPickupComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 }
 
-void UPickupComponent::PickupItem(APickupItem* PickupItem)
+void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 {
 	if (!IsEnabled()) {
 		return;
@@ -80,6 +81,16 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem)
 			if (ASpikeMode* SpikeGM = Cast<ASpikeMode>(GetWorld()->GetAuthGameMode()))
 			{
 				SpikeGM->NotifySpikePickedUp(OwnerCharacter);
+			}
+		}
+
+		if (AutoEquip)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("AutoEquip is true, equipping item"));
+			UEquipComponent* EquipComp = OwnerCharacter->GetEquipComponent();
+			if (EquipComp)
+			{
+				EquipComp->RequestSelectActiveItem(PickupItem->GetPickupData().ItemId);
 			}
 		}
 

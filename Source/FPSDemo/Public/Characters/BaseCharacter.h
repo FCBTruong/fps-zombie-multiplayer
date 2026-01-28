@@ -340,6 +340,9 @@ public:
     UFUNCTION(BlueprintCallable)
     EMovementState GetCurrentMovementState() const;
 
+    UFUNCTION(BlueprintCallable)
+    bool IsWorkingWithSpike() const;
+
 	// ===== Delegates =====
     FOnHit OnHit;
 

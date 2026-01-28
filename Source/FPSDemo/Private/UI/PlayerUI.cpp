@@ -70,7 +70,15 @@ void UPlayerUI::ShowPickupMessage(const FString& Message)
 {
     if (UTextBlock* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("PickupLabel"))))
     {
-        Label->SetText(FText::FromString(Message));
+        if (Message == TEXT(""))
+        {
+            Label->SetVisibility(ESlateVisibility::Hidden);
+            return;
+		}
+        Label->SetText(FText::Format(
+            FText::FromString(TEXT("{0}\n(Press F)")),
+            FText::FromString(Message)
+        ));
         Label->SetVisibility(ESlateVisibility::Visible);
     }
 }

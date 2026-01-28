@@ -26,6 +26,7 @@ void UItemUseComponent::BeginPlay() {
         WeaponFireComp = OwnerChar->GetWeaponFireComponent();
         WeaponMeleeComp = OwnerChar->GetWeaponMeleeComponent();
         ThrowableComp = OwnerChar->GetThrowableComponent();
+		SpikeComp = OwnerChar->GetSpikeComponent();
     }
 }
 

@@ -99,7 +99,10 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 		}
 		UPickupComponent* PC = Player->GetPickupComponent();
 		if (PC && PC->IsEnabled()) {
-			PC->PickupItem(this);
+			if (this->Data.ItemId == EItemId::SPIKE) {
+				UE_LOG(LogTemp, Warning, TEXT("Player overlapping with SPIKE pickup"));
+				PC->PickupItem(this);
+			}
 		}
 	}
 }

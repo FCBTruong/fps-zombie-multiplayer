@@ -1770,3 +1770,11 @@ FString ABaseCharacter::GetPlayerName() const {
     static const FString DefaultName = TEXT("Unknown");
 	return DefaultName;
 }
+
+bool ABaseCharacter::IsWorkingWithSpike() const {
+    if (ActionStateComp) {
+        return ActionStateComp->GetState() == EActionState::Planting
+			|| ActionStateComp->GetState() == EActionState::Defusing;
+    }
+    return false;
+}   

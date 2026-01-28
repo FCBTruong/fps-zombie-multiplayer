@@ -29,7 +29,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void PickupItem(class APickupItem* Item);
+	void PickupItem(class APickupItem* Item, bool AutoEquip = false);
 
 	FOnNewItemPickup OnNewItemPickup;
 };
