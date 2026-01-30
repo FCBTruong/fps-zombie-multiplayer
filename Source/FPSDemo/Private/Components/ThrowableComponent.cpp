@@ -12,6 +12,7 @@
 #include "Projectiles/ThrownProjectileIncendiary.h"
 #include "Items/ThrowableConfig.h"
 #include "Components/ItemVisualComponent.h"
+#include "Components/InventoryComponent.h"
 
 UThrowableComponent::UThrowableComponent()
 {
@@ -134,6 +135,13 @@ void UThrowableComponent::FinishThrow()
 
 	const UItemConfig* ItemConf = EquipComp->GetActiveItemConfig();
 	const UThrowableConfig* ThrowableConfig = Cast<UThrowableConfig>(ItemConf);
+
+	// remove one throwable from inventory
+	UInventoryComponent* InvComp = Character->GetInventoryComponent();
+	if (InvComp)
+	{
+		InvComp->RemoveItem(ThrowableConfig->Id);
+	}
 
 	if (!ThrowableConfig)
 	{

@@ -376,12 +376,21 @@ void AMyPlayerController::StopCrouch() {
 
 void AMyPlayerController::Look(const FInputActionValue& Value) {
     FVector2D Axis = Value.Get<FVector2D>();
+
+    if (ASpike* Spike = Cast<ASpike>(GetViewTarget()))
+    {
+        Spike->AddCameraYaw(Axis.X);
+        return;
+    }
+    if (IsSpectatingState()) {
+        return;
+    }
+
     ABaseCharacter* MyChar = GetMyChar();
     if (!MyChar) {
         return;
     }
-	if (!MyChar) return;
-
+    if (!MyChar) return;
 	float AimSensitivity = MyChar->GetAimSensitivity() * 0.3;
 
     AddYawInput(Axis.X * AimSensitivity);
@@ -525,28 +534,6 @@ void AMyPlayerController::ReleaseSlow() {
     MyChar->RequestSlowMovement(false);
 }
 
-AActor* AMyPlayerController::FindLivingTeammate(AController* Spectator)
-{
-    AMyPlayerState* SpectatorPS = Spectator->GetPlayerState<AMyPlayerState>();
-    if (!SpectatorPS) return nullptr;
-
-    for (APlayerState* PS : Spectator->GetWorld()->GetGameState()->PlayerArray)
-    {
-        AMyPlayerState* OtherPS = Cast<AMyPlayerState>(PS);
-        if (!OtherPS) continue;
-
-		ABaseCharacter* OtherChar = Cast<ABaseCharacter>(OtherPS->GetPawn());
-		if (!OtherChar) continue;
-
-        if (OtherPS->GetTeamId() == SpectatorPS->GetTeamId()
-            && OtherChar->IsAlive())
-        {
-            return OtherChar;
-        }
-    }
-    return nullptr;
-}
-
 void AMyPlayerController::BeginSpectatingState()
 {
 	UE_LOG(LogTemp, Warning, TEXT("BeginSpectatingState called"));
@@ -561,22 +548,10 @@ void AMyPlayerController::EndSpectatingState()
 
 bool AMyPlayerController::IsSpectatingState() const
 {
-    return IsInState(NAME_Spectating);
+    return PlayerState && PlayerState->IsSpectator();
 }
 
 void AMyPlayerController::RequestSpectateNextPlayer()
-{
-    if (HasAuthority())
-    {
-        SpectateNextPlayer_Internal();
-    }
-    else
-    {
-        ServerSpectateNextPlayer();
-	}
-}
-
-void AMyPlayerController::ServerSpectateNextPlayer_Implementation()
 {
     SpectateNextPlayer_Internal();
 }
@@ -587,12 +562,6 @@ void AMyPlayerController::SpectateNextPlayer_Internal()
     if (!PlayerState) return;
 	AMyPlayerState* PlayerMyState = Cast<AMyPlayerState>(PlayerState);
 	if (!PlayerMyState) return;
-
-    if (!IsSpectatingState())
-    {
-		UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: Not in spectating state"));
-        return;
-    }
     
     auto Target = FindNextLivingTeammate(CurrentSpectateTarget.Get());
     UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug1"));
@@ -600,21 +569,20 @@ void AMyPlayerController::SpectateNextPlayer_Internal()
     if (Target)
     {
         CurrentSpectateTarget = Target;
-        ClientSetSpectateViewTarget(Target, 0.3f);
         UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug2"));
     }
     else {
         UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug3"));
-        // get game mode
-		ASpikeMode* GM = GetWorld()->GetAuthGameMode<ASpikeMode>();
-        if (GM) {
-            if (GM->GetPlantedSpike()) {
-                CurrentSpectateTarget = GM->GetPlantedSpike();
-                if (CurrentSpectateTarget.IsValid()) {
-                    ClientSetSpectateViewTarget(CurrentSpectateTarget.Get(), 0.3f);
-                }
-				return;
-            }
+        // get game state
+		AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+		
+        if (GS && GS->GetMatchMode() == EMatchMode::Spike) {
+            // no living teammates, spectate spike
+            ASpike* Spike = GS->GetPlantedSpike();
+            if (Spike) {
+                CurrentSpectateTarget = Spike;
+                UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: Spectating Spike"));
+			}
         }
     }
 }
@@ -649,6 +617,9 @@ AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
         Candidates.Add(Char);
     }
 
+    // log size
+    UE_LOG(LogTemp, Warning, TEXT("FindNextLivingTeammate: Found %d candidates"), Candidates.Num());
+
     if (Candidates.Num() == 0) return nullptr;
 
     // Stable cycling: sort by something consistent (optional but recommended)
@@ -664,44 +635,6 @@ AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
     int32 NextIndex = (Index >= 0) ? (Index + 1) % Candidates.Num() : 0;
     return Candidates[NextIndex];
 }
-
-void AMyPlayerController::ClientSetSpectateViewTarget_Implementation(AActor* Target, float BlendTime)
-{
-    if (Target)
-    {
-        //SetViewTargetWithBlend(Target, BlendTime);
-		SetViewTarget(Target);
-    }
-}
-
-void AMyPlayerController::SetPlayerSpectate()
-{
-    if (!HasAuthority()) return;
-
-    // Mark as spectator for replication/UI.
-    PlayerState->SetIsSpectator(true);
-
-    // Switch gameplay state to spectating.
-    ChangeState(NAME_Spectating);
-
-    // If you want them considered "waiting to respawn".
-    bPlayerIsWaiting = true;
-
-    // Ensure the owning client transitions too.
-    ClientGotoState(NAME_Spectating);
-}
-
-void AMyPlayerController::SetPlayerPlay()
-{
-    if (!HasAuthority()) return;
-
-    PlayerState->SetIsSpectator(false);
-    ChangeState(NAME_Playing);
-    bPlayerIsWaiting = false;
-
-    ClientGotoState(NAME_Playing);
-}
-
 
 void AMyPlayerController::ShowScoreboard()
 {
@@ -739,7 +672,7 @@ void AMyPlayerController::HandleSpikeChanged(bool bHasSpike)
     if (bHasSpike && PlayerUI)
     {
         PlayerUI->ShowNotiToast(
-            FText::FromString(TEXT("You picked up Photon")));
+            FText::FromString(TEXT("You picked up Spike")));
     }
 }
 
@@ -1001,6 +934,8 @@ void AMyPlayerController::BindGameState(AShooterGameState* GS)
     H_UpdateScore = GS->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::UpdateTeamScores);
     H_UpdateRoundTime = GS->OnUpdateRoundTime.AddUObject(PlayerUI, &UPlayerUI::OnUpdateRoundTime);
     H_UpdateMatchState = GS->OnUpdateMatchState.AddUObject(PlayerUI, &UPlayerUI::UpdateGameState);
+	H_OnGameResult = GS->OnGameResult.AddUObject(PlayerUI, &UPlayerUI::ShowGameResult);
+	H_OnSwitchSide = GS->OnSwitchSide.AddUObject(PlayerUI, &UPlayerUI::OnSwitchSide);
 
 	PlayerUI->UpdateTeamScores(GS->GetTeamAScore(), GS->GetTeamBScore());
     PlayerUI->OnUpdateRoundTime(GS->GetRemainingRoundTime());
@@ -1014,10 +949,12 @@ void AMyPlayerController::UnbindGameState(AShooterGameState* GS)
     GS->OnUpdateScore.Remove(H_UpdateScore);
     GS->OnUpdateRoundTime.Remove(H_UpdateRoundTime);
     GS->OnUpdateMatchState.Remove(H_UpdateMatchState);
+	GS->OnGameResult.Remove(H_OnGameResult);
 
     H_UpdateScore.Reset();
     H_UpdateRoundTime.Reset();
     H_UpdateMatchState.Reset();
+	H_OnGameResult.Reset();
 }
 
 void AMyPlayerController::BindPlayerState(AMyPlayerState* PS)
@@ -1025,7 +962,10 @@ void AMyPlayerController::BindPlayerState(AMyPlayerState* PS)
     if (!PS || !PlayerUI || !PlayerUI->WBP_Shop) return;
 
     H_UpdateMoney = PS->OnUpdateMoney.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateShopMoneyStatus);
+	H_UpdateTeamId = PS->OnUpdateTeamId.AddUObject(PlayerUI, &UPlayerUI::UpdateTeamId);
     H_UpdateBoughtItems = PS->OnUpdateBoughtItems.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateBoughtItemsStatus);
+
+	PlayerUI->UpdateTeamId(PS->GetTeamId());
 }
 
 void AMyPlayerController::UnbindPlayerState(AMyPlayerState* PS)
@@ -1034,9 +974,11 @@ void AMyPlayerController::UnbindPlayerState(AMyPlayerState* PS)
 
     PS->OnUpdateMoney.Remove(H_UpdateMoney);
     PS->OnUpdateBoughtItems.Remove(H_UpdateBoughtItems);
+	PS->OnUpdateTeamId.Remove(H_UpdateTeamId);
 
     H_UpdateMoney.Reset();
     H_UpdateBoughtItems.Reset();
+	H_UpdateTeamId.Reset();
 }
 
 ABaseCharacter* AMyPlayerController::GetMyChar() const
@@ -1074,16 +1016,7 @@ void AMyPlayerController::Test() {
 
 void AMyPlayerController::ServerTest_Implementation()
 {
-    ASpikeMode* GM = GetWorld()->GetAuthGameMode<ASpikeMode>();
-    if (GM) {
-        if (GM->GetPlantedSpike()) {
-            CurrentSpectateTarget = GM->GetPlantedSpike();
-            if (CurrentSpectateTarget.IsValid()) {
-                ClientSetSpectateViewTarget(CurrentSpectateTarget.Get(), 0.3f);
-            }
-            return;
-        }
-    }
+    
 }
 
 void AMyPlayerController::HandleEscapePressed()

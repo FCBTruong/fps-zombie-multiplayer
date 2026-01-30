@@ -43,5 +43,5 @@ public:
 	UFUNCTION(NetMulticast, Unreliable) virtual void MulticastExplode(const FVector& Location);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	UFUNCTION(NetMulticast, Unreliable) void MulticastInitData(EItemId ItemId);
-	const UThrowableConfig* GetWeaponData() { return Data; }
+	const UThrowableConfig* GetWeaponData() const { return Data; }
 };

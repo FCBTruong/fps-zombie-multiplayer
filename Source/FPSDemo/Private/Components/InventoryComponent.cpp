@@ -24,29 +24,17 @@ void UInventoryComponent::BeginPlay()
     CachedGM = UGameManager::Get(GetWorld());
 }
 
-void UInventoryComponent::Test()
+void UInventoryComponent::InitBasicWeapon()
 {
     // Test function to be removed later
     MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
     PistolState.ItemId = EItemId::PISTOL_PL_14;
-	RifleState.ItemId = EItemId::RIFLE_AK_47;
 
 	const UItemConfig* ItemPistol = UItemsManager::Get(GetWorld())->GetItemById(EItemId::PISTOL_PL_14);
 	const UFirearmConfig* PistolData = Cast<UFirearmConfig>(ItemPistol);
     PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
     PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
 	PistolState.MaxAmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
-
-	const UItemConfig* ItemRifle = UItemsManager::Get(GetWorld())->GetItemById(EItemId::RIFLE_AK_47);
-	const UFirearmConfig* RifleData = Cast<UFirearmConfig>(ItemRifle);
-	RifleState.AmmoInClip = 2;
-    RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 3 : 0;
-	RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
-
-    Throwables.Add(EItemId::GRENADE_FRAG_BASIC);
-    Throwables.Add(EItemId::GRENADE_SMOKE);
-    Throwables.Add(EItemId::GRENADE_INCENDIARY);
-    Throwables.Add(EItemId::GRENADE_STUN);
              
     // log size throwables
 	UE_LOG(LogTemp, Log, TEXT("InventoryComponent Test: Throwables count = %d"), Throwables.Num());
@@ -155,6 +143,10 @@ bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
         }
         case EItemType::Throwable:
         {
+			// check if already have this throwable
+            if (Throwables.Contains(ItemId))
+				return false;
+
             Throwables.Add(ItemId);
             SortThrowables();
             OnRep_Throwables();
@@ -245,22 +237,6 @@ bool UInventoryComponent::ConsumeAmmo(EItemId WeaponId, int32 Amount)
     return true;
 }
 
-int32 UInventoryComponent::ReloadAmmo(EItemId WeaponId, int32 MaxAmmoInClip)
-{
-    if (!GetOwner() || !GetOwner()->HasAuthority())
-        return 0;
-
-    FWeaponState* WS = GetWeaponStateByItemId(WeaponId);
-    if (!WS) return 0;
-
-    const int32 Needed = MaxAmmoInClip - WS->AmmoInClip;
-    if (Needed <= 0) return 0;
-
-    const int32 ToLoad = FMath::Min(Needed, WS->AmmoReserve);
-    WS->AmmoReserve = FMath::Max(0, WS->AmmoReserve - ToLoad);
-    WS->AmmoInClip += ToLoad;
-    return ToLoad;
-}
 
 // ===== OnRep =====
 
@@ -341,10 +317,9 @@ void UInventoryComponent::RemoveItem(EItemId ItemId) {
         return;
     }
     // Check and remove from throwables
-    int32 Removed = Throwables.Remove(ItemId);
-    if (Removed > 0) {
+    if (Throwables.RemoveSingle(ItemId) > 0)
+    {
         OnRep_Throwables();
-        return;
     }
     // Check spike
     if (ItemId == EItemId::SPIKE && bHasSpike) {
@@ -378,9 +353,12 @@ void UInventoryComponent::DropAllItems() {
     if (RifleState.ItemId != EItemId::NONE) {
         DropItem(RifleState.ItemId);
     }
-    if (PistolState.ItemId != EItemId::NONE) {
+    for (EItemId ThrowableId : Throwables) {
+        DropItem(ThrowableId);
+	}
+    /*if (PistolState.ItemId != EItemId::NONE) {
         DropItem(PistolState.ItemId);
-    }
+    }*/
 }
 
 APickupItem* UInventoryComponent::DropItem(EItemId Id) {
@@ -402,6 +380,7 @@ APickupItem* UInventoryComponent::DropItem(EItemId Id) {
 			Data.AmmoReserve = WeaponState->AmmoReserve;
 		}
 	}
+    RemoveItem(Id);
 
     APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
 
@@ -411,7 +390,6 @@ APickupItem* UInventoryComponent::DropItem(EItemId Id) {
         Pickup->PlayerDropInfo(Character);
     }
 
-    RemoveItem(Id);
 	return Pickup;
 }
 

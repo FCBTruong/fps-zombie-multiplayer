@@ -7,6 +7,8 @@
 #include "Data/MatchMode.h"
 #include "ShooterGameState.generated.h"
 
+class ASpike;
+
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateScore, int32, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRoundTime, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateMatchState, const EMyMatchState&)
@@ -19,6 +21,8 @@ DECLARE_MULTICAST_DELEGATE_OneParam(
     FOnPlayerStateRemoved,
     APlayerState*
 );
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnGameResult, ETeamId);
+DECLARE_MULTICAST_DELEGATE(FOnSwitchSide);
 
 UCLASS()
 class FPSDEMO_API AShooterGameState : public AGameState
@@ -43,6 +47,12 @@ protected:
 
     UPROPERTY(ReplicatedUsing = OnRep_CurrentRound)
     int CurrentRound = -1;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Spike)
+    ASpike* PlantedSpike;
+
+    UFUNCTION()
+	void OnRep_Spike();
     
     UFUNCTION()
     void OnRep_Score();
@@ -73,6 +83,10 @@ public:
     
     UFUNCTION(NetMulticast, Unreliable)
     void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot);
+    UFUNCTION(NetMulticast, Reliable)
+	void Multicast_GameResult(ETeamId WinningTeam);
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_SwitchSide();
     void SetMatchState(EMyMatchState NewState);
     EMyMatchState GetMatchState() const {
 		return CurrentMatchState;
@@ -85,6 +99,8 @@ public:
 	FOnUpdateMatchState OnUpdateMatchState;
     FOnPlayerStateAdded   OnPlayerAdded;
     FOnPlayerStateRemoved OnPlayerRemoved;
+    FOnGameResult OnGameResult;
+	FOnSwitchSide OnSwitchSide;
 
     void AddScoreTeam(ETeamId TeamId, int ScoreToAdd);
     int GetScoreTeam(ETeamId TeamId) const;
@@ -117,4 +133,10 @@ public:
 	}
 
     float GetRemainingRoundTime() const;
+    void SetPlantedSpike(ASpike* NewSpike) {
+        PlantedSpike = NewSpike;
+    }
+    ASpike* GetPlantedSpike() const {
+        return PlantedSpike;
+	}
 };

@@ -436,7 +436,7 @@ void AZombieMode::ReviveZombie(ABaseCharacter* ZombieCharacter)
 
 void AZombieMode::EndGame(ETeamId WinningTeam)
 {
-
+	Super::EndGame(WinningTeam);
 }
 
 void AZombieMode::OnRoundTimeExpired()
@@ -451,15 +451,12 @@ void AZombieMode::StartSpectating(ABaseCharacter* VictimPawn) {
 		Cast<AMyPlayerController>(VictimPawn->GetController());
 	if (!PC) return;
 
-	// Move anyone watching this pawn
-	MoveSpectatorsOffDeadPawn(VictimPawn);
-
 	TWeakObjectPtr<AMyPlayerController> PCWeak = PC;
 
 	GetWorldTimerManager().SetTimerForNextTick([PCWeak]()
 		{
 			if (!PCWeak.IsValid()) return;
 
-			PCWeak->SetPlayerSpectate();
+		
 		});
 }

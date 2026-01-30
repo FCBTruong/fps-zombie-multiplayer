@@ -146,6 +146,7 @@ void UPlayerUI::OnEnter()
 	ScopeUI->HideScope();
 	PnSpike->SetVisibility(ESlateVisibility::Hidden);
 	NotiToastPn->SetVisibility(ESlateVisibility::Hidden);
+	SwitchSideEffPn->SetVisibility(ESlateVisibility::Hidden);   
     if (MatchToastPn) {
         MatchToastPn->SetVisibility(ESlateVisibility::Hidden);
     }
@@ -441,7 +442,7 @@ void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
     switch (State) {
         case EMyMatchState::PRE_MATCH:
 			MatchStatePn->SetVisibility(ESlateVisibility::Visible);
-			MatchStateTxt->SetText(FText::FromString("Waiting for other players…"));
+			MatchStateTxt->SetText(FText::FromString("Waiting for other players …"));
 			break;
         case EMyMatchState::ROUND_START:
 			ShowMatchStateToast(FText::FromString("Round Started!"), 0.f);
@@ -532,6 +533,7 @@ void UPlayerUI::StartRoundClock()
     {
         return;
     }
+	UE_LOG(LogTemp, Log, TEXT("UPlayerUI::StartRoundClock: Starting round clock with end time %d"), RoundTimeEnd);
 
     // Run immediately and then every 1s
     UpdateRoundClockOnce();
@@ -633,5 +635,73 @@ void UPlayerUI::SetMatchInfoPnVisible(bool bVisible)
         MatchInfoPn->SetVisibility(
             bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
         );
+    }
+}
+
+void UPlayerUI::ShowGameResult(ETeamId WinTeam) {
+    UGameManager* GM = UGameManager::Get(GetWorld());
+    UGlobalDataAsset* GlobalData = GM->GlobalData;
+    UGameplayStatics::PlaySound2D(
+        GetWorld(),
+        GM->GlobalData->GameEndSound    
+    );
+
+    ShowMatchStateToast(
+        FText::FromString(
+            WinTeam == ETeamId::Attacker ? "Attackers Win!" :
+            WinTeam == ETeamId::Defender ? "Defenders Win!" :
+            "Game Ended!"
+        ),
+        0.f
+	);
+	UE_LOG(LogTemp, Log, TEXT("UPlayerUI::ShowGameResult: WinTeam = %d"), static_cast<int32>(WinTeam));
+}
+
+void UPlayerUI::OnSwitchSide() {
+    UGameManager* GM = UGameManager::Get(GetWorld());
+    UGlobalDataAsset* GlobalData = GM->GlobalData;
+    UGameplayStatics::PlaySound2D(
+        GetWorld(),
+        GM->GlobalData->SwitchingSideVoice
+    );
+
+    FTimerHandle ShowTimerHandle;
+	SwitchSideEffPn->SetVisibility(ESlateVisibility::Visible);
+
+    GetWorld()->GetTimerManager().SetTimer(
+        ShowTimerHandle,
+        [this]()
+        {
+            PlayAnimation(ShowAnimSwitchSide);
+        },
+        1.0f,
+        false
+    );
+
+	// hide after 2 seconds
+    FTimerHandle HideTimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(
+        HideTimerHandle,
+        [this]()
+        {
+            SwitchSideEffPn->SetVisibility(ESlateVisibility::Hidden);
+        },
+        4.0f,
+        false
+    );
+}
+
+void UPlayerUI::UpdateTeamId(ETeamId TeamId) {
+    UGameManager* GM = UGameManager::Get(GetWorld());
+    UGlobalDataAsset* GlobalData = GM->GlobalData;
+
+    if (TeamId == ETeamId::Attacker) {
+        TeamIcon->SetBrushFromTexture(GlobalData->AttackerIcon.Get());
+    }
+    else if (TeamId == ETeamId::Defender) {
+        TeamIcon->SetBrushFromTexture(GlobalData->DefenderIcon.Get());
+    }
+    else {
+        TeamIcon->SetVisibility(ESlateVisibility::Hidden);
     }
 }

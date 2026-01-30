@@ -65,11 +65,11 @@ void AShooterGameMode::StartPlay()
             P.PlayerId = FGameConstants::EMPTY_PLAYER_ID;
 			RoomDataMutable.Players.Add(P);
         }
-        RoomDataMutable.Players[3].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 2;
+      /*  RoomDataMutable.Players[3].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 2;
         RoomDataMutable.Players[3].bIsBot = true;
 
         RoomDataMutable.Players[6].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
-        RoomDataMutable.Players[6].bIsBot = true;
+        RoomDataMutable.Players[6].bIsBot = true;*/
 
 		UE_LOG(LogTemp, Warning, TEXT("Editor mode: Added 2 bots to room data"));
     }
@@ -121,7 +121,21 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 	UE_LOG(LogTemp, Warning, TEXT("Player Logged In: %s"), *GetNameSafe(NewPlayer));
     Super::PostLogin(NewPlayer);
 
-    bIsAllPlayersJoined = true;
+    if (NewPlayer && NewPlayer->PlayerState)
+    {
+        JoinedPlayers.AddUnique(NewPlayer->PlayerState);
+    }
+
+    if (JoinedPlayers.Num() >= 1) { // test hardcode
+        bIsAllPlayersJoined = true;
+    }
+
+    // temp
+	AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>();
+    if (PS) {
+		UE_LOG(LogTemp, Warning, TEXT("DEBUG01: Assigning team for player: %s"), *PS->GetPlayerName());
+		PS->SetTeamId(ETeamId::Attacker);
+    }
 }
 
 
@@ -180,6 +194,8 @@ void AShooterGameMode::ResetPlayers()
        
         AController* Controller = PS->GetOwner<AController>();
       
+		PS->SetIsSpectator(false);
+
         if (Controller)
         {
             if (APawn* P = Controller->GetPawn())
@@ -190,36 +206,16 @@ void AShooterGameMode::ResetPlayers()
 			Controller->StartSpot = nullptr;
             RestartPlayer(Controller);
         }
-
-        AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
-        if (MyPS)
-        {
-            MyPS->SetIsSpectator(false);
-            MyPS->ResetBoughtItems();
-        }
 	}
 }
 
 void AShooterGameMode::RestartPlayer(AController* NewPlayer)
 {
     Super::RestartPlayer(NewPlayer);
-    ResetPlayerNewRound(NewPlayer);
+
+    UE_LOG(LogTemp, Warning, TEXT("DEBUG01: Restart player"));
 }
 
-void AShooterGameMode::ResetPlayerNewRound(AController * NewPlayer)
-{
-    if (!NewPlayer) return;
-    if (AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>())
-    {
-        PS->ResetBoughtItems();
-    }
-  
-	AMyPlayerController* MyPC = Cast<AMyPlayerController>(NewPlayer);
-    if (MyPC)
-    {
-        MyPC->SetPlayerPlay();
-	}
-}
 
 ABotAIController* AShooterGameMode::SpawnBot(bool IsTeamA)
 {
@@ -352,30 +348,28 @@ void AShooterGameMode::EndRound(ETeamId WinningTeam)
 
 void AShooterGameMode::EndGame(ETeamId WinningTeam)
 {
-
-}
-
-void AShooterGameMode::MoveSpectatorsOffDeadPawn(APawn* DeadPawn)
-{
-    if (!DeadPawn) return;
-
-    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-    {
-        AMyPlayerController* PC = Cast<AMyPlayerController>(It->Get());
-        if (!PC) continue;
-
-        if (!PC->IsSpectatingState()) continue;
-
-        AActor* ViewTarget = PC->GetViewTarget();
-        if (ViewTarget == DeadPawn)
-        {
-            PC->RequestSpectateNextPlayer();
-        }
+    AShooterGameState* GS = GetGameState<AShooterGameState>();
+    if (GS) {
+        GS->SetMatchState(EMyMatchState::GAME_ENDED);
+        GS->Multicast_GameResult(WinningTeam);
     }
+
+    // Delay so clients see end screen
+    FTimerHandle Timer;
+    GetWorld()->GetTimerManager().SetTimer(
+        Timer,
+        this,
+        &AShooterGameMode::TravelToLobby,
+        1.5f,
+        false
+    );
 }
 
 bool AShooterGameMode::IsDamageAllowed(AController* Killer, AController* Victim) const
 {
+    if (true) {
+        return true;
+    }
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
     if (!GS)
 		return false;
@@ -392,4 +386,10 @@ bool AShooterGameMode::IsDamageAllowed(AController* Killer, AController* Victim)
         return false;
 	}*/
 	return true;
+}
+
+void AShooterGameMode::TravelToLobby()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Traveling to Lobby"));
+    GetWorld()->ServerTravel(FGameConstants::LEVEL_LOBBY.ToString());
 }

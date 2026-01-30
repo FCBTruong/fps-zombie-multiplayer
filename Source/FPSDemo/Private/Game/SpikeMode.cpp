@@ -39,9 +39,11 @@ void ASpikeMode::PlantSpike(FVector Location, AController* Planter)
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = Planter;
 	SpawnParams.Instigator = Planter ? Planter->GetPawn() : nullptr;
-	PlantedSpike = GetWorld()->SpawnActor<ASpike>(SpikeClass, Location, FRotator::ZeroRotator, SpawnParams);
+	auto PlantedSpike = GetWorld()->SpawnActor<ASpike>(SpikeClass, Location, FRotator::ZeroRotator, SpawnParams);
+
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	GS->SetPlantedSpike(PlantedSpike);
 	GS->SetMatchState(EMyMatchState::SPIKE_PLANTED);
 
 	if (BotManager) {
@@ -49,28 +51,22 @@ void ASpikeMode::PlantSpike(FVector Location, AController* Planter)
 	}
 }
 
-void ASpikeMode::DefuseSpike(AController* Defuser)
+void ASpikeMode::OnSpikeDefused(AController* Defuser)
 {
-	if (PlantedSpike)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Spike defused by %s"), *Defuser->GetName());
-		
-		EndRound(ETeamId::Defender);
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
 
-		if (BotManager) {
-			BotManager->OnSpikeDefused();
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("No spike to defuse"));
+	UE_LOG(LogTemp, Warning, TEXT("Spike defused by %s"), *Defuser->GetName());
+		
+	EndRound(ETeamId::Defender);
+
+	if (BotManager) {
+		BotManager->OnSpikeDefused();
 	}
 }
 
 void ASpikeMode::EndRound(ETeamId WinningTeam)
 {
 	Super::EndRound(WinningTeam);
-	SwapTeams();
 	
 	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
 
@@ -86,7 +82,15 @@ void ASpikeMode::EndRound(ETeamId WinningTeam)
 		return;
 	}
 	if (GS->GetCurrentRound() == RoundToSwapSides) {
-		SwapTeams();
+		GetWorld()->GetTimerManager().SetTimer(
+			SwitchSideTimerHandle,
+			[this]()
+			{
+				SwapTeams();
+			},
+			2.0f,
+			false
+		);
 	}
 
 	// save guns for next round if player is alive	
@@ -98,7 +102,7 @@ void ASpikeMode::EndRound(ETeamId WinningTeam)
 		{
 			StartRound();
 		},
-		5.0f,
+		4.0f,
 		false
 	);
 }
@@ -109,15 +113,13 @@ void ASpikeMode::StartRound()
 	ResetPlayers();
 	AShooterGameState* GS = GetShooterGS();
 
-	UE_LOG(LogTemp, Warning, TEXT("DEBUGXX: Starting new round..."));
-
-	// Clean map
-
-	if (PlantedSpike)
-	{
-		PlantedSpike->Destroy();
-		PlantedSpike = nullptr;
+	// remove spike if planted
+	if (GS->GetPlantedSpike()) {
+		GS->GetPlantedSpike()->Destroy();
+		GS->SetPlantedSpike(nullptr);
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGXX: Starting new round..."));
 
 	// Random spike for attacker team
 	FVector SpawnLocation = FVector::ZeroVector;
@@ -144,45 +146,29 @@ void ASpikeMode::StartRound()
 		BotManager->OnStartRound(PickupActor);
 	}
 	
-	int BuyPhaseTime = 0; // seconds
-	//GS->SetMatchState(EMyMatchState::BUY_PHASE);
-	//GS->SetRoundRemainingTime(BuyPhaseTime);
 
 	GenerateInitialWeapons();
 	// auto buy for bots
 	AutoBuyForBots();
 
 	// start game after buy phase 3 seconds
+	AShooterGameState* GSInner = GetGameState<AShooterGameState>();
+	int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
+	GSInner->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
+	GSInner->SetRoundEndTime(TimeEnd);
+
 	GetWorld()->GetTimerManager().SetTimer(
 		RoundTimerHandle,
-		[this]()
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Buy phase ended, round in progress"));
-			AShooterGameState* GSInner = GetGameState<AShooterGameState>();
-			int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
-			GSInner->SetRoundEndTime(TimeEnd);
-			GSInner->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
-
-			GetWorld()->GetTimerManager().SetTimer(
-				RoundTimerHandle,
-				this,
-				&ASpikeMode::OnRoundTimeExpired,
-				TimePerRound,
-				false
-			);
-		},
-		BuyPhaseTime,
+		this,
+		&ASpikeMode::OnRoundTimeExpired,
+		TimePerRound,
 		false
 	);
 }
 
 void ASpikeMode::EndGame(ETeamId WinningTeam)
 {
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (GS) {
-		GS->SetMatchState(EMyMatchState::GAME_ENDED);
-		//GS->Multicast_GameResult(WinningTeam);
-	}
+	Super::EndGame(WinningTeam);
 }
 
 void ASpikeMode::SpikeExploded()
@@ -267,29 +253,6 @@ void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Vi
 			}
 		}
 	}
-
-	TWeakObjectPtr<AController> VictimCtrlWeak = VictimPawn->Controller;
-
-	const float SpectateDelay = 2.f;
-	FTimerDelegate SpectateDel;
-
-	MoveSpectatorsOffDeadPawn(VictimPawn);
-	if (AMyPlayerController* PC = Cast<AMyPlayerController>(VictimCtrlWeak.Get()))
-	{
-		PC->SetPlayerSpectate();
-	}
-	SpectateDel.BindLambda([VictimCtrlWeak]()
-		{
-			if (!VictimCtrlWeak.IsValid()) return;
-
-			if (AMyPlayerController* PC = Cast<AMyPlayerController>(VictimCtrlWeak.Get()))
-			{
-				PC->RequestSpectateNextPlayer();
-			}
-		});
-
-	FTimerHandle SpectateHandle;
-	GetWorldTimerManager().SetTimer(SpectateHandle, SpectateDel, SpectateDelay, false);
 }
 
 
@@ -370,7 +333,7 @@ void ASpikeMode::AssignPlayerTeamInit(AController* NewPlayer)
 	PS->SetTeamId(AssignedTeam);
 }
 
-void ASpikeMode::SwapTeams()
+void ASpikeMode::SwapTeams() // switch side
 {
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) {
@@ -391,6 +354,8 @@ void ASpikeMode::SwapTeams()
 			MyExistingPS->SetTeamId(NewTeam);
 		}
 	}
+
+	GS->Multicast_SwitchSide();
 }
 
 void ASpikeMode::GenerateInitialWeapons()
@@ -413,33 +378,44 @@ void ASpikeMode::GenerateInitialWeapons()
 	};
 
 	const float Distance = 120.0f;
-	FVector CenterPos = AM->DefenderWeaponInitPos;
-
-	// Center the row
-	int32 Count = Items.Num();
-	float StartOffset = -((Count - 1) * Distance) * 0.5f;
-
-	auto ItemsManager = UItemsManager::Get(GetWorld());
-	for (int32 i = 0; i < Count; ++i)
+	TArray<FVector> Centers;
+	Centers.Add(AM->DefenderWeaponInitPos);
+	Centers.Add(AM->AttackerWeaponInitPos);
+	
+	for (const FVector& CenterPos : Centers)
 	{
-		FPickupData P;
-		P.Id = GMR->GetNextItemOnMapId();
-		P.ItemId = Items[i];
-		P.Amount = 1;
+		// Center the row
+		int32 Count = Items.Num();
+		float StartOffset = -((Count - 1) * Distance) * 0.5f;
 
-		const UItemConfig* ItemConfig = ItemsManager->GetItemById(Items[i]);
-		const UFirearmConfig* FirearmConfig = Cast<UFirearmConfig>(ItemConfig);
-		if (FirearmConfig)
+		auto ItemsManager = UItemsManager::Get(GetWorld());
+		for (int32 i = 0; i < Count; ++i)
 		{
-			P.AmmoInClip = FirearmConfig->MaxAmmoInClip;
-			P.AmmoReserve = FirearmConfig->MaxAmmoInClip * 2;
+			FPickupData P;
+			P.Id = GMR->GetNextItemOnMapId();
+			P.ItemId = Items[i];
+			P.Amount = 1;
+
+			const UItemConfig* ItemConfig = ItemsManager->GetItemById(Items[i]);
+			const UFirearmConfig* FirearmConfig = Cast<UFirearmConfig>(ItemConfig);
+			if (FirearmConfig)
+			{
+				P.AmmoInClip = FirearmConfig->MaxAmmoInClip;
+				P.AmmoReserve = FirearmConfig->MaxAmmoInClip * 2;
+			}
+
+
+			// Offset along X axis
+			P.Location = CenterPos + FVector(0.f, StartOffset + i * Distance, 0.f);
+
+			APickupItem* PickupActor = GMR->CreatePickupActor(P);
+			UE_LOG(LogTemp, Warning, TEXT("Pickup %d address = %p"), i, PickupActor);
 		}
-
-
-		// Offset along X axis
-		P.Location = CenterPos + FVector(0.f, StartOffset + i * Distance, 0.f);
-
-		APickupItem* PickupActor = GMR->CreatePickupActor(P);
-		UE_LOG(LogTemp, Warning, TEXT("Pickup %d address = %p"), i, PickupActor);
 	}
+}
+
+bool ASpikeMode::IsSpikePlanted() const
+{
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	return GS->GetMatchState() == EMyMatchState::SPIKE_PLANTED;
 }

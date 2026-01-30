@@ -382,7 +382,7 @@ void USpikeComponent::StartDefuse_Internal() {
         return; // attackers cannot defuse
     }
 
-    ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
+    ASpike* SpikeActor = GameState->GetPlantedSpike();
     if (GameState->GetMatchState() != EMyMatchState::SPIKE_PLANTED) {
         return; // can only defuse during playing state
     }
@@ -432,11 +432,7 @@ void USpikeComponent::StopDefuse_Internal() {
     if (!Character) {
         return;
     }
-    ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
-    if (!SpikeGM) {
-        UE_LOG(LogTemp, Warning, TEXT("ServerStopDefuseSpike: No SpikeGM found"));
-        return;
-    }
+	AShooterGameState* GS = Cast<AShooterGameState>(GetWorld()->GetGameState());
     if (!ActionStateComp) {
         return;
     }
@@ -444,7 +440,7 @@ void USpikeComponent::StopDefuse_Internal() {
     if (!ActionStateComp->IsInState(EActionState::Defusing)) {
         return;
     }
-    ASpike* SpikeActor = SpikeGM->GetPlantedSpike();
+    ASpike* SpikeActor = GS->GetPlantedSpike();
     if (!SpikeActor) {
         return;
     }

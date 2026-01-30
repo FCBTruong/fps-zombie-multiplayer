@@ -32,7 +32,6 @@ public:
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
-	virtual void ResetPlayerNewRound(AController* NewPlayer);
 	virtual void ResetPlayers();
 	virtual ABotAIController* SpawnBot(bool IsTeamA);
 	virtual bool CheckAllTeamDead(ETeamId TeamId);
@@ -52,11 +51,13 @@ protected:
 	virtual void StartRound();
 	virtual void EndRound(ETeamId WinningTeam);
 	virtual void EndGame(ETeamId WinningTeam);
-	void MoveSpectatorsOffDeadPawn(APawn* DeadPawn);
+	void TravelToLobby();
 
 	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;
 	TUniquePtr<BotStateManager> BotManager;
+	UPROPERTY()
+	TArray<APlayerState*> JoinedPlayers;
 
 	UPROPERTY()
 	TArray<TWeakObjectPtr<AActor>> Corpses;

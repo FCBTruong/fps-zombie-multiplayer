@@ -7,6 +7,7 @@
 #include "Game/SpikeMode.h"
 #include "Components/SpikeComponent.h"
 #include "Characters/BaseCharacter.h"
+#include "GameFramework/SpringArmComponent.h"
 
 // Sets default values
 ASpike::ASpike()
@@ -57,6 +58,11 @@ void ASpike::BeginPlay()
             SpikePlantedSound
         );
 	}
+
+	SpringArmComp = FindComponentByClass<USpringArmComponent>();
+    if (SpringArmComp) {
+        CamPitch = SpringArmComp->GetRelativeRotation().Pitch;
+    }
 }
 
 void ASpike::Tick(float DeltaTime)
@@ -138,7 +144,7 @@ void ASpike::Multicast_Explode_Implementation()
         );
     }
     if (MainMeshRef) {
-		MainMeshRef->SetVisibility(false);
+		MainMeshRef->SetVisibility(false, true);
     }
 }
 
@@ -175,7 +181,7 @@ void ASpike::Defused()
         return;
     }
 
-    SpikeGM->DefuseSpike(PC);
+    SpikeGM->OnSpikeDefused(PC);
 
     Multicast_Defused();
 }
@@ -286,4 +292,11 @@ void ASpike::OnCompleteExplode() {
             UDamageType::StaticClass()
         );
     }
+}
+
+void ASpike::AddCameraYaw(float Value)
+{
+    if (!SpringArmComp || FMath::IsNearlyZero(Value)) return;
+    CamYaw += Value * LookSensitivity;
+    SpringArmComp->SetRelativeRotation(FRotator(CamPitch, CamYaw, 0.f));
 }

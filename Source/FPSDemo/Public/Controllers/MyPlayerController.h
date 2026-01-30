@@ -108,20 +108,13 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_SCOREBOARD;
 
-    UFUNCTION(Server, Reliable)
-    void ServerSpectateNextPlayer();
     void SpectateNextPlayer_Internal();
 
-    UFUNCTION(Client, Reliable)
-    void ClientSetSpectateViewTarget(AActor* Target, float BlendTime);
-    void SetPlayerPlay();
-    void SetPlayerSpectate();
     void ShowScoreboard();
     void HideScoreboard();
     UPlayerUI* GetPlayerUI() const { return PlayerUI; }
     void RequestBuyItem(EItemId ItemId);
     ETeamId GetTeamId() const;
-    AActor* FindLivingTeammate(AController* Spectator);
     AActor* FindNextLivingTeammate(AActor* CurrentTarget) const;
     bool IsSpectatingState() const;
     void Test();
@@ -157,10 +150,13 @@ private:
     FDelegateHandle H_UpdateScore;
     FDelegateHandle H_UpdateRoundTime;
     FDelegateHandle H_UpdateMatchState;
+    FDelegateHandle H_OnGameResult;
+    FDelegateHandle H_OnSwitchSide;
 
     // PlayerState delegate handles
     FDelegateHandle H_UpdateMoney;
     FDelegateHandle H_UpdateBoughtItems;
+	FDelegateHandle H_UpdateTeamId;
 
     bool bInputMappingAdded = false;
 private:

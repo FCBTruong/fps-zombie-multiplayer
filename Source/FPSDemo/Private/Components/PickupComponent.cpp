@@ -8,6 +8,8 @@
 #include "Characters/BaseCharacter.h"
 #include "Game/SpikeMode.h"
 #include "Components/EquipComponent.h"
+#include "Game/GlobalDataAsset.h"
+#include <Kismet/GameplayStatics.h>
 
 // Sets default values for this component's properties
 UPickupComponent::UPickupComponent()
@@ -69,14 +71,24 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 		return;
 	}
 	
+	auto PickupData = PickupItem->GetPickupData();
+	// special case, for spike, need to check team
+	if (PickupData.ItemId == EItemId::SPIKE) {
+		// check team
+		ETeamId Team = OwnerCharacter->GetTeamId();
+		if (Team != ETeamId::Attacker) {
+			return;
+		}
+	}
+
 	// Check if overlap
-    bool Added = InventoryComp->AddItemFromPickup(PickupItem->GetPickupData());
+    bool Added = InventoryComp->AddItemFromPickup(PickupData);
 	UE_LOG(LogTemp, Warning, TEXT("PickupItem: Added = %s"), Added ? TEXT("true") : TEXT("false"));
 	if (Added) {
-		GMR->FindAndDestroyItemNode(PickupItem->GetPickupData().Id);
+		GMR->FindAndDestroyItemNode(PickupData.Id);
 
 		// check if is spike, need to tell game mode
-		if (PickupItem->GetPickupData().ItemId == EItemId::SPIKE) {
+		if (PickupData.ItemId == EItemId::SPIKE) {
 			// tell spike mode
 			if (ASpikeMode* SpikeGM = Cast<ASpikeMode>(GetWorld()->GetAuthGameMode()))
 			{
@@ -111,6 +123,15 @@ void UPickupComponent::ClientNotifyItemPickup_Implementation(
 	{
 		return;
 	}
+
+	// play sound
+	UGameManager* GM = UGameManager::Get(GetWorld());
+	UGlobalDataAsset* GlobalData = GM->GlobalData;
+	UGameplayStatics::PlaySound2D(
+		GetWorld(),
+		GM->GlobalData->PickupSound
+	);
+
 	// broadcast to UI
 	OnNewItemPickup.Broadcast(ItemId);
 }

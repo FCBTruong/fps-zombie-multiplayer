@@ -262,6 +262,10 @@ bool UEquipComponent::CanDropItem() const {
         UE_LOG(LogTemp, Warning, TEXT("CanDropItem: Current item is not droppable"));
         return false;
     }
+    if (ActionStateComp && !ActionStateComp->IsIdle()) {
+        UE_LOG(LogTemp, Warning, TEXT("CanDropItem: Cannot drop item while not idle"));
+        return false;
+	}
     return true;
 }
 
@@ -314,7 +318,6 @@ void UEquipComponent::HandleDropItem() {
 
     if (Pickup && Pickup->GetItemMesh())
     {
-        Pickup->PlayerDropInfo(Character);
         Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
     }
 
@@ -325,6 +328,7 @@ void UEquipComponent::HandleDropItem() {
             SpikeGM->NotifySpikeDropped(Character);
         }
     }
+    ActiveItemId = EItemId::NONE;
  
     // refresh overlapping actors
     RefreshOverlapPickupActors();

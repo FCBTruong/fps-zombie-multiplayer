@@ -13,6 +13,7 @@ class UItemConfig;
 
 DECLARE_MULTICAST_DELEGATE(FOnUpdateMoney);
 DECLARE_MULTICAST_DELEGATE(FOnUpdateBoughtItems);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateTeamId, ETeamId);
 /**
  * 
  */
@@ -63,6 +64,7 @@ public:
 
 	FOnUpdateMoney OnUpdateMoney;
 	FOnUpdateBoughtItems OnUpdateBoughtItems;
+	FOnUpdateTeamId OnUpdateTeamId;
 
 	bool CanBuyThisItem(const UItemConfig* Item) const;
 	void AutoBuy();

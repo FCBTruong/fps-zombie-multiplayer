@@ -22,10 +22,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
 	TSubclassOf<ASpike> SpikeClass;
 
-	UPROPERTY()
-	ASpike* PlantedSpike;
-
 	FTimerHandle StartRoundTimerHandle;
+	FTimerHandle SwitchSideTimerHandle;
 	FTimerHandle RoundTimerHandle;
 	void OnRoundTimeExpired();
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
@@ -36,21 +34,16 @@ public:
 	virtual void EndRound(ETeamId WinningTeam) override;
 	virtual void EndGame(ETeamId WinningTeam) override;
 	void PlantSpike(FVector Location, AController* Planter);
-	bool IsSpikePlanted() {
-		return PlantedSpike != nullptr;
-	}
-	void DefuseSpike(AController* Defuser);
+	bool IsSpikePlanted() const;
+	void OnSpikeDefused(AController* Defuser);
 	void SpikeExploded();
-	static constexpr int32 ScoreToWin = 7;
-	static constexpr int32 RoundToSwapSides = 6;
+	static constexpr int32 ScoreToWin = 3; // good is 7
+	static constexpr int32 RoundToSwapSides = ScoreToWin - 1;
 	static constexpr int32 TimePerRound = 90; // seconds
 	void NotifySpikeDropped(ABaseCharacter* Player);
 	void NotifySpikePickedUp(ABaseCharacter* Player);
 	virtual void AssignPlayerTeamInit(AController* NewPlayer) override;
-	
-	ASpike* GetPlantedSpike() const {
-		return PlantedSpike;
-	}
+
 	virtual EMatchMode GetMatchMode() const {
 		return EMatchMode::Spike;
 	}

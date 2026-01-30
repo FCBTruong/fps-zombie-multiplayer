@@ -58,6 +58,7 @@
 #include "Items/FirearmConfig.h"
 #include "Components/ItemUseComponent.h"
 #include "Game/ZombieMode.h"
+#include "Spike/Spike.h"
 
 const FVector ABaseCharacter::TPSMeshRelLoc(0.f, 0.f, -88.f);
 const FRotator ABaseCharacter::TPSMeshRelRot(0.f, -90.f, 0.f);
@@ -666,9 +667,14 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 		bLastHitWasHeadshot = MyEvent->bIsHeadshot;
     }
     else if (DamageCauser) {
-		AThrownProjectile* Projectile = Cast<AThrownProjectile>(DamageCauser);
-        if (Projectile) {
-			LastDamageCauser = Projectile->GetWeaponData();
+        if (const AThrownProjectile* Projectile = Cast<AThrownProjectile>(DamageCauser))
+        {
+            LastDamageCauser = Projectile->GetWeaponData();
+        }
+        else if (DamageCauser->IsA(ASpike::StaticClass()))
+        {
+            LastDamageCauser =
+                UItemsManager::Get(GetWorld())->GetItemById(EItemId::SPIKE);
         }
     }
     if (!HealthComp) {
@@ -811,37 +817,27 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
         const FVector CamLoc = CameraTps->GetComponentLocation();
         const FRotator CamRot = CameraTps->GetComponentRotation();
 
+		// after 2 seconds, change to spectator mode
+
         // Spawn proxy actor that has physics + camera
-        DeathCameraProxy = GetWorld()->SpawnActor<AActor>(CachedCharacterAsset->DeathCameraProxyClass, CamLoc, CamRot);
+  //      DeathCameraProxy = GetWorld()->SpawnActor<AActor>(CachedCharacterAsset->DeathCameraProxyClass, CamLoc, CamRot);
 
-        if (!DeathCameraProxy.IsValid()) {
-            return;
-		}
-        // Add impulse so camera feels like it gets knocked down
-        if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(DeathCameraProxy->GetRootComponent()))
-        {
-            Root->AddImpulse(FVector(
-                FMath::RandRange(-80.f, 80.f),
-                FMath::RandRange(-80.f, 80.f),
-                -250.f
-            ) * 20.f);
-        }
+  //      if (!DeathCameraProxy.IsValid()) {
+  //          return;
+		//}
+  //      // Add impulse so camera feels like it gets knocked down
+  //      if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(DeathCameraProxy->GetRootComponent()))
+  //      {
+  //          Root->AddImpulse(FVector(
+  //              FMath::RandRange(-80.f, 80.f),
+  //              FMath::RandRange(-80.f, 80.f),
+  //              -250.f
+  //          ) * 20.f);
+  //      }
 
-        // Blend view to death camera
-        PC->SetViewTargetWithBlend(DeathCameraProxy.Get(), 0.15f, VTBlend_EaseOut);
-		UE_LOG(LogTemp, Warning, TEXT("Switched to death camera proxy."));
-
-		// view spectator mode
-        FTimerHandle TmpTimer;
-        GetWorld()->GetTimerManager().SetTimer(
-            TmpTimer,
-            [PC]()
-            {
-               // PC->ServerSetSpectateTarget(false);
-            },
-            2.0f,
-            false
-        );
+  //      // Blend view to death camera
+  //      PC->SetViewTargetWithBlend(DeathCameraProxy.Get(), 0.15f, VTBlend_EaseOut);
+		//UE_LOG(LogTemp, Warning, TEXT("Switched to death camera proxy."));
     }
 }
 
@@ -1673,7 +1669,7 @@ void ABaseCharacter::SetupInitialInventory()
 
     if (InventoryComp)
     {
-        InventoryComp->Test();
+        InventoryComp->InitBasicWeapon();
     }
     if (EquipComp)
     {

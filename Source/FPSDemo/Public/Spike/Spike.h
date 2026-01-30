@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Spike.generated.h"
 
+
+class USpringArmComponent;
 class USpikeComponent;
 UCLASS()
 class FPSDEMO_API ASpike : public AActor
@@ -40,6 +42,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Explode")
 	USoundBase* SpikeDefuseedVoice;
 
+	UPROPERTY()
+	USpringArmComponent* SpringArmComp;
+
 	// explosion animation state
 	bool bIsExploding = false;
 	float ExplodeTimer = 0.f;
@@ -47,6 +52,18 @@ protected:
 	UPROPERTY()
 	UAudioComponent* ActiveSoundComp;
 	bool bIsDefuseInProgress = false;
+
+	float CamYaw = 0.f;
+	float CamPitch = -20.f;
+
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	float LookSensitivity = 2.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	float MinPitch = -80.f;
+
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	float MaxPitch = 20.f;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -72,6 +89,7 @@ public:
 
 	bool IsDefused() const { return bIsDefused; }
 	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	void AddCameraYaw(float DeltaYaw);
 
 private:
 	void OnCompleteExplode();

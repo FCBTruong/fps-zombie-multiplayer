@@ -89,6 +89,10 @@ EFireEnableReason UWeaponFireComponent::CanFireNow() const
 	if (!ActionStateComp->CanFireNow())
 		return EFireEnableReason::Undefined;
 
+	float TimeSinceLastShot = GetServerTimeSeconds() - LastShotTime;
+	if (TimeSinceLastShot < CurrentFirearmConfig->FireInterval * 0.8) // allow some leeway for timer inaccuracies
+		return EFireEnableReason::Undefined;
+
 	// Ammo check (only firearms should pass)
 	const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(CurrentFirearmConfig->Id);
 	if (!State)
@@ -434,8 +438,6 @@ FVector UWeaponFireComponent::ComputeShotDirDeterministic(
 
 	const float SpreadDeg = GetTotalSpreadDeg(NowServerTime);
 	const float SpreadRad = FMath::DegreesToRadians(SpreadDeg);
-	UE_LOG(LogTemp, Log, TEXT("ComputeShotDirDeterministic: ShotIndex=%d, Seed=%d, SpreadDeg=%.2f"),
-		ShotIndex, PerShotSeed, SpreadDeg);
 
 	return Stream.VRandCone(AimDir, SpreadRad, SpreadRad).GetSafeNormal();
 }
@@ -444,8 +446,6 @@ float UWeaponFireComponent::GetTotalSpreadDeg(float NowServerTime) const
 {
 	// NOTE: BurstAccDeg should already be updated at the moment of firing on both sides.
 	float MoveSpreadDeg = GetMovementSpreadDeg();
-	UE_LOG(LogTemp, Log, TEXT("GetTotalSpreadDeg: Base=%.2f, Move=%.2f, Air=%.2f, Burst=%.2f"),
-		CurrentFirearmConfig->BaseDeg, MoveSpreadDeg, GetAirSpreadDeg(), BurstAccDeg);
 	const float Total = CurrentFirearmConfig->BaseDeg + MoveSpreadDeg + GetAirSpreadDeg() + BurstAccDeg;
 	return FMath::Min(Total, CurrentFirearmConfig->MaxTotalDeg);
 }
@@ -613,6 +613,9 @@ void UWeaponFireComponent::OnFinishedReload()
 		return;
 	}
 	if (!CurrentFirearmConfig) {
+		return;
+	}
+	if (ActionStateComp->GetState() != EActionState::Reloading) {
 		return;
 	}
 	ActionStateComp->TrySetState(EActionState::Idle);

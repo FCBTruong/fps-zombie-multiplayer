@@ -71,8 +71,6 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 	SpawnParams.Instigator = Shooter;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	UE_LOG(LogTemp, Warning, TEXT("Shooter: %s"), *Shooter->GetName());
-
 	FVector StartPointBullet = MuzzleLocation;
 	if (bCustomStart) {
 		StartPointBullet = StartPoint;
@@ -164,8 +162,6 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 	}
 	
 	if (WeaponMesh) {
-		// log debug
-		UE_LOG(LogTemp, Warning, TEXT("DEBUGZXX: Playing Fire Montage"));
 
 		if (FC && FC->FireAnimation) // FireAnimation: UAnimSequenceBase* (or UAnimationAsset*)
 		{

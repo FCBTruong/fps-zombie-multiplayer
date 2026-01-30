@@ -78,4 +78,5 @@ public:
 	FVector GetRandomHoldLocationNearBombSite(FName BombSiteName) const;
 	FVector GetRandomScoutLocation() const;
 	FVector DefenderWeaponInitPos;
+	FVector AttackerWeaponInitPos;
 };

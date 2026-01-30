@@ -16,6 +16,7 @@
 #include "UI/Crosshair.h"
 #include "Game/MyMatchState.h"
 #include "Controllers/MyPlayerState.h"
+#include "Data/TeamId.h"
 #include "PlayerUI.generated.h"
 
 class UItemConfig;
@@ -49,6 +50,11 @@ protected:
 	UTextBlock* SecondTeamLb;
 	UPROPERTY(meta = (BindWidget))
 	UImage* BloodScreen;
+	UPROPERTY(meta = (BindWidget))
+	UWidget* SwitchSideEffPn;
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* ShowAnimSwitchSide;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* GetHitAnim;
 	UPROPERTY(meta = (BindWidget))
@@ -93,6 +99,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* Rifle;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* TeamIcon;
 
 	UPROPERTY(meta = (BindWidget))
 	UVerticalBox* WeaponsBox;
@@ -202,4 +211,7 @@ public:
 	void UpdatePlayerName(const FString& PlayerName);
 	void SetRadarVisible(bool bVisible);
 	void SetMatchInfoPnVisible(bool bVisible);
+	void ShowGameResult(ETeamId WinningTeam);
+	void OnSwitchSide();
+	void UpdateTeamId(ETeamId NewTeamId);
 };

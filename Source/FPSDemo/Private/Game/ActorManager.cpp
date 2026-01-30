@@ -68,6 +68,9 @@ void AActorManager::BeginPlay()
         else if (TargetPoint->ActorHasTag(TEXT("DefenderWeaponInitPos"))) {
             DefenderWeaponInitPos = TargetPoint->GetActorLocation();
         }
+        else if (TargetPoint->ActorHasTag(TEXT("AttackerWeaponInitPos"))) {
+            AttackerWeaponInitPos = TargetPoint->GetActorLocation();
+        }
     }
 
     UGameplayStatics::GetAllActorsOfClass(

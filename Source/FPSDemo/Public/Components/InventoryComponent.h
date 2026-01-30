@@ -50,7 +50,7 @@ public:
     // Add item to inventory from pickup data (server only)
     
 
-	void Test(); // remove later
+    void InitBasicWeapon();
 
     // Remove throwable after throw/drop (server only)
     bool RemoveThrowable(EItemId ItemId);
@@ -63,7 +63,6 @@ public:
 
     // Ammo operations (server only)
     bool ConsumeAmmo(EItemId WeaponId, int32 Amount);
-    int32 ReloadAmmo(EItemId WeaponId, int32 MaxAmmoInClip);
 
     // Drop rules (pure query)
     bool CanDrop(EItemId ItemId);

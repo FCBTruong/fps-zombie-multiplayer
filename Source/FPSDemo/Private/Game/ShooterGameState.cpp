@@ -8,6 +8,7 @@
 #include "Controllers/MyPlayerState.h"
 #include "Items/ItemConfig.h"
 #include "UI/PlayerUI.h"
+#include "Spike/Spike.h"
 
 AShooterGameState::AShooterGameState()
 {
@@ -25,6 +26,7 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
     DOREPLIFETIME(AShooterGameState, MatchMode);
 	DOREPLIFETIME(AShooterGameState, BuyEndTime);
 	DOREPLIFETIME(AShooterGameState, CurrentRound);
+	DOREPLIFETIME(AShooterGameState, PlantedSpike);
 }
 
 
@@ -80,7 +82,7 @@ void AShooterGameState::Multicast_RoundResult_Implementation(ETeamId WinningTeam
                 }
                 ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
             }
-			MyPC->GetPlayerUI()->ShowMatchStateToast(ResultText, 1);
+			MyPC->GetPlayerUI()->ShowMatchStateToast(ResultText, 0);
         }
     }
 }
@@ -195,4 +197,19 @@ float AShooterGameState::GetRemainingRoundTime() const
 void AShooterGameState::OnRep_CurrentRound()
 {
     
+}
+
+void AShooterGameState::OnRep_Spike()
+{
+    
+}
+
+void AShooterGameState::Multicast_GameResult_Implementation(ETeamId WinningTeam)
+{
+	OnGameResult.Broadcast(WinningTeam);
+}
+
+void AShooterGameState::Multicast_SwitchSide_Implementation()
+{
+	OnSwitchSide.Broadcast();
 }
