@@ -669,11 +669,15 @@ void AMyPlayerController::HandleAimingChanged(bool bIsAiming)
 
 void AMyPlayerController::HandleSpikeChanged(bool bHasSpike)
 {
-    if (bHasSpike && PlayerUI)
+    if (!PlayerUI) {
+        return;
+	}
+    if (bHasSpike)
     {
         PlayerUI->ShowNotiToast(
             FText::FromString(TEXT("You picked up Spike")));
     }
+	PlayerUI->UpdateSpikeSlot(bHasSpike);
 }
 
 void AMyPlayerController::NotifyItemPickedUp(EItemId ItemId)
@@ -840,6 +844,7 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
 
 		H_ArmorChanged = Inv->OnArmorChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateArmor);
 		PlayerUI->UpdateArmor(Inv->GetArmorPoints(), Inv->GetArmorMaxPoints());
+		HandleSpikeChanged(Inv->HasSpike());
     }
 
     if (UPickupComponent* PC = Char->GetPickupComponent())

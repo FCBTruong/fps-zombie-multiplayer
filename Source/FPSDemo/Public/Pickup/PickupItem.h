@@ -27,6 +27,7 @@ private:
 	USphereComponent* PickupSphere;
 	float LastDropTimeMs = -FLT_MAX;
 	TWeakObjectPtr<ABaseCharacter> LastOwner;
+	bool bIsActive = false;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -49,4 +50,5 @@ public:
 	FPickupData GetPickupData() const { return Data; }
 	void PlayerDropInfo(ABaseCharacter* Character);
 	bool IsJustDropped(ABaseCharacter* Character) const;
+	void SetIsActive(bool bNewIsActive) { bIsActive = bNewIsActive; }
 };

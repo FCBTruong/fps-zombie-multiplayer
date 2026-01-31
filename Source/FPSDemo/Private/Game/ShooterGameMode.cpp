@@ -65,11 +65,11 @@ void AShooterGameMode::StartPlay()
             P.PlayerId = FGameConstants::EMPTY_PLAYER_ID;
 			RoomDataMutable.Players.Add(P);
         }
-      /*  RoomDataMutable.Players[3].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 2;
+        RoomDataMutable.Players[3].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 2;
         RoomDataMutable.Players[3].bIsBot = true;
 
         RoomDataMutable.Players[6].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
-        RoomDataMutable.Players[6].bIsBot = true;*/
+        RoomDataMutable.Players[6].bIsBot = true;
 
 		UE_LOG(LogTemp, Warning, TEXT("Editor mode: Added 2 bots to room data"));
     }

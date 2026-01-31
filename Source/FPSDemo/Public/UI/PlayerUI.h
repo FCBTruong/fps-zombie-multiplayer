@@ -104,6 +104,9 @@ protected:
 	UImage* TeamIcon;
 
 	UPROPERTY(meta = (BindWidget))
+	UWidget* SpikeSlot;
+
+	UPROPERTY(meta = (BindWidget))
 	UVerticalBox* WeaponsBox;
 
 	UPROPERTY(meta = (BindWidget))
@@ -194,6 +197,7 @@ public:
 	void CreateGrenadeNodes();
 	void UpdateGrenades(const TArray<EItemId>& GrenadeIds);
 	void UpdateCurrentWeapon(EItemId CurrentWeaponId);
+	void UpdateSpikeSlot(bool bHasSpike);
 	void ShowWeaponGuide();
 	void ShowScope();
 	void HideScope();

@@ -37,6 +37,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	TObjectPtr<UAnimMontage> AnimMontage_ZombieAttack = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	TObjectPtr<UAnimMontage> AnimMontage_HitReact = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Flash")
 	TObjectPtr<UCurveFloat> StunCurve = nullptr;
 
@@ -58,6 +61,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	TObjectPtr<USoundBase> Audio_HeroDead = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_SoldierDead = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_ZombieDead = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	TObjectPtr<USoundBase> Audio_HeroSpawn = nullptr;

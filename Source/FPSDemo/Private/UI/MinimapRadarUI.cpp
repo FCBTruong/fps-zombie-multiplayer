@@ -57,19 +57,7 @@ void UMinimapRadarUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	UpdateBombAreaLabels();
 	UpdatePlayerDots();
 
-	// check if spike drop on map
-	auto Spike = UGameManager::Get(GetWorld())->GetPickupSpike();
-
-	if (!SpikeIcon) return;
-
-	if (Spike) {
-		SpikeIcon->SetVisibility(ESlateVisibility::Visible);
-		const FVector2D AbsSpike = WorldToMinimapAbsolute(Spike->GetActorLocation());
-		ClampWidgetToMap(AbsSpike, SpikeIcon);
-	}
-	else {
-		SpikeIcon->SetVisibility(ESlateVisibility::Hidden);
-	}
+	UpdateSpike();
 }
 
 void UMinimapRadarUI::UpdateBombAreaLabels()
@@ -84,6 +72,30 @@ void UMinimapRadarUI::UpdateBombAreaLabels()
 
 	ClampWidgetToMap(AbsPointA, A_Lb);
 	ClampWidgetToMap(AbsPointB, B_Lb);
+}
+
+void UMinimapRadarUI::UpdateSpike()
+{
+	// handled in NativeTick
+	// check if spike drop on map
+	auto Spike = UGameManager::Get(GetWorld())->GetPickupSpike();
+
+	if (!SpikeIcon) return;
+
+	AMyPlayerState* MyPS = CachedPC->GetPlayerState<AMyPlayerState>();
+	if (!MyPS) return;
+
+	SpikeIcon->SetVisibility(ESlateVisibility::Hidden);
+	if (MyPS->GetTeamId() != ETeamId::Attacker)
+	{
+		return; // only attacker can see spike on minimap
+	}
+
+	if (Spike) {
+		SpikeIcon->SetVisibility(ESlateVisibility::Visible);
+		const FVector2D AbsSpike = WorldToMinimapAbsolute(Spike->GetActorLocation());
+		ClampWidgetToMap(AbsSpike, SpikeIcon);
+	}
 }
 
 void UMinimapRadarUI::ClampWidgetToMap(const FVector2D& AbsPoint, UWidget * LabelWidget) {
@@ -129,15 +141,6 @@ void UMinimapRadarUI::UpdatePlayerDots()
 	AMyPlayerState* MyPS = CachedPC->GetPlayerState<AMyPlayerState>();
 	AActor* ViewTarget = CachedPC->GetViewTarget();
 	if (!ViewTarget || !MyPS) return;
-	
-	if (ABaseCharacter* ViewChar = Cast<ABaseCharacter>(ViewTarget))
-	{
-		bool bHasSpike = false;
-		if (UInventoryComponent* WC = ViewChar->GetInventoryComponent())
-		{
-			bHasSpike = WC->HasSpike();
-		}
-	}
 
 	if (MyPS) {
 		MyTeamId = MyPS->GetTeamId();
@@ -185,7 +188,16 @@ void UMinimapRadarUI::UpdatePlayerDots()
 		}
 
 		Dot->SetRenderTransformAngle(AngleYaw);
-		Dot->UpdateData(bIsSelf, false, false);
+
+		ABaseCharacter* Char = Cast<ABaseCharacter>(Pawn);
+		if (!Char) continue;
+		bool bHasSpike = false;
+		
+		if (UInventoryComponent* WC = Char->GetInventoryComponent())
+		{
+			bHasSpike = WC->HasSpike();
+		}
+		Dot->UpdateData(bIsSelf, Char->IsDead(), bHasSpike);
 	}
 }
 

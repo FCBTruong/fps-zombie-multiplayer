@@ -140,6 +140,7 @@ void ASpikeMode::StartRound()
 	P.Location = SpawnLocation;
 
 	APickupItem* PickupActor = GMR->CreatePickupActor(P);
+	PickupActor->SetIsActive(true);
 	UE_LOG(LogTemp, Warning, TEXT("Object address = %p"), PickupActor);
 	
 	if (BotManager) {
@@ -409,6 +410,7 @@ void ASpikeMode::GenerateInitialWeapons()
 			P.Location = CenterPos + FVector(0.f, StartOffset + i * Distance, 0.f);
 
 			APickupItem* PickupActor = GMR->CreatePickupActor(P);
+			PickupActor->SetIsActive(true);
 			UE_LOG(LogTemp, Warning, TEXT("Pickup %d address = %p"), i, PickupActor);
 		}
 	}

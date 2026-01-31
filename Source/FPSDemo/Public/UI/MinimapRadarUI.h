@@ -54,6 +54,7 @@ public:
 	void UpdateBombAreaLabels();
 	void ClampWidgetToMap(const FVector2D& AbsPoint, UWidget* LabelWidget);
 	void UpdatePlayerDots();
+	void UpdateSpike();
 	FVector2D WorldToMinimapAbsolute(const FVector& WorldPos) const;
 	FVector2D WorldToMinimapLocal(const FVector& WorldPos) const;
 

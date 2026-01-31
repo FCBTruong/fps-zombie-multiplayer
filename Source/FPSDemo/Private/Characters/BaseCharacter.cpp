@@ -627,28 +627,25 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	}
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     
-    /* const FArmorState* Armor = InventoryComp->GetArmorState();
-    if (Armor)
+    FArmorState& Armor = InventoryComp->GetArmorStateMutable();
+    if (Armor.ArmorPoints > 0)
     {
-        if (Armor->ArmorPoints > 0)
+        float DamageToHealth = ActualDamage * Armor.ArmorRatio;
+        float DamageToArmor = (ActualDamage - DamageToHealth) * Armor.ArmorEfficiency;
+
+        if (DamageToArmor >= Armor.ArmorPoints)
         {
-            float DamageToHealth = ActualDamage * Armor->ArmorRatio;
-            float DamageToArmor = (ActualDamage - DamageToHealth) * Armor->ArmorEfficiency;
+            float Overflow = DamageToArmor - Armor.ArmorPoints;
+            DamageToHealth += Overflow;
+            Armor.ArmorPoints = 0.0f;
+        }
+        else
+        {
+            Armor.ArmorPoints -= DamageToArmor;
+        }
 
-            if (DamageToArmor >= Armor->ArmorPoints)
-            {
-                float Overflow = DamageToArmor - Armor->ArmorPoints;
-                DamageToHealth += Overflow;
-                Armor->ArmorPoints = 0.0f;
-            }
-            else
-            {
-                Armor->ArmorPoints -= DamageToArmor;
-            }
-
-            ActualDamage = DamageToHealth;
-		}
-	}*/
+        ActualDamage = DamageToHealth;
+	}
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     LastHitByController = EventInstigator;
 	bLastHitWasHeadshot = false;
@@ -796,6 +793,16 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
             AudioComp->PlayHeroDeath();
         }
     }
+    else if (GetCharacterRole() == ECharacterRole::Zombie) {
+        if (AudioComp) {
+            AudioComp->PlayZombieDeath();
+        }
+	}
+    else {
+        if (AudioComp) {
+            AudioComp->PlaySoldierDeath();
+        }
+    }
 
     if (IsLocallyControlled()) {
         AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
@@ -863,6 +870,9 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation, const FVector& HitN
             CachedCharacterAsset->BloodFx,
             HitLocation
         );
+    }
+    if (CachedCharacterAsset->AnimMontage_HitReact) {
+        PlayAnimMontage(CachedCharacterAsset->AnimMontage_HitReact);
     }
     if (CachedCharacterAsset->HitFx)
     {

@@ -40,6 +40,7 @@ public:
     const FWeaponState& GetPistolState() const { return PistolState; }
     const FWeaponState& GetMeleeState() const { return MeleeState; }
     const FArmorState& GetArmorState() const { return ArmorState; }
+	FArmorState& GetArmorStateMutable() { return ArmorState; }
 
     FWeaponState* GetWeaponStateByItemId(EItemId ItemId);
     const FWeaponState* GetWeaponStateByItemId(EItemId ItemId) const;

@@ -35,6 +35,13 @@ void UInventoryComponent::InitBasicWeapon()
     PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
     PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
 	PistolState.MaxAmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
+
+	const UItemConfig* ArmorItem = UItemsManager::Get(GetWorld())->GetItemById(EItemId::KEVLAR_VEST);
+    const UArmorConfig* ArmorData = Cast<UArmorConfig>(ArmorItem);
+    ArmorState.ArmorMaxPoints = ArmorData ? ArmorData->ArmorMaxPoints : 0;
+    ArmorState.ArmorPoints = ArmorState.ArmorMaxPoints;
+    ArmorState.ArmorEfficiency = ArmorData ? ArmorData->ArmorEfficiency : 0.f;
+	ArmorState.ArmorRatio = ArmorData ? ArmorData->ArmorRatio : 0.f;
              
     // log size throwables
 	UE_LOG(LogTemp, Log, TEXT("InventoryComponent Test: Throwables count = %d"), Throwables.Num());
@@ -380,6 +387,7 @@ APickupItem* UInventoryComponent::DropItem(EItemId Id) {
 			Data.AmmoReserve = WeaponState->AmmoReserve;
 		}
 	}
+
     RemoveItem(Id);
 
     APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
@@ -389,6 +397,7 @@ APickupItem* UInventoryComponent::DropItem(EItemId Id) {
     {
         Pickup->PlayerDropInfo(Character);
     }
+	Pickup->SetIsActive(true);
 
 	return Pickup;
 }

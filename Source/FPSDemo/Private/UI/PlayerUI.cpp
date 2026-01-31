@@ -251,6 +251,14 @@ void UPlayerUI::UpdateGrenades(const TArray<EItemId>& GrenadeIds)
     }
 }
 
+void UPlayerUI::UpdateSpikeSlot(bool bHasSpike)
+{
+    if (SpikeSlot)
+    {
+        SpikeSlot->SetVisibility(bHasSpike ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    }
+}
+
 void UPlayerUI::UpdatePistol(const EItemId& ItemId) {
     if (ItemId == EItemId::NONE) {
         Pistol->SetVisibility(ESlateVisibility::Collapsed);
@@ -686,7 +694,7 @@ void UPlayerUI::OnSwitchSide() {
         {
             SwitchSideEffPn->SetVisibility(ESlateVisibility::Hidden);
         },
-        4.0f,
+        5.0f,
         false
     );
 }

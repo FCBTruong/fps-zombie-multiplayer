@@ -79,11 +79,16 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!bIsActive)
+	{
+		return;
+	}
 	// only allow on server
 	if (!HasAuthority())
 	{
 		return;
 	}
+
 	UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));
 	if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
 	{

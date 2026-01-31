@@ -130,6 +130,22 @@ void UCharAudioComponent::PlayHeroDeath()
     PlaySound3D(CachedCharacterAsset->Audio_HeroDead);
 }
 
+void UCharAudioComponent::PlayZombieDeath()
+{
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlaySound3D(CachedCharacterAsset->Audio_SoldierDead);
+}
+
+void UCharAudioComponent::PlaySoldierDeath()
+{
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlaySound3D(CachedCharacterAsset->Audio_SoldierDead);
+}
+
 void UCharAudioComponent::PlayHeroSpawn()
 {
     if (!CachedCharacterAsset) {

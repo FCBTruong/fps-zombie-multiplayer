@@ -30,6 +30,8 @@ public:
 	void PlaySound3D(USoundBase* Sound); // at actor location
 	void PlayZombieSpawn();
 	void PlayHeroDeath();
+	void PlayZombieDeath();
+	void PlaySoldierDeath();
 	void PlayHeroSpawn();
 protected:
     virtual void BeginPlay() override;
