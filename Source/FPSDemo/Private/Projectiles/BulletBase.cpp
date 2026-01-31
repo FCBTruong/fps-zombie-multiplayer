@@ -94,10 +94,21 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 
 
     // spawn decal
-    if (HitDecal) {
-        UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal,
-            FVector(5.f), Hit.ImpactPoint,
-            Hit.ImpactNormal.Rotation(), 10.0f);
+    if (OtherActor->IsA<APawn>() == false) {
+        if (HitDecal) {
+            UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal,
+                FVector(5.f), Hit.ImpactPoint,
+                Hit.ImpactNormal.Rotation(), 10.0f);
+        }
+
+        if (HitSurfaceSound) {
+            UGameplayStatics::PlaySoundAtLocation(this, HitSurfaceSound, Hit.ImpactPoint);
+        }
+    }
+    else {
+        if (Data->HitBodySound) {
+            UGameplayStatics::PlaySoundAtLocation(this, Data->HitBodySound, Hit.ImpactPoint);
+        }
     }
 
     // blood fx
@@ -124,6 +135,10 @@ void ABulletBase::InitFromData(UBulletData* InData, FVector FireDestination)
         {
             HitDecal = Data->HitDecal;
         }
+        if (Data->HitSurfaceSound)
+        {
+            HitSurfaceSound = Data->HitSurfaceSound;
+		}
     }
 
     FireTowards(FireDestination);
@@ -138,7 +153,7 @@ void ABulletBase::FireTowards(const FVector& Target)
     ProjectileMovement->SetVelocityInLocalSpace(FVector::ForwardVector * ProjectileMovement->InitialSpeed);
     ProjectileMovement->Activate(true);
 	UGameManager* GMR = UGameManager::Get(GetWorld());  
-    UNiagaraSystem* BulletTrailNS = GMR->GlobalData->BulletTrailNS;
+  /*  UNiagaraSystem* BulletTrailNS = GMR->GlobalData->BulletTrailNS;
     if (BulletTrailNS)
     {
         UNiagaraComponent* Trail = UNiagaraFunctionLibrary::SpawnSystemAttached(
@@ -150,5 +165,5 @@ void ABulletBase::FireTowards(const FVector& Target)
             EAttachLocation::SnapToTarget,
             true
         );
-    }
+    }*/
 }

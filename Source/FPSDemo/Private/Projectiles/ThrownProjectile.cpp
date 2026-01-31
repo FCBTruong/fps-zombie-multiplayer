@@ -7,6 +7,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Items/ThrowableConfig.h"
 #include "Game/ItemsManager.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 AThrownProjectile::AThrownProjectile()
@@ -121,6 +122,9 @@ void AThrownProjectile::LaunchProjectile(FVector LaunchVelocity, AActor* Instiga
 void AThrownProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(AThrownProjectile, bIsExploded);
+    DOREPLIFETIME(AThrownProjectile, bDidHit);
 }
 
 // Server function to handle explosion

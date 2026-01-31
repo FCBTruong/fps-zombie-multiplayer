@@ -321,13 +321,6 @@ void UEquipComponent::HandleDropItem() {
         Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
     }
 
-    if (ActiveItemId == EItemId::SPIKE) {
-        ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
-
-        if (SpikeGM) {
-            SpikeGM->NotifySpikeDropped(Character);
-        }
-    }
     ActiveItemId = EItemId::NONE;
  
     // refresh overlapping actors

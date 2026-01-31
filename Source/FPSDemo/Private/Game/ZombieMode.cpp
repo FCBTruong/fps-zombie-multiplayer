@@ -184,12 +184,16 @@ void AZombieMode::EndRound(ETeamId WinningTeam)
 	Super::EndRound(WinningTeam);
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (GS)
+	if (!GS)
 	{
-		GS->SetMatchState(EMyMatchState::ROUND_ENDED);
-		GS->Multicast_RoundResult(WinningTeam);
+		return;
 	}
-
+	if (GS->GetMatchState() == EMyMatchState::ROUND_ENDED)
+	{
+		return; // already ended
+	}
+	GS->SetMatchState(EMyMatchState::ROUND_ENDED);
+	GS->Multicast_RoundResult(WinningTeam);
 	GetWorld()->GetTimerManager().ClearTimer(FightStateTimerHandle);
 
 	// start new round after some delay
@@ -245,21 +249,6 @@ void AZombieMode::OnCharacterKilled(class AController* Killer, class ABaseCharac
 
 AActor* AZombieMode::ChoosePlayerStart_Implementation(AController* Player)
 {
-	UE_LOG(LogTemp, Warning, TEXT("DEBUGXX: ChoosePlayerStart_Implementation..."));
-	AMyPlayerState* PS = Player->GetPlayerState<AMyPlayerState>();
-
-	if (!PS) {
-		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in ChoosePlayerStart_Implementation"));
-		return Super::ChoosePlayerStart_Implementation(Player); // fallback
-	}
-
-	AActorManager* AM = AActorManager::Get(GetWorld());
-
-	APlayerStart* PlayerStart = AM->GetRandomZombieStart();
-	if (PlayerStart) {
-		return PlayerStart;
-	}
-
 	return Super::ChoosePlayerStart_Implementation(Player); // fallback
 }
 
@@ -459,4 +448,24 @@ void AZombieMode::StartSpectating(ABaseCharacter* VictimPawn) {
 
 		
 		});
+}
+
+void AZombieMode::RestartPlayer(AController* NewPlayer)
+{
+	if (!NewPlayer)
+	{
+		return;
+	}
+	AActorManager* AM = AActorManager::Get(GetWorld());
+
+	FVector Location = AM->RandomLocationOnMap();
+	FRotator Rotation = FRotator::ZeroRotator;
+	FTransform SpawnTransform(Rotation, Location);
+
+	APawn* Pawn = SpawnDefaultPawnAtTransform(NewPlayer, SpawnTransform);
+
+	if (Pawn)
+	{
+		NewPlayer->Possess(Pawn);
+	}
 }

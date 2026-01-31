@@ -75,6 +75,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Sound")
 	USoundBase* ReloadMagSound = nullptr;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UNiagaraSystem* BulletTrailNS;
+
 	// ===== Recoil =====
 	// Base accuracy (deg)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Recoil")

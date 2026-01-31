@@ -47,6 +47,7 @@ class UPostProcessComponent;
 class UItemConfig;
 class URoleComponent;
 class UItemUseComponent;
+class UTextRenderComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
 
@@ -161,9 +162,6 @@ protected:
 
     UPROPERTY(Transient)
     TObjectPtr<UCharacterAsset> CachedCharacterAsset;
-
-    UPROPERTY(VisibleAnywhere)
-    UPostProcessComponent* FlashPP = nullptr;
 protected:
     // ===== Runtime State =====
     bool bLastHitWasHeadshot;
@@ -192,6 +190,9 @@ protected:
 
     UPROPERTY(Transient)
     TWeakObjectPtr<AActor> DeathCameraProxy;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UTextRenderComponent* NameText;
 protected:
 	// ===== Replicated Properties =====
     UPROPERTY(ReplicatedUsing = OnRep_IsAiming)
@@ -231,6 +232,7 @@ protected:
 	bool IsSpikeMode() const;
     void BecomeHero_Internal();
     void PlayZombieSpawnEffects();
+	void UpdateNameTextRotation();
 
     UFUNCTION(BlueprintPure)
     EEquippedAnimState GetEquippedAnimState() const;

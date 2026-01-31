@@ -106,9 +106,17 @@ void BotStateManager::OnSpikePickedUp(ABaseCharacter* Player)
 
 void BotStateManager::OnSpikeDropped()
 {
+	TArray<ABotAIController*> Defenders;
 	for (ABotAIController* Bot : ManagedBots)
 	{
-		// Bot->ReactToSpikeDropped();
+		AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
+		if (!PS) continue;
+
+		ABaseCharacter* BotCharacter = Cast<ABaseCharacter>(Bot->GetPawn());
+		if (!BotCharacter || BotCharacter->IsDead()) continue;
+
+		Bot->SetSpikeRole(EBotRole::A_FindSpike);
+		break;
 	}
 }
 
@@ -175,7 +183,7 @@ void BotStateManager::OnStartRound(AActor* SpikeActor)
 	{
 		int32 RandomIndex = FMath::RandRange(0, Attackers.Num() - 1);
 		ABotAIController* SpikeCarrierBot = Attackers[RandomIndex];
-		SpikeCarrierBot->SetSpikeRole(EBotRole::A_Carrier);
+		SpikeCarrierBot->SetSpikeRole(EBotRole::A_FindSpike);
 	}
 }
 

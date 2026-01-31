@@ -17,6 +17,7 @@ public:
 	AThrownProjectile();
 
 protected:
+	UPROPERTY(Replicated)
 	bool bDidHit = false;
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -26,6 +27,8 @@ protected:
 	UPROPERTY() UProjectileMovementComponent* Projectile;
 	UPROPERTY() UStaticMeshComponent* WeaponMesh;
 	const UThrowableConfig* Data;
+
+	UPROPERTY(Replicated)
 	bool bIsExploded = false;
 
 	UFUNCTION()

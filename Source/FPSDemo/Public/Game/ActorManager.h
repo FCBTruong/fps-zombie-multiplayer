@@ -50,8 +50,6 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Setup")
 	TArray<ATargetPoint*> HoldPointsB;
 
-	TArray<ATargetPoint*> ScoutLocations;
-
 	TSet<APlayerStart*> StartUsage;
 
 	TArray<APlayerStart*> ZombieStartLocations;
@@ -60,15 +58,13 @@ protected:
 
 	APlayerStart* GetRandomStart(const TArray<APlayerStart*>& Starts);
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	ATriggerBox* GetAreaBombA() const { return TriggerBoxAreaA; };
 	ATriggerBox* GetAreaBombB() const { return TriggerBoxAreaB; };
 	FVector GetSpikeStartLocation() const;
 	APlayerStart* GetRandomAttackerStart();
 	APlayerStart* GetRandomDefenderStart();
-	APlayerStart* GetRandomZombieStart();
 	ATargetPoint* GetRandomZombieDefensePoint() const;
+	FVector RandomLocationOnMap() const;
 	void ResetPlayerStartsUsage();
 
 	UPROPERTY(EditInstanceOnly, Category = "Setup")

@@ -388,7 +388,7 @@ void ULobbyUI::OnPracticeBtnClicked()
 {
 	UGameplayStatics::OpenLevel(
 		this,
-		FGameConstants::LEVEL_PRACTICE
+		FName(*(FGameConstants::LEVEL_PRACTICE.ToString() + TEXT("?listen")))
 	);
 }
 

@@ -153,6 +153,10 @@ void UMinimapRadarUI::UpdatePlayerDots()
 
 		if (!PS || !Dot) continue;
 
+		APawn* Pawn = PS->GetPawn();
+		if (!Pawn) continue;
+		ABaseCharacter* Char = Cast<ABaseCharacter>(Pawn);
+		if (!Char) continue;
 		AMyPlayerState* MyTeammatePS = Cast<AMyPlayerState>(PS);
 		if (!MyTeammatePS) continue;
 		if (MyTeammatePS->GetTeamId() != MyTeamId) {
@@ -162,9 +166,6 @@ void UMinimapRadarUI::UpdatePlayerDots()
 		}
 		
 		Dot->SetVisibility(ESlateVisibility::Visible);
-
-		APawn* Pawn = PS->GetPawn();
-		if (!Pawn) continue;
 
 		// World -> minimap
 		const FVector2D AbsSpike = WorldToMinimapAbsolute(Pawn->GetActorLocation());
@@ -189,8 +190,6 @@ void UMinimapRadarUI::UpdatePlayerDots()
 
 		Dot->SetRenderTransformAngle(AngleYaw);
 
-		ABaseCharacter* Char = Cast<ABaseCharacter>(Pawn);
-		if (!Char) continue;
 		bool bHasSpike = false;
 		
 		if (UInventoryComponent* WC = Char->GetInventoryComponent())

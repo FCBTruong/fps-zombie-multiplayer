@@ -63,6 +63,11 @@ void ASpike::BeginPlay()
     if (SpringArmComp) {
         CamPitch = SpringArmComp->GetRelativeRotation().Pitch;
     }
+
+	ASpikeMode* SpikeMode = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(this));
+    if (SpikeMode) {
+		SpikeMode->OnCharacterDead.AddUObject(this, &ASpike::OnCharacterDead);
+    }
 }
 
 void ASpike::Tick(float DeltaTime)
@@ -299,4 +304,26 @@ void ASpike::AddCameraYaw(float Value)
     if (!SpringArmComp || FMath::IsNearlyZero(Value)) return;
     CamYaw += Value * LookSensitivity;
     SpringArmComp->SetRelativeRotation(FRotator(CamPitch, CamYaw, 0.f));
+}
+
+void ASpike::OnCharacterDead(ABaseCharacter* DeadCharacter)
+{
+    if (!HasAuthority()) {
+        return;
+    }
+    if (!DeadCharacter) {
+        return;
+    }
+    APawn* Pawn = Cast<APawn>(DeadCharacter);
+    if (!Pawn) {
+        return;
+    }
+    
+    // if defuser is dead, cancel defuse
+    if (bIsDefuseInProgress && DefusingComponent) {
+        APawn* DefusePawn = Cast<APawn>(DefusingComponent->GetOwner());
+        if (DefusePawn && DefusePawn == Pawn) {
+            CancelDefuse();
+        }
+    }
 }

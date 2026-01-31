@@ -22,6 +22,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	UMaterialInterface* HitDecal;
 
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	USoundBase* HitSurfaceSound;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 	float Damage = 10.f;
 public:	

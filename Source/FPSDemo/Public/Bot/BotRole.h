@@ -12,10 +12,8 @@ enum class EBotRole : uint8
   
     // ATTACKER
     A_Carrier   UMETA(DisplayName = "Attacker - Carrier"),
-    A_Escort    UMETA(DisplayName = "Attacker - Escort"),
 	A_FindSpike UMETA(DisplayName = "Attacker - FindSpike"),
 
     // COMMON
-    Scout     UMETA(DisplayName = "Scout"),
-    Holder    UMETA(DisplayName = "Holder"),
+    Scout     UMETA(DisplayName = "Scout")
 };

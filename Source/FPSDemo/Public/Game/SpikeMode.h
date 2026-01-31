@@ -26,6 +26,7 @@ protected:
 	FTimerHandle SwitchSideTimerHandle;
 	FTimerHandle RoundTimerHandle;
 	void OnRoundTimeExpired();
+	virtual void AutoBuyForBots() override;
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 public:

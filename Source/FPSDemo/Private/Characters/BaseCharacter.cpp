@@ -59,6 +59,7 @@
 #include "Components/ItemUseComponent.h"
 #include "Game/ZombieMode.h"
 #include "Spike/Spike.h"
+#include "Components/TextRenderComponent.h"
 
 const FVector ABaseCharacter::TPSMeshRelLoc(0.f, 0.f, -88.f);
 const FRotator ABaseCharacter::TPSMeshRelRot(0.f, -90.f, 0.f);
@@ -128,8 +129,8 @@ ABaseCharacter::ABaseCharacter()
     }
     if (FpsPivot) {
         // set same eye position
-        BaseEyeHeight = 60;
-        CrouchedEyeHeight = 60;
+        BaseEyeHeight = 70;
+        CrouchedEyeHeight = 70;
 		FpsPivot->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
     }
     if (MeshFps)
@@ -138,10 +139,18 @@ ABaseCharacter::ABaseCharacter()
         MeshFps->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
     }
 
-    FlashPP = CreateDefaultSubobject<UPostProcessComponent>(TEXT("FlashPP"));
-    FlashPP->SetupAttachment(CameraFps);
-    FlashPP->bUnbound = false;
-    FlashPP->BlendWeight = 1.0f;
+    NameText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("NameText"));
+    NameText->SetupAttachment(GetMesh()); // attach to character mesh (follows animations)
+
+    NameText->SetHorizontalAlignment(EHTA_Center);
+    NameText->SetVerticalAlignment(EVRTA_TextCenter);
+    NameText->SetWorldSize(15.f);
+    NameText->SetTextRenderColor(FColor::Yellow);
+
+    // Place above head (tweak values for your skeleton)
+    NameText->SetRelativeLocation(FVector(0.f, 0.f, 210.f));
+   
+    NameText->SetText(FText::FromString(TEXT("Player")));
 }
 
 // Called when the game starts or when spawned
@@ -331,6 +340,25 @@ void ABaseCharacter::Tick(float DeltaTime)
     }
     // logic sound
     UpdateFootstepSound(DeltaTime);
+
+    if (!IsNetMode(NM_DedicatedServer))
+    {
+        UpdateNameTextRotation();
+    }
+}
+
+void ABaseCharacter::UpdateNameTextRotation()
+{
+    if (!NameText) return;
+
+    APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+    if (!PC || !PC->PlayerCameraManager) return;
+
+    const FVector CamLoc = PC->PlayerCameraManager->GetCameraLocation();
+    const FVector TextLoc = NameText->GetComponentLocation();
+
+    const FRotator LookAt = (CamLoc - TextLoc).Rotation();
+    NameText->SetWorldRotation(FRotator(0.f, LookAt.Yaw, 0.f));
 }
 
 void ABaseCharacter::UpdateFootstepSound(float DeltaTime) {
@@ -592,10 +620,20 @@ void ABaseCharacter::UpdateMaxWalkSpeed() {
         Speed = SLOW_WALK_SPEED;
     }
     else {
-        Speed = NORMAL_WALK_SPEED * GetSpeedWalkRatio();
+        Speed = NORMAL_WALK_SPEED;
+		// sub weight penalty
+        const UItemConfig* Config = EquipComp->GetActiveItemConfig();
+        if (Config) {
+            Speed -= Config->Weight;
+        }
+
+        if (bIsAiming) {
+            Speed *= 0.2f; // aiming penalty
+        }
+
         if (RoleComp) {
             if (RoleComp->GetRole() == ECharacterRole::Zombie) {
-                Speed *= 1.1f; // zombie role moves faster
+             //   Speed *= 1.1f; // zombie role moves faster
 			}
         }
     }
@@ -787,6 +825,10 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
     GetMesh()->SetSimulatePhysics(true);
     GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
 
+    if (NameText) {
+        NameText->SetVisibility(false);
+    }
+
     // if is hero, play sound hero dead
     if (GetCharacterRole() == ECharacterRole::Hero) {
         if (AudioComp) {
@@ -897,6 +939,7 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation, const FVector& HitN
 
 void ABaseCharacter::PlayStunEffect(const float& Strength) 
 {
+	UE_LOG(LogTemp, Warning, TEXT("PlayStunEffect called with Strength: %f"), Strength);
     if (!CachedCharacterAsset) {
         return;
 	}
@@ -904,18 +947,8 @@ void ABaseCharacter::PlayStunEffect(const float& Strength)
         return;
     }
 	
-    UE_LOG(
-        LogTemp,
-        Warning,
-        TEXT("PlayStunEffectPlaying [STUN][%s] Character=%s Strength=%f"),
-        HasAuthority() ? TEXT("SERVER") : TEXT("CLIENT"),
-        *GetName(),
-        Strength
-    );
-
     if (CachedCharacterAsset->StunCurve)
     {
-		UE_LOG(LogTemp, Warning, TEXT("PlayStunEffectPlaying stun effect with Strength: %f"), Strength);
         float NewDuration = BaseStunDuration * Strength;
         // Restart the timeline from the beginning
         StunTimeline.SetPlayRate(BaseStunDuration / FMath::Max(NewDuration, 0.01f));
@@ -929,8 +962,6 @@ void ABaseCharacter::OnStunTimelineUpdate(float Value)
     APlayerController* PC = GetWorld()->GetFirstPlayerController();
     if (!FlashMID || !PC || PC->GetViewTarget() != this)
         return;
-
-	UE_LOG(LogTemp, Warning, TEXT("OnStunTimelineUpdate called with Value: %f"), Value);
 
     FlashMID->SetScalarParameterValue(
         TEXT("Intensity"),
@@ -1625,10 +1656,20 @@ void ABaseCharacter::SetupPerception()
 
 void ABaseCharacter::SetupFlashPostProcess()
 {
-    if (!CachedCharacterAsset || !CachedCharacterAsset->FlashPPMat || !FlashPP) return;
+    if (!CachedCharacterAsset || !CachedCharacterAsset->FlashPPMat) return;
 
     FlashMID = UMaterialInstanceDynamic::Create(CachedCharacterAsset->FlashPPMat, this);
-    FlashPP->Settings.AddBlendable(FlashMID, 1.0f);
+
+    // Apply to the active view camera (FPS here; if you can switch, apply to both)
+    if (CameraFps)
+    {
+        CameraFps->PostProcessSettings.AddBlendable(FlashMID, 1.0f);
+    }
+    if (CameraTps)
+    {
+        CameraTps->PostProcessSettings.AddBlendable(FlashMID, 1.0f);
+    }
+
     FlashMID->SetScalarParameterValue(TEXT("Intensity"), 0.f);
 }
 
@@ -1687,7 +1728,6 @@ void ABaseCharacter::SetupInitialInventory()
     }
 
     UE_LOG(LogTemp, Warning, TEXT("BeginPlay: Added test items to inventory"));
-
 }
 
 void ABaseCharacter::MulticastRevive_Implementation()

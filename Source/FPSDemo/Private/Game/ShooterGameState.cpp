@@ -9,6 +9,9 @@
 #include "Items/ItemConfig.h"
 #include "UI/PlayerUI.h"
 #include "Spike/Spike.h"
+#include "Game/GameManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Game/GlobalDataAsset.h"
 
 AShooterGameState::AShooterGameState()
 {
@@ -79,6 +82,15 @@ void AShooterGameState::Multicast_RoundResult_Implementation(ETeamId WinningTeam
                 bool IsWinner = false;
                 if (MyPC->GetTeamId() == WinningTeam) {
                     IsWinner = true;
+                }
+
+                // play sound
+                if (UGameManager* GM = UGameManager::Get(GetWorld()))
+                {
+                    if (GM->GlobalData && GM->GlobalData->RoundEndSound)
+                    {
+                        UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->RoundEndSound.Get());
+                    }
                 }
                 ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
             }

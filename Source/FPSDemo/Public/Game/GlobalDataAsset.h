@@ -28,9 +28,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UPlayerUI> PlayerUIClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UNiagaraSystem* BulletTrailNS;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
 	USoundBase* TouchSound;
 
@@ -63,6 +60,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase> PickupSound;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase> RoundEndSound;
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase> MeleeImpactBodySound;

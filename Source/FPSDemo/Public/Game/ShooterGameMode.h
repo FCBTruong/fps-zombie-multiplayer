@@ -11,6 +11,9 @@
 
 class UItemConfig;
 class AShooterGameState;
+class ABaseCharacter;
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnCharacterDead, ABaseCharacter*);
 /**
  * 
  */
@@ -44,6 +47,8 @@ public:
 		return EMatchMode::None;
 	}
 	virtual bool IsDamageAllowed(AController* Killer, AController* Victim) const;
+
+	FOnCharacterDead OnCharacterDead;
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual bool ReadyToStartMatch_Implementation() override;

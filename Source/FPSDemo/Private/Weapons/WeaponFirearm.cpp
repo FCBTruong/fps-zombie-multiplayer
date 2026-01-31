@@ -84,37 +84,32 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 	);
 	Bullet->InitFromData(FC->BulletData, TargetPoint);
 
-	if (bIsFpsView) {
-		UGameManager* GMR = UGameManager::Get(GetWorld());
-		if (!GMR || !GMR->GlobalData) return;
-
-		if (GMR->GlobalData->BulletTrailNS) {
-			UNiagaraComponent* Trail =
-				UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-					GetWorld(),                               // World
-					GMR->GlobalData->BulletTrailNS,           // Niagara System
-					MuzzleLocation,                         // Location (Start)
-					FRotator::ZeroRotator,
-					FVector::OneVector,
-					true,   // AutoDestroy
-					false    // AutoActivate
-				);
-
-			if (!Trail) return;
-
-			// log start and end points
-			Trail->SetVectorParameter(TEXT("MuzzlePosition"), MuzzleLocation);
-			TArray<FVector> ImpactPositions;
-			ImpactPositions.Add(TargetPoint);
-
-			UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
-				Trail,
-				FName("User.ImpactPositions"),
-				ImpactPositions
+	if (FC->BulletTrailNS) {
+		UNiagaraComponent* Trail =
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),                               // World
+				FC->BulletTrailNS,           // Niagara System
+				MuzzleLocation,                         // Location (Start)
+				FRotator::ZeroRotator,
+				FVector::OneVector,
+				true,   // AutoDestroy
+				false    // AutoActivate
 			);
 
-			Trail->Activate(true);
-		}
+		if (!Trail) return;
+
+		// log start and end points
+		Trail->SetVectorParameter(TEXT("MuzzlePosition"), MuzzleLocation);
+		TArray<FVector> ImpactPositions;
+		ImpactPositions.Add(TargetPoint);
+
+		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
+			Trail,
+			FName("User.ImpactPositions"),
+			ImpactPositions
+		);
+
+		Trail->Activate(true);
 	}
 
 	// Play sound

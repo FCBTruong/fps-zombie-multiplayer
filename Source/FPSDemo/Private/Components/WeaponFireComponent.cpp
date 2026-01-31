@@ -432,7 +432,12 @@ FVector UWeaponFireComponent::ComputeShotDirDeterministic(
 	FRandomStream Stream(PerShotSeed);
 
 	const float SpreadDeg = GetTotalSpreadDeg(NowServerTime);
-	const float SpreadRad = FMath::DegreesToRadians(SpreadDeg);
+	float SpreadRad = FMath::DegreesToRadians(SpreadDeg);
+
+	// if crouching, reduce spread by half
+	if (Character && Character->bIsCrouched) {
+		SpreadRad *= 0.5f;
+	}
 
 	return Stream.VRandCone(AimDir, SpreadRad, SpreadRad).GetSafeNormal();
 }

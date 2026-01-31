@@ -13,6 +13,8 @@
 #include "Game/ItemsManager.h"
 #include "Items/FirearmConfig.h"
 #include "Items/ItemConfig.h"
+#include "Components/InventoryComponent.h"
+#include "Components/EquipComponent.h"
 
 void ASpikeMode::StartPlay()
 {
@@ -81,7 +83,9 @@ void ASpikeMode::EndRound(ETeamId WinningTeam)
 		EndGame(WinningTeam);
 		return;
 	}
+	float DelayBeforeNewRound = 4.0f;
 	if (GS->GetCurrentRound() == RoundToSwapSides) {
+		DelayBeforeNewRound += 2.0f; // extra delay for side swap
 		GetWorld()->GetTimerManager().SetTimer(
 			SwitchSideTimerHandle,
 			[this]()
@@ -102,7 +106,7 @@ void ASpikeMode::EndRound(ETeamId WinningTeam)
 		{
 			StartRound();
 		},
-		4.0f,
+		DelayBeforeNewRound,
 		false
 	);
 }
@@ -218,6 +222,7 @@ void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Vi
 {
 	Super::OnCharacterKilled(Killer, VictimPawn, DamageCauser, bWasHeatShot);
 
+	OnCharacterDead.Broadcast(VictimPawn);
 	RegisterCorpse(VictimPawn);
 	VictimPawn->ApplyRealDeath(/*bDropInventory=*/true);
 
@@ -235,6 +240,16 @@ void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Vi
 	bool IsAllTeamDead = CheckAllTeamDead(VictimTeam);
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) {
+		UE_LOG(LogTemp, Warning, TEXT("GameState is null in OnCharacterKilled"));
+		return;
+	}
+	if (GS->GetMatchState() != EMyMatchState::ROUND_IN_PROGRESS &&
+		GS->GetMatchState() != EMyMatchState::SPIKE_PLANTED)
+	{
+		return; // do nothing if round not in progress
+	}
+
 	if (IsAllTeamDead)
 	{
 		ETeamId WinningTeam;
@@ -420,4 +435,40 @@ bool ASpikeMode::IsSpikePlanted() const
 {
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	return GS->GetMatchState() == EMyMatchState::SPIKE_PLANTED;
+}
+
+void ASpikeMode::AutoBuyForBots()
+{
+	if (!BotManager) return;
+	TArray<ABotAIController*> Bots = BotManager->GetManagedBots();
+
+	TArray<EItemId> InitialWeapons = {
+		EItemId::RIFLE_AK_47,
+		EItemId::RIFLE_RUSSIAN_AS_VAL,
+		EItemId::RIFLE_M16A,
+		EItemId::RIFLE_QBZ
+	};
+	for (ABotAIController* Bot : Bots)
+	{
+		if (!Bot) continue;
+		ABaseCharacter* BotChar = Cast<ABaseCharacter>(Bot->GetPawn());
+		if (!BotChar) continue;
+		UInventoryComponent* InventoryComp = BotChar->GetInventoryComponent();
+		if (!InventoryComp) continue;
+
+		InventoryComp->AddItemFromShop(FPickupData{ 
+			.Id = -1, 
+			.ItemId = InitialWeapons[FMath::RandRange(0, InitialWeapons.Num() - 1)],
+			.Amount = 1,
+			.AmmoInClip = 30,
+			.AmmoReserve = 90
+		});
+
+		UEquipComponent* EquipComp = BotChar->GetEquipComponent();
+
+		if (EquipComp)
+		{
+			EquipComp->AutoSelectBestWeapon();
+		}
+	}
 }

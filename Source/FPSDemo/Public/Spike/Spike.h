@@ -9,6 +9,7 @@
 
 class USpringArmComponent;
 class USpikeComponent;
+class ABaseCharacter;
 UCLASS()
 class FPSDEMO_API ASpike : public AActor
 {
@@ -93,4 +94,5 @@ public:
 
 private:
 	void OnCompleteExplode();
+	void OnCharacterDead(ABaseCharacter* DeadCharacter);
 };

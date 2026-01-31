@@ -24,6 +24,7 @@ protected:
 	) override;
 	virtual void EndRound(ETeamId WinningTeam) override;
 	virtual void EndGame(ETeamId WinningTeam) override;
+	virtual void RestartPlayer(AController* NewPlayer) override;
 
 	void RandomZombie();
 	void EnterFightState();

@@ -7,13 +7,12 @@
 #include "GameFramework/PlayerStart.h"
 #include "Engine/TriggerBox.h"
 #include "Engine/TargetPoint.h"
+#include "NavigationSystem.h"
 
 // Sets default values
 AActorManager::AActorManager()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
+	PrimaryActorTick.bCanEverTick = false;
 }
 
 // Called when the game starts or when spawned
@@ -38,7 +37,6 @@ void AActorManager::BeginPlay()
         *GetWorld()->GetName()
     );
 
-    ScoutLocations.Empty();
 	ZombieStartLocations.Empty();
 
     TArray<AActor*> FoundActors;
@@ -57,11 +55,7 @@ void AActorManager::BeginPlay()
             continue;
         }
 
-        if (TargetPoint->ActorHasTag(TEXT("ScoutPoint")))
-        {
-            ScoutLocations.Add(TargetPoint);
-        }
-        else if (TargetPoint->ActorHasTag(TEXT("ZombieDefensePoint")))
+        if (TargetPoint->ActorHasTag(TEXT("ZombieDefensePoint")))
         {
             ZombieDefenseLocations.Add(TargetPoint);
         }
@@ -94,13 +88,6 @@ void AActorManager::BeginPlay()
         }
     }
     UE_LOG(LogTemp, Warning, TEXT("ActorManager: Found %d Zombie start actors"), ZombieStartLocations.Num());
-}
-
-// Called every frame
-void AActorManager::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 FVector AActorManager::GetSpikeStartLocation() const
@@ -192,29 +179,7 @@ FVector AActorManager::GetRandomHoldLocationNearBombSite(FName BombSiteName) con
 
 FVector AActorManager::GetRandomScoutLocation() const
 {
-    if (ScoutLocations.Num() == 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ScoutLocations is empty"));
-        return FVector::ZeroVector;
-    }
-
-    const int32 Index = FMath::RandRange(0, ScoutLocations.Num() - 1);
-    ATargetPoint* Target = ScoutLocations[Index];
-
-    if (!IsValid(Target))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Invalid ScoutLocation at index %d"), Index);
-        return FVector::ZeroVector;
-    }
-
-    return Target->GetActorLocation();
-}
-
-APlayerStart* AActorManager::GetRandomZombieStart() {
-	if (ZombieStartLocations.Num() == 0)
-		return nullptr;
-	APlayerStart* Chosen = ZombieStartLocations[FMath::RandRange(0, ZombieStartLocations.Num() - 1)];
-	return Chosen;
+	return RandomLocationOnMap();
 }
 
 ATargetPoint* AActorManager::GetRandomZombieDefensePoint() const {
@@ -223,4 +188,35 @@ ATargetPoint* AActorManager::GetRandomZombieDefensePoint() const {
         return nullptr;
     ATargetPoint* Chosen = ZombieDefenseLocations[FMath::RandRange(0, ZombieDefenseLocations.Num() - 1)];
     return Chosen;
+}
+
+FVector AActorManager::RandomLocationOnMap() const {
+	auto WorldContext = Cast<UObject>(this);
+    constexpr float Radius = 50000.f;
+    constexpr int32 MaxTries = 20;
+
+    if (!WorldContext) return FVector::ZeroVector;
+
+    UWorld* World = WorldContext->GetWorld();
+    if (!World) return FVector::ZeroVector;
+
+    UNavigationSystemV1* Nav = UNavigationSystemV1::GetCurrent(World);
+    if (!Nav) return FVector::ZeroVector;
+
+    FVector Origin = FVector::ZeroVector;
+    if (const AActor* AsActor = Cast<AActor>(WorldContext))
+    {
+        Origin = AsActor->GetActorLocation();
+    }
+
+    FNavLocation P;
+    for (int32 i = 0; i < MaxTries; ++i)
+    {
+        if (Nav->GetRandomReachablePointInRadius(Origin, Radius, P))
+        {
+            return P.Location;
+        }
+    }
+
+    return Origin;
 }

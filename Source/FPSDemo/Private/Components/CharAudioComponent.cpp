@@ -89,7 +89,7 @@ void UCharAudioComponent::PlayDefuseSpike()
 {
     if (!CachedCharacterAsset || !LoopingComp) return;
 
-    LoopingComp->SetSound(CachedCharacterAsset->Audio_DefuseSpike);
+    LoopingComp->SetSound(CachedCharacterAsset->Audio_PlantSpike);
     LoopingComp->Play();
 }
 
