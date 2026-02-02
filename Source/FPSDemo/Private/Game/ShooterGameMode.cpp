@@ -7,6 +7,7 @@
 #include "Game/ActorManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Lobby/RoomManager.h"
+#include "Items/ItemConfig.h"
 
 AShooterGameMode::AShooterGameMode()
 {
@@ -152,6 +153,10 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 void AShooterGameMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
     UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in AShooterGameMode"));
+    if (DamageCauser->Id == EItemId::SPIKE) {
+		Killer = nullptr; // spike planting is not counted as kill
+        UE_LOG(LogTemp, Warning, TEXT("DamageCauser is None in NotifyPlayerKilled"));
+	}
 
     AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
     AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;

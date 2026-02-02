@@ -118,6 +118,9 @@ public:
     void SetRoundEndTime(int NewRoundEndTime) {
         RoundEndTime = NewRoundEndTime;
 	}
+    int GetRoundEndTime() const {
+        return RoundEndTime;
+    }
     void SetRoundRemainingTime(int TimeRemaining) {
         RoundEndTime = GetWorld()->GetTimeSeconds() + TimeRemaining;
     }   

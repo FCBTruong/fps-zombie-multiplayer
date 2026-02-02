@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Asset/CharacterVisualSet.h"
 #include "CharacterAsset.generated.h"
 
 class UNiagaraSystem;
@@ -86,45 +87,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UParticleSystem> HeroFx;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	USkeletalMesh* TerroristMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	USkeletalMesh* FpsMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	USkeletalMesh* CounterTerroristMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	USkeletalMesh* ZombieMeshTPS;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	USkeletalMesh* ZombieMeshFPS;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	USkeletalMesh* HeroMeshFPS;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	USkeletalMesh* HeroMeshTPS;
-
-	// anim
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	TSubclassOf<UAnimInstance> ZombieAnimTPS;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	TSubclassOf<UAnimInstance> ZombieAnimFPS;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	TSubclassOf<UAnimInstance> HumanAnimFPS;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	TSubclassOf<UAnimInstance> HumanAnimTPS;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	TSubclassOf<UAnimInstance> HeroAnimFPS;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
-	TSubclassOf<UAnimInstance> HeroAnimTPS;
+	UPROPERTY(EditDefaultsOnly, Category = "Characters")
+	TObjectPtr<UCharacterVisualSet> HeroVisualSet;
+	UPROPERTY(EditDefaultsOnly, Category = "Characters")
+	TObjectPtr<UCharacterVisualSet> SoldierVisualSet;
+	UPROPERTY(EditDefaultsOnly, Category = "Characters")
+	TObjectPtr<UCharacterVisualSet> ZombieVisualSet;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterialInterface* FlashPPMat;

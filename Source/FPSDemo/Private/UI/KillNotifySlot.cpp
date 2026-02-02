@@ -7,7 +7,7 @@
 
 void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState* Victim, const UItemConfig* WeaponConf, bool bIsHeadShot)
 {
-	const FString KillerName = Killer ? Killer->GetPlayerName() : TEXT("Unknown");
+	const FString KillerName = Killer ? Killer->GetPlayerName() : TEXT("");
 	const FString VictimName = Victim ? Victim->GetPlayerName() : TEXT("Unknown");
 
 	UTexture2D* WeaponTex = nullptr;

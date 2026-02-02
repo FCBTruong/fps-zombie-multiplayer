@@ -305,6 +305,10 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 				or (TotalPlayers >= 3 && AliveSoldiers == 1)) {
 				// temporary hard code condition, will refactor later
 				GS->SetHeroPhase(true);
+
+				// add time
+				int TimeEnd = GetWorld()->GetTimeSeconds() + 60; // add 1 minute
+				GS->SetRoundEndTime(TimeEnd);
 			}
 		}
 	}

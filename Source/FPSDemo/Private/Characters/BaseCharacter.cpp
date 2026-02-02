@@ -285,19 +285,6 @@ void ABaseCharacter::ApplyTeamMesh() // TODO later, for spike mode
         return;
     }
     if (MyPS) {
-        USkeletalMesh* NewMesh = nullptr;
-
-        if (MyPS->GetTeamId() == ETeamId::Attacker) {
-            NewMesh = CachedCharacterAsset->TerroristMesh;
-        }
-        else {
-            NewMesh = CachedCharacterAsset->CounterTerroristMesh;
-        }
-        if (NewMesh)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Setting new mesh for team"));
-            GetMesh()->SetSkeletalMesh(NewMesh);
-        }
     }
     else {
         UE_LOG(LogTemp, Warning, TEXT("MyPS is null in SetMeshBaseOnTeam"));
@@ -549,9 +536,9 @@ void ABaseCharacter::RequestStopAiming()
 
 void ABaseCharacter::OnRep_IsAiming()
 {
-    if (IsLocallyControlled()) {
-		return; // already handled locally
-	}
+ //   if (IsLocallyControlled()) {
+	//	return; // already handled locally
+	//}
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_IsAiming: %s"), bIsAiming ? TEXT("true") : TEXT("false"));
 
     if (CameraComp)
@@ -1374,30 +1361,16 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
     if (!CachedCharacterAsset)
         return;
 
-    // Pick meshes/anims
-    USkeletalMesh* NewTpsMesh = nullptr;
-    USkeletalMesh* NewFpsMesh = nullptr;
-    TSubclassOf<UAnimInstance> NewTpsAnim = nullptr;
-    TSubclassOf<UAnimInstance> NewFpsAnim = nullptr;
-
+    UCharacterVisualSet* VisualSet = nullptr;
     // hard code for testing
     //NewRole = ECharacterRole::Hero;
     if (NewRole == ECharacterRole::Zombie)
     {
-        NewTpsMesh = CachedCharacterAsset->ZombieMeshTPS;
-        NewFpsMesh = CachedCharacterAsset->ZombieMeshFPS;
-        NewTpsAnim = CachedCharacterAsset->ZombieAnimTPS;
-        NewFpsAnim = CachedCharacterAsset->ZombieAnimFPS;
+		VisualSet = CachedCharacterAsset->ZombieVisualSet;
     }
     else if (NewRole == ECharacterRole::Hero)
     {
-        // Hero -> use team mesh
-        NewTpsMesh = CachedCharacterAsset->HeroMeshTPS;
-		NewFpsMesh = CachedCharacterAsset->HeroMeshFPS;
-
-        NewTpsAnim = CachedCharacterAsset->HeroAnimTPS;
-        NewFpsAnim = CachedCharacterAsset->HeroAnimFPS;
-
+		VisualSet = CachedCharacterAsset->HeroVisualSet;
         if (CachedCharacterAsset->HeroFx)
         {
             FVector EffectScale(0.4f); // scale
@@ -1419,35 +1392,35 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
     }
     else
     {
-        NewTpsMesh = CachedCharacterAsset->CounterTerroristMesh;
-		NewFpsMesh = CachedCharacterAsset->FpsMesh;
-        NewTpsAnim = CachedCharacterAsset->HumanAnimTPS;    
-        NewFpsAnim = CachedCharacterAsset->HumanAnimFPS;      
+		VisualSet = CachedCharacterAsset->SoldierVisualSet;
     }
 
     // Apply TPS
     if (USkeletalMeshComponent* TpsMesh = GetMesh())
     {
-        if (NewTpsMesh && TpsMesh->GetSkeletalMeshAsset() != NewTpsMesh)
+        if (VisualSet->TpsMesh && TpsMesh->GetSkeletalMeshAsset() != VisualSet->TpsMesh)
         {
-            TpsMesh->SetSkeletalMesh(NewTpsMesh);
+            TpsMesh->SetSkeletalMesh(VisualSet->TpsMesh);
         }
-        if (NewTpsAnim)
+        if (VisualSet->TpsAnimClass)
         {
-            TpsMesh->SetAnimInstanceClass(NewTpsAnim);
+            TpsMesh->SetAnimInstanceClass(VisualSet->TpsAnimClass);
         }
+    }
+    if (!VisualSet) {
+        return;
     }
 
     // Apply FPS
     if (MeshFps)
     {
-        if (NewFpsMesh && MeshFps->GetSkeletalMeshAsset() != NewFpsMesh)
+        if (VisualSet->FpsMesh && MeshFps->GetSkeletalMeshAsset() != VisualSet->FpsMesh)
         {
-            MeshFps->SetSkeletalMesh(NewFpsMesh);
+            MeshFps->SetSkeletalMesh(VisualSet->FpsMesh);
         }
-        if (NewFpsAnim)
+        if (VisualSet->FpsAnimClass)
         {
-            MeshFps->SetAnimInstanceClass(NewFpsAnim);
+            MeshFps->SetAnimInstanceClass(VisualSet->FpsAnimClass);
         }
     }
 
