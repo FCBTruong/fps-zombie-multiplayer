@@ -28,6 +28,7 @@ void UInventoryComponent::BeginPlay()
 void UInventoryComponent::InitBasicWeapon()
 {
     AShooterGameMode* GM = GetWorld()->GetAuthGameMode<AShooterGameMode>();
+	if (!GM) return;
     auto MatchMode = GM->GetMatchMode();
     // Test function to be removed later
     MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;

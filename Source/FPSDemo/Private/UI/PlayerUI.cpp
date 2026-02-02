@@ -382,6 +382,13 @@ void UPlayerUI::ShowWeaponGuide()
 
 void UPlayerUI::ShowScope()
 {
+    if (UGameManager* GM = UGameManager::Get(GetWorld()))
+    {
+        if (GM->GlobalData && GM->GlobalData->ZoomScopeSound)
+        {
+            UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->ZoomScopeSound.Get());
+        }
+    }
     ScopeUI->ShowScope();
 }
 

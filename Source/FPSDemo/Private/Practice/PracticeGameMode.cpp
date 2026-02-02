@@ -46,7 +46,7 @@ void APracticeGameMode::BeginPlay()
 		if (FirearmConfig)
 		{
 			P.AmmoInClip = FirearmConfig->MaxAmmoInClip;
-			P.AmmoReserve = FirearmConfig->MaxAmmoInClip * 2;
+			P.AmmoReserve = FirearmConfig->MaxAmmoInClip * 10;
 		}
 
 

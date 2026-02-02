@@ -23,10 +23,10 @@ void AZombieMode::StartRound()
 	Super::StartRound();
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (GS) {
-		GS->SetMatchState(EMyMatchState::BUY_PHASE);
-		GS->SetHeroPhase(false);
-	}
+	if (!GS) return;
+	
+	GS->SetMatchState(EMyMatchState::BUY_PHASE);
+	GS->SetHeroPhase(false);
 
 	int BuyTime = 10; // seconds
 	int TimeBuyEnd = GetWorld()->GetTimeSeconds() + BuyTime;

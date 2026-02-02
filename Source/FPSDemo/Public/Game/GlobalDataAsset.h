@@ -72,6 +72,8 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase> CountdownTenSound;
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase>	ZoomScopeSound;
 
 	UPROPERTY(EditAnywhere, Category = "Fx")
 	TObjectPtr<UParticleSystem> MeleeHitFx;

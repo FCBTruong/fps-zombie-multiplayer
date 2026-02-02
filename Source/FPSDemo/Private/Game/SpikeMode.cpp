@@ -23,6 +23,7 @@ void ASpikeMode::StartPlay()
 
 	// get all controllers and assign teams
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) return;
 	for (APlayerState* PS : GS->PlayerArray)
 	{
 		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
