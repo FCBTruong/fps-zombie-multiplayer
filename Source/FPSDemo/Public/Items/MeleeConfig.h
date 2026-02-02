@@ -19,7 +19,14 @@ public:
     int32 Damage = 0;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
+    float Interval = 1.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee")
     float Range = 150.f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Melee|Decal")
+    UMaterialInterface* HitDecalMat = nullptr;
+
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee|Animation")
     TObjectPtr<UAnimMontage> Attack1Montage = nullptr;

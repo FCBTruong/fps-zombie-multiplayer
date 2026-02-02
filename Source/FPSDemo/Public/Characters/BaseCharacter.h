@@ -212,7 +212,6 @@ protected:
     void PlayFootstepSound();
     void UpdateFootstepSound(float DeltaTime);
     void PlayLandingSound();
-    void ApplyTeamMesh();
     void HandleDeath();
 	bool CanPlayFootstep() const;
 	bool IsBot() const;
@@ -315,6 +314,8 @@ public:
     bool IsPermanentDead() {
 		return bIsPermanentDead;
     }
+    bool HasLineOfSightToPawn(const APawn* Target) const;
+    void OnTeamChanged();
 	FString GetPlayerName() const;
 
     UFUNCTION(Server, Reliable)

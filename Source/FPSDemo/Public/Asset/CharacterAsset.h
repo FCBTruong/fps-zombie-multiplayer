@@ -92,6 +92,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Characters")
 	TObjectPtr<UCharacterVisualSet> SoldierVisualSet;
 	UPROPERTY(EditDefaultsOnly, Category = "Characters")
+	TObjectPtr<UCharacterVisualSet> SoldierVisualSet2;
+	UPROPERTY(EditDefaultsOnly, Category = "Characters")
 	TObjectPtr<UCharacterVisualSet> ZombieVisualSet;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

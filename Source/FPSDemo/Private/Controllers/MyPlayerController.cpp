@@ -330,6 +330,11 @@ void AMyPlayerController::OnLeftClickStart()
 
     if (IsSpectatingState())
     {
+		// prevent accidental click if just died
+		auto CurTime = GetWorld()->GetTimeSeconds();
+        if (CurTime - TimeOfDeath < 1) {
+            return;
+		}
 		RequestSpectateNextPlayer();
         return;
     }
@@ -870,7 +875,11 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
     {
         H_SpikeChanged = Inv->OnSpikeChanged.AddUObject(this, &AMyPlayerController::HandleSpikeChanged);
         H_ThrowablesChanged = Inv->OnThrowablesChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateGrenades);
+		H_RifleChanged = Inv->OnRifleChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateRifle);
+		H_PistolChanged = Inv->OnPistolChanged.AddUObject(PlayerUI, &UPlayerUI::UpdatePistol);
         PlayerUI->UpdateGrenades(Inv->GetThrowables());
+		PlayerUI->UpdateRifle(Inv->GetRifleId());
+		PlayerUI->UpdatePistol(Inv->GetPistolId());
 
 		H_ArmorChanged = Inv->OnArmorChanged.AddUObject(PlayerUI, &UPlayerUI::UpdateArmor);
 		PlayerUI->UpdateArmor(Inv->GetArmorPoints(), Inv->GetArmorMaxPoints());
@@ -933,6 +942,10 @@ void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
         H_SpikeChanged.Reset();
         H_ThrowablesChanged.Reset();
 		H_ArmorChanged.Reset();
+		Inv->OnRifleChanged.Remove(H_RifleChanged);
+		Inv->OnPistolChanged.Remove(H_PistolChanged);
+		H_RifleChanged.Reset();
+		H_PistolChanged.Reset();
     }
 
     if (UPickupComponent* PC = Char->GetPickupComponent())
@@ -1135,4 +1148,9 @@ void AMyPlayerController::ClientSpectateTarget_Implementation(AActor* Target, fl
 
     // This is the only thing you said you want: view through teammate.
     SetViewTargetWithBlend(Target, BlendTime);
+}
+
+void AMyPlayerController::SetTimeOfDeath(float Time)
+{
+    TimeOfDeath = Time;
 }

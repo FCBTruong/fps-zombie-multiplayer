@@ -90,9 +90,12 @@ void AZombieMode::RandomZombie()
 	{
 		NumZombies = 1;
 	}
-	else
+	else if (TotalPlayers <= 6)
 	{
 		NumZombies = 2;
+	}
+	else {
+		NumZombies = 3;
 	}
 
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
@@ -307,8 +310,18 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 				GS->SetHeroPhase(true);
 
 				// add time
-				int TimeEnd = GetWorld()->GetTimeSeconds() + 60; // add 1 minute
+				const int HeroProgressTime = 60; // add 1 minute
+				int TimeEnd = GetWorld()->GetTimeSeconds() + HeroProgressTime;
 				GS->SetRoundEndTime(TimeEnd);
+
+				// reset timer
+				GetWorld()->GetTimerManager().SetTimer(
+					FightStateTimerHandle,
+					this,
+					&AZombieMode::OnRoundTimeExpired,
+					HeroProgressTime,
+					false
+				);
 			}
 		}
 	}

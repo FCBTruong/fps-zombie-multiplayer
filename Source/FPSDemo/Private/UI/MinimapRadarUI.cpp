@@ -15,7 +15,7 @@
 void UMinimapRadarUI::NativeConstruct()
 {
 	Super::NativeConstruct();
-
+	UE_LOG(LogTemp, Warning, TEXT("MinimapRadarUI: NativeConstruct called"));
 
 	AActorManager* AM = AActorManager::Get(GetWorld());
 	if (!AM || !AM->MainPlane) return;
@@ -45,7 +45,19 @@ void UMinimapRadarUI::NativeConstruct()
 			HandlePlayerAdded(PS);
 		}
 	}
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(
+			PeriodicUpdateTimerHandle,
+			this,
+			&UMinimapRadarUI::PeriodicUpdate,
+			0.5f,
+			true
+		);
+	}
 }
+
 void UMinimapRadarUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
@@ -58,6 +70,60 @@ void UMinimapRadarUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	UpdatePlayerDots();
 
 	UpdateSpike();
+}
+
+void UMinimapRadarUI::PeriodicUpdate()
+{
+	AMyPlayerState* MyPS = CachedPC->GetPlayerState<AMyPlayerState>();
+	ETeamId MyTeamId = ETeamId::None;
+	if (MyPS) {
+		MyTeamId = MyPS->GetTeamId();
+	}
+	TMap<APawn*, UPlayerMapDot*> Enemies;
+	Enemies.Reserve(PlayerNodes.Num());
+	for (auto& Pair : PlayerNodes)
+	{
+		UPlayerMapDot* Dot = Pair.Value;
+		Dot->SetVisibility(ESlateVisibility::Hidden);
+
+		AMyPlayerState* PS = Pair.Key.Get();
+		if (!PS) continue;
+		if (PS->GetTeamId() != MyTeamId) {
+			APawn* EnemyPawn = Cast<APawn>(PS->GetPawn());
+			if (EnemyPawn)
+			{
+				Enemies.Add(EnemyPawn, Dot);
+			}
+		}
+		Dot->SetIsTeammateVisual(PS->GetTeamId() == MyTeamId);
+	}
+	for (auto& Pair : PlayerNodes)
+	{
+		UPlayerMapDot* Dot = Pair.Value;
+		if (!Dot) continue;
+
+		AMyPlayerState* PS = Pair.Key.Get();
+		if (!PS) continue;
+
+		if (PS->GetTeamId() == MyTeamId) {
+			Dot->SetVisibility(ESlateVisibility::Visible);
+
+			ABaseCharacter* Char = Cast<ABaseCharacter>(PS->GetPawn());
+			if (!Char) continue;
+			// check if it can see
+			for (auto& EnemyPair : Enemies)
+			{
+				APawn* EnemyPawn = EnemyPair.Key;
+				UPlayerMapDot* EnemyDot = EnemyPair.Value;
+				if (!EnemyPawn || !EnemyDot) continue;
+
+				if (Char->HasLineOfSightToPawn(EnemyPawn))
+				{
+					EnemyDot->SetVisibility(ESlateVisibility::Visible);
+				}
+			}
+		}
+	}
 }
 
 void UMinimapRadarUI::UpdateBombAreaLabels()
@@ -137,18 +203,12 @@ void UMinimapRadarUI::UpdatePlayerDots()
 	}
 	if (!CachedPC) return;
 
-	ETeamId MyTeamId = ETeamId::None;
-	AMyPlayerState* MyPS = CachedPC->GetPlayerState<AMyPlayerState>();
 	AActor* ViewTarget = CachedPC->GetViewTarget();
-	if (!ViewTarget || !MyPS) return;
-
-	if (MyPS) {
-		MyTeamId = MyPS->GetTeamId();
-	}
+	if (!ViewTarget) return;
 
 	for (auto& Pair : PlayerNodes)
 	{
-		APlayerState* PS = Pair.Key.Get();
+		AMyPlayerState* PS = Pair.Key.Get();
 		UPlayerMapDot* Dot = Pair.Value;
 
 		if (!PS || !Dot) continue;
@@ -157,15 +217,6 @@ void UMinimapRadarUI::UpdatePlayerDots()
 		if (!Pawn) continue;
 		ABaseCharacter* Char = Cast<ABaseCharacter>(Pawn);
 		if (!Char) continue;
-		AMyPlayerState* MyTeammatePS = Cast<AMyPlayerState>(PS);
-		if (!MyTeammatePS) continue;
-		if (MyTeammatePS->GetTeamId() != MyTeamId) {
-			// not teammate
-			Dot->SetVisibility(ESlateVisibility::Hidden);
-			continue;
-		}
-		
-		Dot->SetVisibility(ESlateVisibility::Visible);
 
 		// World -> minimap
 		const FVector2D AbsSpike = WorldToMinimapAbsolute(Pawn->GetActorLocation());
@@ -219,8 +270,9 @@ FVector2D UMinimapRadarUI::WorldToMinimapAbsolute(const FVector& WorldPos) const
 	return MinimapImgPn->GetCachedGeometry().LocalToAbsolute(Local);
 }
 
-void UMinimapRadarUI::HandlePlayerAdded(APlayerState* NewPS)
+void UMinimapRadarUI::HandlePlayerAdded(APlayerState* PS)
 {
+	AMyPlayerState* NewPS = Cast<AMyPlayerState>(PS);
 	if (!NewPS || PlayerNodes.Contains(NewPS)) return;
 
 	UPlayerMapDot* Dot = CreateWidget<UPlayerMapDot>(GetWorld(), TeammateWidgetClass);
@@ -231,8 +283,9 @@ void UMinimapRadarUI::HandlePlayerAdded(APlayerState* NewPS)
 	PlayerNodes.Add(NewPS, Dot);
 }
 
-void UMinimapRadarUI::HandlePlayerRemoved(APlayerState* RemovedPS)
+void UMinimapRadarUI::HandlePlayerRemoved(APlayerState* PS)
 {
+	AMyPlayerState* RemovedPS = Cast<AMyPlayerState>(PS);
 	if (UPlayerMapDot** DotPtr = PlayerNodes.Find(RemovedPS))
 	{
 		if (*DotPtr)

@@ -208,8 +208,8 @@ public:
 	void ShowWeaponGuide();
 	void ShowScope();
 	void HideScope();
-	void UpdatePistol(const EItemId& ItemId);
-	void UpdateRifle(const EItemId& ItemId);
+	void UpdatePistol(EItemId ItemId);
+	void UpdateRifle(EItemId ItemId);
 	void OnUpdatePlantSpikeState(bool IsPlanting);
 	void OnUpdateDefuseSpikeState(bool IsDefusing);
 	void ShowMatchStateToast(FText Txt, float Delay);

@@ -124,6 +124,7 @@ public:
     UFUNCTION(Server, Reliable)
 	void ServerSpectateNextPlayer();
     void BindCharacter(ABaseCharacter* Char);
+	void SetTimeOfDeath(float TimeDead);
 private:
     UPROPERTY()
     TWeakObjectPtr<AActor> CurrentSpectateTarget;
@@ -140,6 +141,8 @@ private:
     FDelegateHandle H_ActiveItemChanged;
     FDelegateHandle H_SpikeChanged;
     FDelegateHandle H_ThrowablesChanged;
+    FDelegateHandle H_RifleChanged;
+    FDelegateHandle H_PistolChanged;
     FDelegateHandle H_NewItemPickup;
     FDelegateHandle H_Toast;
     FDelegateHandle H_UpdatePlantSpikeState;
@@ -163,6 +166,7 @@ private:
 	FDelegateHandle H_UpdateTeamId;
 
     bool bInputMappingAdded = false;
+	float TimeOfDeath = 0.f;
 private:
     UPROPERTY(Transient)
     TObjectPtr<UPlayerUI> PlayerUI;

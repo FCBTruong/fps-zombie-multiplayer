@@ -118,6 +118,13 @@ bool AMyPlayerState::CanBuyThisItem(const UItemConfig* Item) const
 void AMyPlayerState::OnRep_TeamId()
 {
 	OnUpdateTeamId.Broadcast(TeamId);
+
+	// get pawn and notify it
+	ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
+	if (MyChar)
+	{
+		MyChar->OnTeamChanged();
+	}
 }
 
 

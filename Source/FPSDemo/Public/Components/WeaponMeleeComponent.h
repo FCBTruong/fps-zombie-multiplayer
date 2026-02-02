@@ -61,4 +61,5 @@ private:
 	float MeleeRange = 100.f;
 	float MeleeRadius = 50.f;
 	float MeleeTraceDelay = 0.2f;
+	float LastAttackTime = -FLT_MAX;
 };

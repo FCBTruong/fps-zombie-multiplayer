@@ -269,26 +269,8 @@ void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
 
 void ABaseCharacter::OnRep_PlayerState() {
     Super::OnRep_PlayerState();
-}
 
-void ABaseCharacter::ApplyTeamMesh() // TODO later, for spike mode
-{
-    UE_LOG(LogTemp, Warning, TEXT("Setting mesh based on team"));
-    if (!CachedCharacterAsset) {
-        return;
-    }
-    // get player state
-    AMyPlayerState* MyPS = Cast<AMyPlayerState>(GetPlayerState());
-    AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
-    if (!GS) {
-        UE_LOG(LogTemp, Warning, TEXT("GS is null in SetMeshBaseOnTeam"));
-        return;
-    }
-    if (MyPS) {
-    }
-    else {
-        UE_LOG(LogTemp, Warning, TEXT("MyPS is null in SetMeshBaseOnTeam"));
-    } 
+    this->OnTeamChanged();
 }
 
 // Called every frame
@@ -839,6 +821,12 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
         return;
 	}
 	bool bIsLocalPlayer = MyPC->GetViewTarget() == this;
+
+	auto LocalPC = Cast<AMyPlayerController>(GetController());
+    if (LocalPC) {
+		auto CurTime = GetWorld()->GetTimeSeconds();
+        LocalPC->SetTimeOfDeath(CurTime);
+    }
     if (bIsLocalPlayer) {
         MyPC->SetIgnoreLookInput(true);
         MyPC->SetIgnoreMoveInput(true);
@@ -1392,7 +1380,19 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
     }
     else
     {
-		VisualSet = CachedCharacterAsset->SoldierVisualSet;
+		AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
+        VisualSet = CachedCharacterAsset->SoldierVisualSet;
+        if (PS) {
+            if (PS->GetTeamId() == ETeamId::Attacker) {
+                VisualSet = CachedCharacterAsset->SoldierVisualSet;
+            }
+            else if (PS->GetTeamId() == ETeamId::Defender) {
+                VisualSet = CachedCharacterAsset->SoldierVisualSet2;
+			}
+            else {
+
+            }
+        }
     }
 
     // Apply TPS
@@ -1796,3 +1796,27 @@ bool ABaseCharacter::IsWorkingWithSpike() const {
     }
     return false;
 }   
+
+void ABaseCharacter::OnTeamChanged() {
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter:OnTeamChanged called"));
+	ApplyVisualByRole(GetCharacterRole()); // recall it to update team-based visuals
+}
+
+bool ABaseCharacter::HasLineOfSightToPawn(const APawn* Target) const
+{
+    if (!Target) return false;
+
+    const UWorld* World = GetWorld();
+    if (!World) return false;
+
+    const FVector Start = GetPawnViewLocation();
+    const FVector End = Target->GetActorLocation();
+
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(CharViewLOS), /*bTraceComplex=*/true);
+    Params.AddIgnoredActor(this);
+
+    FHitResult Hit;
+    const bool bHit = World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+
+    return (!bHit) || (Hit.GetActor() == Target) || (Hit.GetActor() && Hit.GetActor()->IsOwnedBy(Target));
+}

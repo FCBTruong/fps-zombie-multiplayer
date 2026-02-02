@@ -9,6 +9,7 @@
 #include "UI/PlayerMapDot.h"
 #include "MinimapRadarUI.generated.h"
 
+class AMyPlayerState;
 /**
  * 
  */
@@ -47,6 +48,11 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* SpikeIcon;
+
+private:
+	FTimerHandle PeriodicUpdateTimerHandle;
+	UFUNCTION()
+	void PeriodicUpdate();
 public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeConstruct() override;
@@ -59,7 +65,7 @@ public:
 	FVector2D WorldToMinimapLocal(const FVector& WorldPos) const;
 
 	UPROPERTY()
-	TMap<TWeakObjectPtr<APlayerState>, UPlayerMapDot*> PlayerNodes;
+	TMap<TWeakObjectPtr<AMyPlayerState>, UPlayerMapDot*> PlayerNodes;
 
 	UPROPERTY()
 	APlayerController* CachedPC;

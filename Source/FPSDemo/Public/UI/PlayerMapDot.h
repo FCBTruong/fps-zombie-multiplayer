@@ -32,4 +32,5 @@ public:
 	UWidget* SpikeIcon;
 
 	void UpdateData(bool bIsMe, bool bIsDead, bool bHasSpike);
+	void SetIsTeammateVisual(bool bIsTeammate);
 };

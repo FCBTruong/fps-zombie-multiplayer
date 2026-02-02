@@ -277,7 +277,7 @@ void UPlayerUI::UpdateSpikeSlot(bool bHasSpike)
     }
 }
 
-void UPlayerUI::UpdatePistol(const EItemId& ItemId) {
+void UPlayerUI::UpdatePistol(EItemId ItemId) {
     if (ItemId == EItemId::NONE) {
         Pistol->SetVisibility(ESlateVisibility::Collapsed);
     } else {
@@ -291,7 +291,7 @@ void UPlayerUI::UpdatePistol(const EItemId& ItemId) {
     }
 }
 
-void UPlayerUI::UpdateRifle(const EItemId& ItemId) {
+void UPlayerUI::UpdateRifle(EItemId ItemId) {
     if (ItemId == EItemId::NONE) {
         Rifle->SetVisibility(ESlateVisibility::Collapsed);
     }

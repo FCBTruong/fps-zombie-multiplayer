@@ -233,8 +233,6 @@ void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Vi
 		return;
 	}
 	ETeamId VictimTeam = VictimPS->GetTeamId();
-
-	// check if spike carrier is killed
 	HandlePlayerDeath(VictimPawn->GetController());
 
 	// check if all team dead
@@ -250,8 +248,6 @@ void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Vi
 	{
 		return; // do nothing if round not in progress
 	}
-
-
 
 	if (IsAllTeamDead)
 	{

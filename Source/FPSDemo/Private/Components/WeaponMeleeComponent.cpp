@@ -58,6 +58,7 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 			MeleeTraceDelay,
 			false
 		);
+		LastAttackTime = GetWorld()->GetTimeSeconds();
 
 		if (MeleeConfig) {
 			if (AttackIndex == FGameConstants::MELEE_ATTACK_INDEX_PRIMARY) {
@@ -97,6 +98,7 @@ void UWeaponMeleeComponent::StartMelee_ServerAuth(int32 AttackIndex)
 
 	// Set server state once
 	ActionStateComp->TrySetState(EActionState::Melee);
+	LastAttackTime = GetWorld()->GetTimeSeconds();
 
 	// Play montage for everyone (you can skip owning client here if you want)
 	MulticastPlayMelee(AttackIndex);
@@ -221,6 +223,15 @@ bool UWeaponMeleeComponent::CanMeleeNow() const
 
 	if (!ActionStateComp->IsIdle())
 		return false;
+
+	if (GetWorld())
+	{
+		float CurrentTime = GetWorld()->GetTimeSeconds();
+		if (CurrentTime - LastAttackTime < MeleeConfig->Interval)
+		{
+			return false;
+		}
+	}
 	return true;
 }
 
@@ -256,9 +267,28 @@ void UWeaponMeleeComponent::PredictMeleeHitFX()
 		{
 			AActor* A = H.GetActor();
 			if (!A) continue;
-
+		
 			if (!A->IsA<APawn>()) // only pawns
+			{
+				//if (MeleeConfig && MeleeConfig->HitDecalMat)
+				//{
+				//	const FVector Location = H.ImpactPoint;
+				//	const FRotator Rotation = H.ImpactNormal.Rotation();
+
+				//	const float DecalSize = 16.f; // adjust as needed
+				//	const float LifeTime = 10.f;  // 0 = infinite
+
+				//	UGameplayStatics::SpawnDecalAtLocation(
+				//		GetWorld(),
+				//		MeleeConfig->HitDecalMat,
+				//		FVector(DecalSize),
+				//		Location,
+				//		Rotation,
+				//		LifeTime
+				//	);
+				//}
 				continue;
+			}
 
 			PlayHitFX_Local(H.ImpactPoint, H.ImpactNormal);
 		}
@@ -278,18 +308,6 @@ void UWeaponMeleeComponent::PlayHitFX_Local(
 	UE_LOG(LogTemp, Log, TEXT("PlayHitFX_Local called at Point: %s, Normal: %s"),
 		*ImpactPoint.ToString(), *ImpactNormal.ToString());
 	if (GlobalData->MeleeHitFx) {
-		/*auto Fx = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			GetWorld(),
-			GlobalData->MeleeHitFx,
-			ImpactPoint,
-			ImpactNormal.Rotation()
-		);
-		if (Fx)
-		{
-			Fx->SetWorldScale3D(FVector(0.02f));
-		}
-		Fx->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);*/
-
 		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(
 			GetWorld(),
 			GlobalData->MeleeHitFx,
@@ -303,7 +321,6 @@ void UWeaponMeleeComponent::PlayHitFX_Local(
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));
 			PSC->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
-
 		}
 	}
 
