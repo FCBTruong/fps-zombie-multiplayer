@@ -24,6 +24,9 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditInstanceOnly, Category = "Setup")
+	AActor* GlobalCamera;
+
+	UPROPERTY(EditInstanceOnly, Category = "Setup")
 	AActor* BombAreaA;
 
 	UPROPERTY(EditInstanceOnly, Category = "Setup")
@@ -75,4 +78,8 @@ public:
 	FVector GetRandomScoutLocation() const;
 	FVector DefenderWeaponInitPos;
 	FVector AttackerWeaponInitPos;
+
+	AActor* GetGlobalCamera() const {
+		return GlobalCamera;
+	}
 };

@@ -182,15 +182,17 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 		DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
 		DamageEvent.WeaponID = MeleeConfig->Id;
 
-		float Damage = MeleeConfig ? MeleeConfig->Damage : 0.f;
-
 		FDamageApplyParams Params;
-		Params.BaseDamage = MeleeConfig ? MeleeConfig->Damage : 0.f;
+		Params.BaseDamage = MeleeConfig->Damage;
 		Params.WeaponId = MeleeConfig->Id;
 		Params.DamageTypeClass = UMyDamageType::StaticClass();
 		Params.bEnableHeadshot = true;
 		Params.HeadshotMultiplier = 4.f;
 		Params.Hit = Hit;
+
+		// log damage
+		UE_LOG(LogTemp, Log, TEXT("Applying melee damage to Actor: %s, Damage: %f"),
+			*Target->GetName(), Params.BaseDamage);
 
 		DamageHelpers::ApplyMyPointDamage(
 			Target,

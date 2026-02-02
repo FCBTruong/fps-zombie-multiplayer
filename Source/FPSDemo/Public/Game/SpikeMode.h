@@ -29,6 +29,7 @@ protected:
 	virtual void AutoBuyForBots() override;
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	void HandlePlayerDeath(AController* DeadController);
 public:
 	virtual void StartPlay() override;
 	virtual void StartRound() override;

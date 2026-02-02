@@ -17,15 +17,9 @@ class FPSDEMO_API AZombieMode : public AShooterGameMode
 protected:
 	virtual void StartPlay() override;
 	virtual void StartRound() override;
-	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
-	virtual APawn* SpawnDefaultPawnAtTransform_Implementation(
-		AController* NewPlayer,
-		const FTransform& SpawnTransform
-	) override;
 	virtual void EndRound(ETeamId WinningTeam) override;
 	virtual void EndGame(ETeamId WinningTeam) override;
-	virtual void RestartPlayer(AController* NewPlayer) override;
-
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer);
 	void RandomZombie();
 	void EnterFightState();
 	void BecomeZombie(AController* Controller);

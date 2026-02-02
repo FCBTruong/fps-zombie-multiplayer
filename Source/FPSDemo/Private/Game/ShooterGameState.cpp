@@ -30,6 +30,7 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterGameState, BuyEndTime);
 	DOREPLIFETIME(AShooterGameState, CurrentRound);
 	DOREPLIFETIME(AShooterGameState, PlantedSpike);
+	DOREPLIFETIME(AShooterGameState, bHeroPhase);
 }
 
 
@@ -101,11 +102,15 @@ void AShooterGameState::Multicast_RoundResult_Implementation(ETeamId WinningTeam
 
 void AShooterGameState::AddScoreTeam(ETeamId TeamId, int ScoreToAdd)
 {
-    if (TeamId == ETeamId::Attacker)
+    if (TeamId == ETeamId::Attacker || 
+		TeamId == ETeamId::Soldier
+        )
     {
         TeamAScore += ScoreToAdd;
     }
-    else if (TeamId == ETeamId::Defender)
+    else if (TeamId == ETeamId::Defender
+		|| TeamId == ETeamId::Zombie
+        )
     {
         TeamBScore += ScoreToAdd;
     }
@@ -208,7 +213,7 @@ float AShooterGameState::GetRemainingRoundTime() const
 
 void AShooterGameState::OnRep_CurrentRound()
 {
-    
+	OnUpdateRoundNumber.Broadcast();
 }
 
 void AShooterGameState::OnRep_Spike()
@@ -224,4 +229,9 @@ void AShooterGameState::Multicast_GameResult_Implementation(ETeamId WinningTeam)
 void AShooterGameState::Multicast_SwitchSide_Implementation()
 {
 	OnSwitchSide.Broadcast();
+}
+
+void AShooterGameState::OnRep_HeroPhase()
+{
+    OnUpdateHeroPhase.Broadcast();
 }

@@ -11,6 +11,7 @@
 #include "Game/GlobalDataAsset.h"
 #include <Kismet/GameplayStatics.h>
 #include "UI/MinimapRadarUI.h"
+#include <Components/CanvasPanelSlot.h>
 
 void UPlayerUI::NativeConstruct()
 {
@@ -38,6 +39,12 @@ void UPlayerUI::NativeConstruct()
         if (CurrentMatchMode == EMatchMode::Zombie)
         {
 			RoundLb->SetVisibility(ESlateVisibility::Visible);
+            if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MatchTimeLb->Slot))
+            {
+                FVector2D Pos = CanvasSlot->GetPosition();
+                Pos.Y += 10.f;
+                CanvasSlot->SetPosition(Pos);
+            }
             if (FirstTeamLb)
             {
                 FirstTeamLb->SetText(FText::FromString(TEXT("Soldier")));
@@ -59,7 +66,18 @@ void UPlayerUI::NativeConstruct()
                 SecondTeamLb->SetText(FText::FromString(TEXT("Defender")));
             }
         }
-
+        else // TeamDeathMatch
+        {
+            RoundLb->SetVisibility(ESlateVisibility::Hidden);
+            if (FirstTeamLb)
+            {
+                FirstTeamLb->SetText(FText::FromString(TEXT("")));
+            }
+            if (SecondTeamLb)
+            {
+                SecondTeamLb->SetText(FText::FromString(TEXT("")));
+            }
+        }
 	}
 }
 
@@ -456,8 +474,8 @@ void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
 			ShowMatchStateToast(FText::FromString("Round Started!"), 0.f);
             break;
         case EMyMatchState::BUY_PHASE:
-			MatchStatePn->SetVisibility(ESlateVisibility::Visible);
-			MatchStateTxt->SetText(FText::FromString("Buy Phase (Press B to Open Shop)"));
+			/*MatchStatePn->SetVisibility(ESlateVisibility::Visible);
+			MatchStateTxt->SetText(FText::FromString("Buy Phase (Press B to Open Shop)"));*/
 			break;
         case EMyMatchState::ROUND_IN_PROGRESS:
 			//ShowMatchStateToast(FText::FromString("Round In Progress"), 0.f);
@@ -712,4 +730,40 @@ void UPlayerUI::UpdateTeamId(ETeamId TeamId) {
     else {
         TeamIcon->SetVisibility(ESlateVisibility::Hidden);
     }
+}
+
+void UPlayerUI::UpdateRoundNumber() {
+	AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    if (!GS) {
+        return;
+	}
+    RoundLb->SetText(
+        FText::Format(
+            FText::FromString("Round {0}/{1}"),
+            FText::AsNumber(GS->GetCurrentRound()),
+            FText::AsNumber(FGameConstants::MAX_ROUND_ZOMBIE_MODE)
+        )
+    );
+
+}
+
+void UPlayerUI::UpdateHeroPhase() {
+    AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    if (!GS) {
+        return;
+    }
+    if (GS->IsHeroPhase()) {
+        // play sound
+        UGameManager* GM = UGameManager::Get(GetWorld());
+        UGlobalDataAsset* GlobalData = GM->GlobalData;
+        UGameplayStatics::PlaySound2D(
+            GetWorld(),
+            GM->GlobalData->HeroPhaseActiveSound
+        );
+		ShowNotiToast(FText::FromString("Press E to become hero!"));
+		ZombieVsHeroPn->SetVisibility(ESlateVisibility::Visible);
+    }
+    else {
+		ZombieVsHeroPn->SetVisibility(ESlateVisibility::Hidden);
+	}
 }

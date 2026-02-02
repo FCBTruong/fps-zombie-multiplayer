@@ -665,6 +665,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	}
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
     
+    UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamageDEBUG: %f"), ActualDamage);
     FArmorState& Armor = InventoryComp->GetArmorStateMutable();
     if (Armor.ArmorPoints > 0)
     {
@@ -684,7 +685,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
         ActualDamage = DamageToHealth;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
+	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage after armor: %f"), ActualDamage);
     LastHitByController = EventInstigator;
 	bLastHitWasHeadshot = false;
 
@@ -791,6 +792,7 @@ void ABaseCharacter::HandleDeath()
     }
 }
 
+// server function to apply death effects
 void ABaseCharacter::ApplyRealDeath(bool bDropInventory)
 {
     GetCharacterMovement()->StopMovementImmediately();
@@ -845,48 +847,45 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
             AudioComp->PlaySoldierDeath();
         }
     }
-
-    if (IsLocallyControlled()) {
-        AMyPlayerController* PC = Cast<AMyPlayerController>(GetController());
-        if (!PC) {
-            return;
-        }
-        PC->SetIgnoreLookInput(true);
-        PC->SetIgnoreMoveInput(true);
+    AMyPlayerController* MyPC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
+    if (!MyPC) {
+        return;
+	}
+	bool bIsLocalPlayer = MyPC->GetViewTarget() == this;
+    if (bIsLocalPlayer) {
+        MyPC->SetIgnoreLookInput(true);
+        MyPC->SetIgnoreMoveInput(true);
         
         if (CameraComp->IsFPS()) {
             ChangeView(); // switch to tps view
         }
-        if (!CachedCharacterAsset) {
-            return;
-        }
-        if (!CachedCharacterAsset->DeathCameraProxyClass) return;
-
+       
         // Use current camera position as start
         const FVector CamLoc = CameraTps->GetComponentLocation();
         const FRotator CamRot = CameraTps->GetComponentRotation();
 
-		// after 2 seconds, change to spectator mode
+        TWeakObjectPtr<AMyPlayerController> WeakPC(MyPC);
 
-        // Spawn proxy actor that has physics + camera
-  //      DeathCameraProxy = GetWorld()->SpawnActor<AActor>(CachedCharacterAsset->DeathCameraProxyClass, CamLoc, CamRot);
+        FTimerHandle Handle;
+        GetWorld()->GetTimerManager().SetTimer(
+            Handle,
+            [WeakPC, this]()
+            {
+                if (!WeakPC.IsValid()) return;
 
-  //      if (!DeathCameraProxy.IsValid()) {
-  //          return;
-		//}
-  //      // Add impulse so camera feels like it gets knocked down
-  //      if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(DeathCameraProxy->GetRootComponent()))
-  //      {
-  //          Root->AddImpulse(FVector(
-  //              FMath::RandRange(-80.f, 80.f),
-  //              FMath::RandRange(-80.f, 80.f),
-  //              -250.f
-  //          ) * 20.f);
-  //      }
+                if (WeakPC->GetViewTarget() != this) {
+					// already switched view, maybe by user
+                    return;
+                }
 
-  //      // Blend view to death camera
-  //      PC->SetViewTargetWithBlend(DeathCameraProxy.Get(), 0.15f, VTBlend_EaseOut);
-		//UE_LOG(LogTemp, Warning, TEXT("Switched to death camera proxy."));
+                if (WeakPC->IsSpectatingState())
+                {
+                    WeakPC->RequestSpectateNextPlayer();
+                }
+            },
+            2.0f,
+            false
+        );
     }
 }
 

@@ -158,6 +158,13 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UWidget* AmmoPn;
 
+	UPROPERTY(meta = (BindWidget))
+	UWidget* ZombieVsHeroPn;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* HeroNumLb;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ZombieNumLb;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* KillMarkAnim;
 
@@ -218,4 +225,6 @@ public:
 	void ShowGameResult(ETeamId WinningTeam);
 	void OnSwitchSide();
 	void UpdateTeamId(ETeamId NewTeamId);
+	void UpdateRoundNumber();
+	void UpdateHeroPhase();
 };

@@ -57,7 +57,7 @@ void AShooterGameMode::StartPlay()
     const FRoomData& RoomData = RoomMgr->GetCurrentRoomData();
 
     // if is editor, dedicated server, hardcode edit it
-    if (GIsEditor) {
+    if (true) {
         FRoomData& RoomDataMutable = RoomMgr->GetCurrentRoomDataMutable();
 
         for (int i = 0; i < 10; i++) {

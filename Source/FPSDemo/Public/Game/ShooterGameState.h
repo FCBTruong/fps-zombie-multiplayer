@@ -23,6 +23,8 @@ DECLARE_MULTICAST_DELEGATE_OneParam(
 );
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnGameResult, ETeamId);
 DECLARE_MULTICAST_DELEGATE(FOnSwitchSide);
+DECLARE_MULTICAST_DELEGATE(FOnUpdateRoundNumber);
+DECLARE_MULTICAST_DELEGATE(FOnUpdateHeroPhase); // for zombie mode, refactor later
 
 UCLASS()
 class FPSDEMO_API AShooterGameState : public AGameState
@@ -48,6 +50,9 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_CurrentRound)
     int CurrentRound = -1;
 
+    UPROPERTY(ReplicatedUsing = OnRep_HeroPhase) // zombie mode
+	bool bHeroPhase = false;
+
 	UPROPERTY(ReplicatedUsing = OnRep_Spike)
     ASpike* PlantedSpike;
 
@@ -65,6 +70,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_MyMatchState();
+
+    UFUNCTION()
+	void OnRep_HeroPhase();
 
     UPROPERTY(ReplicatedUsing = OnRep_MatchMode)
     EMatchMode MatchMode = EMatchMode::Spike;
@@ -101,6 +109,8 @@ public:
     FOnPlayerStateRemoved OnPlayerRemoved;
     FOnGameResult OnGameResult;
 	FOnSwitchSide OnSwitchSide;
+	FOnUpdateRoundNumber OnUpdateRoundNumber;
+	FOnUpdateHeroPhase OnUpdateHeroPhase;
 
     void AddScoreTeam(ETeamId TeamId, int ScoreToAdd);
     int GetScoreTeam(ETeamId TeamId) const;
@@ -139,4 +149,10 @@ public:
     ASpike* GetPlantedSpike() const {
         return PlantedSpike;
 	}
+    void SetHeroPhase(bool bNewHeroPhase) {
+        bHeroPhase = bNewHeroPhase;
+    }
+    bool IsHeroPhase() const {
+        return bHeroPhase;
+    }
 };

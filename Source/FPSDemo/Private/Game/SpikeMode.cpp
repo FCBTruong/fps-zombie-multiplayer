@@ -234,7 +234,7 @@ void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Vi
 	ETeamId VictimTeam = VictimPS->GetTeamId();
 
 	// check if spike carrier is killed
-	
+	HandlePlayerDeath(VictimPawn->GetController());
 
 	// check if all team dead
 	bool IsAllTeamDead = CheckAllTeamDead(VictimTeam);
@@ -249,6 +249,8 @@ void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Vi
 	{
 		return; // do nothing if round not in progress
 	}
+
+
 
 	if (IsAllTeamDead)
 	{
@@ -470,5 +472,15 @@ void ASpikeMode::AutoBuyForBots()
 		{
 			EquipComp->AutoSelectBestWeapon();
 		}
+	}
+}
+
+void ASpikeMode::HandlePlayerDeath(AController* DeadController)
+{
+	if (!DeadController) return;
+	AMyPlayerState* PS = DeadController->GetPlayerState<AMyPlayerState>();
+	if (PS)
+	{
+		PS->SetIsSpectator(true);
 	}
 }

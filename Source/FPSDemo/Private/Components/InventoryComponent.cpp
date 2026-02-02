@@ -11,6 +11,7 @@
 #include "Pickup/PickupItem.h"
 #include "Characters/BaseCharacter.h"
 #include "Items/ArmorConfig.h"
+#include "Game/ShooterGameMode.h"
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -26,6 +27,8 @@ void UInventoryComponent::BeginPlay()
 
 void UInventoryComponent::InitBasicWeapon()
 {
+    AShooterGameMode* GM = GetWorld()->GetAuthGameMode<AShooterGameMode>();
+    auto MatchMode = GM->GetMatchMode();
     // Test function to be removed later
     MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
     PistolState.ItemId = EItemId::PISTOL_PL_14;
@@ -45,6 +48,25 @@ void UInventoryComponent::InitBasicWeapon()
              
     // log size throwables
 	UE_LOG(LogTemp, Log, TEXT("InventoryComponent Test: Throwables count = %d"), Throwables.Num());
+
+    if (MatchMode == EMatchMode::DeathMatch
+        || MatchMode == EMatchMode::Zombie
+        )
+    {
+        TArray<EItemId> RifleOptions = {
+            EItemId::RIFLE_AK_47,
+            EItemId::RIFLE_M16A,
+            EItemId::RIFLE_QBZ,
+            EItemId::RIFLE_RUSSIAN_AS_VAL
+		};
+		RifleState.ItemId = RifleOptions[FMath::RandRange(0, RifleOptions.Num() - 1)];
+
+		const UItemConfig* ItemRifle = UItemsManager::Get(GetWorld())->GetItemById(RifleState.ItemId);
+        const UFirearmConfig* RifleData = Cast<UFirearmConfig>(ItemRifle);
+        RifleState.AmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
+		RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 5 : 0;
+		RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
+    }
 }
 
 

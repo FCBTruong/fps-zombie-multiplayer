@@ -121,6 +121,8 @@ public:
     UFUNCTION(Server, Reliable)
     void ServerTest();
 	void RequestSpectateNextPlayer();
+    UFUNCTION(Server, Reliable)
+	void ServerSpectateNextPlayer();
     void BindCharacter(ABaseCharacter* Char);
 private:
     UPROPERTY()
@@ -152,6 +154,8 @@ private:
     FDelegateHandle H_UpdateMatchState;
     FDelegateHandle H_OnGameResult;
     FDelegateHandle H_OnSwitchSide;
+    FDelegateHandle H_OnUpdateRoundNumber;
+    FDelegateHandle H_OnUpdateHeroPhase;
 
     // PlayerState delegate handles
     FDelegateHandle H_UpdateMoney;
@@ -213,4 +217,7 @@ private:
     void EnterUIMode();
     void EnterGameMode();
     void OnAmmoChanged(int32 Clip, int32 Reserve);
+
+    UFUNCTION(Client, Reliable)
+    void ClientSpectateTarget(AActor* Target, float BlendTime = 0.f);
 };

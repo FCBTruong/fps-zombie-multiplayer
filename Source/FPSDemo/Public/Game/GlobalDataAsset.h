@@ -56,6 +56,9 @@ public:
 	TObjectPtr<USoundBase> SwitchingSideVoice;
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase> HeroPhaseActiveSound;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase> GameEndSound;
 
 	UPROPERTY(EditAnywhere, Category = "Sound")

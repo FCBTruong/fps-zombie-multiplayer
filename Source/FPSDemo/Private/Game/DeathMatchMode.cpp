@@ -38,6 +38,7 @@ void ADeathMatchMode::OnCharacterKilled(class AController* Killer, ABaseCharacte
 	Super::OnCharacterKilled(Killer, Victim, DamageCauser, bWasHeadShot);
 	
 	// restart victim after 3 seconds
+	Victim->ApplyRealDeath(/*bDropInventory=*/false);
 	FTimerHandle RespawnTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(
 		RespawnTimerHandle,
@@ -53,28 +54,28 @@ void ADeathMatchMode::OnCharacterKilled(class AController* Killer, ABaseCharacte
 	);
 }
 
-void ADeathMatchMode::RestartPlayer(AController* NewPlayer)
+void ADeathMatchMode::RestartPlayer(AController* Controller)
 {
-	if (!NewPlayer)
-	{
-		return;
+	if (!Controller) return;
+	if (Controller->GetPawn()) {
+		Controller->GetPawn()->Destroy();
 	}
-	// destroy existing pawn
-	if (APawn* ExistingPawn = NewPlayer->GetPawn())
-	{
-		ExistingPawn->Destroy();
-	}
+	Controller->StartSpot = nullptr; // clear start spot to force choosing a new one
+	Controller->UnPossess();
+	Super::RestartPlayer(Controller);
+}
+
+void ADeathMatchMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
+	if (!NewPlayer) return;
 
 	AActorManager* AM = AActorManager::Get(GetWorld());
 
-	FVector Location = AM->RandomLocationOnMap();
-	FRotator Rotation = FRotator::ZeroRotator;
-	FTransform SpawnTransform(Rotation, Location);
+	const FVector RandomLoc = AM->RandomLocationOnMap();
+	const FRotator RandomRot = FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f);
 
-	APawn* Pawn = SpawnDefaultPawnAtTransform(NewPlayer, SpawnTransform);
-
-	if (Pawn)
-	{
-		NewPlayer->Possess(Pawn);
-	}
+	FTransform SpawnTM(RandomRot, RandomLoc);
+	// Spawns DefaultPawnClass at this transform and possesses it
+	RestartPlayerAtTransform(NewPlayer, SpawnTM);
 }
+

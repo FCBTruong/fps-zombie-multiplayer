@@ -30,6 +30,7 @@
 #include "Lobby/SceneManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Practice/PracticeGameMode.h"
+#include "Game/ActorManager.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -553,6 +554,18 @@ bool AMyPlayerController::IsSpectatingState() const
 
 void AMyPlayerController::RequestSpectateNextPlayer()
 {
+    if (HasAuthority())
+    {
+        SpectateNextPlayer_Internal();
+        return;
+	}
+    else {
+        ServerSpectateNextPlayer();
+	}
+}
+
+void AMyPlayerController::ServerSpectateNextPlayer_Implementation()
+{
     SpectateNextPlayer_Internal();
 }
 
@@ -563,6 +576,16 @@ void AMyPlayerController::SpectateNextPlayer_Internal()
 	AMyPlayerState* PlayerMyState = Cast<AMyPlayerState>(PlayerState);
 	if (!PlayerMyState) return;
     
+	ABaseCharacter* Char = Cast<ABaseCharacter>(CurrentSpectateTarget.Get());
+    if (Char)
+    {
+        // make sure current target is still alive
+        if (Char->IsDead())
+        {
+            CurrentSpectateTarget = nullptr;
+        }
+    }
+
     auto Target = FindNextLivingTeammate(CurrentSpectateTarget.Get());
     UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug1"));
 
@@ -585,6 +608,13 @@ void AMyPlayerController::SpectateNextPlayer_Internal()
 			}
         }
     }
+    if (!CurrentSpectateTarget.IsValid()) {
+		AActorManager* AM = AActorManager::Get(GetWorld());
+		CurrentSpectateTarget = AM->GetGlobalCamera();
+        return;
+	}
+
+	ClientSpectateTarget(CurrentSpectateTarget.Get());
 }
 
 AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
@@ -941,10 +971,13 @@ void AMyPlayerController::BindGameState(AShooterGameState* GS)
     H_UpdateMatchState = GS->OnUpdateMatchState.AddUObject(PlayerUI, &UPlayerUI::UpdateGameState);
 	H_OnGameResult = GS->OnGameResult.AddUObject(PlayerUI, &UPlayerUI::ShowGameResult);
 	H_OnSwitchSide = GS->OnSwitchSide.AddUObject(PlayerUI, &UPlayerUI::OnSwitchSide);
+	H_OnUpdateRoundNumber = GS->OnUpdateRoundNumber.AddUObject(PlayerUI, &UPlayerUI::UpdateRoundNumber);
+	H_OnUpdateHeroPhase = GS->OnUpdateHeroPhase.AddUObject(PlayerUI, &UPlayerUI::UpdateHeroPhase);
 
 	PlayerUI->UpdateTeamScores(GS->GetTeamAScore(), GS->GetTeamBScore());
     PlayerUI->OnUpdateRoundTime(GS->GetRemainingRoundTime());
 	PlayerUI->UpdateGameState(GS->GetMatchState());
+    PlayerUI->UpdateHeroPhase();
 }
 
 void AMyPlayerController::UnbindGameState(AShooterGameState* GS)
@@ -955,11 +988,17 @@ void AMyPlayerController::UnbindGameState(AShooterGameState* GS)
     GS->OnUpdateRoundTime.Remove(H_UpdateRoundTime);
     GS->OnUpdateMatchState.Remove(H_UpdateMatchState);
 	GS->OnGameResult.Remove(H_OnGameResult);
+	GS->OnSwitchSide.Remove(H_OnSwitchSide);
+	GS->OnUpdateRoundNumber.Remove(H_OnUpdateRoundNumber);
+	GS->OnUpdateHeroPhase.Remove(H_OnUpdateHeroPhase);
 
     H_UpdateScore.Reset();
     H_UpdateRoundTime.Reset();
     H_UpdateMatchState.Reset();
 	H_OnGameResult.Reset();
+	H_OnSwitchSide.Reset();
+	H_OnUpdateRoundNumber.Reset();
+	H_OnUpdateHeroPhase.Reset();
 }
 
 void AMyPlayerController::BindPlayerState(AMyPlayerState* PS)
@@ -1021,7 +1060,7 @@ void AMyPlayerController::Test() {
 
 void AMyPlayerController::ServerTest_Implementation()
 {
-    
+    SpectateNextPlayer_Internal();
 }
 
 void AMyPlayerController::HandleEscapePressed()
@@ -1085,4 +1124,15 @@ void AMyPlayerController::OnAmmoChanged(int32 Clip, int32 Reserve) // for curren
     {
         StartReload();
     }   
+}
+
+void AMyPlayerController::ClientSpectateTarget_Implementation(AActor* Target, float BlendTime)
+{
+    if (!IsValid(Target))
+    {
+        return;
+    }
+
+    // This is the only thing you said you want: view through teammate.
+    SetViewTargetWithBlend(Target, BlendTime);
 }
