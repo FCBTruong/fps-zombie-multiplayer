@@ -18,6 +18,9 @@ class FPSDEMO_API UScoreboardUI : public UUserWidget
 
 protected:
 	UPROPERTY(meta = (BindWidget))
+	class UWidget* Divide;
+
+	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* ScoreboardBox;
 
 	UPROPERTY(meta = (BindWidget))

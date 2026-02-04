@@ -12,6 +12,9 @@
 #include "Game/GameManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Game/GlobalDataAsset.h"
+#include "Characters/BaseCharacter.h"
+#include "Items/AirdropCrate.h"
+#include "Game/ItemsManager.h"
 
 AShooterGameState::AShooterGameState()
 {
@@ -234,4 +237,88 @@ void AShooterGameState::Multicast_SwitchSide_Implementation()
 void AShooterGameState::OnRep_HeroPhase()
 {
     OnUpdateHeroPhase.Broadcast();
+}
+
+bool AShooterGameState::CanQuitMidMatch() const
+{
+    // Prevent quitting mid-match during critical phases
+    if (MatchMode == EMatchMode::DeathMatch)
+    {
+        return true; // Allow quitting in DeathMatch mode
+	}
+    return false;
+}
+
+void AShooterGameState::OnSpawnedAirdropCrate(AAirdropCrate* NewCrate)
+{
+    if (!HasAuthority() || !NewCrate) return;
+    ActiveAirdropCrates.Add(NewCrate);
+
+	FVector Location = NewCrate->GetActorLocation();
+    Multicast_SpawnAirdropCrate(Location);
+}
+
+void AShooterGameState::Multicast_SpawnAirdropCrate_Implementation(FVector Location)
+{
+	// dedicated then return
+    if (GetNetMode() == NM_DedicatedServer) {
+        return;
+    }
+    // Clients can play spawn effects here if needed
+	AMyPlayerController* MyPC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
+	MyPC->NotifyToastMessage(FText::FromString("Airdrop crate has arrived!"));
+
+    if (UGameManager* GM = UGameManager::Get(GetWorld()))
+    {
+        if (GM->GlobalData && GM->GlobalData->AirdropCrateSpawnSound)
+        {
+            UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->AirdropCrateSpawnSound.Get());
+        }
+
+        if (GM->GlobalData->HelicopterClass) {
+			AActor* Helicopter = GetWorld()->SpawnActor<AActor>(GM->GlobalData->HelicopterClass);
+            Location.Z += 2000.f; // raise it up
+            Helicopter->SetActorLocation(Location);
+
+            // random direction
+            FRotator NewRot = FRotator::ZeroRotator;
+            NewRot.Yaw = FMath::FRandRange(0.f, 360.f);
+            Helicopter->SetActorRotation(NewRot);
+			Helicopter->SetLifeSpan(25.f);
+            // move forward, and hide after 5 seconds
+        }
+    }
+}
+
+void AShooterGameState::OnClaimedAirdropCrate(AAirdropCrate* ClaimedCrate, ABaseCharacter* ClaimingCharacter, EItemId GiftId)
+{
+    if (!HasAuthority() || !ClaimedCrate) return;
+    ActiveAirdropCrates.Remove(ClaimedCrate);
+
+	Multicast_ClaimAirdropCrate(ClaimingCharacter, GiftId);
+}
+
+void AShooterGameState::Multicast_ClaimAirdropCrate_Implementation(ABaseCharacter* Claimer, EItemId GiftId)
+{
+    // Clients can play claim effects here if needed
+    if (Claimer && Claimer->IsLocallyControlled())
+    {
+        AMyPlayerController* MyPC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
+        FText Txt = FText::FromString("Ammo added to primary weapon!");
+        if (GiftId != EItemId::NONE)
+        {
+			const UItemConfig* GiftConfig = UItemsManager::Get(GetWorld())->GetItemById(GiftId);
+            if (GiftConfig)
+            {
+                Txt = FText::FromString(
+                    FString::Printf(TEXT("You received %s!"),
+                        *GiftConfig->DisplayName.ToString())
+                );
+            }
+		}
+        else {
+            // if none, mean ammo
+        }
+        MyPC->NotifyToastMessage(Txt);
+    }
 }

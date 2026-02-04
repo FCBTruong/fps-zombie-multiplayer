@@ -140,7 +140,7 @@ void UCharCameraComponent::OnBecomeViewTarget(APlayerController* PC)
     }
 
     CachedLocalPC = PC;
-    bIsFPS = true;
+    bIsFPS = false;
     TargetFOV = DefaultFpsFov;
     ApplyView();
 }

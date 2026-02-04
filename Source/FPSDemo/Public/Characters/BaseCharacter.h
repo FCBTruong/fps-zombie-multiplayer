@@ -183,6 +183,9 @@ protected:
     TWeakObjectPtr<AController> LastHitByController;
 
     UPROPERTY()
+    TArray<TWeakObjectPtr<AController>> DamageInstigators;
+
+    UPROPERTY()
     TWeakObjectPtr<const UItemConfig> LastDamageCauser;
 
     UPROPERTY()
@@ -314,7 +317,7 @@ public:
     bool IsPermanentDead() {
 		return bIsPermanentDead;
     }
-    bool HasLineOfSightToPawn(const APawn* Target) const;
+    bool CanSeeThisActor(const APawn* Target) const;
     void OnTeamChanged();
 	FString GetPlayerName() const;
 

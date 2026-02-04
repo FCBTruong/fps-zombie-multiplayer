@@ -87,11 +87,13 @@ void UBTService_UpdateTarget::TickNode(
         bool bHasLOS = (!bHit || Hit.GetActor() == BestTarget);
 		AICon->SetHasLineSight(bHasLOS);
 		AICon->SetFocus(BestTarget);
+
+       // AICon->SetFocalPoint(BestTarget->GetActorLocation());
     }
     else
     {
         AICon->SetHasLineSight(false);
-		AICon->ClearFocus(EAIFocusPriority::Default);
+		AICon->ClearFocus(EAIFocusPriority::Gameplay);
     }
     //AICon->SetFocus(BestTarget);
 }

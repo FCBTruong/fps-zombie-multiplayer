@@ -24,11 +24,11 @@ void UScoreboardSlotUI::Setup(const AMyPlayerState* PS, bool isMe)
 		AssistLb->SetText(FText::AsNumber(PS->GetAssists()));
 	}
 
-	if (PS->GetTeamId() == ETeamId::Attacker) {
-		BackgroundImg->SetColorAndOpacity(FLinearColor(0.3f, 0.65f, 1.0f, 0.3f)); // Blueish
+	if (PS->GetTeamId() == ETeamId::Defender) {
+		BackgroundImg->SetColorAndOpacity(FLinearColor(0.3f, 0.65f, 1.0f, 0.6f)); // Blueish
 	}
-	else if (PS->GetTeamId() == ETeamId::Defender) {
-		BackgroundImg->SetColorAndOpacity(FLinearColor(0.617f, 0.184f, 0.036f, 0.3f)); // Reddish
+	else if (PS->GetTeamId() == ETeamId::Attacker) {
+		BackgroundImg->SetColorAndOpacity(FLinearColor(0.617f, 0.184f, 0.036f, 0.6f)); // Reddish
 	}
 
 	bool bIsDead = false;

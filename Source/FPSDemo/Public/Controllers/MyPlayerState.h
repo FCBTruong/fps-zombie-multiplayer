@@ -53,6 +53,8 @@ protected:
 
 	UPROPERTY(Replicated)
 	int Assists = 0;
+
+	bool bWasChosenAsZombie = false;
 public:
 	AMyPlayerState();
 
@@ -96,5 +98,12 @@ public:
 	}
 	int GetAssists() const {
 		return Assists;
+	}
+
+	void SetChosenAsZombie(bool bChosen) {
+		bWasChosenAsZombie = bChosen;
+	}
+	bool WasChosenAsZombie() const {
+		return bWasChosenAsZombie;
 	}
 };

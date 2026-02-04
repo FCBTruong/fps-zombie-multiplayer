@@ -3,7 +3,12 @@
 
 #include "UI/PlayerMapDot.h"
 
-
+void UPlayerMapDot::NativeConstruct()
+{
+	Super::NativeConstruct();
+	SpikeIcon->SetVisibility(ESlateVisibility::Hidden);
+	DeadIcon->SetVisibility(ESlateVisibility::Hidden);
+}
 void UPlayerMapDot::UpdateData(bool bIsMe, bool bIsDead, bool bHasSpike)
 {
 	if (bIsDead)
@@ -26,6 +31,7 @@ void UPlayerMapDot::UpdateData(bool bIsMe, bool bIsDead, bool bHasSpike)
 	{
 		SpikeIcon->SetVisibility(ESlateVisibility::Hidden);
 	}
+	LightScanIcon->SetVisibility(bIsMe ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 }
 
 void UPlayerMapDot::SetIsTeammateVisual(bool bIsTeammate)
@@ -35,4 +41,8 @@ void UPlayerMapDot::SetIsTeammateVisual(bool bIsTeammate)
 	Dot->SetColorAndOpacity(bIsTeammate
 		? FLinearColor(0.028f, 0.484f, 0.073f, 1.f)
 		: FLinearColor::Red);
+
+	if (!bIsTeammate) {
+		LightScanIcon->SetVisibility(ESlateVisibility::Hidden);
+	}
 }

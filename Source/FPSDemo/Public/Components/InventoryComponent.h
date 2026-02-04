@@ -75,6 +75,7 @@ public:
     void OnBecomeZombie();
 	int GetArmorPoints() const { return ArmorState.ArmorPoints; }
 	int GetArmorMaxPoints() const { return ArmorState.ArmorMaxPoints; }
+	void AddAmmoToMainGun(int32 Amount);
 
     void ClearInventory();
 public:

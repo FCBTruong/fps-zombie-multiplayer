@@ -31,12 +31,17 @@ protected:
 	void ScheduleZombieRevive(ABaseCharacter* VictimPawn);
 	void OnRoundTimeExpired();
 	void StartSpectating(ABaseCharacter* VictimPawn);
+	void SpawnAirdropCrate();
+	void HandleAirdropClaimed(class AAirdropCrate* AirdropCrate, ABaseCharacter* Character);
+	AController* ChooseZombieController() const;
+	void CheckAndSpawnAirdropCrate();
 
 	FTimerHandle BuyingTimerHandle;
 	FTimerHandle FightStateTimerHandle;
 	FTimerHandle StartRoundTimerHandle;
+	FTimerHandle AirdropCheckTimer;
 public:
-	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 	virtual EMatchMode GetMatchMode() const {
 		return EMatchMode::Zombie;
 	}

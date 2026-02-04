@@ -8,6 +8,8 @@
 #include "ShooterGameState.generated.h"
 
 class ASpike;
+class AAirdropCrate;
+class ABaseCharacter;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateScore, int32, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRoundTime, int32)
@@ -56,6 +58,9 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_Spike)
     ASpike* PlantedSpike;
 
+    UPROPERTY() // zombie mode, Airdrop Crates
+	TArray<AAirdropCrate*> ActiveAirdropCrates;
+
     UFUNCTION()
 	void OnRep_Spike();
     
@@ -85,6 +90,12 @@ protected:
 
     virtual void RemovePlayerState(APlayerState* PlayerState) override;
     virtual void AddPlayerState(APlayerState* PlayerState) override;
+
+    UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_SpawnAirdropCrate(FVector Location);
+
+    UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_ClaimAirdropCrate(ABaseCharacter* Claimer, EItemId GiftId);
 public:
 	AShooterGameState();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -158,4 +169,10 @@ public:
     bool IsHeroPhase() const {
         return bHeroPhase;
     }
+    bool CanQuitMidMatch() const;
+
+    void OnSpawnedAirdropCrate(AAirdropCrate* Crate);
+    void OnClaimedAirdropCrate(AAirdropCrate* Crate, ABaseCharacter* Claimer, EItemId GiftId);
+	TArray<AAirdropCrate*> GetActiveAirdropCrates() const { return ActiveAirdropCrates; }
+	void ClearAirdropCrates() { ActiveAirdropCrates.Empty(); }
 };

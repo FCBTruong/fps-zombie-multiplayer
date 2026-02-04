@@ -33,4 +33,6 @@ public:
 
 	void UpdateData(bool bIsMe, bool bIsDead, bool bHasSpike);
 	void SetIsTeammateVisual(bool bIsTeammate);
+
+	void NativeConstruct() override;
 };

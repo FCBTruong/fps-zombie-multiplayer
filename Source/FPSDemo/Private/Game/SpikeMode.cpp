@@ -15,6 +15,7 @@
 #include "Items/ItemConfig.h"
 #include "Components/InventoryComponent.h"
 #include "Components/EquipComponent.h"
+#include "Game/GameManager.h"
 
 void ASpikeMode::StartPlay()
 {
@@ -31,6 +32,14 @@ void ASpikeMode::StartPlay()
 		AController* PC = MyPS->GetOwner<AController>();
 		if (!PC) continue;
 		AssignPlayerTeamInit(PC);
+	}
+
+	if (UGameManager* GMR = UGameManager::Get(GetWorld()))
+	{
+		GMR->OnNewPickupItemSpawned.AddUObject(
+			this,
+			&ASpikeMode::HandleNewPickupItemSpawned
+		);
 	}
 }
 
@@ -85,13 +94,14 @@ void ASpikeMode::EndRound(ETeamId WinningTeam)
 		return;
 	}
 	float DelayBeforeNewRound = 4.0f;
-	if (GS->GetCurrentRound() == RoundToSwapSides) {
+	bool bShouldSwapSides = (GS->GetCurrentRound() == RoundToSwapSides);
+	if (bShouldSwapSides) {
 		DelayBeforeNewRound += 2.0f; // extra delay for side swap
 		GetWorld()->GetTimerManager().SetTimer(
 			SwitchSideTimerHandle,
-			[this]()
+			[this, GS]()
 			{
-				SwapTeams();
+				GS->Multicast_SwitchSide();
 			},
 			2.0f,
 			false
@@ -103,8 +113,11 @@ void ASpikeMode::EndRound(ETeamId WinningTeam)
 	
 	GetWorld()->GetTimerManager().SetTimer(
 		StartRoundTimerHandle,
-		[this]()
+		[this, bShouldSwapSides]()
 		{
+			if (bShouldSwapSides) {
+				SwapTeams();
+			}
 			StartRound();
 		},
 		DelayBeforeNewRound,
@@ -219,9 +232,9 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 }
 
 
-void ASpikeMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeatShot)
+void ASpikeMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists,  ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeatShot)
 {
-	Super::OnCharacterKilled(Killer, VictimPawn, DamageCauser, bWasHeatShot);
+	Super::HandleCharacterKilled(Killer, Assists, VictimPawn, DamageCauser, bWasHeatShot);
 
 	OnCharacterDead.Broadcast(VictimPawn);
 	RegisterCorpse(VictimPawn);
@@ -279,13 +292,6 @@ void ASpikeMode::OnRoundTimeExpired()
 	if (!IsSpikePlanted())
 	{
 		EndRound(ETeamId::Defender);
-	}
-}
-
-void ASpikeMode::NotifySpikeDropped(ABaseCharacter* Player)
-{
-	if (BotManager) {
-		BotManager->OnSpikeDropped();
 	}
 }
 
@@ -369,8 +375,6 @@ void ASpikeMode::SwapTeams() // switch side
 			MyExistingPS->SetTeamId(NewTeam);
 		}
 	}
-
-	GS->Multicast_SwitchSide();
 }
 
 void ASpikeMode::GenerateInitialWeapons()
@@ -479,5 +483,14 @@ void ASpikeMode::HandlePlayerDeath(AController* DeadController)
 	if (PS)
 	{
 		PS->SetIsSpectator(true);
+	}
+}
+
+void ASpikeMode::HandleNewPickupItemSpawned(APickupItem* NewPickupItem)
+{
+	if (!NewPickupItem) return;
+	if (NewPickupItem->GetData().ItemId != EItemId::SPIKE) return;
+	if (BotManager) {
+		BotManager->OnSpikeDropped(NewPickupItem);
 	}
 }

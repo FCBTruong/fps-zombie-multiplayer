@@ -71,8 +71,7 @@ void BotStateManager::OnSpikePlanted(AActor* SpikeActor)
 	// assign one defender as spike defuser
 	if (Defenders.Num() > 0)
 	{
-		int32 RandomIndex = FMath::RandRange(0, Defenders.Num() - 1);
-		ABotAIController* SpikeDefuserBot = Defenders[RandomIndex];
+		ABotAIController* SpikeDefuserBot = Defenders[0];
 		SpikeDefuserBot->SetSpikeRole(EBotRole::D_Defuser);
 	}
 }
@@ -104,7 +103,7 @@ void BotStateManager::OnSpikePickedUp(ABaseCharacter* Player)
 	PlayerBot->SetSpikeRole(EBotRole::A_Carrier);
 }
 
-void BotStateManager::OnSpikeDropped()
+void BotStateManager::OnSpikeDropped(AActor* SpikeActor)
 {
 	TArray<ABotAIController*> Defenders;
 	for (ABotAIController* Bot : ManagedBots)
@@ -116,6 +115,7 @@ void BotStateManager::OnSpikeDropped()
 		if (!BotCharacter || BotCharacter->IsDead()) continue;
 
 		Bot->SetSpikeRole(EBotRole::A_FindSpike);
+		Bot->SetSpikeActor(SpikeActor);
 		break;
 	}
 }

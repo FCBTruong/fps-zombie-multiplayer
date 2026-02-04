@@ -25,6 +25,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterialInterface* TrajectoryMaterial;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Helicopter")
+	TSubclassOf<AActor> HelicopterClass;
+
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UPlayerUI> PlayerUIClass;
 
@@ -74,10 +77,15 @@ public:
 	TObjectPtr<USoundBase> CountdownTenSound;
 	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase>	ZoomScopeSound;
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase>	AirdropCrateSpawnSound;
 
 	UPROPERTY(EditAnywhere, Category = "Fx")
 	TObjectPtr<UParticleSystem> MeleeHitFx;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UPopupDialogUI> PopupDialogUIClass;
+
+	UPROPERTY(EditAnywhere, Category = "Crates")
+	TObjectPtr<UStaticMesh> CrateMesh;
 };

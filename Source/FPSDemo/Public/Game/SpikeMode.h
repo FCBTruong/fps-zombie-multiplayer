@@ -9,7 +9,7 @@
 #include "SpikeMode.generated.h"
 
 class UItemConfig;
-
+class APickupItem;
 /**
  * 
  */
@@ -28,8 +28,10 @@ protected:
 	void OnRoundTimeExpired();
 	virtual void AutoBuyForBots() override;
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
-	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, 
+		ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeatShot) override;
 	void HandlePlayerDeath(AController* DeadController);
+	void HandleNewPickupItemSpawned(APickupItem* NewPickupItem);
 public:
 	virtual void StartPlay() override;
 	virtual void StartRound() override;
@@ -42,7 +44,6 @@ public:
 	static constexpr int32 ScoreToWin = 3; // good is 7
 	static constexpr int32 RoundToSwapSides = ScoreToWin - 1;
 	static constexpr int32 TimePerRound = 90; // seconds
-	void NotifySpikeDropped(ABaseCharacter* Player);
 	void NotifySpikePickedUp(ABaseCharacter* Player);
 	virtual void AssignPlayerTeamInit(AController* NewPlayer) override;
 

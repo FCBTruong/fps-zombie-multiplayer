@@ -1084,6 +1084,11 @@ void AMyPlayerController::HandleEscapePressed()
         return;
     }
 
+	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+    if (GS && !GS->CanQuitMidMatch()) {
+        return;
+    }
+
 	// Show pause menu or other UI here
 	USceneManager* SceneMgr = USceneManager::Get(GetWorld());
     if (SceneMgr)

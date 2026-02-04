@@ -657,6 +657,10 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage after armor: %f"), ActualDamage);
     LastHitByController = EventInstigator;
 	bLastHitWasHeadshot = false;
+    if (EventInstigator)
+    {
+        DamageInstigators.AddUnique(EventInstigator);
+    }
 
     if (DamageEvent.IsOfType(FMyPointDamageEvent::ClassID))
     {
@@ -750,9 +754,10 @@ void ABaseCharacter::HandleDeath()
         if (!GM) {
             return;
         }
-        GM->OnCharacterKilled(LastHitByController.Get(), this, LastDamageCauser.Get(), bLastHitWasHeadshot);
+        GM->HandleCharacterKilled(LastHitByController.Get(), DamageInstigators, this, LastDamageCauser.Get(), bLastHitWasHeadshot);
         LastHitByController = nullptr; // reset after use
         LastDamageCauser = nullptr; // reset after use
+        DamageInstigators.Reset();
 
         if (bIsAiming) {
             bIsAiming = false;
@@ -1135,6 +1140,7 @@ void ABaseCharacter::ApplyRotationMode()
     if (IsBot())
     {
 		Move->bOrientRotationToMovement = true;
+        bUseControllerRotationYaw = false;
     }
 }
 
@@ -1142,13 +1148,14 @@ void ABaseCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
 
-    //ApplyRotationMode(IsLocal, IsPlayer);
+    ApplyRotationMode();
 }
 
 void ABaseCharacter::OnRep_Controller()
 {
     Super::OnRep_Controller();
 
+    ApplyRotationMode();
     /* bool IsLocal = Controller->IsLocalController();
     bool IsPlayer = Cast<APlayerController>(Controller) != nullptr;
     ApplyRotationMode(Cast<APlayerController>(Controller) != nullptr);*/
@@ -1390,7 +1397,16 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
                 VisualSet = CachedCharacterAsset->SoldierVisualSet2;
 			}
             else {
-
+                const FUniqueNetIdRepl& NetId = PS->GetUniqueId();
+                uint32 Hash = GetTypeHash(NetId);
+				// skin selection based on id, due to skin not important yet
+				// refactor later, use skin id replicated from player state
+                if (Hash % 2 == 0) {
+                    VisualSet = CachedCharacterAsset->SoldierVisualSet;
+                }
+                else {
+                    VisualSet = CachedCharacterAsset->SoldierVisualSet2;
+                }
             }
         }
     }
@@ -1802,21 +1818,71 @@ void ABaseCharacter::OnTeamChanged() {
 	ApplyVisualByRole(GetCharacterRole()); // recall it to update team-based visuals
 }
 
-bool ABaseCharacter::HasLineOfSightToPawn(const APawn* Target) const
+bool ABaseCharacter::CanSeeThisActor(const APawn* Target) const
 {
-    if (!Target) return false;
+    float FOVDegrees = 80.f;
+    float MaxDistance = 0.f;
+    if (!IsValid(Target)) return false;
 
     const UWorld* World = GetWorld();
     if (!World) return false;
 
-    const FVector Start = GetPawnViewLocation();
-    const FVector End = Target->GetActorLocation();
+    // ----- View origin + direction -----
+    FVector ViewLoc;
+    FRotator ViewRot;
 
+    // Prefer controller view when available (more accurate for players), otherwise fall back to actor view.
+    if (const AController* C = GetController())
+    {
+        C->GetPlayerViewPoint(ViewLoc, ViewRot);
+    }
+    else
+    {
+        ViewLoc = GetPawnViewLocation();
+        ViewRot = GetViewRotation();
+    }
+
+    // Aim at target "eyes" if possible; otherwise use actor location.
+    FVector TargetLoc = Target->GetActorLocation();
+    if (const ACharacter* TargetChar = Cast<ACharacter>(Target))
+    {
+        TargetLoc = TargetChar->GetPawnViewLocation();
+    }
+
+    const FVector ToTarget = TargetLoc - ViewLoc;
+    const float DistSq = ToTarget.SizeSquared();
+
+    if (MaxDistance > 0.f && DistSq > FMath::Square(MaxDistance))
+        return false;
+
+    // ----- Field of view check -----
+    const FVector ViewForward = ViewRot.Vector();
+    const FVector ToTargetDir = ToTarget.GetSafeNormal();
+
+    const float CosHalfFOV = FMath::Cos(FMath::DegreesToRadians(FOVDegrees * 0.5f));
+    const float CosAngle = FVector::DotProduct(ViewForward, ToTargetDir);
+
+    if (CosAngle < CosHalfFOV)
+        return false;
+
+    // ----- Line of sight check -----
     FCollisionQueryParams Params(SCENE_QUERY_STAT(CharViewLOS), /*bTraceComplex=*/true);
     Params.AddIgnoredActor(this);
 
-    FHitResult Hit;
-    const bool bHit = World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+    // Ignore anything attached to us (weapons, components that might block the trace).
+    TArray<AActor*> AttachedActors;
+    GetAttachedActors(AttachedActors);
+    for (AActor* A : AttachedActors)
+    {
+        Params.AddIgnoredActor(A);
+    }
 
-    return (!bHit) || (Hit.GetActor() == Target) || (Hit.GetActor() && Hit.GetActor()->IsOwnedBy(Target));
+    FHitResult Hit;
+    const bool bHit = World->LineTraceSingleByChannel(Hit, ViewLoc, TargetLoc, ECC_Visibility, Params);
+
+    if (!bHit)
+        return true; // Nothing blocked the trace.
+
+    AActor* HitActor = Hit.GetActor();
+    return (HitActor == Target) || (HitActor && HitActor->IsOwnedBy(Target));
 }

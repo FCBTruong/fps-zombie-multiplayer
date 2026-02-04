@@ -13,6 +13,7 @@ class APickupItem;
 class UCharacterAsset;
 class ABaseCharacter;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewPickupItemSpawned, APickupItem*);
 /**
  * 
  */
@@ -57,4 +58,6 @@ public:
 		const FString& InRoomId,
 		const FString& InMode,
 		const FString& InToken);
+
+	FOnNewPickupItemSpawned OnNewPickupItemSpawned;
 };

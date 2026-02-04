@@ -67,11 +67,6 @@ void ATeamEliminationMode::EndGame(ETeamId WinningTeam)
 
 }
 
-void ATeamEliminationMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
-{
-    Super::OnCharacterKilled(Killer, Victim, DamageCauser);
-}
-
 void ATeamEliminationMode::CheckRoundEnd()
 {
     

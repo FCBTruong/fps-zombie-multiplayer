@@ -24,12 +24,20 @@ void UScoreboardUI::UpdateScoreboard(class AShooterGameState* GameState)
 
 	TArray<const AMyPlayerState*> SortedPlayers;
 
+	auto MatchMode = GameState->GetMatchMode();
 	for (APlayerState* PS : GameState->PlayerArray)
 	{
 		if (const AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS))
 		{
 			SortedPlayers.Add(MyPS);
 		}
+	}
+
+	if (MatchMode == EMatchMode::Spike) {
+		Divide->SetVisibility(ESlateVisibility::Visible);
+	}
+	else {
+		Divide->SetVisibility(ESlateVisibility::Hidden);
 	}
 
 	// 2. Sort by kills (DESC)
@@ -45,6 +53,11 @@ void UScoreboardUI::UpdateScoreboard(class AShooterGameState* GameState)
 			bool IsMe = (MyPS == LocalPS);
 			CvSlot->Setup(MyPS, IsMe);
 
+			if (MatchMode == EMatchMode::DeathMatch
+				|| MatchMode == EMatchMode::Zombie) {
+				ScoreboardBox->AddChild(CvSlot);
+				continue;
+			}
 			if (MyPS->GetTeamId() == ETeamId::Attacker) {
 				ScoreboardBoxA->AddChild(CvSlot);
 			}

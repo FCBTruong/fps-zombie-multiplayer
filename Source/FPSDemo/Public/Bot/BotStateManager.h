@@ -24,7 +24,7 @@ public:
 	void OnSpikePlanted(AActor* SpikeActor);
 	void OnSpikeDefused();
 	void OnSpikePickedUp(ABaseCharacter* Player);
-	void OnSpikeDropped();
+	void OnSpikeDropped(AActor* SpikeActor);
 	void OnSpikeCarrierKilled();
 	void OnStartRound(AActor* SpikeActor);
 	void OnStartRoundZombieMode();

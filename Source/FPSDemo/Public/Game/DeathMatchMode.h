@@ -22,7 +22,8 @@ protected:
 	virtual void StartPlay() override;
 	virtual void RestartPlayer(AController* Controller) override;
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
-	virtual void OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists,
+		ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeatShot) override;
 private:
 	void OnRoundTimeExpired();
 	FTimerHandle RoundTimerHandle;

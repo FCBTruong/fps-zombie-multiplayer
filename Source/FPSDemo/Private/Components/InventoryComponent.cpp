@@ -58,7 +58,7 @@ void UInventoryComponent::InitBasicWeapon()
             EItemId::RIFLE_AK_47,
             EItemId::RIFLE_M16A,
             EItemId::RIFLE_QBZ,
-            EItemId::RIFLE_RUSSIAN_AS_VAL
+            EItemId::RIFLE_RUSSIAN_AS_VAL,
 		};
 		RifleState.ItemId = RifleOptions[FMath::RandRange(0, RifleOptions.Num() - 1)];
 
@@ -67,7 +67,14 @@ void UInventoryComponent::InitBasicWeapon()
         RifleState.AmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
 		RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 5 : 0;
 		RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
+
+		Throwables.Add(EItemId::GRENADE_FRAG_BASIC);
     }
+
+    OnRep_RifleState();
+    OnRep_PistolState();
+    OnRep_MeleeState();
+    OnRep_ArmorState();
 }
 
 
@@ -451,4 +458,15 @@ void UInventoryComponent::OnBecomeZombie() {
     OnRep_RifleState();
     OnRep_PistolState();
     Throwables.Empty();
+}
+
+void UInventoryComponent::AddAmmoToMainGun(int Ammo) {
+    if (RifleState.ItemId != EItemId::NONE) {
+		RifleState.AmmoReserve += Ammo;
+		OnRep_RifleState();
+	}
+    else if (PistolState.ItemId != EItemId::NONE) {
+        PistolState.AmmoReserve += Ammo;
+        OnRep_PistolState();
+    }
 }

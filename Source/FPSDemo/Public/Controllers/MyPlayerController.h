@@ -125,6 +125,7 @@ public:
 	void ServerSpectateNextPlayer();
     void BindCharacter(ABaseCharacter* Char);
 	void SetTimeOfDeath(float TimeDead);
+    void NotifyToastMessage(const FText& Message);
 private:
     UPROPERTY()
     TWeakObjectPtr<AActor> CurrentSpectateTarget;
@@ -173,7 +174,6 @@ private:
     void ToggleShop();
     void HandleSpikeChanged(bool bHasSpike);
     void NotifyItemPickedUp(EItemId ItemId);
-    void NotifyToastMessage(const FText& Message);
     void DropWeapon();
     void Pickup();
     void ClickAim();

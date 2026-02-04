@@ -66,7 +66,7 @@ void AShooterGameMode::StartPlay()
             P.PlayerId = FGameConstants::EMPTY_PLAYER_ID;
 			RoomDataMutable.Players.Add(P);
         }
-        if (true) {
+        if (false) {
             RoomDataMutable.Players[3].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 2;
             RoomDataMutable.Players[3].bIsBot = true;
 
@@ -150,7 +150,7 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 }
 
 
-void AShooterGameMode::OnCharacterKilled(class AController* Killer, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void AShooterGameMode::HandleCharacterKilled(class AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
     UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in AShooterGameMode"));
     if (DamageCauser->Id == EItemId::SPIKE) {
@@ -170,6 +170,16 @@ void AShooterGameMode::OnCharacterKilled(class AController* Killer, ABaseCharact
     if (KillerPS && KillerPS != VictimPS && KillerPS->GetTeamId() != VictimPS->GetTeamId()) {
         KillerPS->AddKill();
     }
+
+	// Add assists score
+    for (TWeakObjectPtr<AController> AssistController : Assists)
+    {
+        AMyPlayerState* AssistPS = AssistController.IsValid() ? AssistController->GetPlayerState<AMyPlayerState>() : nullptr;
+        if (AssistPS && AssistPS != KillerPS && AssistPS != VictimPS)
+        {
+            AssistPS->AddAssist();
+        }
+	}
    
     AShooterGameState* GS = GetGameState<AShooterGameState>();
     if (GS)

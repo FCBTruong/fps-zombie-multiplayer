@@ -9,6 +9,8 @@
 #include "GameFramework/PlayerStart.h"
 #include "Items/ItemConfig.h"
 #include "Controllers/MyPlayerController.h"
+#include "Items/AirdropCrate.h"
+#include "Components/InventoryComponent.h"
 
 void AZombieMode::StartPlay()
 {
@@ -21,9 +23,21 @@ void AZombieMode::StartRound()
 {
 	UE_LOG(LogTemp, Warning, TEXT("AZombieMode: Starting Round..."));
 	Super::StartRound();
-
+	
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return;
+
+	// clean airdrop crates and clear timer
+	GetWorldTimerManager().ClearTimer(AirdropCheckTimer);
+	auto Airdopes = GS->GetActiveAirdropCrates();
+	for (AAirdropCrate* Crate : Airdopes)
+	{
+		if (Crate && !Crate->IsPendingKillPending())
+		{
+			Crate->Destroy();
+		}
+	}
+	GS->ClearAirdropCrates();
 	
 	GS->SetMatchState(EMyMatchState::BUY_PHASE);
 	GS->SetHeroPhase(false);
@@ -74,6 +88,14 @@ void AZombieMode::EnterFightState()
 		RoundProgressTime,
 		false
 	);
+
+	GetWorldTimerManager().SetTimer(
+		AirdropCheckTimer,
+		this,
+		&AZombieMode::CheckAndSpawnAirdropCrate,
+		20.0f,
+		true
+	);
 }
 
 void AZombieMode::RandomZombie()
@@ -98,8 +120,20 @@ void AZombieMode::RandomZombie()
 		NumZombies = 3;
 	}
 
+	for (int32 i = 0; i < NumZombies; ++i)
+	{
+		AController* Ctrl = ChooseZombieController();
+		if (!Ctrl) continue;
+
+		BecomeZombie(Ctrl);
+	}
+}
+
+// This function chooses a random player, but skips players who were zombies before
+// Help prevent the same players from being zombies repeatedly
+AController* AZombieMode::ChooseZombieController() const {
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (!GS) return;
+	if (!GS) return nullptr;
 
 	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
 
@@ -111,40 +145,32 @@ void AZombieMode::RandomZombie()
 	{
 		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
 		if (!MyPS) continue;
-
-		ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPS->GetPawn());
-		if (!MyChar) continue;
-
-		URoleComponent* RoleComp = MyChar->GetRoleComponent();
-		if (!RoleComp) continue;
-		
-		if (RoleComp->GetRole() != ECharacterRole::Human) continue;
+		if (MyPS->WasChosenAsZombie()) continue; // skip players who were zombies before
 		Eligible.Add(MyPS);
 	}
-
 	if (Eligible.Num() == 0)
 	{
-		return;
+		// need to reset the "was zombie before" flags
+		for (APlayerState* PS : PlayerStates)
+		{
+			AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
+			if (!MyPS) continue;
+			MyPS->SetChosenAsZombie(false);
+			Eligible.Add(MyPS);
+		}
 	}
-
-	// Clamp number of zombies
-	const int32 ZombiesToPick = FMath::Min(NumZombies, Eligible.Num());
-
-	for (int32 i = 0; i < ZombiesToPick; ++i)
+	if (Eligible.Num() == 0)
 	{
-		const int32 Index = FMath::RandRange(0, Eligible.Num() - 1);
-		AMyPlayerState* ZombiePS = Eligible[Index];
-		Eligible.RemoveAtSwap(Index);
-
-		if (!ZombiePS) continue;
-
-		AController* Ctrl = Cast<AController>(ZombiePS->GetOwner());
-		if (!Ctrl) continue;
-
-		BecomeZombie(Ctrl);
+		UE_LOG(LogTemp, Warning, TEXT("ChooseZombieController: No eligible players found"));
+		return nullptr;
 	}
-}
 
+	const int32 Index = FMath::RandRange(0, Eligible.Num() - 1);
+	AMyPlayerState* ZombiePS = Eligible[Index];
+	ZombiePS->SetChosenAsZombie(true);
+	Eligible.RemoveAtSwap(Index);
+	return Cast<AController>(ZombiePS->GetOwner());
+}
 
 void AZombieMode::BecomeZombie(AController* Controller) {
 	UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeZombie called"));
@@ -237,9 +263,9 @@ void AZombieMode::EndRound(ETeamId WinningTeam)
 		});
 }
 
-void AZombieMode::OnCharacterKilled(class AController* Killer, class ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void AZombieMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
-	Super::OnCharacterKilled(Killer, VictimPawn, DamageCauser, bWasHeadShot);
+	Super::HandleCharacterKilled(Killer, Assists, VictimPawn, DamageCauser, bWasHeadShot);
 	UE_LOG(LogTemp, Warning, TEXT("AZombieMode::OnCharacterKilled called"));
 
 	if (!VictimPawn)
@@ -493,4 +519,58 @@ void AZombieMode::HandleStartingNewPlayer_Implementation(APlayerController* NewP
 	FTransform SpawnTM(RandomRot, RandomLoc);
 	// Spawns DefaultPawnClass at this transform and possesses it
 	RestartPlayerAtTransform(NewPlayer, SpawnTM);
+}
+
+void AZombieMode::SpawnAirdropCrate() {
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) return;
+
+	AActorManager* AM = AActorManager::Get(GetWorld());
+	FVector RandomLoc = AM->RandomLocationOnMap();
+	RandomLoc.Z += 1500.f; // spawn above ground
+	const FRotator RandomRot = FRotator::ZeroRotator;
+	FTransform SpawnTM(RandomRot, RandomLoc);
+	auto Crate = GetWorld()->SpawnActor<AAirdropCrate>(AAirdropCrate::StaticClass(), SpawnTM);
+	GS->OnSpawnedAirdropCrate(Crate);
+	if (Crate) {
+		Crate->OnAirdropClaimed.AddUObject(this, &AZombieMode::HandleAirdropClaimed);
+	}
+}
+
+void AZombieMode::HandleAirdropClaimed(AAirdropCrate* AirdropCrate, ABaseCharacter* Character) {
+	if (!AirdropCrate || !Character) return;
+	
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) return;
+
+	EItemId GiftId = EItemId::NONE;
+
+	int32 A = FMath::RandRange(1, 100);
+	/*if (A > 80)
+	{
+		GiftId = static_cast<EItemId>(
+			FMath::RandRange(
+				static_cast<int32>(EItemId::RIFLE_M16A),
+				static_cast<int32>(EItemId::RIFLE_QBZ)
+			)
+			);
+	}*/
+	GS->OnClaimedAirdropCrate(AirdropCrate, Character, GiftId);
+	// add gifts to character
+	// right now only bullets to main gun
+	Character->GetInventoryComponent()->AddAmmoToMainGun(90); // add 90 bullets
+	AirdropCrate->Destroy();
+}
+
+void AZombieMode::CheckAndSpawnAirdropCrate() {
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) return;
+	if (GS->GetMatchState() != EMyMatchState::ROUND_IN_PROGRESS) {
+		return; // only spawn during round in progress
+	}
+	const int CurrentAirdropNum = GS->GetActiveAirdropCrates().Num();
+	const int MaxAirdropNum = 2;
+	if (CurrentAirdropNum < MaxAirdropNum) {
+		SpawnAirdropCrate();
+	}
 }

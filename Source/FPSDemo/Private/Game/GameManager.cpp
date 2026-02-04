@@ -62,6 +62,8 @@ APickupItem* UGameManager::CreatePickupActor(FPickupData Data)
 
 		Pickup->SetActorLocation(Data.Location);
 		PickupItemsOnMap.Add(Data.Id, Pickup);
+
+
     }
     return Pickup;
 }

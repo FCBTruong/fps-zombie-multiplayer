@@ -52,9 +52,10 @@ void UMinimapRadarUI::NativeConstruct()
 			PeriodicUpdateTimerHandle,
 			this,
 			&UMinimapRadarUI::PeriodicUpdate,
-			0.5f,
+			1.0f,
 			true
 		);
+		PeriodicUpdate();
 	}
 }
 
@@ -74,12 +75,13 @@ void UMinimapRadarUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void UMinimapRadarUI::PeriodicUpdate()
 {
+	if (!CachedPC) return;
 	AMyPlayerState* MyPS = CachedPC->GetPlayerState<AMyPlayerState>();
 	ETeamId MyTeamId = ETeamId::None;
 	if (MyPS) {
 		MyTeamId = MyPS->GetTeamId();
 	}
-	TMap<APawn*, UPlayerMapDot*> Enemies;
+	TMap<ABaseCharacter*, UPlayerMapDot*> Enemies;
 	Enemies.Reserve(PlayerNodes.Num());
 	for (auto& Pair : PlayerNodes)
 	{
@@ -89,11 +91,23 @@ void UMinimapRadarUI::PeriodicUpdate()
 		AMyPlayerState* PS = Pair.Key.Get();
 		if (!PS) continue;
 		if (PS->GetTeamId() != MyTeamId) {
-			APawn* EnemyPawn = Cast<APawn>(PS->GetPawn());
+			ABaseCharacter* EnemyPawn = Cast<ABaseCharacter>(PS->GetPawn());
 			if (EnemyPawn)
 			{
 				Enemies.Add(EnemyPawn, Dot);
 			}
+		}
+		else {
+			ABaseCharacter* Char = Cast<ABaseCharacter>(PS->GetPawn());
+			bool bIsSelf = (Char == CachedPC->GetViewTarget());
+			if (!Char) continue;
+			bool bHasSpike = false;
+
+			if (UInventoryComponent* WC = Char->GetInventoryComponent())
+			{
+				bHasSpike = WC->HasSpike();
+			}
+			Dot->UpdateData(bIsSelf, Char->IsDead(), bHasSpike);
 		}
 		Dot->SetIsTeammateVisual(PS->GetTeamId() == MyTeamId);
 	}
@@ -110,14 +124,16 @@ void UMinimapRadarUI::PeriodicUpdate()
 
 			ABaseCharacter* Char = Cast<ABaseCharacter>(PS->GetPawn());
 			if (!Char) continue;
+			if (Char->IsDead()) continue;
 			// check if it can see
 			for (auto& EnemyPair : Enemies)
 			{
-				APawn* EnemyPawn = EnemyPair.Key;
+				ABaseCharacter* EnemyPawn = EnemyPair.Key;
 				UPlayerMapDot* EnemyDot = EnemyPair.Value;
 				if (!EnemyPawn || !EnemyDot) continue;
+				if (EnemyPawn->IsDead()) continue;
 
-				if (Char->HasLineOfSightToPawn(EnemyPawn))
+				if (Char->CanSeeThisActor(EnemyPawn))
 				{
 					EnemyDot->SetVisibility(ESlateVisibility::Visible);
 				}
@@ -240,14 +256,6 @@ void UMinimapRadarUI::UpdatePlayerDots()
 		}
 
 		Dot->SetRenderTransformAngle(AngleYaw);
-
-		bool bHasSpike = false;
-		
-		if (UInventoryComponent* WC = Char->GetInventoryComponent())
-		{
-			bHasSpike = WC->HasSpike();
-		}
-		Dot->UpdateData(bIsSelf, Char->IsDead(), bHasSpike);
 	}
 }
 
