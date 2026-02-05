@@ -58,6 +58,7 @@ public:
 	bool GetIsAttacker() const { return bIsAttacker; }
 	bool HasLineOfSight() const { return bHasLineSight; }
     ABaseCharacter* GetBotChar() const { return CachedChar.Get(); }
+    float GetLastTimeSeenTarget() const { return LastTimeSeenTarget; }
 protected:
     virtual void OnPossess(APawn* InPawn) override;
     virtual void BeginPlay() override;
@@ -70,6 +71,7 @@ protected:
         AActor* Actor,
         FAIStimulus Stimulus);
     void OnAmmoChanged(int32 Clip, int32 Reserve);
+	virtual void UpdateControlRotation(float DeltaTime, bool bUpdatePawn = true) override;
 private:
     UPROPERTY(VisibleAnywhere)
     class UAIPerceptionComponent* PerceptionComp;
@@ -90,6 +92,7 @@ private:
 	FVector ScoutLocation;
 	FVector HoldLocation;
 	bool bHasLineSight;
+    float LastTimeSeenTarget;
 
     TWeakObjectPtr<ABaseCharacter> CachedChar;
 

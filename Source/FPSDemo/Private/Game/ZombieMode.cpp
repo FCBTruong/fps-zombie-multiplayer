@@ -493,18 +493,10 @@ void AZombieMode::OnRoundTimeExpired()
 
 void AZombieMode::StartSpectating(ABaseCharacter* VictimPawn) {
 	if (!VictimPawn) return;
-	AMyPlayerController* PC =
-		Cast<AMyPlayerController>(VictimPawn->GetController());
-	if (!PC) return;
-
-	TWeakObjectPtr<AMyPlayerController> PCWeak = PC;
-
-	GetWorldTimerManager().SetTimerForNextTick([PCWeak]()
-		{
-			if (!PCWeak.IsValid()) return;
-
-		
-		});
+	AMyPlayerState* PS = VictimPawn->GetPlayerState<AMyPlayerState>();
+	if (PS) {
+		PS->SetIsSpectator(true);
+	}
 }
 
 void AZombieMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)

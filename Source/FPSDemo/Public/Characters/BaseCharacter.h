@@ -58,6 +58,17 @@ enum class EMovementState : uint8
 	Slow
 };
 
+UENUM()
+enum class EAimPointPolicy : uint8
+{
+    Center,
+    Head,
+    Chest,
+    Pelvis,
+    RandomBody,
+    HeadOrBody
+};
+
 UCLASS()
 class FPSDEMO_API ABaseCharacter : public ACharacter
 {
@@ -273,7 +284,7 @@ protected:
     void OnStunTimelineUpdate(float Value);
     UFUNCTION()
     void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
-
+    FVector GetAimPointInternal(EAimPointPolicy Policy, float HeadChance01) const;
   
 public:
     // ===== Public API =====
@@ -319,6 +330,8 @@ public:
     }
     bool CanSeeThisActor(const APawn* Target) const;
     void OnTeamChanged();
+    FVector GetAimPoint(EAimPointPolicy Policy = EAimPointPolicy::Head, float HeadChance01 = 0.35f) const;
+
 	FString GetPlayerName() const;
 
     UFUNCTION(Server, Reliable)
@@ -332,6 +345,7 @@ public:
 	UInteractComponent* GetInteractComponent() const;
 	UAnimationComponent* GetAnimationComponent() const;
     USkeletalMeshComponent* GetCurrentMesh() const;
+	USkeletalMeshComponent* GetMeshFps() const;
 	UEquipComponent* GetEquipComponent() const;
 	UWeaponFireComponent* GetWeaponFireComponent() const;
 	UWeaponMeleeComponent* GetWeaponMeleeComponent() const;

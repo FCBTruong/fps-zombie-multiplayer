@@ -25,6 +25,8 @@ void UBTService_UpdateTarget::TickNode(
     UAIPerceptionComponent* Perception = AICon->GetAIPerceptionComponent();
     APawn* Pawn = AICon->GetPawn();
     if (!Pawn || !Perception) return;
+	ABaseCharacter* MyBotCharacter = Cast<ABaseCharacter>(Pawn);
+	if (!MyBotCharacter) return;
 
     // Get my team ID
     AMyPlayerState* MyPS = Pawn->GetPlayerState<AMyPlayerState>();
@@ -54,46 +56,27 @@ void UBTService_UpdateTarget::TickNode(
         // Skip same team
         if (TargetPS->GetTeamId() == MyTeamId) continue;
 
+		if (!MyBotCharacter->CanSeeThisActor(BC)) continue;
+
         // This is an enemy we can see
         BestTarget = BC;
         break;
     }
 
-    // Update blackboard
-   /* if (BestTarget)
-    {
-        UE_LOG(LogTemp, Log,
-            TEXT("BTService_UpdateTarget: New Target: %s"),
-			*BestTarget->GetName());
-        BB->SetValueAsObject("Obj_TargetActor", BestTarget);
-    }*/
-
 	AICon->SetTargetActor(BestTarget);
 
     if (BestTarget)
     {
-        FVector MyLoc = Pawn->GetActorLocation();
-        FVector TargetLoc = BestTarget->GetActorLocation();
+        FVector AimLoc = BestTarget->GetActorLocation();
+        
+        AimLoc = BestTarget->GetAimPoint(EAimPointPolicy::HeadOrBody, 0.2f); // 50% head
 
-        // LOS trace
-        FHitResult Hit;
-        FCollisionQueryParams Params;
-        Params.AddIgnoredActor(Pawn);
-
-        bool bHit = Pawn->GetWorld()->LineTraceSingleByChannel(
-            Hit, MyLoc, TargetLoc, ECC_Visibility, Params
-        );
-
-        bool bHasLOS = (!bHit || Hit.GetActor() == BestTarget);
-		AICon->SetHasLineSight(bHasLOS);
-		AICon->SetFocus(BestTarget);
-
-       // AICon->SetFocalPoint(BestTarget->GetActorLocation());
+		const bool bHasLOS = MyBotCharacter->CanSeeThisActor(BestTarget);
+        // Focus the point
+        AICon->SetFocalPoint(AimLoc, EAIFocusPriority::Gameplay);
     }
     else
     {
-        AICon->SetHasLineSight(false);
-		AICon->ClearFocus(EAIFocusPriority::Gameplay);
+        AICon->ClearFocus(EAIFocusPriority::Gameplay);
     }
-    //AICon->SetFocus(BestTarget);
 }

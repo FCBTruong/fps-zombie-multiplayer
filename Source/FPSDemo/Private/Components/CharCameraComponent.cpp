@@ -140,8 +140,15 @@ void UCharCameraComponent::OnBecomeViewTarget(APlayerController* PC)
     }
 
     CachedLocalPC = PC;
-    bIsFPS = false;
+    bIsFPS = true;
     TargetFOV = DefaultFpsFov;
+    if (PC == UGameplayStatics::GetPlayerController(GetOwner(), 0))
+    {
+		CameraBoom->bEnableCameraLag = false;
+	}
+    else {
+        CameraBoom->bEnableCameraLag = true;
+    }
     ApplyView();
 }
 

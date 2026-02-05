@@ -45,11 +45,10 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 	if (!Character || !Character->IsAlive())
 		return;
 
-	if (IsOwningClient() && VisualComp)
+	if (!Character->HasAuthority() && VisualComp)
 	{
 		if (!CanMeleeNow())
 			return;
-		ActionStateComp->TrySetState(EActionState::Melee);
 
 		GetWorld()->GetTimerManager().SetTimer(
 			MeleeClientFxTimer,
@@ -126,7 +125,7 @@ void UWeaponMeleeComponent::MulticastPlayMelee_Implementation(int32 AttackIndex)
 	UE_LOG(LogTemp, Log, TEXT("MulticastPlayMelee called with AttackIndex: %d"), AttackIndex);
 	if (!Character)
 		return;
-	
+
 	// Skip owning client if already played
 	if (IsOwningClient())
 		return;
@@ -214,6 +213,7 @@ bool UWeaponMeleeComponent::CanMeleeNow() const
 {
 	if (!IsEnabled())
 		return false;
+
 	if (!ActionStateComp)
 		return false;
 
@@ -222,8 +222,9 @@ bool UWeaponMeleeComponent::CanMeleeNow() const
 	}
 
 	if (!ActionStateComp->IsIdle())
+	{
 		return false;
-
+	}
 	if (GetWorld())
 	{
 		float CurrentTime = GetWorld()->GetTimeSeconds();

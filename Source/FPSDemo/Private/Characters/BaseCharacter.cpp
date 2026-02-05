@@ -54,7 +54,6 @@
 #include "Game/GlobalDataAsset.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "Items/ThrowableConfig.h"
-#include "Components/RoleComponent.h"
 #include "Items/FirearmConfig.h"
 #include "Components/ItemUseComponent.h"
 #include "Game/ZombieMode.h"
@@ -71,10 +70,12 @@ ABaseCharacter::ABaseCharacter()
 	bReplicates = true;
 
     FpsPivot = CreateDefaultSubobject<USceneComponent>(TEXT("FpsPivot"));
-    FpsPivot->SetupAttachment(GetRootComponent());
+    FpsPivot->SetupAttachment(GetMesh());
+	FpsPivot->SetRelativeRotation(FRotator(0, 90, 0));
 
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBloom"));
-    CameraBoom->SetupAttachment(RootComponent);
+    CameraBoom->SetupAttachment(GetRootComponent());
+    CameraBoom->bEnableCameraLag = true;
 
     CameraTps = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraTps"));
     CameraTps->SetupAttachment(CameraBoom);
@@ -131,7 +132,7 @@ ABaseCharacter::ABaseCharacter()
         // set same eye position
         BaseEyeHeight = 70;
         CrouchedEyeHeight = 70;
-		FpsPivot->SetRelativeLocation(FVector(0.f, 0.f, BaseEyeHeight));
+		FpsPivot->SetRelativeLocation(FVector(0.f, 0.f, -TPSMeshRelLoc.Z + BaseEyeHeight));
     }
     if (MeshFps)
     {
@@ -300,7 +301,7 @@ void ABaseCharacter::Tick(float DeltaTime)
             AimRot = GetBaseAimRotation(); // uses RemoteViewPitch for non-owned pawns
         }
 
-        const FRotator TargetPivotRot(AimRot.Pitch, 0.f, 0.f);
+        const FRotator TargetPivotRot(AimRot.Pitch, 90.f, 0.f);
 
         const FRotator Smoothed =
             FMath::RInterpTo(FpsPivot->GetRelativeRotation(), TargetPivotRot, DeltaTime, 20.f);
@@ -398,17 +399,9 @@ void ABaseCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeigh
         ScaledHalfHeightAdjust
 	);
 
-    // Cancel the instant camera drop caused by capsule shrinking
-    CurrentCrouchCompZ += HalfHeightAdjust;
 
-    CrouchFromZ = CurrentCrouchCompZ;
-    CrouchToZ = 0.f;
-
-    // Snap to the compensated position (no pop), then smooth toward target
-    FVector Loc = FpsPivot->GetRelativeLocation();
-    Loc.Z = BasePivotFpsZ + CurrentCrouchCompZ;
-    FpsPivot->SetRelativeLocation(Loc);
-
+	CrouchToZ = BasePivotFpsZ - HalfHeightAdjust;
+  
     CrouchTimeline.PlayFromStart();
 
     UpdateMaxWalkSpeed();
@@ -418,15 +411,8 @@ void ABaseCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightA
 {
     Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
 
-    // Cancel the instant camera rise caused by capsule expanding
-    CurrentCrouchCompZ -= HalfHeightAdjust;
-
-    CrouchFromZ = CurrentCrouchCompZ;
-    CrouchToZ = 0.f;
-
-    FVector Loc = FpsPivot->GetRelativeLocation();
-    Loc.Z = BasePivotFpsZ + CurrentCrouchCompZ;
-    FpsPivot->SetRelativeLocation(Loc);
+   
+    CrouchToZ = BasePivotFpsZ;
 
     CrouchTimeline.PlayFromStart(); // forward again (not Reverse)
     UpdateMaxWalkSpeed();
@@ -434,10 +420,9 @@ void ABaseCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightA
 
 void ABaseCharacter::HandleCrouchProgress(float Alpha)
 {
-    CurrentCrouchCompZ = FMath::Lerp(CrouchFromZ, CrouchToZ, Alpha);
-
     FVector Loc = FpsPivot->GetRelativeLocation();
-    Loc.Z = BasePivotFpsZ + CurrentCrouchCompZ;
+    CurrentCrouchCompZ = FMath::Lerp(Loc.Z, CrouchToZ, Alpha);
+    Loc.Z = CurrentCrouchCompZ;
     FpsPivot->SetRelativeLocation(Loc);
 }
                                                                                                                          
@@ -461,6 +446,11 @@ USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh() const
     {
         return GetMesh();
     }
+}
+
+USkeletalMeshComponent* ABaseCharacter::GetMeshFps() const
+{
+    return MeshFps;
 }
 
 void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -602,7 +592,7 @@ void ABaseCharacter::UpdateMaxWalkSpeed() {
 
         if (RoleComp) {
             if (RoleComp->GetRole() == ECharacterRole::Zombie) {
-             //   Speed *= 1.1f; // zombie role moves faster
+                Speed += 20.f; // zombie role moves faster
 			}
         }
     }
@@ -698,7 +688,10 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
     if (IsBot()) {
         if (ABotAIController* AICon = Cast<ABotAIController>(GetController()))
         {
-            // AICon->SetFocus(EventInstigator);
+            if (AICon->GetTargetActor() == nullptr)
+            {
+                AICon->SetFocalPoint(EventInstigator->GetPawn()->GetActorLocation());
+            }
         }
     }
 
@@ -1136,11 +1129,11 @@ void ABaseCharacter::ApplyRotationMode()
 {
     auto* Move = GetCharacterMovement();
     if (!Move) return;
-
+   
     if (IsBot())
     {
-		Move->bOrientRotationToMovement = true;
-        bUseControllerRotationYaw = false;
+		/*Move->bOrientRotationToMovement = true;
+        bUseControllerRotationYaw = true;*/
     }
 }
 
@@ -1885,4 +1878,51 @@ bool ABaseCharacter::CanSeeThisActor(const APawn* Target) const
 
     AActor* HitActor = Hit.GetActor();
     return (HitActor == Target) || (HitActor && HitActor->IsOwnedBy(Target));
+}
+
+static FVector GetBoneOrSocketLoc(const USkeletalMeshComponent* Mesh, const FName& Name)
+{
+    if (!Mesh) return FVector::ZeroVector;
+    if (Mesh->DoesSocketExist(Name)) return Mesh->GetSocketLocation(Name);
+    return Mesh->GetBoneLocation(Name);
+}
+
+FVector ABaseCharacter::GetAimPoint(EAimPointPolicy Policy, float HeadChance01) const
+{
+    return GetAimPointInternal(Policy, HeadChance01);
+}
+
+FVector ABaseCharacter::GetAimPointInternal(EAimPointPolicy Policy, float HeadChance01) const
+{
+    const USkeletalMeshComponent* SkelMeshComp = GetMesh();
+    const FVector Fallback = GetActorLocation();
+
+    if (!SkelMeshComp) return Fallback;
+
+    static const FName Head(TEXT("head"));
+    static const FName Chest(TEXT("spine_03"));
+    static const FName Pelvis(TEXT("pelvis"));
+
+    auto HeadLoc = [&]() { return GetBoneOrSocketLoc(SkelMeshComp, Head);   };
+    auto ChestLoc = [&]() { return GetBoneOrSocketLoc(SkelMeshComp, Chest);  };
+    auto PelvisLoc = [&]() { return GetBoneOrSocketLoc(SkelMeshComp, Pelvis); };
+
+    switch (Policy)
+    {
+    case EAimPointPolicy::Center:     return Fallback;
+    case EAimPointPolicy::Head:       return HeadLoc();
+    case EAimPointPolicy::Chest:      return ChestLoc();
+    case EAimPointPolicy::Pelvis:     return PelvisLoc();
+    case EAimPointPolicy::RandomBody:
+    {
+        const int32 Pick = FMath::RandRange(0, 2);
+        return (Pick == 0) ? ChestLoc() : (Pick == 1) ? PelvisLoc() : HeadLoc();
+    }
+    case EAimPointPolicy::HeadOrBody:
+    default:
+    {
+        const float R = FMath::FRand();
+        return (R < HeadChance01) ? HeadLoc() : ChestLoc();
+    }
+    }
 }

@@ -308,6 +308,9 @@ void UMinimapRadarUI::PivotCurrentPawn()
 {
 	AActor* ViewTarget = CachedPC->GetViewTarget();
 	if (!IsValid(ViewTarget)) return;
+	ABaseCharacter* ViewChar = Cast<ABaseCharacter>(ViewTarget);
+	if (!IsValid(ViewChar)) return;
+	if (ViewChar->IsDead()) return;
 
 	FVector WorldPos = ViewTarget->GetActorLocation();
 	FVector Offset = WorldPos - WorldOrigin;

@@ -36,22 +36,33 @@ void UBTService_UpdateTarget_Zombie::TickNode(
  
     ABaseCharacter* BestTarget = nullptr;
     FindBestTarget(PerceivedActors, SelfCharacter, BestTarget);
-    // Perceived actors via Sight
-    if (bSelfIsZombie) {
-        // Write blackboard
-        if (BestTarget) {
-			AICon->SetTargetActor(Cast<ABaseCharacter>(BestTarget));
-        }
-        else {
-            // No target found, keep current if valid
-            if (CurrentTargetChar && !CurrentTargetChar->IsAlive()) {
-				AICon->SetTargetActor(nullptr);
+
+    if (BestTarget == nullptr) {
+        if (CurrentTargetChar) {
+            if (CurrentTargetChar->IsDead()) {
+                AICon->SetTargetActor(nullptr);
+                AICon->ClearFocus(EAIFocusPriority::Gameplay);
+                return;
             }
-		}
+            if (GetWorld()->GetTimeSeconds() - AICon->GetLastTimeSeenTarget() < 2) {
+                // allow memory
+                AICon->ClearFocus(EAIFocusPriority::Gameplay);
+                return;
+            }
+        }
+    }
+   
+    AICon->SetTargetActor(BestTarget);
+
+    if (BestTarget) {
+        FVector AimLoc = BestTarget->GetActorLocation();
+       
+        AimLoc = BestTarget->GetAimPoint(EAimPointPolicy::HeadOrBody, 0.2f); // 50% head
+        // Focus the point
+        AICon->SetFocalPoint(AimLoc, EAIFocusPriority::Gameplay);
     }
     else {
-		// Non-zombie logic can go here
-        AICon->SetTargetActor(Cast<ABaseCharacter>(BestTarget));
+        AICon->ClearFocus(EAIFocusPriority::Gameplay);
     }
 }
 
@@ -73,7 +84,7 @@ void UBTService_UpdateTarget_Zombie::FindBestTarget(TArray<AActor*> PerceivedAct
 
 		ETeamId TargetTeamId = TargetChar->GetTeamId();
 		if (TargetTeamId == MyTeamId) continue; // Skip same team
-
+        if (!SelfPawn->CanSeeThisActor(TargetChar)) continue;
         // Nearest
         const float DistSq = FVector::DistSquared(SelfLoc, Actor->GetActorLocation());
         if (DistSq < BestDistSq)

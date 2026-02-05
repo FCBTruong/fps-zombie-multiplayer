@@ -34,8 +34,19 @@ void UBTService_UpdateTarget_DM::TickNode(
 
     ABaseCharacter* BestTarget = nullptr;
     FindBestTarget(PerceivedActors, SelfCharacter, BestTarget);
-        
-    AICon->SetTargetActor(Cast<ABaseCharacter>(BestTarget));
+
+    AICon->SetTargetActor(BestTarget);
+    if (BestTarget) {
+        FVector AimLoc = BestTarget->GetActorLocation();
+        if (const ABaseCharacter* BC = Cast<ABaseCharacter>(BestTarget))
+        {
+            AimLoc = BC->GetAimPoint(EAimPointPolicy::HeadOrBody, 0.2f); // 50% head
+        }
+        // Focus the point
+        AICon->SetFocalPoint(AimLoc, EAIFocusPriority::Gameplay);
+    } else {
+        AICon->ClearFocus(EAIFocusPriority::Gameplay);
+	}
 }
 
 void UBTService_UpdateTarget_DM::FindBestTarget(TArray<AActor*> PerceivedActors, ABaseCharacter* SelfPawn, ABaseCharacter*& OutBestTarget) {
@@ -53,6 +64,9 @@ void UBTService_UpdateTarget_DM::FindBestTarget(TArray<AActor*> PerceivedActors,
         if (!TargetChar) continue;
 
         if (!TargetChar->IsAlive()) continue;
+
+		// check has line of sight
+		if (!SelfPawn->CanSeeThisActor(TargetChar)) continue;
 
         // Nearest
         const float DistSq = FVector::DistSquared(SelfLoc, Actor->GetActorLocation());

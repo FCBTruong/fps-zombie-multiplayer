@@ -66,7 +66,7 @@ void AShooterGameMode::StartPlay()
             P.PlayerId = FGameConstants::EMPTY_PLAYER_ID;
 			RoomDataMutable.Players.Add(P);
         }
-        if (false) {
+        if (true) {
             RoomDataMutable.Players[3].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 2;
             RoomDataMutable.Players[3].bIsBot = true;
 

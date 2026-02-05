@@ -46,7 +46,7 @@ void UInventoryComponent::InitBasicWeapon()
     ArmorState.ArmorPoints = ArmorState.ArmorMaxPoints;
     ArmorState.ArmorEfficiency = ArmorData ? ArmorData->ArmorEfficiency : 0.f;
 	ArmorState.ArmorRatio = ArmorData ? ArmorData->ArmorRatio : 0.f;
-             
+    Throwables.Add(EItemId::GRENADE_FRAG_BASIC);
     // log size throwables
 	UE_LOG(LogTemp, Log, TEXT("InventoryComponent Test: Throwables count = %d"), Throwables.Num());
 
@@ -67,8 +67,6 @@ void UInventoryComponent::InitBasicWeapon()
         RifleState.AmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
 		RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 5 : 0;
 		RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
-
-		Throwables.Add(EItemId::GRENADE_FRAG_BASIC);
     }
 
     OnRep_RifleState();
@@ -444,20 +442,25 @@ void UInventoryComponent::OnBecomeHero() {
 
 	RifleState = FWeaponState();
 	PistolState = FWeaponState();
-	OnRep_RifleState();
-	OnRep_PistolState();
 	Throwables.Empty();
+
+    OnRep_RifleState();
+    OnRep_PistolState();
+	OnRep_Throwables();
 }
 
 void UInventoryComponent::OnBecomeZombie() {
     MeleeState.ItemId = EItemId::MELEE_UNARMED_ZOMBIE;
-    OnRep_MeleeState();
 
     RifleState = FWeaponState();
     PistolState = FWeaponState();
+  
+    Throwables.Empty();
+
     OnRep_RifleState();
     OnRep_PistolState();
-    Throwables.Empty();
+    OnRep_MeleeState();
+	OnRep_Throwables();
 }
 
 void UInventoryComponent::AddAmmoToMainGun(int Ammo) {

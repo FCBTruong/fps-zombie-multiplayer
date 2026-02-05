@@ -38,27 +38,52 @@ void UAnimationComponent::PlayEquipMontage()
 
 void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
 {
-	ABaseCharacter* Owner = Cast<ABaseCharacter>(GetOwner());
-	if (MontageToPlay && Owner) {
-        if (!MontageToPlay)
+    ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
+    if (!OwnerChar)
+    {
+        UE_LOG(LogTemp, Error, TEXT("PlayMontage: Owner is not ABaseCharacter"));
+        return;
+    }
+
+    if (!MontageToPlay)
+    {
+        UE_LOG(LogTemp, Error, TEXT("PlayMontage: MontageToPlay is null"));
+        return;
+    }
+
+    auto PlayOnMesh = [&](USkeletalMeshComponent* MeshComp, const TCHAR* MeshLabel)
         {
-            UE_LOG(LogTemp, Error, TEXT("MontageToPlay is null"));
-            return;
-        }
-        USkeletalMeshComponent* MeshComp = Owner->GetCurrentMesh();
-        if (!MeshComp)
-        {
-            UE_LOG(LogTemp, Error, TEXT("GetCurrentMesh() returned null"));
-            return;
-        }
-        UAnimInstance* AnimInst = MeshComp->GetAnimInstance();
-        if (!AnimInst)
-        {
-            UE_LOG(LogTemp, Error, TEXT("AnimInstance is null"));
-            return;
-        }
-        AnimInst->Montage_Play(MontageToPlay);
-	}
+            if (!MeshComp)
+            {
+                UE_LOG(LogTemp, Error, TEXT("PlayMontage: %s mesh is null"), MeshLabel);
+                return;
+            }
+
+            UAnimInstance* AnimInst = MeshComp->GetAnimInstance();
+            if (!AnimInst)
+            {
+                UE_LOG(
+                    LogTemp,
+                    Error,
+                    TEXT("PlayMontage: AnimInstance is null on %s mesh (AnimClass=%s, Mode=%d)"),
+                    MeshLabel,
+                    *GetNameSafe(MeshComp->GetAnimClass()),
+                    static_cast<int32>(MeshComp->GetAnimationMode())
+                );
+                return;
+            }
+
+            AnimInst->Montage_Play(MontageToPlay);
+        };
+
+    // Always play on TPS mesh (bots/others will use this).
+    PlayOnMesh(OwnerChar->GetMesh(), TEXT("TPS"));
+
+    // Only play on FPS mesh for locally controlled FPS view (avoid bot / remote issues).
+    if (OwnerChar->IsFpsViewMode())
+    {
+        PlayOnMesh(OwnerChar->GetMeshFps(), TEXT("FPS"));
+    }
 }
 
 void UAnimationComponent::PlayFireRifleMontage(FVector TargetPoint, UAnimMontage* FireMontage) {
