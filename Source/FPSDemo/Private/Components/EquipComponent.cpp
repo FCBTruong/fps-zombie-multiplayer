@@ -322,6 +322,7 @@ void UEquipComponent::HandleDropItem() {
     }
 
     ActiveItemId = EItemId::NONE;
+	OnRep_ActiveItemId();
  
     // refresh overlapping actors
     RefreshOverlapPickupActors();

@@ -29,6 +29,7 @@ public:
 		FString& ErrorMessage) override;
 	virtual void StartPlay() override;
 	virtual void StartMatch() override;
+	virtual bool ReadyToStartMatch_Implementation() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void HandleCharacterKilled(class AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
 	virtual void AssignPlayerTeamInit(AController* NewPlayer);
@@ -51,7 +52,6 @@ public:
 	FOnCharacterDead OnCharacterDead;
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
-	virtual bool ReadyToStartMatch_Implementation() override;
 	virtual void HandleMatchHasStarted() override;
 	virtual void StartRound();
 	virtual void EndRound(ETeamId WinningTeam);
@@ -71,5 +71,7 @@ protected:
 	int RoomId = 0;
 	bool bIsAllPlayersJoined = false;
 
-	FTimerHandle TryStartMatchHandle;
+	FTimerHandle StartRoundTimerHandle;
+	UFUNCTION()
+	void StartRoundDelayed();
 };

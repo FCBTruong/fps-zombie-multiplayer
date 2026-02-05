@@ -27,6 +27,7 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerTryPickup(APickupItem* Item);
+	void HandlePickup_Internal(APickupItem* Item);
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

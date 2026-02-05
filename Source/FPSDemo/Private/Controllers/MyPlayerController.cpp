@@ -449,6 +449,11 @@ void AMyPlayerController::StartReload() {
     MyChar->RequestReloadPressed();
 }
 
+void AMyPlayerController::StartReloadDelayed()
+{
+    StartReload();
+}
+
 void AMyPlayerController::Pickup() {
     ABaseCharacter* MyChar = GetMyChar();
     if (!MyChar) {
@@ -539,18 +544,6 @@ void AMyPlayerController::ReleaseSlow() {
     }
     MyChar->RequestSlowMovement(false);
 }
-
-void AMyPlayerController::BeginSpectatingState()
-{
-	UE_LOG(LogTemp, Warning, TEXT("BeginSpectatingState called"));
-    Super::BeginSpectatingState();
-}
-
-void AMyPlayerController::EndSpectatingState()
-{
-    Super::EndSpectatingState();
-}
-
 
 bool AMyPlayerController::IsSpectatingState() const
 {
@@ -986,6 +979,7 @@ void AMyPlayerController::BindGameState(AShooterGameState* GS)
 	H_OnSwitchSide = GS->OnSwitchSide.AddUObject(PlayerUI, &UPlayerUI::OnSwitchSide);
 	H_OnUpdateRoundNumber = GS->OnUpdateRoundNumber.AddUObject(PlayerUI, &UPlayerUI::UpdateRoundNumber);
 	H_OnUpdateHeroPhase = GS->OnUpdateHeroPhase.AddUObject(PlayerUI, &UPlayerUI::UpdateHeroPhase);
+	H_OnUpdateHeroZombieCount = GS->OnUpdateHeroZombieCount.AddUObject(PlayerUI, &UPlayerUI::UpdateHeroZombieNum);
 
 	PlayerUI->UpdateTeamScores(GS->GetTeamAScore(), GS->GetTeamBScore());
     PlayerUI->OnUpdateRoundTime(GS->GetRemainingRoundTime());
@@ -1004,6 +998,7 @@ void AMyPlayerController::UnbindGameState(AShooterGameState* GS)
 	GS->OnSwitchSide.Remove(H_OnSwitchSide);
 	GS->OnUpdateRoundNumber.Remove(H_OnUpdateRoundNumber);
 	GS->OnUpdateHeroPhase.Remove(H_OnUpdateHeroPhase);
+	GS->OnUpdateHeroZombieCount.Remove(H_OnUpdateHeroZombieCount);
 
     H_UpdateScore.Reset();
     H_UpdateRoundTime.Reset();
@@ -1012,6 +1007,7 @@ void AMyPlayerController::UnbindGameState(AShooterGameState* GS)
 	H_OnSwitchSide.Reset();
 	H_OnUpdateRoundNumber.Reset();
 	H_OnUpdateHeroPhase.Reset();
+    H_OnUpdateHeroZombieCount.Reset();
 }
 
 void AMyPlayerController::BindPlayerState(AMyPlayerState* PS)
@@ -1137,11 +1133,22 @@ void AMyPlayerController::EnterGameMode()
 void AMyPlayerController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current active weapon
 {
 	PlayerUI->UpdateAmmo(Clip, Reserve);
-    UE_LOG(LogTemp, Warning, TEXT("BotAIController::OnAmmoChanged: Clip=%d, Reserve=%d"), Clip, Reserve);
+    UE_LOG(LogTemp, Warning, TEXT("AMyPlayerController::OnAmmoChanged: Clip=%d, Reserve=%d"), Clip, Reserve);
     if (Clip <= 0 && Reserve > 0)
     {
-        StartReload();
-    }   
+        GetWorldTimerManager().ClearTimer(ReloadDelayHandle);
+
+        GetWorldTimerManager().SetTimer(
+            ReloadDelayHandle,
+            this,
+            &AMyPlayerController::StartReload,
+            0.5f,
+            false
+        );
+    }
+    else {
+        GetWorldTimerManager().ClearTimer(ReloadDelayHandle);
+    }
 }
 
 void AMyPlayerController::ClientSpectateTarget_Implementation(AActor* Target, float BlendTime)

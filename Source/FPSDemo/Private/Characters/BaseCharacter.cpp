@@ -152,6 +152,12 @@ ABaseCharacter::ABaseCharacter()
     NameText->SetRelativeLocation(FVector(0.f, 0.f, 210.f));
    
     NameText->SetText(FText::FromString(TEXT("Player")));
+
+    // Note: This allows physics assets to update on the server even when the mesh is not rendered,
+    // but it may have a performance cost.
+    // Consider refactoring to use capsules for hit detection (may look unnatural).
+    GetMesh()->VisibilityBasedAnimTickOption =
+        EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 }
 
 // Called when the game starts or when spawned
@@ -170,6 +176,7 @@ void ABaseCharacter::BeginPlay()
 	BindDelegates();
     SetupCrouchTimeline();
     SetupStunTimeline();
+    SetupSpineKickTimeline();
     SetupPerception();
     SetupFlashPostProcess();
     SetupInitialInventory();
@@ -285,6 +292,10 @@ void ABaseCharacter::Tick(float DeltaTime)
     if (CrouchTimeline.IsPlaying()) {
         CrouchTimeline.TickTimeline(DeltaTime);
 	}
+    if (SpineKickTimeline.IsPlaying())
+    {
+        SpineKickTimeline.TickTimeline(DeltaTime);
+    }
 
     if (FpsPivot)
     {
@@ -607,6 +618,10 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         return 0.f; // only server handles damage
     }
 
+    if (true) {
+		return 0.f; // invulnerable for testing
+    }
+
 	// ask for game mode if damage is allowed 
     AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this));
     if (!GM) {
@@ -871,6 +886,7 @@ void ABaseCharacter::ClientPlayHitEffect_Implementation()
 
 void ABaseCharacter::PlayBloodFx(const FVector& HitLocation, const FVector& HitNormal)
 {
+    PlayEffectHitReact();
     if (IsFpsViewMode()) {
 		return; // no blood fx in fps mode
     }
@@ -885,9 +901,10 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation, const FVector& HitN
             HitLocation
         );
     }
-    if (CachedCharacterAsset->AnimMontage_HitReact) {
+    /*if (CachedCharacterAsset->AnimMontage_HitReact) {
         PlayAnimMontage(CachedCharacterAsset->AnimMontage_HitReact);
-    }
+    }*/
+
     if (CachedCharacterAsset->HitFx)
     {
         FVector EffectScale(0.1f); // scale
@@ -1347,8 +1364,9 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Applying visuals for role: %d"), (int32)NewRole);
     if (!CachedCharacterAsset)
+    {
         return;
-
+    }
     UCharacterVisualSet* VisualSet = nullptr;
     // hard code for testing
     //NewRole = ECharacterRole::Hero;
@@ -1411,6 +1429,7 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
         {
             TpsMesh->SetSkeletalMesh(VisualSet->TpsMesh);
         }
+
         if (VisualSet->TpsAnimClass)
         {
             TpsMesh->SetAnimInstanceClass(VisualSet->TpsAnimClass);
@@ -1728,6 +1747,10 @@ void ABaseCharacter::MulticastRevive_Implementation()
         PC->SetIgnoreLookInput(false);
         PC->SetIgnoreMoveInput(false);
         PC->SetViewTargetWithBlend(this, 0.1f);
+
+        if (!CameraComp->IsFPS()) {
+            ChangeView(); // switch to tps view
+        }
     }
     if (DeathCameraProxy.IsValid()) {
         DeathCameraProxy->Destroy();
@@ -1925,4 +1948,62 @@ FVector ABaseCharacter::GetAimPointInternal(EAimPointPolicy Policy, float HeadCh
         return (R < HeadChance01) ? HeadLoc() : ChestLoc();
     }
     }
+}
+
+void ABaseCharacter::GetActorEyesViewPoint(FVector& out_Location, FRotator& out_Rotation) const
+{
+    out_Location = FpsPivot->GetComponentLocation();
+	out_Rotation = GetViewRotation();
+}
+
+float ABaseCharacter::GetSpineKickAlpha() const
+{
+	return SpineKickAlpha;
+}
+
+void ABaseCharacter::PlayEffectHitReact() {
+    UE_LOG(LogTemp, Warning, TEXT("PlayEffectHitReact"));
+    if (SpineKickTimeline.IsPlaying())
+    {
+        return;
+    }
+
+    // if is firing then return
+    if (ActionStateComp) {
+        if (ActionStateComp->IsInState(EActionState::Firing)) {
+            return;
+        }
+    }
+
+    SpineKickTimeline.PlayFromStart();
+}
+
+void ABaseCharacter::OnSpineKickUpdate(float Value)
+{
+    UE_LOG(LogTemp, Warning, TEXT("SpineKickUpdate: %f"), Value);
+    SpineKickAlpha = Value;
+
+    float CamKickPitchDeg = 4.0f;
+    float CamKickRollDeg = 0.5f;
+
+    FRotator CamFpsBaseRelRot = FRotator::ZeroRotator;
+    if (CameraFps)
+    {
+        const float Pitch = CamKickPitchDeg * Value;
+        const float Roll = CamKickRollDeg * Value;
+
+        CameraFps->SetRelativeRotation(
+            CamFpsBaseRelRot + FRotator(Pitch, 0.f, Roll)
+        );
+    }
+}
+
+void ABaseCharacter::SetupSpineKickTimeline()
+{
+    if (!CachedCharacterAsset || !CachedCharacterAsset->SpineKickCurve) return;
+
+    FOnTimelineFloat Update;
+    Update.BindUFunction(this, FName("OnSpineKickUpdate"));
+    SpineKickTimeline.AddInterpFloat(CachedCharacterAsset->SpineKickCurve, Update);
+    SpineKickTimeline.SetLooping(false);
 }

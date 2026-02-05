@@ -23,6 +23,8 @@ enum EFireEnableReason
 	Undefined,
 };
 
+DECLARE_MULTICAST_DELEGATE(FOnFinishedReload);
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class FPSDEMO_API UWeaponFireComponent : public URoleGatedComponent
 {
@@ -35,12 +37,14 @@ public:
 	void RequestStartFire();
 	void RequestStopFire();
 	void RequestReload();
-	void RequestFireOnce();
+	bool RequestFireOnce();
 
 	bool CanWeaponAim() const;
 	UFUNCTION()
 	void OnActiveItemChanged(EItemId NewId);
+	EFireEnableReason CanFireNow() const;
 
+	FOnFinishedReload OnFinishedReload;
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -57,15 +61,13 @@ private:
 	float GetMoveAlphaForSpread() const;
 	bool CanReload() const;
 	void HandleReload();
-	void OnFinishedReload();
+	void HandleFinishedReload();
 	void ApplyRecoilLocal();
 
 #if !UE_SERVER
 	// Owning client prediction (visuals only)
 	void FireOnce_PredictedLocal();
 #endif
-
-	EFireEnableReason CanFireNow() const;
 	bool IsOwningClient() const;
 
 	void GetAim(FVector& OutStart, FVector& OutDir) const;

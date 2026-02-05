@@ -76,7 +76,7 @@ class FPSDEMO_API ABaseCharacter : public ACharacter
 
 public:
 	ABaseCharacter();
-
+    virtual void GetActorEyesViewPoint(FVector& out_Location, FRotator& out_Rotation) const override;
 protected:
     //  ===== Lifecycle =====
     virtual void BeginPlay() override;
@@ -215,10 +215,12 @@ protected:
     EMovementState CurrentMovementState = EMovementState::Normal;
     UPROPERTY(ReplicatedUsing = OnRep_SpeedMultiplier)
     float SpeedMultiplier = 1.0f;
+	float SpineKickAlpha = 0.f;
 protected:
     // ===== Timelines =====
 	FTimeline StunTimeline;
     FTimeline CrouchTimeline;
+    FTimeline SpineKickTimeline;
     FTimerHandle HitSlowTimer;
 protected:
     // ===== Internal Functions =====
@@ -328,6 +330,10 @@ public:
     bool IsPermanentDead() {
 		return bIsPermanentDead;
     }
+    void PlayEffectHitReact();
+    UFUNCTION()
+    void OnSpineKickUpdate(float Value);
+    void SetupSpineKickTimeline();
     bool CanSeeThisActor(const APawn* Target) const;
     void OnTeamChanged();
     FVector GetAimPoint(EAimPointPolicy Policy = EAimPointPolicy::Head, float HeadChance01 = 0.35f) const;
@@ -362,6 +368,9 @@ public:
 
     UFUNCTION(BlueprintCallable)
     bool IsWorkingWithSpike() const;
+
+    UFUNCTION(BlueprintCallable)
+    float GetSpineKickAlpha() const;
 
 	// ===== Delegates =====
     FOnHit OnHit;

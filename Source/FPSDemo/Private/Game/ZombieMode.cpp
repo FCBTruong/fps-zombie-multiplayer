@@ -47,15 +47,12 @@ void AZombieMode::StartRound()
 	GS->SetRoundEndTime(TimeBuyEnd);
 	ResetPlayers();
 
-	// debug playerarray size
-	UE_LOG(LogTemp, Warning, TEXT("DEBUGHH: PlayerArray Size: %d"), GS->PlayerArray.Num());
 	// reassign team id
 	for (APlayerState* PS : GS->PlayerArray)
 	{
 		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
 		if (!MyPS) continue;
 		MyPS->SetTeamId(ETeamId::Soldier);
-		UE_LOG(LogTemp, Warning, TEXT("DEBUGHH: Player %s assigned to Soldier team"), *MyPS->GetName());
 	}
 
 	BotManager->OnStartRoundZombieMode();
@@ -333,6 +330,9 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 			if ((TotalPlayers >= 8 && AliveSoldiers == 2)
 				or (TotalPlayers >= 3 && AliveSoldiers == 1)) {
 				// temporary hard code condition, will refactor later
+
+				GS->SetRemainingHeroCount(AliveSoldiers);
+				GS->SetRemainingZombieCount(TotalPlayers - AliveSoldiers);
 				GS->SetHeroPhase(true);
 
 				// add time
@@ -382,22 +382,11 @@ void AZombieMode::HandleHeroKilled(ABaseCharacter* VictimPawn)
 	// check if all soldiers are dead -> end game
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return;
-	auto PlayerStates = GS->PlayerArray;
-	bool bAllSoldierDead = true;
-	for (APlayerState* PS : PlayerStates)
-	{
-		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
-		if (!MyPS) continue;
-		ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPS->GetPawn());
-		if (!MyChar) continue;
-		if (MyChar->IsDead()) continue;
-		if (!MyChar->IsZombie())
-		{
-			bAllSoldierDead = false;
-			break;
-		}
-	}
-	if (bAllSoldierDead)
+	int RemainingHeroCount = GS->GetRemainingHeroCount();
+	RemainingHeroCount = FMath::Max(0, RemainingHeroCount - 1);
+	GS->SetRemainingHeroCount(RemainingHeroCount);
+	
+	if (RemainingHeroCount == 0)
 	{
 		EndRound(ETeamId::Zombie);
 	}
@@ -413,6 +402,10 @@ void AZombieMode::HandlePermanentZombieDeath(ABaseCharacter* VictimPawn)
 	// check if all zombie are dead -> end game with soldier win
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return;
+	int ZombieRemainingCount = GS->GetRemainingZombieCount();
+	ZombieRemainingCount = FMath::Max(0, ZombieRemainingCount - 1);
+	GS->SetRemainingZombieCount(ZombieRemainingCount);
+
 	auto PlayerStates = GS->PlayerArray;
 	bool bAllZombieDead = true;
 	for (APlayerState* PS : PlayerStates)

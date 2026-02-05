@@ -66,7 +66,7 @@ void UInventoryComponent::InitBasicWeapon()
         const UFirearmConfig* RifleData = Cast<UFirearmConfig>(ItemRifle);
         RifleState.AmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
 		RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 5 : 0;
-		RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
+        RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
     }
 
     OnRep_RifleState();

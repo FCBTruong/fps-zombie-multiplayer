@@ -137,8 +137,6 @@ void ASpikeMode::StartRound()
 		GS->SetPlantedSpike(nullptr);
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("DEBUGXX: Starting new round..."));
-
 	// Random spike for attacker team
 	FVector SpawnLocation = FVector::ZeroVector;
 	if (AActorManager::Get(GetWorld())) {

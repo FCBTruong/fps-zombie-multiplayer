@@ -62,13 +62,18 @@ void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
             UAnimInstance* AnimInst = MeshComp->GetAnimInstance();
             if (!AnimInst)
             {
+                const FString MontageName = MontageToPlay ? MontageToPlay->GetName() : TEXT("null");
+                const FString MontagePath = MontageToPlay ? MontageToPlay->GetPathName() : TEXT("null");
+
                 UE_LOG(
                     LogTemp,
                     Error,
-                    TEXT("PlayMontage: AnimInstance is null on %s mesh (AnimClass=%s, Mode=%d)"),
+                    TEXT("PlayMontage: AnimInstance is null on %s mesh (AnimClass=%s, Mode=%d, Montage=%s, MontagePath=%s)"),
                     MeshLabel,
                     *GetNameSafe(MeshComp->GetAnimClass()),
-                    static_cast<int32>(MeshComp->GetAnimationMode())
+                    static_cast<int32>(MeshComp->GetAnimationMode()),
+                    *MontageName,
+                    *MontagePath
                 );
                 return;
             }
@@ -76,6 +81,13 @@ void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
             AnimInst->Montage_Play(MontageToPlay);
         };
 
+    UE_LOG(
+        LogTemp,
+        Warning,
+        TEXT("DEBUGXX: Playing montage %s on character %s"),
+        *GetNameSafe(MontageToPlay),
+        *GetNameSafe(OwnerChar)
+	);
     // Always play on TPS mesh (bots/others will use this).
     PlayOnMesh(OwnerChar->GetMesh(), TEXT("TPS"));
 
@@ -110,6 +122,7 @@ void UAnimationComponent::PlayReloadRifleMontage() {
     if (!CachedCharacterAsset) {
         return;
     }
+	UE_LOG(LogTemp, Warning, TEXT("xxxxPlaying Reload Rifle Montage"));
     PlayMontage(CachedCharacterAsset->AnimMontage_ReloadRifle);
 }
 

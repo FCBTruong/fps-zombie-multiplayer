@@ -30,8 +30,6 @@ private:
     TObjectPtr<UGameManager> GMR;
 
 protected:
-    virtual void BeginSpectatingState() override;
-    virtual void EndSpectatingState() override;
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     virtual void OnPossess(APawn* InPawn) override;
@@ -39,7 +37,6 @@ protected:
     virtual void OnRep_Pawn() override;
     virtual void OnRep_PlayerState() override;
     virtual void SetupInputComponent() override;
-
 public:
     AMyPlayerController();
 
@@ -160,6 +157,7 @@ private:
     FDelegateHandle H_OnSwitchSide;
     FDelegateHandle H_OnUpdateRoundNumber;
     FDelegateHandle H_OnUpdateHeroPhase;
+    FDelegateHandle H_OnUpdateHeroZombieCount;
 
     // PlayerState delegate handles
     FDelegateHandle H_UpdateMoney;
@@ -168,6 +166,7 @@ private:
 
     bool bInputMappingAdded = false;
 	float TimeOfDeath = 0.f;
+    FTimerHandle ReloadDelayHandle;
 private:
     UPROPERTY(Transient)
     TObjectPtr<UPlayerUI> PlayerUI;
@@ -179,6 +178,8 @@ private:
     void ClickAim();
     void StopAim();
     void StartReload();
+    UFUNCTION()
+    void StartReloadDelayed();
     void EquipSlot(const int32 SlotIndex);
     void ChangeView();
     void OnButtonE_Started();

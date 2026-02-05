@@ -41,6 +41,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	TObjectPtr<UAnimMontage> AnimMontage_HitReact = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	TObjectPtr<UCurveFloat> SpineKickCurve = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Flash")
 	TObjectPtr<UCurveFloat> StunCurve = nullptr;
 

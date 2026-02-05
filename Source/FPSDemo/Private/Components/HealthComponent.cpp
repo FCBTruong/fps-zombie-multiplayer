@@ -59,6 +59,8 @@ void UHealthComponent::OnRep_Health()
 {
 	UE_LOG(LogTemp, Log, TEXT("Health replicated: %f"), Health);
 	OnHealthUpdated.Broadcast(Health, MaxHealth);
+
+
 }
 
 void UHealthComponent::HealthDeath()

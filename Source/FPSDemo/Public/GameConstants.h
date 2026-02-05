@@ -17,8 +17,8 @@ public:
 	static constexpr int32 MELEE_ATTACK_INDEX_SECONDARY = 2;
 
 	static constexpr int32 INIT_HEALTH_SOLIDER = 100;
-	static constexpr int32 INIT_HEALTH_ZOMBIE = 500;
-	static constexpr int32 INIT_HEALTH_HERO = 600;
+	static constexpr int32 INIT_HEALTH_ZOMBIE = 1000;
+	static constexpr int32 INIT_HEALTH_HERO = 1000;
 
 	static constexpr int32 EMPTY_PLAYER_ID = -1;
 	static constexpr int32 BOT_PLAYER_ID_START = 100000;

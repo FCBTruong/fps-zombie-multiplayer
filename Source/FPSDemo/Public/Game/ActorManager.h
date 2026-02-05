@@ -55,10 +55,6 @@ protected:
 
 	TSet<APlayerStart*> StartUsage;
 
-	TArray<APlayerStart*> ZombieStartLocations;
-
-	TArray<ATargetPoint*> ZombieDefenseLocations;
-
 	APlayerStart* GetRandomStart(const TArray<APlayerStart*>& Starts);
 public:	
 	ATriggerBox* GetAreaBombA() const { return TriggerBoxAreaA; };
@@ -66,7 +62,6 @@ public:
 	FVector GetSpikeStartLocation() const;
 	APlayerStart* GetRandomAttackerStart();
 	APlayerStart* GetRandomDefenderStart();
-	ATargetPoint* GetRandomZombieDefensePoint() const;
 	FVector RandomLocationOnMap() const;
 	void ResetPlayerStartsUsage();
 

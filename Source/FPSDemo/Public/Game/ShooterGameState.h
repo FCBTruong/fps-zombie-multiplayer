@@ -13,7 +13,7 @@ class ABaseCharacter;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateScore, int32, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRoundTime, int32)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateMatchState, const EMyMatchState&)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateMatchState, EMyMatchState)
 DECLARE_MULTICAST_DELEGATE_OneParam(
     FOnPlayerStateAdded,
     APlayerState*
@@ -27,6 +27,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnGameResult, ETeamId);
 DECLARE_MULTICAST_DELEGATE(FOnSwitchSide);
 DECLARE_MULTICAST_DELEGATE(FOnUpdateRoundNumber);
 DECLARE_MULTICAST_DELEGATE(FOnUpdateHeroPhase); // for zombie mode, refactor later
+DECLARE_MULTICAST_DELEGATE(FOnUpdateHeroZombieCount);
 
 UCLASS()
 class FPSDEMO_API AShooterGameState : public AGameState
@@ -55,6 +56,12 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_HeroPhase) // zombie mode
 	bool bHeroPhase = false;
 
+    UPROPERTY(ReplicatedUsing = OnRep_RemainingHeroCount) // zombie mode
+    int RemainingHeroCount;
+
+    UPROPERTY(ReplicatedUsing = OnRep_RemainingZombieCount) // zombie mode
+    int RemainingZombieCount;
+
 	UPROPERTY(ReplicatedUsing = OnRep_Spike)
     ASpike* PlantedSpike;
 
@@ -78,6 +85,10 @@ protected:
 
     UFUNCTION()
 	void OnRep_HeroPhase();
+	UFUNCTION()
+	void OnRep_RemainingHeroCount();
+	UFUNCTION()
+	void OnRep_RemainingZombieCount();
 
     UPROPERTY(ReplicatedUsing = OnRep_MatchMode)
     EMatchMode MatchMode = EMatchMode::Spike;
@@ -122,6 +133,7 @@ public:
 	FOnSwitchSide OnSwitchSide;
 	FOnUpdateRoundNumber OnUpdateRoundNumber;
 	FOnUpdateHeroPhase OnUpdateHeroPhase;
+	FOnUpdateHeroZombieCount OnUpdateHeroZombieCount;
 
     void AddScoreTeam(ETeamId TeamId, int ScoreToAdd);
     int GetScoreTeam(ETeamId TeamId) const;
@@ -164,8 +176,20 @@ public:
         return PlantedSpike;
 	}
     void SetHeroPhase(bool bNewHeroPhase) {
-        bHeroPhase = bNewHeroPhase;
+		bHeroPhase = bNewHeroPhase;
     }
+    void SetRemainingHeroCount(int NewCount) {
+        RemainingHeroCount = NewCount;
+	}
+    void SetRemainingZombieCount(int NewCount) {
+		RemainingZombieCount = NewCount;
+	}
+    int GetRemainingHeroCount() const {
+		return RemainingHeroCount;
+	}
+	int GetRemainingZombieCount() const {
+		return RemainingZombieCount;
+	}
     bool IsHeroPhase() const {
         return bHeroPhase;
     }

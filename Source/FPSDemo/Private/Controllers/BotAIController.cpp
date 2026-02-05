@@ -37,6 +37,8 @@ ABotAIController::ABotAIController()
     PerceptionComp->OnPerceptionUpdated.AddDynamic(this, &ABotAIController::OnPerceptionUpdated);
     PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(
         this, &ABotAIController::OnTargetPerceptionUpdated);
+
+	bCanShoot = true;
 }
 
 void ABotAIController::BeginPlay()
@@ -63,6 +65,12 @@ void ABotAIController::OnPossess(APawn* InPawn)
     {
         UE_LOG(LogTemp, Warning, TEXT("BotAIController: Initial MatchMode=%d"), (uint8)GS->GetMatchMode());
         SetMatchMode(GS->GetMatchMode());
+
+        GS->OnUpdateMatchState.AddUObject(
+            this,
+            &ABotAIController::SetMatchState
+		);
+		SetMatchState(GS->GetMatchState());
     }
 }
 
@@ -97,6 +105,7 @@ void ABotAIController::ResetAIState()
 	SetTargetActor(nullptr);
     SetHasLineSight(false);
 	SetPlantLocation(FVector::ZeroVector);
+	SetCanShoot(true);
 
     // Clear AI focus
     ClearFocus(EAIFocusPriority::Gameplay);
@@ -137,8 +146,17 @@ void ABotAIController::StartDefusingSpike() {
 
 void ABotAIController::RequestFireOnce()
 {
+    if (!bCanShoot) {
+        return;
+	}
+
     ABaseCharacter* MyChar = GetBotChar();
     if (!MyChar) return;
+	UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent();
+	auto CanFireState = WFC->CanFireNow();
+    if (CanFireState != EFireEnableReason::OK) {
+        return;
+    }
     MyChar->RequestPrimaryActionPressed();
     MyChar->RequestPrimaryActionReleased();
 }
@@ -148,11 +166,33 @@ void ABotAIController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current a
 	UE_LOG(LogTemp, Warning, TEXT("BotAIController::OnAmmoChanged: Clip=%d, Reserve=%d"), Clip, Reserve);
     if (Clip <= 0 && Reserve > 0)
     {
-        if (ABaseCharacter* MyChar = GetBotChar())
-        {
-            MyChar->RequestReloadPressed();
-        }
-	}
+        SetCanShoot(false);
+        GetWorldTimerManager().ClearTimer(ReloadDelayHandle);
+
+        GetWorldTimerManager().SetTimer(
+            ReloadDelayHandle,
+            this,
+            &ABotAIController::StartReload,
+            0.5f,
+            false
+        );
+    }
+    else {
+        GetWorldTimerManager().ClearTimer(ReloadDelayHandle);
+    }
+}
+
+void ABotAIController::StartReloadDelayed()
+{
+    StartReload();
+}
+
+void ABotAIController::StartReload() {
+    ABaseCharacter* MyChar = GetBotChar();
+    if (!MyChar) {
+        return;
+    }
+    MyChar->RequestReloadPressed();
 }
 
 void ABotAIController::SetTargetActor(ABaseCharacter* NewTarget)
@@ -299,6 +339,10 @@ void ABotAIController::BindPawn(APawn* InPawn)
     {
         EquipComp->OnAmmoChanged.AddUObject(this, &ABotAIController::OnAmmoChanged);
     }
+    if (UWeaponFireComponent* WFC = CachedChar->GetWeaponFireComponent())
+    {
+        WFC->OnFinishedReload.AddUObject(this, &ABotAIController::HandleFinishedReload);
+	}
 }
 
 void ABotAIController::UnbindPawn()
@@ -345,3 +389,48 @@ void ABotAIController::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
     }
 }
 
+void ABotAIController::SetCanShoot(bool bInCanShoot)
+{
+	bCanShoot = bInCanShoot;
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        BB->SetValueAsBool(
+            BotBBKeys::CanShoot,
+            bCanShoot
+        );
+    }
+}
+
+void ABotAIController::HandleFinishedReload()
+{
+    GetWorldTimerManager().ClearTimer(FinishedReloadDelayHandle);
+
+    GetWorldTimerManager().SetTimer(
+        FinishedReloadDelayHandle,
+        this,
+        &ABotAIController::SetCanShootTrueDelayed,
+        0.5f,
+        false
+    );
+}
+
+void ABotAIController::SetCanShootTrueDelayed()
+{
+    SetCanShoot(true);
+}
+
+void ABotAIController::SetMatchState(EMyMatchState NewState)
+{
+    CurrentMatchState = NewState;
+    UE_LOG(LogTemp, Warning, TEXT("BotAIController: SetMatchState"));
+    UBlackboardComponent* BB = GetBlackboardComponent();
+    if (BB)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("BotAIController: BBB OK"));
+        Blackboard->SetValueAsEnum(
+            BotBBKeys::MatchState,
+            static_cast<uint8>(NewState)
+        );
+    }
+}

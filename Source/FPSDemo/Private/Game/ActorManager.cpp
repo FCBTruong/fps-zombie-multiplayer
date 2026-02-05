@@ -37,16 +37,13 @@ void AActorManager::BeginPlay()
         *GetWorld()->GetName()
     );
 
-	ZombieStartLocations.Empty();
-
     TArray<AActor*> FoundActors;
     UGameplayStatics::GetAllActorsOfClass(
         GetWorld(),
         ATargetPoint::StaticClass(),
         FoundActors
     );
-	UE_LOG(LogTemp, Warning, TEXT("ActorManager: Found %d TargetPoint actors"), FoundActors.Num());
-
+	
     for (AActor* Actor : FoundActors)
     {
         ATargetPoint* TargetPoint = Cast<ATargetPoint>(Actor);
@@ -55,39 +52,13 @@ void AActorManager::BeginPlay()
             continue;
         }
 
-        if (TargetPoint->ActorHasTag(TEXT("ZombieDefensePoint")))
-        {
-            ZombieDefenseLocations.Add(TargetPoint);
-        }
-        else if (TargetPoint->ActorHasTag(TEXT("DefenderWeaponInitPos"))) {
+        if (TargetPoint->ActorHasTag(TEXT("DefenderWeaponInitPos"))) {
             DefenderWeaponInitPos = TargetPoint->GetActorLocation();
         }
         else if (TargetPoint->ActorHasTag(TEXT("AttackerWeaponInitPos"))) {
             AttackerWeaponInitPos = TargetPoint->GetActorLocation();
         }
     }
-
-    UGameplayStatics::GetAllActorsOfClass(
-        GetWorld(),
-        APlayerStart::StaticClass(),
-        FoundActors
-    );
-    UE_LOG(LogTemp, Warning, TEXT("ActorManager: Found %d TargetPoint actors"), FoundActors.Num());
-
-    for (AActor* Actor : FoundActors)
-    {
-        APlayerStart* TargetPoint = Cast<APlayerStart>(Actor);
-        if (!TargetPoint)
-        {
-            continue;
-        }
-
-        if (TargetPoint->ActorHasTag(TEXT("ZombiePoint")))
-        {
-            ZombieStartLocations.Add(TargetPoint);
-        }
-    }
-    UE_LOG(LogTemp, Warning, TEXT("ActorManager: Found %d Zombie start actors"), ZombieStartLocations.Num());
 }
 
 FVector AActorManager::GetSpikeStartLocation() const
@@ -180,14 +151,6 @@ FVector AActorManager::GetRandomHoldLocationNearBombSite(FName BombSiteName) con
 FVector AActorManager::GetRandomScoutLocation() const
 {
 	return RandomLocationOnMap();
-}
-
-ATargetPoint* AActorManager::GetRandomZombieDefensePoint() const {
-
-    if (ZombieDefenseLocations.Num() == 0)
-        return nullptr;
-    ATargetPoint* Chosen = ZombieDefenseLocations[FMath::RandRange(0, ZombieDefenseLocations.Num() - 1)];
-    return Chosen;
 }
 
 FVector AActorManager::RandomLocationOnMap() const {

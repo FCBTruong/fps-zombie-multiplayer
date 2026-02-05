@@ -48,13 +48,6 @@ EBTNodeResult::Type UBTTask_Shoot::ExecuteTask(
 		return EBTNodeResult::Succeeded;
     }*/
 
-    // === Base aim ===
-    const FVector CameraLocation = Char->GetPawnViewLocation();
-
-    FVector TargetPoint = Target->GetActorLocation();
-    TargetPoint.Z += 60.f; // chest height
-
-
     // === Fire ===
     AI->RequestFireOnce();
 

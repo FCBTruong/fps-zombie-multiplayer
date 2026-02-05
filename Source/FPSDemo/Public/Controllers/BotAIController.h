@@ -19,6 +19,7 @@ namespace BotBBKeys
     inline const FName HasLOS(TEXT("B_HasLineSight"));
     inline const FName TargetLocation(TEXT("Vec_TargetLocation"));
     inline const FName MatchMode(TEXT("E_MatchMode"));
+    inline const FName MatchState(TEXT("E_MatchState"));
 	inline const FName SpikeRole(TEXT("E_Role"));
 	inline const FName SpikeActor(TEXT("Obj_SpikeActor"));
 	inline const FName IsAttacker(TEXT("B_IsAttacker"));
@@ -27,6 +28,7 @@ namespace BotBBKeys
 	inline const FName ScoutLocation(TEXT("Vec_ScoutLocation"));
 	inline const FName HasLineSight(TEXT("B_HasLineSight"));
 	inline const FName HoldLocation(TEXT("Vec_HoldLocation"));
+	inline const FName CanShoot(TEXT("B_CanShoot"));
 }
 
 UCLASS()
@@ -52,6 +54,8 @@ public:
 	void SetScoutLocation(const FVector& NewLocation);
 	void SetHasLineSight(bool bLineSight);
 	void SetHoldLocation(const FVector& NewLocation);
+	void SetCanShoot(bool bCanShoot);
+	void SetMatchState(EMyMatchState NewState);
 
 	EBotRole GetSpikeRole() const { return SpikeRole; }
 	ABaseCharacter* GetTargetActor() const;
@@ -59,6 +63,7 @@ public:
 	bool HasLineOfSight() const { return bHasLineSight; }
     ABaseCharacter* GetBotChar() const { return CachedChar.Get(); }
     float GetLastTimeSeenTarget() const { return LastTimeSeenTarget; }
+
 protected:
     virtual void OnPossess(APawn* InPawn) override;
     virtual void BeginPlay() override;
@@ -72,6 +77,15 @@ protected:
         FAIStimulus Stimulus);
     void OnAmmoChanged(int32 Clip, int32 Reserve);
 	virtual void UpdateControlRotation(float DeltaTime, bool bUpdatePawn = true) override;
+    void StartReload();
+    UFUNCTION()
+    void StartReloadDelayed();
+    void HandleFinishedReload();
+
+    FTimerHandle FinishedReloadDelayHandle;
+
+    UFUNCTION()
+    void SetCanShootTrueDelayed();
 private:
     UPROPERTY(VisibleAnywhere)
     class UAIPerceptionComponent* PerceptionComp;
@@ -93,8 +107,10 @@ private:
 	FVector HoldLocation;
 	bool bHasLineSight;
     float LastTimeSeenTarget;
-
+    FTimerHandle ReloadDelayHandle;
     TWeakObjectPtr<ABaseCharacter> CachedChar;
+	bool bCanShoot;
+	EMyMatchState CurrentMatchState;
 
     void BindPawn(APawn* InPawn);
     void UnbindPawn();

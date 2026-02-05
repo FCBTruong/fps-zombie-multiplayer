@@ -467,7 +467,7 @@ void UPlayerUI::OnUpdateRoundTime(int TimeEnd) {
 	StartRoundClock();
 }
 
-void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
+void UPlayerUI::UpdateGameState(EMyMatchState State) {
 	PhotonPlantedIcon->SetVisibility(ESlateVisibility::Hidden);
 	MatchTimeLb->SetVisibility(ESlateVisibility::Visible);
     bPlayedTenSec = false;
@@ -475,7 +475,7 @@ void UPlayerUI::UpdateGameState(const EMyMatchState& State) {
     switch (State) {
         case EMyMatchState::PRE_MATCH:
 			MatchStatePn->SetVisibility(ESlateVisibility::Visible);
-			MatchStateTxt->SetText(FText::FromString("Waiting for other players …"));
+			MatchStateTxt->SetText(FText::FromString("Waiting for other players."));
 			break;
         case EMyMatchState::ROUND_START:
 			ShowMatchStateToast(FText::FromString("Round Started!"), 0.f);
@@ -769,8 +769,21 @@ void UPlayerUI::UpdateHeroPhase() {
         );
 		ShowNotiToast(FText::FromString("Press E to become hero!"));
 		ZombieVsHeroPn->SetVisibility(ESlateVisibility::Visible);
+        UpdateHeroZombieNum();
     }
     else {
 		ZombieVsHeroPn->SetVisibility(ESlateVisibility::Hidden);
 	}
+}
+
+void UPlayerUI::UpdateHeroZombieNum() {
+	AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    if (!GS) {
+        return;
+	}
+	int32 HeroNum = GS->GetRemainingHeroCount();
+	int32 ZombieNum = GS->GetRemainingZombieCount();
+
+    HeroNumLb->SetText(FText::AsNumber(HeroNum));
+    ZombieNumLb->SetText(FText::AsNumber(ZombieNum));
 }

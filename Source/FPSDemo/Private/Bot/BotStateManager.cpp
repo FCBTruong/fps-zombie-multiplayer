@@ -191,11 +191,7 @@ void BotStateManager::OnStartRoundZombieMode() {
 	if (!ActorManager) return;
 	for (ABotAIController* Bot : ManagedBots)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("BotStateManager: OnStartRoundZombieMode setting hold location for bot"));
-		ATargetPoint* ZombieSpawnPoint = ActorManager->GetRandomZombieDefensePoint();
-		if (!ZombieSpawnPoint) continue;
 		
-		Bot->SetHoldLocation(ZombieSpawnPoint->GetActorLocation());
 	}
 }
 void BotStateManager::SetMatchMode(EMatchMode NewMode)

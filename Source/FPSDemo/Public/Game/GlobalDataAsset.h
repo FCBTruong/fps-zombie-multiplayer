@@ -71,6 +71,12 @@ public:
 	TObjectPtr<USoundBase> RoundEndSound;
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase> ZombieWinVoice;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase> SoldierWinVoice;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase> MeleeImpactBodySound;
 
 	UPROPERTY(EditAnywhere, Category = "Sound")

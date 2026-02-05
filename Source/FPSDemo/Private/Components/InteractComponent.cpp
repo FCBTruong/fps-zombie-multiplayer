@@ -44,7 +44,6 @@ void UInteractComponent::TraceForPickup()
 	APickupItem* NewPickup = bHit ? Cast<APickupItem>(Hit.GetActor()) : nullptr;
 	if (NewPickup != FocusedPickup)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ddsss"));
 		FocusedPickup = NewPickup;
 		
 		ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
@@ -67,15 +66,18 @@ void UInteractComponent::TryPickup()
 	UE_LOG(LogTemp, Warning, TEXT("pressed pickup"));
 	if (FocusedPickup)
 	{
-		ServerTryPickup(FocusedPickup);
-		if (auto PickupComp = GetOwner()->FindComponentByClass<UPickupComponent>())
+		if (GetOwner()->HasAuthority())
 		{
-			PickupComp->PickupItem(FocusedPickup, true);
+			HandlePickup_Internal(FocusedPickup);
+		}
+		else
+		{
+			ServerTryPickup(FocusedPickup);
 		}
 	}
 }
 
-void UInteractComponent::ServerTryPickup_Implementation(APickupItem* Item)
+void UInteractComponent::HandlePickup_Internal(APickupItem* Item)
 {
 	if (Item)
 	{
@@ -84,4 +86,9 @@ void UInteractComponent::ServerTryPickup_Implementation(APickupItem* Item)
 			PickupComp->PickupItem(Item, true);
 		}
 	}
+}
+
+void UInteractComponent::ServerTryPickup_Implementation(APickupItem* Item)
+{
+	HandlePickup_Internal(Item);
 }

@@ -370,8 +370,8 @@ void URoomManager::RequestChangeHostType(bool bIsSelfHost) {
 
 void URoomManager::RequestCreateRoom() {
     if (NetworkManager && NetworkManager->IsConnected()) {
-        game::net::Empty Empty;
-        NetworkManager->SendPacket(ECmdId::CREATE_ROOM, Empty);
+        game::net::CreateRoomRequest CreateRoomPkg;
+        NetworkManager->SendPacket(ECmdId::CREATE_ROOM, CreateRoomPkg);
 	}
     else {
 		UE_LOG(LogTemp, Warning, TEXT("URoomManager::RequestCreateRoom: NetworkManager is not connected"));
@@ -417,6 +417,15 @@ void URoomManager::HandleGameStarted(const std::string& payload)
     if (!GI) return;
 
     UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_LOADING);
+
+	// if is self host and owner, start hosting the game server
+    if (IsMyRoom() && CurrentRoomData.bIsSelfHost) {
+        UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleGameStarted: Is self-host and owner, start hosting the game server."));
+        UGameManager* GameMgr = UGameManager::Get(GetWorld());
+        if (GameMgr) {
+            GameMgr->StartMatch();
+        }
+	}
 }
 
 void URoomManager::HandleSelfHostReady(const std::string& payload)

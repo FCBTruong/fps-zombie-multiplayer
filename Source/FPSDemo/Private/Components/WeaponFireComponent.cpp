@@ -151,12 +151,6 @@ void UWeaponFireComponent::RequestStartFire()
 		BurstAccDeg = 0;
 		FireOnce_PredictedLocal();
 
-		// if is aiming, stop aim
-		ABaseCharacter* Char = Cast<ABaseCharacter>(GetOwner());
-		if (Char->IsAiming()) {
-			Char->RequestStopAiming();
-		}
-
 		GetWorld()->GetTimerManager().SetTimer(
 			FireTimer_Local,
 			this,
@@ -166,6 +160,11 @@ void UWeaponFireComponent::RequestStartFire()
 		);
 	}
 #endif
+	// if is aiming, stop aim
+	ABaseCharacter* Char = Cast<ABaseCharacter>(GetOwner());
+	if (Char && Char->IsAiming()) {
+		Char->RequestStopAiming();
+	}
 
 	if (GetOwner()->HasAuthority())
 	{
@@ -571,8 +570,8 @@ void UWeaponFireComponent::HandleReload()
 	GetWorld()->GetTimerManager().SetTimer(
 		ReloadTimer,
 		this,
-		&UWeaponFireComponent::OnFinishedReload,
-		2.0f,
+		&UWeaponFireComponent::HandleFinishedReload,
+		2.5f,
 		false
 	);
 }
@@ -606,7 +605,7 @@ void UWeaponFireComponent::MulticastReload_Implementation()
 	}
 }
 
-void UWeaponFireComponent::OnFinishedReload()
+void UWeaponFireComponent::HandleFinishedReload()
 {
 	if (!Character || !Character->IsAlive()) return;
 	if (!GetOwner()->HasAuthority()) {
@@ -622,6 +621,8 @@ void UWeaponFireComponent::OnFinishedReload()
 
 	UE_LOG(LogTemp, Warning, TEXT("OnFinishedReload called"));
 	InventoryComp->ReloadWeapon(CurrentFirearmConfig->Id);
+
+	OnFinishedReload.Broadcast();
 }
 
 bool UWeaponFireComponent::CanWeaponAim() const {
@@ -649,14 +650,16 @@ bool UWeaponFireComponent::CanWeaponAim() const {
 }
 
 // for server only
-void UWeaponFireComponent::RequestFireOnce() {
+bool UWeaponFireComponent::RequestFireOnce() {
 	if (GetOwner()->HasAuthority())
 	{
 		if (CanFireNow() == EFireEnableReason::OK)
 		{
 			FireOnce_ServerAuth();
+			return true;
 		}
 	}
+	return false;
 }
 
 void UWeaponFireComponent::ApplyRecoilLocal()

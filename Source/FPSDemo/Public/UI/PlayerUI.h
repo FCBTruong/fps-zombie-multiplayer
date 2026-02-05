@@ -215,7 +215,7 @@ public:
 	void ShowMatchStateToast(FText Txt, float Delay);
 	void ShowNotiToast(FText Txt);
 	void OnUpdateRoundTime(int TimeEnd);
-	void UpdateGameState(const EMyMatchState& State);
+	void UpdateGameState(EMyMatchState State);
 	void ShowScoreboard(bool bShow);
 	void UpdateArmor(int AmmorPoints, int MaxArmorPoints);
 	void ShowKillMark(bool bHeadShot = false);
@@ -227,4 +227,5 @@ public:
 	void UpdateTeamId(ETeamId NewTeamId);
 	void UpdateRoundNumber();
 	void UpdateHeroPhase();
+	void UpdateHeroZombieNum();
 };

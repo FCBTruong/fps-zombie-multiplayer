@@ -33,15 +33,6 @@ void AShooterGameMode::StartPlay()
 
     UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode:Game Started!"));
 
-	// call start round after short delay
-    /*GetWorldTimerManager().SetTimer(
-        TryStartMatchHandle,
-        this,
-        &AShooterGameMode::StartRound,
-        1.0f,
-        false
-	);*/
-	
     AShooterGameState* GS = GetGameState<AShooterGameState>();
     if (!GS)
     {
@@ -50,7 +41,11 @@ void AShooterGameMode::StartPlay()
     }
 
     GS->SetMatchMode(GetMatchMode());
+	GS->SetMatchState(EMyMatchState::PRE_MATCH);
     GS->SetCurrentRound(0);
+
+	int WaitingTime = 15; // seconds
+	GS->SetRoundEndTime(WaitingTime);
     BotManager->SetMatchMode(GetMatchMode());
 
     URoomManager* RoomMgr = URoomManager::Get(GetWorld());
@@ -70,17 +65,17 @@ void AShooterGameMode::StartPlay()
             RoomDataMutable.Players[3].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 2;
             RoomDataMutable.Players[3].bIsBot = true;
 
-            RoomDataMutable.Players[6].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
-            RoomDataMutable.Players[6].bIsBot = true;
+            //RoomDataMutable.Players[6].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
+            //RoomDataMutable.Players[6].bIsBot = true;
 
-            /*RoomDataMutable.Players[4].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
-            RoomDataMutable.Players[4].bIsBot = true;*/
+            ///*RoomDataMutable.Players[4].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
+            //RoomDataMutable.Players[4].bIsBot = true;*/
 
-            RoomDataMutable.Players[7].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
-            RoomDataMutable.Players[7].bIsBot = true;
+            //RoomDataMutable.Players[7].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
+            //RoomDataMutable.Players[7].bIsBot = true;
 
-            RoomDataMutable.Players[8].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
-            RoomDataMutable.Players[8].bIsBot = true;
+            //RoomDataMutable.Players[8].PlayerId = FGameConstants::BOT_PLAYER_ID_START + 22;
+            //RoomDataMutable.Players[8].bIsBot = true;
         }
 		UE_LOG(LogTemp, Warning, TEXT("Editor mode: Added 2 bots to room data"));
     }
@@ -110,9 +105,32 @@ void AShooterGameMode::StartPlay()
 
 void AShooterGameMode::StartMatch()
 {
-    UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode: StartMatch called"));
     Super::StartMatch();
+    UE_LOG(LogTemp, Warning, TEXT("StartMatch called in AShooterGameMode"));
+
+	// Start first round after short delay
+    GetWorldTimerManager().ClearTimer(StartRoundTimerHandle);
+    GetWorldTimerManager().SetTimer(
+        StartRoundTimerHandle,
+        this,
+        &AShooterGameMode::StartRoundDelayed,
+        1.0f,   // delay seconds (change as needed)
+        false
+    );
+}
+
+void AShooterGameMode::StartRoundDelayed()
+{
+    if (!HasAuthority()) return;
+    if (!HasMatchStarted()) return;
+
     StartRound();
+}
+
+bool AShooterGameMode::ReadyToStartMatch_Implementation()
+{
+    UE_LOG(LogTemp, Warning, TEXT("ReadyToStartMatch called in AShooterGameMode"));
+    return bIsAllPlayersJoined;
 }
 
 void AShooterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -131,7 +149,10 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Player Logged In: %s"), *GetNameSafe(NewPlayer));
     Super::PostLogin(NewPlayer);
-
+    if (NewPlayer && !NewPlayer->GetPawn())
+    {
+        RestartPlayer(NewPlayer);
+    }
     if (NewPlayer && NewPlayer->PlayerState)
     {
         JoinedPlayers.AddUnique(NewPlayer->PlayerState);
@@ -237,8 +258,6 @@ void AShooterGameMode::ResetPlayers()
 void AShooterGameMode::RestartPlayer(AController* NewPlayer)
 {
     Super::RestartPlayer(NewPlayer);
-
-    UE_LOG(LogTemp, Warning, TEXT("DEBUG01: Restart player"));
 }
 
 
@@ -277,6 +296,7 @@ ABotAIController* AShooterGameMode::SpawnBot(bool IsTeamA)
     {
         BotManager->AddBot(Bot);
 	}
+    RestartPlayer(Bot); 
     return Bot;
 }
 
@@ -347,13 +367,6 @@ void AShooterGameMode::HandleMatchHasStarted()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Match Has Started in AShooterGameMode"));
     Super::HandleMatchHasStarted();
-}
-
-bool AShooterGameMode::ReadyToStartMatch_Implementation()
-{
-    if (GetNumPlayers() <= 0) return false;
-	if (!bIsAllPlayersJoined) return false;
-    return true;
 }
 
 void AShooterGameMode::StartRound() {

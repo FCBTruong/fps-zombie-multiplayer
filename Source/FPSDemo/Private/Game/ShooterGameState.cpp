@@ -34,6 +34,8 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterGameState, CurrentRound);
 	DOREPLIFETIME(AShooterGameState, PlantedSpike);
 	DOREPLIFETIME(AShooterGameState, bHeroPhase);
+	DOREPLIFETIME(AShooterGameState, RemainingHeroCount);
+	DOREPLIFETIME(AShooterGameState, RemainingZombieCount);
 }
 
 
@@ -70,37 +72,34 @@ void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Kille
 
 void AShooterGameState::Multicast_RoundResult_Implementation(ETeamId WinningTeam)
 {
-    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-    {
-        AMyPlayerController* MyPC = Cast<AMyPlayerController>(It->Get());
-        if (MyPC && MyPC->GetPlayerUI())
-        {
-            FText ResultText;
-            if (WinningTeam == ETeamId::Soldier) {
-                ResultText = FText::FromString("Solider Win");
-            }
-            else if (WinningTeam == ETeamId::Zombie) {
-                ResultText = FText::FromString("Zombie Win");
-            }
-            else {
-                bool IsWinner = false;
-                if (MyPC->GetTeamId() == WinningTeam) {
-                    IsWinner = true;
-                }
-
-                // play sound
-                if (UGameManager* GM = UGameManager::Get(GetWorld()))
-                {
-                    if (GM->GlobalData && GM->GlobalData->RoundEndSound)
-                    {
-                        UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->RoundEndSound.Get());
-                    }
-                }
-                ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
-            }
-			MyPC->GetPlayerUI()->ShowMatchStateToast(ResultText, 0);
-        }
+	AMyPlayerController* MyPC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
+    if (!MyPC || !MyPC->GetPlayerUI()) {
+        return;
     }
+    UGameManager* GM = UGameManager::Get(GetWorld());
+    if (!GM || !GM->GlobalData) {
+        return;
+	}
+    FText ResultText;
+    if (WinningTeam == ETeamId::Soldier) {
+        ResultText = FText::FromString("Soldiers Win");
+        UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->SoldierWinVoice.Get());
+    }
+    else if (WinningTeam == ETeamId::Zombie) {
+        ResultText = FText::FromString("Zombies Win");
+        UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->ZombieWinVoice.Get());
+    }
+    else {
+        bool IsWinner = false;
+        if (MyPC->GetTeamId() == WinningTeam) {
+            IsWinner = true;
+        }
+
+        UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->RoundEndSound.Get());
+          
+        ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
+    }
+	MyPC->GetPlayerUI()->ShowMatchStateToast(ResultText, 0);
 }
 
 void AShooterGameState::AddScoreTeam(ETeamId TeamId, int ScoreToAdd)
@@ -321,4 +320,14 @@ void AShooterGameState::Multicast_ClaimAirdropCrate_Implementation(ABaseCharacte
         }
         MyPC->NotifyToastMessage(Txt);
     }
+}
+
+void AShooterGameState::OnRep_RemainingHeroCount()
+{
+	OnUpdateHeroZombieCount.Broadcast();
+}
+
+void AShooterGameState::OnRep_RemainingZombieCount()
+{
+    OnUpdateHeroZombieCount.Broadcast();
 }
