@@ -29,7 +29,6 @@ private:
 protected:
 	virtual void Init() override;
 	virtual void OnStart() override;
-	void RequestMatchDataAndStart();
 public:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UGlobalDataAsset> GlobalData = nullptr;
@@ -54,10 +53,17 @@ public:
 	TUniquePtr<DedicatedServerClient> DsClient;
 
 	void StartMatch();
-	void InitFromGameLift(
+	void InitServerConfig(
 		const FString& InRoomId,
-		const FString& InMode,
 		const FString& InToken);
+	void RequestMatchDataAndStart();
 
 	FOnNewPickupItemSpawned OnNewPickupItemSpawned;
+
+private:
+	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+	void CreateHostSession();
+	FName PendingMapName;
+	FString PendingOptions;
+	FDelegateHandle OnCreateHandle;
 };

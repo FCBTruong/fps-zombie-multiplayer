@@ -123,6 +123,7 @@ public:
     void BindCharacter(ABaseCharacter* Char);
 	void SetTimeOfDeath(float TimeDead);
     void NotifyToastMessage(const FText& Message);
+	AMyPlayerState* GetMyPlayerState() const;
 private:
     UPROPERTY()
     TWeakObjectPtr<AActor> CurrentSpectateTarget;

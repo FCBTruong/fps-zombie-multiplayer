@@ -10,6 +10,7 @@
 #include "Types/EquippedAnimState.h"
 #include "Characters/CharacterRole.h"
 #include "Data/TeamId.h"
+#include "GameConstants.h"
 #include "BaseCharacter.generated.h"
 
 class UPickupComponent;
@@ -211,11 +212,16 @@ protected:
 	// ===== Replicated Properties =====
     UPROPERTY(ReplicatedUsing = OnRep_IsAiming)
     bool bIsAiming = false;
+
     UPROPERTY(ReplicatedUsing = OnRep_CurrentMovementState)
     EMovementState CurrentMovementState = EMovementState::Normal;
+
+    UPROPERTY(ReplicatedUsing = OnRep_CharacterSkin)
+    int32 CharacterSkin = FGameConstants::SKIN_CHARACTER_ATTACKER;
     UPROPERTY(ReplicatedUsing = OnRep_SpeedMultiplier)
     float SpeedMultiplier = 1.0f;
-	float SpineKickAlpha = 0.f;
+
+    float SpineKickAlpha = 0.f;
 protected:
     // ===== Timelines =====
 	FTimeline StunTimeline;
@@ -274,6 +280,8 @@ protected:
     void OnRep_CurrentMovementState();
     UFUNCTION()
     void OnRep_SpeedMultiplier();
+	UFUNCTION()
+	void OnRep_CharacterSkin();
 
 	// ===== Client RPC =====
     UFUNCTION(Client, Reliable)
@@ -331,11 +339,11 @@ public:
 		return bIsPermanentDead;
     }
     void PlayEffectHitReact();
+    void SetCharacterSkin(int32 SkinId);
     UFUNCTION()
     void OnSpineKickUpdate(float Value);
     void SetupSpineKickTimeline();
     bool CanSeeThisActor(const APawn* Target) const;
-    void OnTeamChanged();
     FVector GetAimPoint(EAimPointPolicy Policy = EAimPointPolicy::Head, float HeadChance01 = 0.35f) const;
 
 	FString GetPlayerName() const;

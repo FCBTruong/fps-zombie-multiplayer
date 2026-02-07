@@ -22,7 +22,7 @@ void URoomPlayerSlotUI::NativeConstruct()
 	}
 }
 
-void URoomPlayerSlotUI::SetPlayerInfo(PlayerRoomInfo Info, int InSlotIdx, int OwnerId, bool IsGuestMode)
+void URoomPlayerSlotUI::SetPlayerInfo(FPlayerRoomInfo Info, int InSlotIdx, int OwnerId, bool IsGuestMode)
 {
 	CachedPlayerInfo = Info;
 	SlotIdx = InSlotIdx;

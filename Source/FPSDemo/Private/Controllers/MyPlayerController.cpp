@@ -31,6 +31,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Practice/PracticeGameMode.h"
 #include "Game/ActorManager.h"
+#include "Game/PlayerSlot.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -620,27 +621,24 @@ AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
     UWorld* World = GetWorld();
     if (!World) return nullptr;
 
-    AGameStateBase* GS = World->GetGameState();
-    if (!GS || !PlayerState) return nullptr;
+	AShooterGameState* GS = World->GetGameState<AShooterGameState>();
+	if (!GS) return nullptr;
 
     // Replace with your team accessors
     auto MyTeamId = CastChecked<AMyPlayerState>(PlayerState)->GetTeamId();
 
     TArray<AActor*> Candidates;
-    Candidates.Reserve(GS->PlayerArray.Num());
-
-    for (APlayerState* PS : GS->PlayerArray)
+    
+    for (APlayerSlot* Slot : GS->Slots)
     {
-        AMyPlayerState* MPS = Cast<AMyPlayerState>(PS);
-        if (!MPS) continue;
-        if (MPS->GetTeamId() != MyTeamId) continue;
-        if (MPS == PlayerState) continue;
-
-        AController* OwnerController = Cast<AController>(MPS->GetOwner()); // On server, PlayerState owner is typically the Controller
-        APawn* OwnedPawn = OwnerController ? OwnerController->GetPawn() : nullptr;
+        if (Slot->GetTeamId() != MyTeamId) continue;
+		APawn* OwnedPawn = Slot->GetPawn();
+		if (!IsValid(OwnedPawn)) continue;
         ABaseCharacter* Char = Cast<ABaseCharacter>(OwnedPawn);
         if (!Char) continue;
         if (!Char->IsAlive()) continue;
+
+		if (Char == this->GetPawn()) continue; // skip self
 
         Candidates.Add(Char);
     }
@@ -967,7 +965,6 @@ void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
     H_AimingChanged.Reset();
 }
 
-
 void AMyPlayerController::BindGameState(AShooterGameState* GS)
 {
     if (!GS || !PlayerUI) return;
@@ -1165,4 +1162,9 @@ void AMyPlayerController::ClientSpectateTarget_Implementation(AActor* Target, fl
 void AMyPlayerController::SetTimeOfDeath(float Time)
 {
     TimeOfDeath = Time;
+}
+
+AMyPlayerState* AMyPlayerController::GetMyPlayerState() const
+{
+    return GetPlayerState<AMyPlayerState>();
 }

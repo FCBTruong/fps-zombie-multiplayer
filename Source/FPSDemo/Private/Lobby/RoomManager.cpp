@@ -47,7 +47,7 @@ void URoomManager::OnPacketReceived(
         CurrentRoomData.Players.Empty();    
         for (int i = 0; i < RoomInfoPkg.players_size(); ++i) {
             const auto& ProtoPlayerInfo = RoomInfoPkg.players(i);
-            PlayerRoomInfo Info;
+            FPlayerRoomInfo Info;
             Info.PlayerName = FString(ProtoPlayerInfo.player_name().c_str());
             Info.PlayerId = ProtoPlayerInfo.user_id();
             Info.bIsBot = ProtoPlayerInfo.is_bot();
@@ -77,7 +77,7 @@ void URoomManager::OnPacketReceived(
             RoomData.Players.Empty();
             for (int j = 0; j < ProtoRoom.players_size(); ++j) {
                 const auto& ProtoPlayerInfo = ProtoRoom.players(j);
-                PlayerRoomInfo Info;
+                FPlayerRoomInfo Info;
                 Info.PlayerName = FString(ProtoPlayerInfo.player_name().c_str());
                 Info.PlayerId = ProtoPlayerInfo.user_id();
                 Info.bIsBot = ProtoPlayerInfo.is_bot();
@@ -125,7 +125,7 @@ void URoomManager::OnPacketReceived(
        
         if (CurrentRoomData.Players.IsValidIndex(SlotIdx)) {
             // Clear the player info in that slot
-            PlayerRoomInfo Info;
+            FPlayerRoomInfo Info;
 
             // if is me, then leave room scene
             if (Info.PlayerId == UPlayerInfoManager::Get(GetWorld())->GetUserId()) {
@@ -151,7 +151,7 @@ void URoomManager::OnPacketReceived(
 		const int SlotIdx = Msg.slot_idx();
         if (CurrentRoomData.Players.IsValidIndex(SlotIdx)) {
             const auto& ProtoPlayerInfo = Msg.player_info();
-            PlayerRoomInfo Info;
+            FPlayerRoomInfo Info;
             Info.PlayerName = FString(ProtoPlayerInfo.player_name().c_str());
             Info.PlayerId = ProtoPlayerInfo.user_id();
             Info.bIsBot = ProtoPlayerInfo.is_bot();
@@ -202,6 +202,20 @@ void URoomManager::OnPacketReceived(
         HandlePlayerSession(Payload);
         break;
     }
+    case ECmdId::SELFHOST_START_SESSION: {
+		game::net::SelfHostStartSessionReply Msg;
+        if (!Msg.ParseFromString(Payload))
+			return;
+        const FString RoomId = UTF8_TO_TCHAR(Msg.room_id().c_str());
+        const FString Token = UTF8_TO_TCHAR(Msg.token().c_str());
+        CreateSelfHostSession(RoomId, Token);
+        break;
+    }
+    case ECmdId::GAME_START_FAILED: {
+		// handle game start failed, back too lobby scene
+        UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_LOBBY);
+        break;
+    }
     default:
         break;
     }
@@ -234,7 +248,7 @@ void URoomManager::RequestKickPlayer(int PlayerId)
         {
             if (CurrentRoomData.Players[i].PlayerId == PlayerId)
             {
-                PlayerRoomInfo Info;
+                FPlayerRoomInfo Info;
                 Info.PlayerName = TEXT("");
                 Info.PlayerId = FGameConstants::EMPTY_PLAYER_ID; // Indicate empty slot
                 Info.bIsBot = false;
@@ -273,7 +287,7 @@ void URoomManager::RequestAddBot(int team) {
         {
             if (CurrentRoomData.Players[i].PlayerId == FGameConstants::EMPTY_PLAYER_ID)
             {
-                PlayerRoomInfo Info;
+                FPlayerRoomInfo Info;
 				Info.PlayerName = TEXT("Bot");
 				Info.Avatar = "100"; // default bot avatar
                 Info.PlayerId = FGameConstants::BOT_PLAYER_ID_START + i; // assign a bot id
@@ -392,7 +406,7 @@ void URoomManager::CreateOfflineRoom()
 
     for (int i = 0; i < 10; ++i)
     {
-        PlayerRoomInfo Info;
+        FPlayerRoomInfo Info;
         if (i == 0) {
             Info.PlayerName = UPlayerInfoManager::Get(GetWorld())->GetPlayerName();
             Info.PlayerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();
@@ -417,15 +431,6 @@ void URoomManager::HandleGameStarted(const std::string& payload)
     if (!GI) return;
 
     UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_LOADING);
-
-	// if is self host and owner, start hosting the game server
-    if (IsMyRoom() && CurrentRoomData.bIsSelfHost) {
-        UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleGameStarted: Is self-host and owner, start hosting the game server."));
-        UGameManager* GameMgr = UGameManager::Get(GetWorld());
-        if (GameMgr) {
-            GameMgr->StartMatch();
-        }
-	}
 }
 
 void URoomManager::HandleSelfHostReady(const std::string& payload)
@@ -435,17 +440,6 @@ void URoomManager::HandleSelfHostReady(const std::string& payload)
         UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleSelfHostReady: Is self-host, no need to join."));
         return;
     }
-
-    // Turn off loading scene
-    // Travel to game map as client
-
-    GetWorld()->GetTimerManager().SetTimer(
-        JoinRetryTimer,
-        this,
-        &URoomManager::TryJoinRoom,
-        3.0f,
-        false
-    );
 }
 
 void URoomManager::HandlePlayerSession(const std::string& payload)
@@ -462,13 +456,24 @@ void URoomManager::HandlePlayerSession(const std::string& payload)
 
     UGameInstance* GI = GetWorld()->GetGameInstance();
     if (!GI) return;
-    FString URL = FString::Printf(TEXT("%s:%d?PlayerSessionId=%s"), *IpAddress, Port, *FString(SessionId));
-    UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandlePlayerSession: Traveling to %s"), *URL);
+ 
+    FString SessionIdStr = UTF8_TO_TCHAR(SessionId);
+    FString URL = FString::Printf(TEXT("%s:%d"), *IpAddress, Port);
+
+    if (!SessionIdStr.IsEmpty())
+    {
+        URL += (URL.Contains(TEXT("?")) ? TEXT("&") : TEXT("?"));
+        URL += FString::Printf(TEXT("PlayerSessionId=%s"), *SessionIdStr);
+    }
 	GI->GetFirstLocalPlayerController()->ClientTravel(URL, TRAVEL_Absolute);
 }
 
-void URoomManager::TryJoinRoom()
+void URoomManager::CreateSelfHostSession(FString RoomId, FString Token)
 {
-    UGameInstance* GI = GetWorld()->GetGameInstance();
-    if (!GI) return;
+	UGameManager* GameMgr = UGameManager::Get(GetWorld());
+    GameMgr->InitServerConfig(
+        RoomId,
+        Token
+	);
+	GameMgr->RequestMatchDataAndStart();
 }

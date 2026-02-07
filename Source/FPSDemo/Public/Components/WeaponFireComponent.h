@@ -37,7 +37,6 @@ public:
 	void RequestStartFire();
 	void RequestStopFire();
 	void RequestReload();
-	bool RequestFireOnce();
 
 	bool CanWeaponAim() const;
 	UFUNCTION()

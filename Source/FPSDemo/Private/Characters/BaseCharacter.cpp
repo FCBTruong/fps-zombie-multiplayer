@@ -277,8 +277,6 @@ void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
 
 void ABaseCharacter::OnRep_PlayerState() {
     Super::OnRep_PlayerState();
-
-    this->OnTeamChanged();
 }
 
 // Called every frame
@@ -469,6 +467,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ABaseCharacter, bIsAiming);
 	DOREPLIFETIME(ABaseCharacter, SpeedMultiplier);
+	DOREPLIFETIME(ABaseCharacter, CharacterSkin);
     DOREPLIFETIME_CONDITION(
         ABaseCharacter,
         CurrentMovementState,
@@ -1398,27 +1397,14 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
     }
     else
     {
-		AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
+        UE_LOG(LogTemp, Warning, TEXT("fbuggSetting character skin for spawned pawn %d"), CharacterSkin);
+
         VisualSet = CachedCharacterAsset->SoldierVisualSet;
-        if (PS) {
-            if (PS->GetTeamId() == ETeamId::Attacker) {
-                VisualSet = CachedCharacterAsset->SoldierVisualSet;
-            }
-            else if (PS->GetTeamId() == ETeamId::Defender) {
-                VisualSet = CachedCharacterAsset->SoldierVisualSet2;
-			}
-            else {
-                const FUniqueNetIdRepl& NetId = PS->GetUniqueId();
-                uint32 Hash = GetTypeHash(NetId);
-				// skin selection based on id, due to skin not important yet
-				// refactor later, use skin id replicated from player state
-                if (Hash % 2 == 0) {
-                    VisualSet = CachedCharacterAsset->SoldierVisualSet;
-                }
-                else {
-                    VisualSet = CachedCharacterAsset->SoldierVisualSet2;
-                }
-            }
+        if (CharacterSkin == FGameConstants::SKIN_CHARACTER_ATTACKER) {
+            VisualSet = CachedCharacterAsset->SoldierVisualSet;
+        }
+        else if (CharacterSkin == FGameConstants::SKIN_CHARACTER_DEFENDER) {
+            VisualSet = CachedCharacterAsset->SoldierVisualSet2;
         }
     }
 
@@ -1829,11 +1815,6 @@ bool ABaseCharacter::IsWorkingWithSpike() const {
     return false;
 }   
 
-void ABaseCharacter::OnTeamChanged() {
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter:OnTeamChanged called"));
-	ApplyVisualByRole(GetCharacterRole()); // recall it to update team-based visuals
-}
-
 bool ABaseCharacter::CanSeeThisActor(const APawn* Target) const
 {
     float FOVDegrees = 80.f;
@@ -1983,7 +1964,7 @@ void ABaseCharacter::OnSpineKickUpdate(float Value)
     UE_LOG(LogTemp, Warning, TEXT("SpineKickUpdate: %f"), Value);
     SpineKickAlpha = Value;
 
-    float CamKickPitchDeg = 4.0f;
+    float CamKickPitchDeg = 1.0f;
     float CamKickRollDeg = 0.5f;
 
     FRotator CamFpsBaseRelRot = FRotator::ZeroRotator;
@@ -2006,4 +1987,19 @@ void ABaseCharacter::SetupSpineKickTimeline()
     Update.BindUFunction(this, FName("OnSpineKickUpdate"));
     SpineKickTimeline.AddInterpFloat(CachedCharacterAsset->SpineKickCurve, Update);
     SpineKickTimeline.SetLooping(false);
+}
+
+void ABaseCharacter::OnRep_CharacterSkin() {
+	ApplyVisualByRole(GetCharacterRole());
+
+    UE_LOG(LogTemp, Warning, TEXT("fbuggSetting onrepcharacter skin for spawned pawn %d"), CharacterSkin);
+
+}
+
+void ABaseCharacter::SetCharacterSkin(int32 NewSkin) {
+    if (CharacterSkin == NewSkin) {
+        return;
+    }
+    CharacterSkin = NewSkin;
+    OnRep_CharacterSkin();
 }

@@ -148,7 +148,6 @@ void ADedicatedServerMode::InitGameLift()
             GameLiftSdkModule->ActivateGameSession();
 
             FString RoomId;
-            FString Mode;
             FString Token = UTF8_TO_TCHAR(InGameSession.GetGameSessionData());
 
             int32 Count = 0;
@@ -167,15 +166,10 @@ void ADedicatedServerMode::InitGameLift()
                 {
                     RoomId = Value;
                 }
-                else if (Key == TEXT("mode"))
-                {
-                    Mode = Value;
-                }
             }
 
             UE_LOG(LogTemp, Log, TEXT("GameSessionId: %s"), *GameSessionId);
             UE_LOG(LogTemp, Log, TEXT("RoomId: %s"), *RoomId);
-            UE_LOG(LogTemp, Log, TEXT("Mode: %s"), *Mode);
 
             if (Token.IsEmpty())
             {
@@ -184,7 +178,8 @@ void ADedicatedServerMode::InitGameLift()
             }
 
 			UGameManager* GMR = UGameManager::Get(GetWorld());
-            GMR->InitFromGameLift(RoomId, Mode, Token);
+            GMR->InitServerConfig(RoomId, Token);
+			GMR->RequestMatchDataAndStart();
         });
 
     //OnProcessTerminate callback. Amazon GameLift Servers will invoke this callback before shutting down an instance hosting this game server.

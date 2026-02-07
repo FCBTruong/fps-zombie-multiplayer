@@ -8,7 +8,8 @@
 #include "Items/ItemConfig.h"
 #include "Items/FirearmConfig.h"
 #include "Net/UnrealNetwork.h"
-
+#include "Game/ShooterGameState.h"
+#include "Game/PlayerSlot.h"
 
 AMyPlayerState::AMyPlayerState()
 {
@@ -69,10 +70,6 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMyPlayerState, Money);
 	DOREPLIFETIME(AMyPlayerState, BoughtItems);
-	DOREPLIFETIME(AMyPlayerState, TeamId);
-	DOREPLIFETIME(AMyPlayerState, Kills);
-	DOREPLIFETIME(AMyPlayerState, Deaths);
-	DOREPLIFETIME(AMyPlayerState, Assists);
 }
 
 void AMyPlayerState::OnRep_Money()
@@ -115,19 +112,6 @@ bool AMyPlayerState::CanBuyThisItem(const UItemConfig* Item) const
 	return Money >= Item->Price;
 }
 
-void AMyPlayerState::OnRep_TeamId()
-{
-	OnUpdateTeamId.Broadcast(TeamId);
-
-	// get pawn and notify it
-	ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
-	if (MyChar)
-	{
-		MyChar->OnTeamChanged();
-	}
-}
-
-
 void AMyPlayerState::AutoBuy() {
 	// Print current owned weapons
 	UE_LOG(LogTemp, Log, TEXT("PlayerState [%s] this=%p OwnedWeapons:"),
@@ -144,29 +128,70 @@ void AMyPlayerState::AutoBuy() {
 
 void AMyPlayerState::TryBuySlot()
 {
-	/*
-	// filter by type
-	TArray<UWeaponData*> FilteredWeapons;
-	for (UWeaponData* Wep : AllWeapons)
-	{
-		if (Wep->WeaponSubType == Type)
-		{
-			FilteredWeapons.Add(Wep);
-		}
-	}
-
 	
+}
 
-	if (FilteredWeapons.Num() == 0)
+ETeamId AMyPlayerState::GetTeamId() const
+{
+	if (PlayerSlot)
 	{
-		return;
+		return PlayerSlot->GetTeamId();
 	}
+	return ETeamId::None;
+}
 
-	int32 RandomIndex = FMath::RandRange(0, FilteredWeapons.Num() - 1);
-	UWeaponData* RandomWeapon = FilteredWeapons[RandomIndex];
+void AMyPlayerState::AddKill() {
+	if (PlayerSlot) {
+		PlayerSlot->AddKill();
+	}
+}
 
-	if (CanBuyThisItem(RandomWeapon))
+void AMyPlayerState::AddDeath() {
+	if (PlayerSlot) {
+		PlayerSlot->AddDeath();
+	}
+}
+
+void AMyPlayerState::AddAssist() {
+	if (PlayerSlot) {
+		PlayerSlot->AddAssist();
+	}
+}
+
+int AMyPlayerState::GetKills() const {
+	if (PlayerSlot) {
+		return PlayerSlot->GetKills();
+	}
+	return 0;
+}
+
+int AMyPlayerState::GetDeaths() const {
+	if (PlayerSlot) {
+		return PlayerSlot->GetDeaths();
+	}
+	return 0;
+}
+
+int AMyPlayerState::GetAssists() const {
+	if (PlayerSlot) {
+		return PlayerSlot->GetAssists();
+	}
+	return 0;
+}
+
+int AMyPlayerState::GetBackendUserId() const
+{
+	if (PlayerSlot)
 	{
-		ProcessBuy(RandomWeapon);
-	} */
+		return PlayerSlot->GetBackendUserId();
+	}
+	return 0;
+}
+
+void AMyPlayerState::SetTeamId(ETeamId NewTeamId)
+{
+	if (PlayerSlot)
+	{
+		PlayerSlot->SetTeamId(NewTeamId);
+	}
 }

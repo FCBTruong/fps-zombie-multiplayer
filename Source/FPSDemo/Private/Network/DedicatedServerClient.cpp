@@ -1,5 +1,8 @@
 #include "Network/DedicatedServerClient.h"
 #include "Network/MyNetworkSettings.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 
 DedicatedServerClient::DedicatedServerClient()
 {
@@ -75,22 +78,17 @@ void DedicatedServerClient::GetMatchInfo(TFunction<void(bool bOk, const FString&
 
 void DedicatedServerClient::NotifyReady( TFunction<void(bool bOk, const FString& ResponseBody)> Callback)
 {
+	UE_LOG(LogTemp, Log, TEXT("DedicatedServerClient::NotifyReady"));
     // POST /ds/ready
-    SendJsonRequest(TEXT("/ds/ready"), TEXT("POST"), {}, MoveTemp(Callback));
+    SendJsonRequest(TEXT("/ds/match/ready"), TEXT("POST"), {}, MoveTemp(Callback));
 }
 
 void DedicatedServerClient::NotifyFinish(
-    const FString& EventId,
     const FString& ResultJson,
     TFunction<void(bool bOk, const FString& ResponseBody)> Callback)
 {
-    // POST /ds/finish
-    SendJsonRequest(TEXT("/ds/finish"), TEXT("POST"), {}, MoveTemp(Callback));
+    SendJsonRequest(TEXT("/ds/match/finish"), TEXT("POST"), ResultJson, MoveTemp(Callback));
 }
-
-#include "Dom/JsonObject.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
 
 bool DedicatedServerClient::ParseMatchInfo(const FString& JsonString, FRoomData& OutMatchInfo)
 {
@@ -119,7 +117,7 @@ bool DedicatedServerClient::ParseMatchInfo(const FString& JsonString, FRoomData&
                 continue;
             }
 
-            PlayerRoomInfo Slot;
+            FPlayerRoomInfo Slot;
             Slot.PlayerId = PlayerObj->GetIntegerField(TEXT("userId"));
 
             // Use TryGet... to avoid crashes if fields are missing

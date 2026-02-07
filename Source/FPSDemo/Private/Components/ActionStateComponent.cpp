@@ -75,3 +75,10 @@ bool UActionStateComponent::CanReloadNow() const
 		return false;
     return CanTransition(State, EActionState::Reloading);
 }
+
+bool UActionStateComponent::CanFireNow() const
+{
+    if (State == EActionState::Firing)
+        return true;
+    return CanTransition(State, EActionState::Firing);
+}

@@ -45,7 +45,8 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 	if (!Character || !Character->IsAlive())
 		return;
 
-	if (!Character->HasAuthority() && VisualComp)
+#if !UE_SERVER
+	if (IsOwningClient() && VisualComp)
 	{
 		if (!CanMeleeNow())
 			return;
@@ -72,6 +73,7 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 			}
 		}
 	}
+#endif
 
 	if (Character->HasAuthority())
 	{

@@ -330,6 +330,11 @@ void UInventoryComponent::ReloadWeapon(EItemId Id) {
     int AmmoToReload = FMath::Min(AmmoNeeded, State->AmmoReserve);
     State->AmmoReserve = FMath::Max(0, State->AmmoReserve - AmmoToReload);
     State->AmmoInClip += AmmoToReload;
+
+	if (State == &RifleState)
+        OnRep_RifleState();
+    else if (State == &PistolState)
+		OnRep_PistolState();
 }
 
 void UInventoryComponent::RemoveItem(EItemId ItemId) {

@@ -41,12 +41,12 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UButton* DeleteBtn;	
 public:
-	void SetPlayerInfo(PlayerRoomInfo Info, int InSlotIdx, int OwnerId, bool IsGuestMode);
+	void SetPlayerInfo(FPlayerRoomInfo Info, int InSlotIdx, int OwnerId, bool IsGuestMode);
 	bool IsEmpty() const;
-	PlayerRoomInfo GetPlayerInfo() const { return  CachedPlayerInfo; }
+	FPlayerRoomInfo GetPlayerInfo() const { return  CachedPlayerInfo; }
 	FOnDeletePlayer OnDeletePlayer;
 private:
-	PlayerRoomInfo CachedPlayerInfo;
+	FPlayerRoomInfo CachedPlayerInfo;
 	int SlotIdx;
 
 	UFUNCTION()

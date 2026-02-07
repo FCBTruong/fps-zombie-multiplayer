@@ -16,6 +16,7 @@
 #include "Components/InventoryComponent.h"
 #include "Components/EquipComponent.h"
 #include "Game/GameManager.h"
+#include "Game/PlayerSlot.h"
 
 void ASpikeMode::StartPlay()
 {
@@ -25,14 +26,6 @@ void ASpikeMode::StartPlay()
 	// get all controllers and assign teams
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return;
-	for (APlayerState* PS : GS->PlayerArray)
-	{
-		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
-		if (!MyPS) continue;
-		AController* PC = MyPS->GetOwner<AController>();
-		if (!PC) continue;
-		AssignPlayerTeamInit(PC);
-	}
 
 	if (UGameManager* GMR = UGameManager::Get(GetWorld()))
 	{
@@ -163,7 +156,6 @@ void ASpikeMode::StartRound()
 		BotManager->OnStartRound(PickupActor);
 	}
 	
-
 	GenerateInitialWeapons();
 	// auto buy for bots
 	AutoBuyForBots();
@@ -206,6 +198,10 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 
 	ETeamId TeamId = PS->GetTeamId();
 	AActorManager* AM = AActorManager::Get(GetWorld());
+	if (!AM) {
+		UE_LOG(LogTemp, Warning, TEXT("ActorManager instance is null in ChoosePlayerStart_Implementation"));
+		return Super::ChoosePlayerStart_Implementation(Player); // fallback
+	}
 
 	if (TeamId == ETeamId::Attacker)
 	{
@@ -217,7 +213,7 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 		}
 	}
 	else {
-
+		UE_LOG(LogTemp, Warning, TEXT("Choosing defender start for player %s"), *Player->GetName());
 		APlayerStart* DefenderStart = AM->GetRandomDefenderStart();
 		if (DefenderStart)
 		{
@@ -300,58 +296,6 @@ void ASpikeMode::NotifySpikePickedUp(ABaseCharacter* Player)
 	}
 }
 
-void ASpikeMode::AssignPlayerTeamInit(AController* NewPlayer)
-{
-	UE_LOG(LogTemp, Warning, TEXT("AddPlayer called in AShooterGameMode"));
-	if (!NewPlayer)
-	{
-		return;
-	}
-
-	AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>();
-	if (!PS) {
-		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in AddPlayer"));
-		return;
-	}
-	UE_LOG(LogTemp, Warning, TEXT("Adding player to team..."));
-
-	ETeamId AssignedTeam;
-
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (!GS) {
-		UE_LOG(LogTemp, Warning, TEXT("GameState is null in AssignPlayerTeam"));
-		return;
-	}
-
-	// pick suitable team
-	int32 AttackerCount = 0;
-	int32 DefenderCount = 0;
-	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
-	for (APlayerState* ExistingPS : PlayerStates)
-	{
-		if (!ExistingPS) continue;
-		AMyPlayerState* MyExistingPS = Cast<AMyPlayerState>(ExistingPS);
-		if (MyExistingPS && MyExistingPS->GetTeamId() == ETeamId::Attacker)
-		{
-			AttackerCount++;
-		}
-		else if (MyExistingPS && MyExistingPS->GetTeamId() == ETeamId::Defender)
-		{
-			DefenderCount++;
-		}
-	}
-	if (AttackerCount <= DefenderCount)
-	{
-		AssignedTeam = ETeamId::Attacker;
-	}
-	else
-	{
-		AssignedTeam = ETeamId::Defender;
-	}
-
-	PS->SetTeamId(AssignedTeam);
-}
-
 void ASpikeMode::SwapTeams() // switch side
 {
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
@@ -360,17 +304,17 @@ void ASpikeMode::SwapTeams() // switch side
 		return;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Swapping teams..."));
-	TArray<APlayerState*> PlayerStates = GS->PlayerArray;
-	for (APlayerState* ExistingPS : PlayerStates)
-	{
-		if (!ExistingPS) continue;
-		AMyPlayerState* MyExistingPS = Cast<AMyPlayerState>(ExistingPS);
-		if (MyExistingPS)
-		{
-			ETeamId CurrentTeam = MyExistingPS->GetTeamId();
-			ETeamId NewTeam = (CurrentTeam == ETeamId::Attacker) ? ETeamId::Defender : ETeamId::Attacker;
-			UE_LOG(LogTemp, Warning, TEXT("Changing player %s from team %d to team %d"), *MyExistingPS->GetName(), static_cast<int32>(CurrentTeam), static_cast<int32>(NewTeam));
-			MyExistingPS->SetTeamId(NewTeam);
+	for (APlayerSlot* Slot : GS->Slots) {
+		ETeamId CurrentTeam = Slot->GetTeamId();
+		ETeamId NewTeam = (CurrentTeam == ETeamId::Attacker) ? ETeamId::Defender : ETeamId::Attacker;
+		Slot->SetTeamId(NewTeam);
+
+		// update skin 
+		if (NewTeam == ETeamId::Attacker) {
+			Slot->SetCharacterSkin(FGameConstants::SKIN_CHARACTER_ATTACKER);
+		}
+		else {
+			Slot->SetCharacterSkin(FGameConstants::SKIN_CHARACTER_DEFENDER);
 		}
 	}
 }

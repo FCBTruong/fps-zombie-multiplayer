@@ -11,6 +11,7 @@
 #include "Controllers/MyPlayerController.h"
 #include "Items/AirdropCrate.h"
 #include "Components/InventoryComponent.h"
+#include "Game/PlayerSlot.h"
 
 void AZombieMode::StartPlay()
 {
@@ -23,13 +24,11 @@ void AZombieMode::StartRound()
 {
 	UE_LOG(LogTemp, Warning, TEXT("AZombieMode: Starting Round..."));
 	Super::StartRound();
-	
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (!GS) return;
+
 
 	// clean airdrop crates and clear timer
 	GetWorldTimerManager().ClearTimer(AirdropCheckTimer);
-	auto Airdopes = GS->GetActiveAirdropCrates();
+	auto Airdopes = CachedGS->GetActiveAirdropCrates();
 	for (AAirdropCrate* Crate : Airdopes)
 	{
 		if (Crate && !Crate->IsPendingKillPending())
@@ -37,22 +36,20 @@ void AZombieMode::StartRound()
 			Crate->Destroy();
 		}
 	}
-	GS->ClearAirdropCrates();
+	CachedGS->ClearAirdropCrates();
 	
-	GS->SetMatchState(EMyMatchState::BUY_PHASE);
-	GS->SetHeroPhase(false);
+	CachedGS->SetMatchState(EMyMatchState::BUY_PHASE);
+	CachedGS->SetHeroPhase(false);
 
 	int BuyTime = 10; // seconds
 	int TimeBuyEnd = GetWorld()->GetTimeSeconds() + BuyTime;
-	GS->SetRoundEndTime(TimeBuyEnd);
+	CachedGS->SetRoundEndTime(TimeBuyEnd);
 	ResetPlayers();
 
 	// reassign team id
-	for (APlayerState* PS : GS->PlayerArray)
+	for (APlayerSlot* Slot : CachedGS->Slots)
 	{
-		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
-		if (!MyPS) continue;
-		MyPS->SetTeamId(ETeamId::Soldier);
+		Slot->SetTeamId(ETeamId::Soldier);
 	}
 
 	BotManager->OnStartRoundZombieMode();
@@ -102,7 +99,7 @@ void AZombieMode::RandomZombie()
 	{
 		return;
 	}
-	const int32 TotalPlayers = GetGameState<AShooterGameState>()->PlayerArray.Num();
+	const int32 TotalPlayers = CachedGS->Slots.Num();
 	
 	int NumZombies = 0;
 	if (TotalPlayers <= 3)
@@ -305,16 +302,21 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 	// check if all is zombie -> end game with zombie win
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return;
-	auto PlayerStates = GS->PlayerArray;
+
 	bool bAllZombie = true;
-	int TotalPlayers = PlayerStates.Num();
+	int TotalPlayers = GS->Slots.Num();
 	int AliveSoldiers = 0;
-	for (APlayerState* PS : PlayerStates)
+	for (APlayerSlot* Slot : GS->Slots)
 	{
-		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
-		if (!MyPS) continue;
-		if (MyPS->GetTeamId() != ETeamId::Zombie)
+		APawn* Pawn = Slot->GetPawn();
+		if (!IsValid(Pawn)) continue;
+		
+		if (Slot->GetTeamId() == ETeamId::Soldier)
 		{
+			ABaseCharacter* SoldierChar = Cast<ABaseCharacter>(Pawn);
+			if (SoldierChar && SoldierChar->IsDead()) {
+				continue;
+			}
 			AliveSoldiers++;
 			bAllZombie = false;
 		}
@@ -406,17 +408,16 @@ void AZombieMode::HandlePermanentZombieDeath(ABaseCharacter* VictimPawn)
 	ZombieRemainingCount = FMath::Max(0, ZombieRemainingCount - 1);
 	GS->SetRemainingZombieCount(ZombieRemainingCount);
 
-	auto PlayerStates = GS->PlayerArray;
 	bool bAllZombieDead = true;
-	for (APlayerState* PS : PlayerStates)
+	for (APlayerSlot* Slot : GS->Slots)
 	{
-		AMyPlayerState* MyPS = Cast<AMyPlayerState>(PS);
-		if (!MyPS) continue;
-		if (MyPS->GetTeamId() != ETeamId::Zombie)
+		if (Slot->GetTeamId() != ETeamId::Zombie)
 		{
 			continue;
 		}
-		ABaseCharacter* MyChar = Cast<ABaseCharacter>(MyPS->GetPawn());
+		APawn* Pawn = Slot->GetPawn();
+		if (!IsValid(Pawn)) continue;
+		ABaseCharacter* MyChar = Cast<ABaseCharacter>(Pawn);
 		if (!MyChar) continue;
 		if (!MyChar->IsPermanentDead())
 		{

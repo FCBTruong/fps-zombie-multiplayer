@@ -116,6 +116,9 @@ extern RoomInfoReplyDefaultTypeInternal _RoomInfoReply_default_instance_;
 class RoomUpdateOwnerReply;
 struct RoomUpdateOwnerReplyDefaultTypeInternal;
 extern RoomUpdateOwnerReplyDefaultTypeInternal _RoomUpdateOwnerReply_default_instance_;
+class SelfHostStartSessionReply;
+struct SelfHostStartSessionReplyDefaultTypeInternal;
+extern SelfHostStartSessionReplyDefaultTypeInternal _SelfHostStartSessionReply_default_instance_;
 class SwitchSlotReply;
 struct SwitchSlotReplyDefaultTypeInternal;
 extern SwitchSlotReplyDefaultTypeInternal _SwitchSlotReply_default_instance_;
@@ -148,6 +151,7 @@ template<> ::game::net::PlayerRoomInfoReply* Arena::CreateMaybeMessage<::game::n
 template<> ::game::net::PlayerSessionReply* Arena::CreateMaybeMessage<::game::net::PlayerSessionReply>(Arena*);
 template<> ::game::net::RoomInfoReply* Arena::CreateMaybeMessage<::game::net::RoomInfoReply>(Arena*);
 template<> ::game::net::RoomUpdateOwnerReply* Arena::CreateMaybeMessage<::game::net::RoomUpdateOwnerReply>(Arena*);
+template<> ::game::net::SelfHostStartSessionReply* Arena::CreateMaybeMessage<::game::net::SelfHostStartSessionReply>(Arena*);
 template<> ::game::net::SwitchSlotReply* Arena::CreateMaybeMessage<::game::net::SwitchSlotReply>(Arena*);
 template<> ::game::net::SwitchSlotRequest* Arena::CreateMaybeMessage<::game::net::SwitchSlotRequest>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
@@ -3992,6 +3996,170 @@ class PlayerSessionReply final :
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_game_2eproto;
 };
+// -------------------------------------------------------------------
+
+class SelfHostStartSessionReply final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:game.net.SelfHostStartSessionReply) */ {
+ public:
+  inline SelfHostStartSessionReply() : SelfHostStartSessionReply(nullptr) {}
+  ~SelfHostStartSessionReply() override;
+  explicit PROTOBUF_CONSTEXPR SelfHostStartSessionReply(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  SelfHostStartSessionReply(const SelfHostStartSessionReply& from);
+  SelfHostStartSessionReply(SelfHostStartSessionReply&& from) noexcept
+    : SelfHostStartSessionReply() {
+    *this = ::std::move(from);
+  }
+
+  inline SelfHostStartSessionReply& operator=(const SelfHostStartSessionReply& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SelfHostStartSessionReply& operator=(SelfHostStartSessionReply&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SelfHostStartSessionReply& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const SelfHostStartSessionReply* internal_default_instance() {
+    return reinterpret_cast<const SelfHostStartSessionReply*>(
+               &_SelfHostStartSessionReply_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    25;
+
+  friend void swap(SelfHostStartSessionReply& a, SelfHostStartSessionReply& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(SelfHostStartSessionReply* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SelfHostStartSessionReply* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SelfHostStartSessionReply* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<SelfHostStartSessionReply>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const SelfHostStartSessionReply& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const SelfHostStartSessionReply& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(SelfHostStartSessionReply* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "game.net.SelfHostStartSessionReply";
+  }
+  protected:
+  explicit SelfHostStartSessionReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kRoomIdFieldNumber = 1,
+    kTokenFieldNumber = 2,
+  };
+  // string room_id = 1;
+  void clear_room_id();
+  const std::string& room_id() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_room_id(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_room_id();
+  PROTOBUF_NODISCARD std::string* release_room_id();
+  void set_allocated_room_id(std::string* room_id);
+  private:
+  const std::string& _internal_room_id() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_room_id(const std::string& value);
+  std::string* _internal_mutable_room_id();
+  public:
+
+  // string token = 2;
+  void clear_token();
+  const std::string& token() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_token(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_token();
+  PROTOBUF_NODISCARD std::string* release_token();
+  void set_allocated_token(std::string* token);
+  private:
+  const std::string& _internal_token() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_token(const std::string& value);
+  std::string* _internal_mutable_token();
+  public:
+
+  // @@protoc_insertion_point(class_scope:game.net.SelfHostStartSessionReply)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr room_id_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr token_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_game_2eproto;
+};
 // ===================================================================
 
 
@@ -5539,9 +5707,115 @@ inline void PlayerSessionReply::set_allocated_playersessionid(std::string* playe
   // @@protoc_insertion_point(field_set_allocated:game.net.PlayerSessionReply.PlayerSessionId)
 }
 
+// -------------------------------------------------------------------
+
+// SelfHostStartSessionReply
+
+// string room_id = 1;
+inline void SelfHostStartSessionReply::clear_room_id() {
+  room_id_.ClearToEmpty();
+}
+inline const std::string& SelfHostStartSessionReply::room_id() const {
+  // @@protoc_insertion_point(field_get:game.net.SelfHostStartSessionReply.room_id)
+  return _internal_room_id();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void SelfHostStartSessionReply::set_room_id(ArgT0&& arg0, ArgT... args) {
+ 
+ room_id_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.SelfHostStartSessionReply.room_id)
+}
+inline std::string* SelfHostStartSessionReply::mutable_room_id() {
+  std::string* _s = _internal_mutable_room_id();
+  // @@protoc_insertion_point(field_mutable:game.net.SelfHostStartSessionReply.room_id)
+  return _s;
+}
+inline const std::string& SelfHostStartSessionReply::_internal_room_id() const {
+  return room_id_.Get();
+}
+inline void SelfHostStartSessionReply::_internal_set_room_id(const std::string& value) {
+  
+  room_id_.Set(value, GetArenaForAllocation());
+}
+inline std::string* SelfHostStartSessionReply::_internal_mutable_room_id() {
+  
+  return room_id_.Mutable(GetArenaForAllocation());
+}
+inline std::string* SelfHostStartSessionReply::release_room_id() {
+  // @@protoc_insertion_point(field_release:game.net.SelfHostStartSessionReply.room_id)
+  return room_id_.Release();
+}
+inline void SelfHostStartSessionReply::set_allocated_room_id(std::string* room_id) {
+  if (room_id != nullptr) {
+    
+  } else {
+    
+  }
+  room_id_.SetAllocated(room_id, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (room_id_.IsDefault()) {
+    room_id_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.SelfHostStartSessionReply.room_id)
+}
+
+// string token = 2;
+inline void SelfHostStartSessionReply::clear_token() {
+  token_.ClearToEmpty();
+}
+inline const std::string& SelfHostStartSessionReply::token() const {
+  // @@protoc_insertion_point(field_get:game.net.SelfHostStartSessionReply.token)
+  return _internal_token();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void SelfHostStartSessionReply::set_token(ArgT0&& arg0, ArgT... args) {
+ 
+ token_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.SelfHostStartSessionReply.token)
+}
+inline std::string* SelfHostStartSessionReply::mutable_token() {
+  std::string* _s = _internal_mutable_token();
+  // @@protoc_insertion_point(field_mutable:game.net.SelfHostStartSessionReply.token)
+  return _s;
+}
+inline const std::string& SelfHostStartSessionReply::_internal_token() const {
+  return token_.Get();
+}
+inline void SelfHostStartSessionReply::_internal_set_token(const std::string& value) {
+  
+  token_.Set(value, GetArenaForAllocation());
+}
+inline std::string* SelfHostStartSessionReply::_internal_mutable_token() {
+  
+  return token_.Mutable(GetArenaForAllocation());
+}
+inline std::string* SelfHostStartSessionReply::release_token() {
+  // @@protoc_insertion_point(field_release:game.net.SelfHostStartSessionReply.token)
+  return token_.Release();
+}
+inline void SelfHostStartSessionReply::set_allocated_token(std::string* token) {
+  if (token != nullptr) {
+    
+  } else {
+    
+  }
+  token_.SetAllocated(token, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (token_.IsDefault()) {
+    token_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.SelfHostStartSessionReply.token)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

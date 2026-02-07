@@ -32,4 +32,8 @@ public:
     static const FName LEVEL_GHOST_MALL_MAP;
     static const FName LEVEL_PRACTICE;
     static const FName LEVEL_LOADING;
+
+    static constexpr int32 SKIN_CHARACTER_ATTACKER = 0;
+    static constexpr int32 SKIN_CHARACTER_DEFENDER = 1;
+    static constexpr int32 SKIN_CHARACTER_YIN = 2;
 };

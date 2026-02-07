@@ -15,6 +15,7 @@
 #include "Characters/BaseCharacter.h"
 #include "Items/AirdropCrate.h"
 #include "Game/ItemsManager.h"
+#include "Game/PlayerSlot.h"
 
 AShooterGameState::AShooterGameState()
 {
@@ -36,6 +37,7 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterGameState, bHeroPhase);
 	DOREPLIFETIME(AShooterGameState, RemainingHeroCount);
 	DOREPLIFETIME(AShooterGameState, RemainingZombieCount);
+	DOREPLIFETIME(AShooterGameState, Slots);
 }
 
 
@@ -330,4 +332,13 @@ void AShooterGameState::OnRep_RemainingHeroCount()
 void AShooterGameState::OnRep_RemainingZombieCount()
 {
     OnUpdateHeroZombieCount.Broadcast();
+}
+
+APlayerSlot* AShooterGameState::GetPlayerSlot(int32 PlayerId) {
+    for (APlayerSlot* Slot : Slots) {
+        if (Slot->GetBackendUserId() == PlayerId) {
+            return Slot;
+        }
+    }
+    return nullptr;
 }

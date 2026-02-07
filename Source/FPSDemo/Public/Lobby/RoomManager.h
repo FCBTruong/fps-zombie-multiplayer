@@ -82,7 +82,7 @@ private:
 	void HandleGameStarted(const std::string& payload);
 	void HandleSelfHostReady(const std::string& payload);
 	void HandlePlayerSession(const std::string& payload);
-	void TryJoinRoom();
+	void CreateSelfHostSession(FString RoomId, FString Token);
 
 	FTimerHandle JoinRetryTimer;
 };

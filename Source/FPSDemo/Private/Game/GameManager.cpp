@@ -10,6 +10,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "Network/DedicatedServerClient.h"
 #include "Lobby/RoomManager.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
+#include "Lobby/PlayerInfoManager.h"
 
 void UGameManager::Init()
 {
@@ -156,49 +160,99 @@ void UGameManager::RequestMatchDataAndStart()
 
 void UGameManager::StartMatch()
 {
-	UE_LOG(LogTemp, Log, TEXT("UGameManager::StartMatch: Starting match, traveling to game level"));
-    // get match, room data
     URoomManager* RoomMgr = URoomManager::Get(GetWorld());
-    // get current room data
     const FRoomData& RoomData = RoomMgr->GetCurrentRoomData();
-    FString Options;
 
-    if (!IsRunningDedicatedServer())
+    PendingOptions.Empty();
+    PendingMapName = FGameConstants::LEVEL_GHOST_MALL_MAP;
+
+    if (RoomData.Mode == EMatchMode::Spike)
     {
-        Options += TEXT("?listen"); // only for listen server (client-host)
+        PendingOptions = TEXT("?listen?game=/Game/Main/Core/GM_Spike.GM_Spike_C");
+    }
+    else if (RoomData.Mode == EMatchMode::Zombie)
+    {
+        PendingOptions = TEXT("?listen?game=/Game/Main/Core/GM_Zombie.GM_Zombie_C");
+    }
+    else
+    {
+        PendingMapName = FGameConstants::LEVEL_PLAYGROUND;
+        PendingOptions = TEXT("?listen");
     }
 
     if (IsRunningDedicatedServer())
     {
-        Options += FString::Printf(TEXT("?DedicatedServer=1"));
-	}
-    else {
-		Options += FString::Printf(TEXT("?DedicatedServer=0"));
-    }
-    if (RoomData.Mode == EMatchMode::Spike)
-    {
-		Options += FString::Printf(TEXT("?game=/Game/Main/Core/GM_Spike.GM_Spike_C"));
-        UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_GHOST_MALL_MAP, true, Options);
+        PendingOptions += TEXT("?DedicatedServer=1");
+        UGameplayStatics::OpenLevel(this, PendingMapName, true, PendingOptions);
         return;
     }
-    else if (RoomData.Mode == EMatchMode::Zombie)
-    {
-        Options += FString::Printf(TEXT("?game=/Game/Main/Core/GM_Zombie.GM_Zombie_C"));
-        UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_GHOST_MALL_MAP, true, Options);
-        return;
-    }
-    UE_LOG(LogTemp, Warning, TEXT("Start Game Clicked"));
-    UGameplayStatics::OpenLevel(
-        this,
-        FGameConstants::LEVEL_PLAYGROUND
-    );
+
+    // Create session then travel in OnCreateSessionComplete
+    CreateHostSession();
 }
 
-void UGameManager::InitFromGameLift(
+
+void UGameManager::InitServerConfig(
     const FString& InRoomId,
-    const FString& InMode,
     const FString& InToken)
 {
 	DsClient->SetBearerToken(InToken);
-    RequestMatchDataAndStart();
+}
+
+void UGameManager::CreateHostSession()
+{
+    IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
+    if (!OSS) { UE_LOG(LogTemp, Error, TEXT("No OnlineSubsystem")); return; }
+
+    IOnlineSessionPtr SI = OSS->GetSessionInterface();
+    if (!SI.IsValid()) { UE_LOG(LogTemp, Error, TEXT("No SessionInterface")); return; }
+
+    ULocalPlayer* LP = GetFirstGamePlayer();
+    if (!LP) { UE_LOG(LogTemp, Error, TEXT("No LocalPlayer")); return; }
+
+    FUniqueNetIdRepl NetId = LP->GetPreferredUniqueNetId();
+    if (!NetId.IsValid()) { UE_LOG(LogTemp, Error, TEXT("Invalid NetId")); return; }
+
+    // Bind once (store handle as member)
+    OnCreateHandle = SI->AddOnCreateSessionCompleteDelegate_Handle(
+        FOnCreateSessionCompleteDelegate::CreateUObject(this, &UGameManager::OnCreateSessionComplete)
+    );
+
+    FOnlineSessionSettings S;
+    S.bIsLANMatch = true;
+    S.bShouldAdvertise = true;
+    S.NumPublicConnections = 10;
+
+    S.bAllowJoinInProgress = true;
+    S.bAllowJoinViaPresence = false;
+
+    // If an old session exists, destroy first 
+    if (SI->GetNamedSession(NAME_GameSession))
+    {
+        SI->DestroySession(NAME_GameSession);
+    }
+
+    SI->CreateSession(*NetId, NAME_GameSession, S);
+}
+
+void UGameManager::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
+{
+	UE_LOG(LogTemp, Log, TEXT("OnCreateSessionComplete: %s, Success: %d"), *SessionName.ToString(), bWasSuccessful);
+    IOnlineSessionPtr SI = IOnlineSubsystem::Get()->GetSessionInterface();
+    if (SI.IsValid())
+    {
+        SI->ClearOnCreateSessionCompleteDelegate_Handle(OnCreateHandle);
+    }
+
+    if (!bWasSuccessful)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CreateSession failed"));
+        return;
+    }
+
+    // self host
+    int OwnerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();;
+    PendingOptions += FString::Printf(TEXT("?PlayerSessionId=%d"), OwnerId);
+
+    UGameplayStatics::OpenLevel(this, PendingMapName, true, PendingOptions);
 }

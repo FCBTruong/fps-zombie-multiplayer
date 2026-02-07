@@ -6,7 +6,7 @@
 #include "Data/MatchMode.h"
 #include "GameConstants.h"
 
-struct PlayerRoomInfo
+struct FPlayerRoomInfo
 {
     FString PlayerName;
     int32 PlayerId = FGameConstants::EMPTY_PLAYER_ID;
@@ -24,7 +24,7 @@ struct FRoomData
 	EMatchMode Mode = EMatchMode::Spike;
 	bool bHasStarted = false;
 	int32 OwnerId = -1; 
-	TArray<PlayerRoomInfo> Players;
+	TArray<FPlayerRoomInfo> Players;
 	bool bIsSelfHost = true;
 	FString JoinKey;
 	bool bEnableDedicatedServer = false;

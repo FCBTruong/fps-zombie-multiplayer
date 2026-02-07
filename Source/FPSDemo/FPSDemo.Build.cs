@@ -11,7 +11,9 @@ public class FPSDemo : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", 
             "InputCore", "EnhancedInput", "PhysicsCore", "UMG", "Niagara", "NavigationSystem",
-            "WebSockets", "GameLiftServerSDK" });
+            "WebSockets", "GameLiftServerSDK",
+            "OnlineSubsystem", "OnlineSubsystemUtils"
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
             "Slate",

@@ -45,7 +45,6 @@ public:
 	static constexpr int32 RoundToSwapSides = ScoreToWin - 1;
 	static constexpr int32 TimePerRound = 90; // seconds
 	void NotifySpikePickedUp(ABaseCharacter* Player);
-	virtual void AssignPlayerTeamInit(AController* NewPlayer) override;
 
 	virtual EMatchMode GetMatchMode() const {
 		return EMatchMode::Spike;

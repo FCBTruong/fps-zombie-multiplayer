@@ -10,6 +10,7 @@
 class ASpike;
 class AAirdropCrate;
 class ABaseCharacter;
+class APlayerSlot;
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateScore, int32, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateRoundTime, int32)
@@ -199,4 +200,9 @@ public:
     void OnClaimedAirdropCrate(AAirdropCrate* Crate, ABaseCharacter* Claimer, EItemId GiftId);
 	TArray<AAirdropCrate*> GetActiveAirdropCrates() const { return ActiveAirdropCrates; }
 	void ClearAirdropCrates() { ActiveAirdropCrates.Empty(); }
+
+    UPROPERTY(Replicated)
+    TArray<APlayerSlot*> Slots;
+
+	APlayerSlot* GetPlayerSlot(int32 PlayerId);
 };

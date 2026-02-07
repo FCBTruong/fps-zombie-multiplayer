@@ -10,6 +10,7 @@
 #include "MyPlayerState.generated.h"
 
 class UItemConfig;
+class APlayerSlot;
 
 DECLARE_MULTICAST_DELEGATE(FOnUpdateMoney);
 DECLARE_MULTICAST_DELEGATE(FOnUpdateBoughtItems);
@@ -23,9 +24,6 @@ class FPSDEMO_API AMyPlayerState : public APlayerState
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_TeamId)
-	ETeamId TeamId = ETeamId::None;
-
 	UPROPERTY(ReplicatedUsing = OnRep_Money)
 	int Money = 10000;
 
@@ -33,9 +31,6 @@ protected:
 
 	UFUNCTION()
 	void OnRep_Money();
-
-	UFUNCTION()
-	void OnRep_TeamId();
 
 	UPROPERTY(ReplicatedUsing = OnRep_BoughtItems)
 	TArray<EItemId> BoughtItems;
@@ -46,20 +41,14 @@ protected:
 	TArray<EItemId> OwnedWeapons;
 
 	UPROPERTY(Replicated)
-	int Kills = 0;
-
-	UPROPERTY(Replicated)
-	int Deaths = 0;
-
-	UPROPERTY(Replicated)
-	int Assists = 0;
+	APlayerSlot* PlayerSlot = nullptr;
 
 	bool bWasChosenAsZombie = false;
 public:
 	AMyPlayerState();
 
-	ETeamId GetTeamId() const { return TeamId; }
-	void SetTeamId(ETeamId NewTeamId) { TeamId = NewTeamId; }
+	ETeamId GetTeamId() const;
+	void SetTeamId(ETeamId NewTeamId);
 	void ProcessBuy(const UItemConfig* Item);
 	int GetMoney() const { return Money; }
 	void ResetBoughtItems() { BoughtItems.Empty(); }
@@ -81,29 +70,27 @@ public:
 		return OwnedWeapons;
 	}
 
-	void AddKill() {
-		Kills++;
-	}
-	void AddDeath() {
-		Deaths++;
-	}
-	void AddAssist() {
-		Assists++;
-	}
-	int GetKills() const {
-		return Kills;
-	}
-	int GetDeaths() const {
-		return Deaths;
-	}
-	int GetAssists() const {
-		return Assists;
-	}
+	void AddKill();
+	void AddDeath();
+	void AddAssist();
+	int GetKills() const;
+	int GetDeaths() const;
+	int GetAssists() const;
 
 	void SetChosenAsZombie(bool bChosen) {
 		bWasChosenAsZombie = bChosen;
 	}
 	bool WasChosenAsZombie() const {
 		return bWasChosenAsZombie;
+	}
+
+	int GetBackendUserId() const;
+
+	void SetPlayerSlot(APlayerSlot* Slot) {
+		PlayerSlot = Slot;
+	}
+
+	APlayerSlot* GetPlayerSlot() const {
+		return PlayerSlot;
 	}
 };

@@ -12,6 +12,7 @@
 class UItemConfig;
 class AShooterGameState;
 class ABaseCharacter;
+class APlayerSlot;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnCharacterDead, ABaseCharacter*);
 /**
@@ -27,17 +28,30 @@ public:
 		const FString& MapName,
 		const FString& Options,
 		FString& ErrorMessage) override;
+	virtual void InitGameState() override;
 	virtual void StartPlay() override;
 	virtual void StartMatch() override;
 	virtual bool ReadyToStartMatch_Implementation() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void HandleCharacterKilled(class AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
-	virtual void AssignPlayerTeamInit(AController* NewPlayer);
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
+	virtual void PreLogin(
+		const FString& Options,
+		const FString& Address,
+		const FUniqueNetIdRepl& UniqueId,
+		FString& ErrorMessage) override;
+	virtual APlayerController* Login(
+		UPlayer* NewPlayer,
+		ENetRole InRemoteRole,
+		const FString& Portal,
+		const FString& Options,
+		const FUniqueNetIdRepl& UniqueId,
+		FString& ErrorMessage) override;
+	virtual void Logout(AController* Exiting) override;
 	virtual void ResetPlayers();
-	virtual ABotAIController* SpawnBot(bool IsTeamA);
+	virtual ABotAIController* SpawnBot(APlayerSlot* Slot);
 	virtual bool CheckAllTeamDead(ETeamId TeamId);
 	virtual void AutoBuyForBots();
 	virtual void SavePlayersGunsForNextRound();
@@ -53,6 +67,8 @@ public:
 protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void HandleMatchHasStarted() override;
+	virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform) override;
+
 	virtual void StartRound();
 	virtual void EndRound(ETeamId WinningTeam);
 	virtual void EndGame(ETeamId WinningTeam);
@@ -61,8 +77,6 @@ protected:
 	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;
 	TUniquePtr<BotStateManager> BotManager;
-	UPROPERTY()
-	TArray<APlayerState*> JoinedPlayers;
 
 	UPROPERTY()
 	TArray<TWeakObjectPtr<AActor>> Corpses;
@@ -74,4 +88,7 @@ protected:
 	FTimerHandle StartRoundTimerHandle;
 	UFUNCTION()
 	void StartRoundDelayed();
+
+	virtual FTransform GetSpawnTransformForSlot(const APlayerSlot& Slot);
+	AShooterGameState* CachedGS;
 };

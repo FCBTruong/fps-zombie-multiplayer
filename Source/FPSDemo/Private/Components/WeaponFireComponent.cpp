@@ -76,18 +76,17 @@ EFireEnableReason UWeaponFireComponent::CanFireNow() const
 {
 	if (!IsEnabled())
 		return EFireEnableReason::Undefined;
-
 	if (!CurrentFirearmConfig) {
 		return EFireEnableReason::Undefined;
 	}
 	if (!Character || !Character->IsAlive())
 		return EFireEnableReason::Undefined;
-
 	if (!InventoryComp || !ActionStateComp)
 		return EFireEnableReason::Undefined;
-
 	if (!ActionStateComp->CanFireNow())
+	{
 		return EFireEnableReason::Undefined;
+	}
 
 	float TimeSinceLastShot = GetServerTimeSeconds() - LastShotTime;
 	if (TimeSinceLastShot < CurrentFirearmConfig->FireInterval * 0.8) // allow some leeway for timer inaccuracies
@@ -97,9 +96,9 @@ EFireEnableReason UWeaponFireComponent::CanFireNow() const
 	const FWeaponState* State = InventoryComp->GetWeaponStateByItemId(CurrentFirearmConfig->Id);
 	if (!State)
 		return EFireEnableReason::Undefined;
-
 	if (State->AmmoInClip <= 0)
 		return EFireEnableReason::NoAmmo;
+
 	return EFireEnableReason::OK;
 }
 
@@ -138,6 +137,7 @@ void UWeaponFireComponent::RequestStartFire()
 				AudioComp->PlaySound3D(CurrentFirearmConfig->DryFireSound);
 			}
 		}
+		UE_LOG(LogTemp, Log, TEXT("Cannot start fire, reason: %d"), static_cast<int>(Reason));
 		return;
 	}
 
@@ -216,8 +216,12 @@ void UWeaponFireComponent::StartFire_ServerAuth()
 		return;
 
 	if (!CurrentFirearmConfig) return;
+	if (ActionStateComp->IsInState(EActionState::Firing)) // already firing
+		return;
 	if (CanFireNow() != EFireEnableReason::OK)
 		return;
+
+	ActionStateComp->TrySetState(EActionState::Firing);
 
 	ShotCount = 0;
 	BurstAccDeg = 0;
@@ -246,6 +250,9 @@ void UWeaponFireComponent::StopFire_ServerAuth()
 	if (GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(FireTimer_Server);
+	}
+	if (ActionStateComp->IsInState(EActionState::Firing)) {
+		ActionStateComp->TrySetState(EActionState::Idle);
 	}
 }
 
@@ -288,11 +295,15 @@ void UWeaponFireComponent::FireOnce_PredictedLocal()
 
 void UWeaponFireComponent::FireOnce_ServerAuth()
 {
-	if (!Character || !Character->HasAuthority())
+	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::FireOnce_ServerAuth called"));
+	if (!Character || !Character->HasAuthority()) {
+		UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::FireOnce_ServerAuth called012"));
 		return;
+	}
 
 	if (CanFireNow() != EFireEnableReason::OK)
 	{
+		UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::FireOnce_ServerAuth called01"));
 		StopFire_ServerAuth();
 		return;
 	}
@@ -334,7 +345,7 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 			nullptr
 		);
 	}
-
+	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::FireOnce_ServerAuth called0001"));
 	MulticastFireFX(ShotEnd);
 	LastShotTime = Now;
 
@@ -647,19 +658,6 @@ bool UWeaponFireComponent::CanWeaponAim() const {
 		return false;
 	}
 	return true;
-}
-
-// for server only
-bool UWeaponFireComponent::RequestFireOnce() {
-	if (GetOwner()->HasAuthority())
-	{
-		if (CanFireNow() == EFireEnableReason::OK)
-		{
-			FireOnce_ServerAuth();
-			return true;
-		}
-	}
-	return false;
 }
 
 void UWeaponFireComponent::ApplyRecoilLocal()

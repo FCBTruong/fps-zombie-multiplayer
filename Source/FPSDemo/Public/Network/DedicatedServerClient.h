@@ -15,7 +15,7 @@ public:
     ~DedicatedServerClient();
     void GetMatchInfo(TFunction<void(bool bOk, const FString& ResponseBody)> Callback);
     void NotifyReady(TFunction<void(bool bOk, const FString& ResponseBody)> Callback);
-    void NotifyFinish(const FString& EventId, const FString& ResultJson,
+    void NotifyFinish(const FString& ResultJson,
         TFunction<void(bool bOk, const FString& ResponseBody)> Callback);
 
     void SetBearerToken(const FString& InBearerToken);
