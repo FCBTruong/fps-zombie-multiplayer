@@ -123,7 +123,10 @@ public:
     void BindCharacter(ABaseCharacter* Char);
 	void SetTimeOfDeath(float TimeDead);
     void NotifyToastMessage(const FText& Message);
-	AMyPlayerState* GetMyPlayerState() const;
+
+    virtual void PawnLeavingGame() override;
+
+	int BackendUserId = -1;
 private:
     UPROPERTY()
     TWeakObjectPtr<AActor> CurrentSpectateTarget;

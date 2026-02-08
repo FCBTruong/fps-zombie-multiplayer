@@ -1164,7 +1164,6 @@ void AMyPlayerController::SetTimeOfDeath(float Time)
     TimeOfDeath = Time;
 }
 
-AMyPlayerState* AMyPlayerController::GetMyPlayerState() const
-{
-    return GetPlayerState<AMyPlayerState>();
+void AMyPlayerController::PawnLeavingGame() {
+    // handle by game mode
 }

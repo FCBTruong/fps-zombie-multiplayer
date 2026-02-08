@@ -65,6 +65,9 @@ FString UPlayerInfoManager::GetAvatar() const
 
 FString UPlayerInfoManager::GetGuestId() const
 {
+    if (!CheatGuestId.IsEmpty()) {
+        return CheatGuestId;
+	}
 	return GuestId;
 }
 
@@ -113,22 +116,12 @@ void UPlayerInfoManager::LoadOrCreateLocalInfo()
         Save->GuestId = GameUtils::GenerateMd5Token();
     }
 
-    // for testing editor
-    if (GIsEditor)
-    {
-        // Running in Editor (PIE or Standalone launched from editor)
-        Save->GuestId = GameUtils::GenerateMd5Token();
-    }
-    else
-    {
-        // Running in packaged game
-    }
-
     if (Save->PlayerName.IsEmpty())
     {
         Save->PlayerName = TEXT("Player");
     }
 
+    if (Save->Avatar.IsEmpty())
     if (Save->Avatar.IsEmpty())
     {
         int32 AvatarId = FGameConstants::AVATAR_IDS[
@@ -167,4 +160,13 @@ void UPlayerInfoManager::OnPacketReceived(
     default:
         break;
     }
+}
+
+void UPlayerInfoManager::Login(int id)
+{
+	CheatGuestId = FString::FromInt(id);
+
+	UE_LOG(LogTemp, Log, TEXT("UPlayerInfoManager::Login with CheatGuestId: %s"), *CheatGuestId);
+    // reopen 
+    UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_LOBBY);
 }

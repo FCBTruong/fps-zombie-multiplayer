@@ -6,6 +6,7 @@
 #include "Network/NetworkManager.h"
 #include "Lobby/LobbyUI.h"
 #include "Game/MyCheatManager.h"
+#include "Lobby/PlayerInfoManager.h"
 
 ALobbyPlayerController::ALobbyPlayerController()
 {
@@ -164,4 +165,9 @@ void ALobbyPlayerController::OnToggleChatPressed()
             LobbyWidget->ToggleChat();
         }
 	}
+}
+
+// cheat command to login with specified id
+void ALobbyPlayerController::Login(int Id) {
+    UPlayerInfoManager::Get(GetWorld())->Login(Id);
 }

@@ -46,6 +46,7 @@ protected:
 	bool bWasChosenAsZombie = false;
 public:
 	AMyPlayerState();
+	virtual void PostInitializeComponents() override;
 
 	ETeamId GetTeamId() const;
 	void SetTeamId(ETeamId NewTeamId);

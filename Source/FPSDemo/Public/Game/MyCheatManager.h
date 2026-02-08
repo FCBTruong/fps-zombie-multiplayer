@@ -19,6 +19,7 @@ public:
 
 	UFUNCTION(exec) void Cmd(int id);
 
+
 	UFUNCTION(Exec)
 	void BecomeDC();
 };

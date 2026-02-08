@@ -25,6 +25,7 @@ private:
 	FString PlayerName;
 	int UserId;
 	FString Avatar;
+	FString CheatGuestId = "";
 
 	void LoadOrCreateLocalInfo();
 
@@ -44,5 +45,6 @@ public:
 		const std::string& Payload
 	) override;
 
+	void Login(int id);
 	static UPlayerInfoManager* Get(UWorld* World);
 };

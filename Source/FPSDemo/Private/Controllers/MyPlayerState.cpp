@@ -15,6 +15,8 @@ AMyPlayerState::AMyPlayerState()
 {
 	SetNetUpdateFrequency(100.f);
 	SetMinNetUpdateFrequency(30.f);
+
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGYYY MyPlayerState created: %s"), *GetName());
 }
 
 void AMyPlayerState::ProcessBuy(const UItemConfig* Item)
@@ -194,4 +196,19 @@ void AMyPlayerState::SetTeamId(ETeamId NewTeamId)
 	{
 		PlayerSlot->SetTeamId(NewTeamId);
 	}
+}
+void AMyPlayerState::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	const UWorld* W = GetWorld();
+	const ENetMode NM = W ? W->GetNetMode() : NM_Standalone;
+
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGYYY PS created: %s  Ptr=%p  World=%s  NetMode=%d  HasAuthority=%d  Owner=%s"),
+		*GetName(),
+		this,
+		W ? *W->GetName() : TEXT("null"),
+		(int32)NM,
+		HasAuthority() ? 1 : 0,
+		GetOwner() ? *GetOwner()->GetName() : TEXT("null"));
 }

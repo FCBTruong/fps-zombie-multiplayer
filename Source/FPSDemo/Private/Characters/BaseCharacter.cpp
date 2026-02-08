@@ -1964,17 +1964,17 @@ void ABaseCharacter::OnSpineKickUpdate(float Value)
     UE_LOG(LogTemp, Warning, TEXT("SpineKickUpdate: %f"), Value);
     SpineKickAlpha = Value;
 
-    float CamKickPitchDeg = 1.0f;
+    float CamKickRawDeg = 1.0f;
     float CamKickRollDeg = 0.5f;
 
     FRotator CamFpsBaseRelRot = FRotator::ZeroRotator;
     if (CameraFps)
     {
-        const float Pitch = CamKickPitchDeg * Value;
+        const float Raw = CamKickRawDeg * Value;
         const float Roll = CamKickRollDeg * Value;
 
         CameraFps->SetRelativeRotation(
-            CamFpsBaseRelRot + FRotator(Pitch, 0.f, Roll)
+            CamFpsBaseRelRot + FRotator(0, Raw, Roll)
         );
     }
 }

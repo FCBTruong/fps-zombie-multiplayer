@@ -81,13 +81,6 @@ void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
             AnimInst->Montage_Play(MontageToPlay);
         };
 
-    UE_LOG(
-        LogTemp,
-        Warning,
-        TEXT("DEBUGXX: Playing montage %s on character %s"),
-        *GetNameSafe(MontageToPlay),
-        *GetNameSafe(OwnerChar)
-	);
     // Always play on TPS mesh (bots/others will use this).
     PlayOnMesh(OwnerChar->GetMesh(), TEXT("TPS"));
 

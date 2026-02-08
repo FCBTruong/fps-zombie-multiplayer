@@ -25,6 +25,8 @@ class FPSDEMO_API ALobbyPlayerController : public APlayerController
 	GENERATED_BODY()
 public:
 	ALobbyPlayerController();
+
+    UFUNCTION(exec) void Login(int id);
 protected:
     virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;

@@ -36,6 +36,11 @@ void UMyCheatManager::Cmd(int Id) {
     case 4:
         PC->Test();
         break;
+    case 5:
+		UE_LOG(LogTemp, Warning, TEXT("CheatManager: Cmd 5 - Loading Lobby Level"));
+        /*UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_LOBBY);*/
+        PC->ClientTravel(FGameConstants::LEVEL_LOBBY.ToString(), ETravelType::TRAVEL_Absolute);
+        break;
     }
 }
 

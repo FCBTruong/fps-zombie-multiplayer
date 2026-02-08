@@ -7,6 +7,10 @@
 // Sets default values
 APlayerSlot::APlayerSlot()
 {
+	USceneComponent* SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = SceneRoot;
+	bAlwaysRelevant = true;
+
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 }
