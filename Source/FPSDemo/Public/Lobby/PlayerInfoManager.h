@@ -26,6 +26,7 @@ private:
 	int UserId;
 	FString Avatar;
 	FString CheatGuestId = "";
+	FString CrosshairCode = "";
 
 	void LoadOrCreateLocalInfo();
 
@@ -33,13 +34,15 @@ public:
 	UPlayerInfoManager();
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	void SetGuestId(const FString& InGuestId);
-	FString GetGuestId() const;
+	const FString& GetGuestId() const;
 	void SetPlayerName(const FString& InPlayerName);
-	FString GetPlayerName() const;
+	const FString& GetPlayerName() const;
 	void SetUserId(int InUserId);
 	int GetUserId() const;
 	void SetAvatar(const FString& InAvatar);
-	FString GetAvatar() const;
+	const FString& GetAvatar() const;
+	const FString& GetCrosshairCode() const;
+	void SetCrosshairCode(const FString& InCrosshairCode);
 	virtual void OnPacketReceived(
 		ECmdId CmdId,
 		const std::string& Payload

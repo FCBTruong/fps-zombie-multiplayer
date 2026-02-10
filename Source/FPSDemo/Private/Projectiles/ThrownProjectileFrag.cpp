@@ -4,6 +4,21 @@
 #include "Projectiles/ThrownProjectileFrag.h"
 #include "Kismet/GameplayStatics.h"
 #include "Items/ThrowableConfig.h"
+#include "Game/GameManager.h"
+#include "Game/GlobalDataAsset.h"
+
+void AThrownProjectileFrag::BeginPlay()
+{
+    Super::BeginPlay();
+    UE_LOG(LogTemp, Log, TEXT("AThrownProjectileFrag::BeginPlay"));
+
+    // play sound fire in the hole
+	UGameManager* GMR = UGameManager::Get(GetWorld());
+    if (GMR && GMR->GlobalData && GMR->GlobalData->FireInTheHoleSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, GMR->GlobalData->FireInTheHoleSound, GetActorLocation());
+	}
+}
 
 void AThrownProjectileFrag::OnExplode ()
 {

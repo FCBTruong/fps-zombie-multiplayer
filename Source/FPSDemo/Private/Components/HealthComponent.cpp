@@ -37,15 +37,13 @@ void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UHealthComponent::ApplyDamage(float DamageAmount)
 {
-	Health -= DamageAmount;
-	if (Health < 0.0f)
+	float CurHealth = Health;
+	float NewHealth = CurHealth - DamageAmount;
+	if (NewHealth < 0.0f)
 	{
-		Health = 0.0f;
+		NewHealth = 0.0f;
 	}
-	if (Health == 0.0f)
-	{
-		HealthDeath();
-	}
+	SetHealth(NewHealth);
 }
 
 void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -57,10 +55,7 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void UHealthComponent::OnRep_Health()
 {
-	UE_LOG(LogTemp, Log, TEXT("Health replicated: %f"), Health);
 	OnHealthUpdated.Broadcast(Health, MaxHealth);
-
-
 }
 
 void UHealthComponent::HealthDeath()
@@ -76,7 +71,8 @@ void UHealthComponent::SetHealth(float NewHealth)
 	{
 		HealthDeath();
 	}
-	OnHealthUpdated.Broadcast(Health, MaxHealth);
+
+	OnRep_Health();
 }
 
 void UHealthComponent::SetMaxHealth(float NewMaxHealth)
@@ -84,13 +80,12 @@ void UHealthComponent::SetMaxHealth(float NewMaxHealth)
 	MaxHealth = FMath::Max(0.0f, NewMaxHealth);
 	if (Health > MaxHealth)
 	{
-		Health = MaxHealth;
+		SetHealth(Health);
 		OnHealthUpdated.Broadcast(Health, MaxHealth);
 	}
 }
 
 void UHealthComponent::ResetHealth()
 {
-	Health = MaxHealth;
-	OnHealthUpdated.Broadcast(Health, MaxHealth);
+	SetHealth(MaxHealth);
 }

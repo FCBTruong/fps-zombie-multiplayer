@@ -15,8 +15,7 @@ AMyPlayerState::AMyPlayerState()
 {
 	SetNetUpdateFrequency(100.f);
 	SetMinNetUpdateFrequency(30.f);
-
-	UE_LOG(LogTemp, Warning, TEXT("DEBUGYYY MyPlayerState created: %s"), *GetName());
+	bUseCustomPlayerNames = true;
 }
 
 void AMyPlayerState::ProcessBuy(const UItemConfig* Item)
@@ -211,4 +210,24 @@ void AMyPlayerState::PostInitializeComponents()
 		(int32)NM,
 		HasAuthority() ? 1 : 0,
 		GetOwner() ? *GetOwner()->GetName() : TEXT("null"));
+}
+
+FString AMyPlayerState::GetPlayerNameCustom() const
+{
+	return PlayerSlot ? PlayerSlot->GetPlayerName() : "";
+}
+
+void AMyPlayerState::SetPlayerSlot(APlayerSlot* Slot)
+{
+	PlayerSlot = Slot;
+
+	// set crosshair code
+	if (PlayerSlot) {
+		SetCrosshairCode(PlayerSlot->GetCrosshairCode());
+	}
+}
+
+void AMyPlayerState::SetCrosshairCode(const FString& InCrosshairCode)
+{
+	CrosshairCode = InCrosshairCode;
 }

@@ -562,13 +562,6 @@ float ABaseCharacter::GetSpeedWalkRatio() const
         return Ratio;
     }
 
-	// Weight penalty
-	float Weight = Config->Weight;
-    Weight = FMath::Max(Weight, 0.01f);
-	Ratio = Ratio / Weight;
-
-	UE_LOG(LogTemp, Warning, TEXT("GetSpeedWalkRatio: Weight = %f, Ratio = %f"), Weight, Ratio);
-
     // Aiming penalty
     if (bIsAiming)
     {
@@ -615,10 +608,6 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 {
     if (!HasAuthority()) {
         return 0.f; // only server handles damage
-    }
-
-    if (true) {
-		return 0.f; // invulnerable for testing
     }
 
 	// ask for game mode if damage is allowed 
@@ -704,7 +693,10 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         {
             if (AICon->GetTargetActor() == nullptr)
             {
-                AICon->SetFocalPoint(EventInstigator->GetPawn()->GetActorLocation());
+                APawn* Target = EventInstigator ? EventInstigator->GetPawn() : nullptr;
+                if (Target) {
+                    AICon->SetFocalPoint(Target->GetActorLocation());
+                }
             }
         }
     }
@@ -1970,12 +1962,12 @@ void ABaseCharacter::OnSpineKickUpdate(float Value)
     FRotator CamFpsBaseRelRot = FRotator::ZeroRotator;
     if (CameraFps)
     {
-        const float Raw = CamKickRawDeg * Value;
+       /* const float Raw = CamKickRawDeg * Value;
         const float Roll = CamKickRollDeg * Value;
 
         CameraFps->SetRelativeRotation(
             CamFpsBaseRelRot + FRotator(0, Raw, Roll)
-        );
+        );*/
     }
 }
 

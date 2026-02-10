@@ -229,11 +229,17 @@ void UCrosshair::ApplyData(const FUECrosshairData& D)
 void UCrosshair::NativeConstruct()
 {
     Super::NativeConstruct();
+}
 
-    FString InputString = CrosshairCode;
-	UE_LOG(LogTemp, Warning, TEXT("Crosshair Code: %s"), *InputString);
-
-    FUECrosshairData Data = ParseCrosshairCode(InputString);
-
+void UCrosshair::SetCrosshairCode(const FString& NewCode)
+{
+    FUECrosshairData Data;
+    if (NewCode.IsEmpty())
+    {
+        Data = ParseCrosshairCode(NewCode);
+	}
+    else {
+        Data = ParseCrosshairCode(NewCode);
+    }
     ApplyData(Data);
 }

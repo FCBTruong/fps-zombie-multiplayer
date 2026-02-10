@@ -225,8 +225,6 @@ void AZombieMode::BecomeHero(AController* Controller) {
 
 void AZombieMode::EndRound(ETeamId WinningTeam)
 {
-	Super::EndRound(WinningTeam);
-
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS)
 	{
@@ -236,6 +234,8 @@ void AZombieMode::EndRound(ETeamId WinningTeam)
 	{
 		return; // already ended
 	}
+	Super::EndRound(WinningTeam);
+
 	GS->SetMatchState(EMyMatchState::ROUND_ENDED);
 	GS->AddScoreTeam(WinningTeam, 1);
 	GS->Multicast_RoundResult(WinningTeam);
@@ -329,8 +329,7 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 		if (!GS->IsHeroPhase()) {
 			// check condition to change to hero phase
 			UE_LOG(LogTemp, Warning, TEXT("AZombieMode::HandleHumanKilled: TotalPlayers=%d, AliveSoldiers=%d"), TotalPlayers, AliveSoldiers);
-			if ((TotalPlayers >= 8 && AliveSoldiers == 2)
-				or (TotalPlayers >= 3 && AliveSoldiers == 1)) {
+			if (ShouldEnterHeroPhase(TotalPlayers, AliveSoldiers)) {
 				// temporary hard code condition, will refactor later
 
 				GS->SetRemainingHeroCount(AliveSoldiers);
@@ -353,6 +352,16 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 			}
 		}
 	}
+}
+
+bool AZombieMode::ShouldEnterHeroPhase(int TotalPlayers, int AliveSoldiers) const {
+	const bool bLargeLobbyEdgeCase =
+		(TotalPlayers >= 8) && (AliveSoldiers >= 1) && (AliveSoldiers <= 2);
+
+	const bool bSmallLobbyLastHero =
+		(TotalPlayers >= 3) && (AliveSoldiers == 1);
+
+	return bLargeLobbyEdgeCase || bSmallLobbyLastHero;
 }
 
 void AZombieMode::HandleZombieKilled(

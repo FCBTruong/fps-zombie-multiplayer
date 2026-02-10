@@ -23,4 +23,7 @@ public:
 
     UPROPERTY()
     FString Avatar;
+
+	UPROPERTY()
+	FString CrosshairCode;
 };

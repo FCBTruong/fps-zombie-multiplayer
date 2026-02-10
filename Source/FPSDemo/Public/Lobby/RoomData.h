@@ -12,6 +12,7 @@ struct FPlayerRoomInfo
     int32 PlayerId = FGameConstants::EMPTY_PLAYER_ID;
 	bool bIsBot = false;
 	FString Avatar;
+	FString CrosshairCode;
 };
 
 /**

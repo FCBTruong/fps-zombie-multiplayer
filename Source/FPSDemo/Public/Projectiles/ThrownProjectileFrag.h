@@ -15,7 +15,8 @@ class FPSDEMO_API AThrownProjectileFrag : public AThrownProjectile
 	GENERATED_BODY()
 
 protected:
-	void OnExplode() override;
+	virtual void OnExplode() override;
+	virtual void BeginPlay() override;
 
 public:
 	virtual void MulticastExplode_Implementation(const FVector& ImpactPoint) override;

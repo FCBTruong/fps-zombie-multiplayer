@@ -86,6 +86,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase>	AirdropCrateSpawnSound;
 
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase>	FireInTheHoleSound;
+
 	UPROPERTY(EditAnywhere, Category = "Fx")
 	TObjectPtr<UParticleSystem> MeleeHitFx;
 

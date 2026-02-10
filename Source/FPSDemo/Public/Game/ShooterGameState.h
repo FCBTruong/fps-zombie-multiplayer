@@ -29,6 +29,7 @@ DECLARE_MULTICAST_DELEGATE(FOnSwitchSide);
 DECLARE_MULTICAST_DELEGATE(FOnUpdateRoundNumber);
 DECLARE_MULTICAST_DELEGATE(FOnUpdateHeroPhase); // for zombie mode, refactor later
 DECLARE_MULTICAST_DELEGATE(FOnUpdateHeroZombieCount);
+DECLARE_MULTICAST_DELEGATE(FOnUpdatePlayerSlots);
 
 UCLASS()
 class FPSDEMO_API AShooterGameState : public AGameState
@@ -100,6 +101,12 @@ protected:
     UFUNCTION()
 	void OnRep_BuyEndTime();
 
+    UFUNCTION()
+	void OnRep_PlayerSlots();
+
+	bool AreSlotsReady() const;
+    void TryBroadcastSlotsReady();
+
     virtual void RemovePlayerState(APlayerState* PlayerState) override;
     virtual void AddPlayerState(APlayerState* PlayerState) override;
 
@@ -135,19 +142,16 @@ public:
 	FOnUpdateRoundNumber OnUpdateRoundNumber;
 	FOnUpdateHeroPhase OnUpdateHeroPhase;
 	FOnUpdateHeroZombieCount OnUpdateHeroZombieCount;
+	FOnUpdatePlayerSlots OnUpdatePlayerSlots;
 
     void AddScoreTeam(ETeamId TeamId, int ScoreToAdd);
     int GetScoreTeam(ETeamId TeamId) const;
 
-    void SetRoundEndTime(int NewRoundEndTime) {
-        RoundEndTime = NewRoundEndTime;
-	}
+    void SetRoundEndTime(int NewRoundEndTime);
     int GetRoundEndTime() const {
         return RoundEndTime;
     }
-    void SetRoundRemainingTime(int TimeRemaining) {
-        RoundEndTime = GetWorld()->GetTimeSeconds() + TimeRemaining;
-    }   
+    void SetRoundRemainingTime(int TimeRemaining);
     void SetMatchMode(EMatchMode NewMode);
 	EMatchMode GetMatchMode() const { return MatchMode; }
     void SetBuyEndTime(int NewBuyEndTime) {
@@ -156,12 +160,18 @@ public:
     int GetBuyEndTime() const {
         return BuyEndTime;
 	}
-    int GetTeamAScore() const {
+    int GetTeamAScore() const { // always score of attackers/soldiers team
 		return TeamAScore;
 	}
 	int GetTeamBScore() const {
 		return TeamBScore;
 	}
+    void SetTeamAScore(int NewScore) {
+		TeamAScore = NewScore;
+	}
+    void SetTeamBScore(int NewScore) {
+        TeamBScore = NewScore;
+    }
     int GetCurrentRound() const {
         return CurrentRound;
     }
@@ -176,15 +186,10 @@ public:
     ASpike* GetPlantedSpike() const {
         return PlantedSpike;
 	}
-    void SetHeroPhase(bool bNewHeroPhase) {
-		bHeroPhase = bNewHeroPhase;
-    }
-    void SetRemainingHeroCount(int NewCount) {
-        RemainingHeroCount = NewCount;
-	}
-    void SetRemainingZombieCount(int NewCount) {
-		RemainingZombieCount = NewCount;
-	}
+    void SetHeroPhase(bool bNewHeroPhase);
+  
+    void SetRemainingHeroCount(int NewCount);
+    void SetRemainingZombieCount(int NewCount);
     int GetRemainingHeroCount() const {
 		return RemainingHeroCount;
 	}
@@ -201,8 +206,11 @@ public:
 	TArray<AAirdropCrate*> GetActiveAirdropCrates() const { return ActiveAirdropCrates; }
 	void ClearAirdropCrates() { ActiveAirdropCrates.Empty(); }
 
-    UPROPERTY(Replicated)
+    UPROPERTY(ReplicatedUsing=OnRep_PlayerSlots)
     TArray<APlayerSlot*> Slots;
 
 	APlayerSlot* GetPlayerSlot(int32 PlayerId);
+
+    FTimerHandle SlotsRetryHandle;
+    int32 SlotsRetryCount = 0;
 };

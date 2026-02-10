@@ -12,6 +12,11 @@
 #include <Kismet/GameplayStatics.h>
 #include "UI/MinimapRadarUI.h"
 #include <Components/CanvasPanelSlot.h>
+#include "UI/PlayerSlotUI.h"
+#include "Game/PlayerSlot.h"
+#include "Lobby/PlayerInfoManager.h"
+#include "Components/ScaleBox.h"
+#include "Components/StackBoxSlot.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -22,6 +27,7 @@ void UPlayerUI::NativeConstruct()
     }
 	CreateGrenadeNodes();
 
+	MatchResultPn->SetVisibility(ESlateVisibility::Hidden);
     for (int32 i = 1; i <= 4; i++)
     {
         const FName WidgetName(*FString::Printf(TEXT("NumberWeapon%d"), i));
@@ -30,21 +36,19 @@ void UPlayerUI::NativeConstruct()
             WeaponTextNumbers.Add(Widget);
         }
     }
+	ZombieVsHeroPn->SetVisibility(ESlateVisibility::Hidden);
 
     // update UI by game mode
 	AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
 	if (GS)
     {
+		GS->OnUpdatePlayerSlots.AddUObject(this, &UPlayerUI::UpdatePlayerSlots);
+        UpdatePlayerSlots();
 		EMatchMode CurrentMatchMode = GS->GetMatchMode();
         if (CurrentMatchMode == EMatchMode::Zombie)
         {
 			RoundLb->SetVisibility(ESlateVisibility::Visible);
-            if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(MatchTimeLb->Slot))
-            {
-                FVector2D Pos = CanvasSlot->GetPosition();
-                Pos.Y += 10.f;
-                CanvasSlot->SetPosition(Pos);
-            }
+         
             if (FirstTeamLb)
             {
                 FirstTeamLb->SetText(FText::FromString(TEXT("Soldier")));
@@ -59,11 +63,11 @@ void UPlayerUI::NativeConstruct()
 			RoundLb->SetVisibility(ESlateVisibility::Hidden);
             if (FirstTeamLb)
             {
-                FirstTeamLb->SetText(FText::FromString(TEXT("Attacker")));
+                FirstTeamLb->SetText(FText::FromString(TEXT("")));
             }
             if (SecondTeamLb)
             {
-                SecondTeamLb->SetText(FText::FromString(TEXT("Defender")));
+                SecondTeamLb->SetText(FText::FromString(TEXT("")));
             }
         }
         else // TeamDeathMatch
@@ -132,7 +136,7 @@ void UPlayerUI::UpdateAmmo(int CurrentAmmoValue, int RemainAmmoValue)
 
 void UPlayerUI::UpdateTeamScores(int FirstScore, int SecondScore)
 {
-    if (FirstTeamScore)
+    if (FirstTeamScore) // first team score is our score
     {
         FirstTeamScore->SetText(FText::AsNumber(FirstScore));
     }
@@ -678,15 +682,18 @@ void UPlayerUI::ShowGameResult(ETeamId WinTeam) {
         GetWorld(),
         GM->GlobalData->GameEndSound    
     );
-
-    ShowMatchStateToast(
-        FText::FromString(
-            WinTeam == ETeamId::Attacker ? "Attackers Win!" :
-            WinTeam == ETeamId::Defender ? "Defenders Win!" :
-            "Game Ended!"
-        ),
-        0.f
-	);
+	AMyPlayerState* MyPlayerState = GetOwningPlayerState<AMyPlayerState>();
+	bool IsWin = false;
+    if (MyPlayerState) {
+        ETeamId MyTeamId = MyPlayerState->GetTeamId();
+		IsWin = (MyTeamId == WinTeam);
+    }
+    
+    auto Txt = FText::FromString(
+        IsWin ? "Victory!!" : "Defeat!"
+    );
+	MatchResultPn->SetVisibility(ESlateVisibility::Visible);
+	MatchResultLb->SetText(Txt);
 	UE_LOG(LogTemp, Log, TEXT("UPlayerUI::ShowGameResult: WinTeam = %d"), static_cast<int32>(WinTeam));
 }
 
@@ -786,4 +793,64 @@ void UPlayerUI::UpdateHeroZombieNum() {
 
     HeroNumLb->SetText(FText::AsNumber(HeroNum));
     ZombieNumLb->SetText(FText::AsNumber(ZombieNum));
+}
+
+void UPlayerUI::UpdatePlayerSlots() {
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGMMM UpdatePlayerSlots: Updating player slots"));
+    PlayerSlotsLeft->ClearChildren();
+	PlayerSlotsRight->ClearChildren();
+    UScaleBox* ScaleBox = NewObject<UScaleBox>(this);
+    ScaleBox->SetStretch(EStretch::Fill);
+
+    if (UStackBoxSlot* SBSlot =
+        Cast<UStackBoxSlot>(PlayerSlotsLeft->AddChild(ScaleBox)))
+    {
+        SBSlot->SetSize(ESlateSizeRule::Fill);   
+        SBSlot->SetHorizontalAlignment(HAlign_Right);
+    }
+    AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    if (!GS) {
+        return;
+    }
+    if (GS->GetMatchMode() != EMatchMode::Spike) {
+        return;
+	}
+    auto Slots = GS->Slots;
+
+	int MyPlayerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();
+
+	ETeamId MyTeamId = ETeamId::None;
+    for (APlayerSlot* PSlot : Slots) {
+        if (!IsValid(PSlot)) {
+			UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerSlots: APlayerSlot is null"));
+            return;
+        }
+        if (PSlot->GetBackendUserId() == MyPlayerId) {
+            MyTeamId = PSlot->GetTeamId();
+            break;
+        }
+    }
+    for (APlayerSlot* PSlot : Slots) {
+        UPlayerSlotUI* SlotWidget = CreateWidget<UPlayerSlotUI>(GetWorld(), PlayerSlotClass);
+        if (!SlotWidget) {
+            continue;
+        }
+
+        bool bIsMyTeam = PSlot->GetTeamId() == MyTeamId;
+		// left will be our team
+        if (bIsMyTeam) {
+            PlayerSlotsLeft->AddChild(SlotWidget);
+        }
+        else {
+            PlayerSlotsRight->AddChild(SlotWidget);
+        }
+
+        SlotWidget->SetInfo(PSlot, bIsMyTeam);
+	}
+}
+
+void UPlayerUI::UpdateCrosshairCode(const FString& NewCrosshairCode) {
+    if (WBP_Crosshair) {
+        WBP_Crosshair->SetCrosshairCode(NewCrosshairCode);
+    }
 }

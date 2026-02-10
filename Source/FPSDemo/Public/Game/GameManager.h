@@ -57,7 +57,10 @@ public:
 		const FString& InRoomId,
 		const FString& InToken);
 	void RequestMatchDataAndStart();
-
+	void OnWorldCleanup(
+		UWorld* World,
+		bool bSessionEnded,
+		bool bCleanupResources);
 	FOnNewPickupItemSpawned OnNewPickupItemSpawned;
 
 private:

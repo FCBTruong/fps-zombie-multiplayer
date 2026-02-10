@@ -28,4 +28,30 @@ void APlayerSlot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(APlayerSlot, Pawn);
 }
 
+void APlayerSlot::OnRep_Pawn()
+{
+	OnReplicatedPawnChanged.Broadcast();
+}
 
+void APlayerSlot::SetPawn(APawn* InPawn)
+{
+	if (Pawn != InPawn)
+	{
+		Pawn = InPawn;
+		OnRep_Pawn();
+	}
+}
+
+void APlayerSlot::SetIsConnected(bool bInIsConnected)
+{
+	if (bIsConnected != bInIsConnected)
+	{
+		bIsConnected = bInIsConnected;
+		OnRep_IsConnected();
+	}
+}
+
+void APlayerSlot::OnRep_IsConnected()
+{
+	OnUpdateConnectedStatus.Broadcast(bIsConnected);
+}

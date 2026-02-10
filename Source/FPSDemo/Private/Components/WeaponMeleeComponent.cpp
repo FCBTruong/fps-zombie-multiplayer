@@ -58,7 +58,10 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 			MeleeTraceDelay,
 			false
 		);
-		LastAttackTime = GetWorld()->GetTimeSeconds();
+		if (!GetOwner()->HasAuthority())
+		{
+			LastAttackTime = GetWorld()->GetTimeSeconds();
+		}
 
 		if (MeleeConfig) {
 			if (AttackIndex == FGameConstants::MELEE_ATTACK_INDEX_PRIMARY) {

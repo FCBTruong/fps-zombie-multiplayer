@@ -1,0 +1,162 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "UI/PlayerSlotUI.h"
+#include "Game/PlayerSlot.h"
+#include "ContentRegistrySubsystem.h"
+#include "Characters/BaseCharacter.h"
+#include "Components/HealthComponent.h"
+#include "Utils/GameUtils.h"
+
+void UPlayerSlotUI::NativeConstruct()
+{
+	Super::NativeConstruct();
+	if (HpBar)
+	{
+		HpBar->SetPercent(.0f);
+	}
+}
+
+void UPlayerSlotUI::SetInfo(APlayerSlot* SlotInfo, bool bInIsMyTeam)
+{
+	bIsMyTeam = bInIsMyTeam;
+	CachedSlot = SlotInfo;
+	if (SlotInfo)
+	{
+		auto PName = GameUtils::SubStringWithDots(SlotInfo->GetPlayerName(), 12);
+		PlayerNameLb->SetText(FText::FromString(PName));
+
+		FSlateBrush Brush = AvatarImg->GetBrush();
+		if (SlotInfo->GetTeamId() == ETeamId::Attacker)
+		{
+			// Dark red
+			Brush.OutlineSettings.Color = FLinearColor(0.6f, 0.1f, 0.1f, 1.0f);
+		}
+		else
+		{
+			// Dark blue
+			Brush.OutlineSettings.Color = FLinearColor(0.1f, 0.2f, 0.6f, 1.0f);
+		}
+		AvatarImg->SetBrush(Brush);
+
+		UContentRegistrySubsystem* Registry =
+			GetGameInstance()->GetSubsystem<UContentRegistrySubsystem>();
+		AvatarImg->SetBrushFromTexture(
+			Registry->GetAvatarTextureById(SlotInfo->GetAvatar()));
+
+		SlotInfo->OnReplicatedPawnChanged.AddUObject(this, &UPlayerSlotUI::HandlePawnChanged);
+		SlotInfo->OnUpdateConnectedStatus.AddUObject(this, &UPlayerSlotUI::HandleUpdateConnectedStatus);
+		HandleUpdateConnectedStatus(SlotInfo->IsConnected());
+		HandlePawnChanged();
+	}
+}
+
+void UPlayerSlotUI::HandleHealthChanged(float NewHealth, float MaxHealth)
+{
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGZZZ UPlayerSlotUI::HandleHealthChanged called: NewHealth=%f, MaxHealth=%f"), NewHealth, MaxHealth);
+	if (MaxHealth <= 0.f) {
+		return;
+	}
+	if (NewHealth <= 0.f) {
+		this->SetRenderOpacity(0.5f);
+		DeadIcon->SetVisibility(ESlateVisibility::Visible);
+	}
+	else {
+		this->SetRenderOpacity(1.0f);
+		DeadIcon->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	if (bIsMyTeam) {
+		// Only show health for my team members
+		float HealthPercent = NewHealth / MaxHealth;
+		HpBar->SetPercent(HealthPercent);
+	}
+}
+
+void UPlayerSlotUI::HandlePawnChanged()
+{
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGZZZ UPlayerSlotUI::HandlePawnChanged called"));
+	TriedNum = 0;
+	StartRetryBindPawn();
+}
+
+void UPlayerSlotUI::StartRetryBindPawn()
+{
+	if (!GetWorld()) return;
+
+	// Clear old timer if any
+	GetWorld()->GetTimerManager().ClearTimer(BindPawnTimer);
+
+	// Try immediately
+	if (TryToBindPawn())
+	{
+		return;
+	}
+
+	// Retry each 1s
+	GetWorld()->GetTimerManager().SetTimer(
+		BindPawnTimer,
+		this,
+		&UPlayerSlotUI::RetryBindPawnTick,
+		1.0f,
+		true
+	);
+}
+
+void UPlayerSlotUI::RetryBindPawnTick()
+{
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGZZZ UPlayerSlotUI::001 called"));
+	if (!GetWorld())
+	{
+		return;
+	}
+
+	++TriedNum;
+
+	if (TryToBindPawn() || TriedNum >= MaxTries)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(BindPawnTimer);
+	}
+}
+
+
+bool UPlayerSlotUI::TryToBindPawn()
+{
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGZZZ UPlayerSlotUI::002 called"));
+	if (!CachedSlot) return false;
+
+	APawn* Pawn = CachedSlot->GetPawn();
+	if (!IsValid(Pawn)) return false;
+
+	ABaseCharacter* Char = Cast<ABaseCharacter>(Pawn);
+	if (!IsValid(Char)) {
+		UE_LOG(LogTemp, Warning, TEXT("DEBUGZZZ UPlayerSlotUI::TryToBindPawn: Cast to ABaseCharacter failed"));
+		return false;
+	}
+
+	UHealthComponent* HealthComp = Char->GetHealthComponent();
+	if (!IsValid(HealthComp)) {
+		UE_LOG(LogTemp, Warning, TEXT("DEBUGZZZ UPlayerSlotUI::TryToBindPawn: HealthComp is null"));
+		return false;
+	}
+
+	HealthComp->OnHealthUpdated.RemoveAll(this);
+
+	HealthComp->OnHealthUpdated.AddUObject(this, &UPlayerSlotUI::HandleHealthChanged);
+	// Initial update
+	HandleHealthChanged(HealthComp->GetHealth(), HealthComp->GetMaxHealth());
+	UE_LOG(LogTemp, Warning, TEXT("DEBUGZZZ UPlayerSlotUI::003 called"));
+	return true;
+}
+
+void UPlayerSlotUI::HandleUpdateConnectedStatus(bool bIsConnected)
+{
+	if (bIsConnected)
+	{
+		this->SetRenderOpacity(1.0f);
+	}
+	else
+	{
+		this->SetRenderOpacity(0.5f);
+	}
+}

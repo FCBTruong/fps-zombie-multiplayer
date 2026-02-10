@@ -171,3 +171,8 @@ void ALobbyPlayerController::OnToggleChatPressed()
 void ALobbyPlayerController::Login(int Id) {
     UPlayerInfoManager::Get(GetWorld())->Login(Id);
 }
+
+void ALobbyPlayerController::Crosshair(FString CrosshairCode) {
+    UPlayerInfoManager::Get(GetWorld())->SetCrosshairCode(CrosshairCode);
+	UE_LOG(LogTemp, Log, TEXT("Set CrosshairCode to: %s"), *CrosshairCode);
+}

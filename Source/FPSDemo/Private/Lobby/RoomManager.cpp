@@ -395,10 +395,11 @@ void URoomManager::RequestCreateRoom() {
 
 void URoomManager::CreateOfflineRoom()
 {
+	UPlayerInfoManager* PlayerInfoMgr = UPlayerInfoManager::Get(GetWorld());
     CurrentRoomData = FRoomData();
     CurrentRoomData.bIsActive = true;
     CurrentRoomData.RoomId = 0;
-    CurrentRoomData.OwnerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();
+    CurrentRoomData.OwnerId = PlayerInfoMgr->GetUserId();
     CurrentRoomData.Mode = EMatchMode::Spike;
     CurrentRoomData.bIsSelfHost = true;
 
@@ -408,9 +409,10 @@ void URoomManager::CreateOfflineRoom()
     {
         FPlayerRoomInfo Info;
         if (i == 0) {
-            Info.PlayerName = UPlayerInfoManager::Get(GetWorld())->GetPlayerName();
-            Info.PlayerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();
-			Info.Avatar = UPlayerInfoManager::Get(GetWorld())->GetAvatar();
+            Info.PlayerName = PlayerInfoMgr->GetPlayerName();
+            Info.PlayerId = PlayerInfoMgr->GetUserId();
+			Info.Avatar = PlayerInfoMgr->GetAvatar();
+			Info.CrosshairCode = PlayerInfoMgr->GetCrosshairCode();
             Info.bIsBot = false;
         }
         else {

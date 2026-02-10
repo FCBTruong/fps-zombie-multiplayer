@@ -19,6 +19,17 @@ void UGameManager::Init()
 {
 	Super::Init();
 	DsClient = MakeUnique<DedicatedServerClient>();
+    FWorldDelegates::OnWorldCleanup.AddUObject(
+        this,
+        &UGameManager::OnWorldCleanup
+    );
+}
+
+void UGameManager::OnWorldCleanup(
+    UWorld* World,
+    bool bSessionEnded,
+    bool bCleanupResources) {
+	PickupItemsOnMap.Empty();
 }
 
 void UGameManager::OnStart()
@@ -77,7 +88,10 @@ void UGameManager::CleanPickupItemsOnMap()
 {
     for (auto& Elem : PickupItemsOnMap) {
         APickupItem* Pickup = Elem.Value;
-		Pickup->Destroy();
+        if (IsValid(Pickup))
+        {
+            Pickup->Destroy();
+        }
 	}
     PickupItemsOnMap.Empty();
 }

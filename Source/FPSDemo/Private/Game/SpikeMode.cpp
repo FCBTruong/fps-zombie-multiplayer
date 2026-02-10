@@ -71,12 +71,14 @@ void ASpikeMode::OnSpikeDefused(AController* Defuser)
 
 void ASpikeMode::EndRound(ETeamId WinningTeam)
 {
-	Super::EndRound(WinningTeam);
-	
-	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
-
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	
+	if (GS->GetMatchState() == EMyMatchState::ROUND_ENDED)
+	{
+		return; // already ended
+	}
+	Super::EndRound(WinningTeam);
+
+	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
 	GS->SetMatchState(EMyMatchState::ROUND_ENDED);
 	GS->Multicast_RoundResult(WinningTeam);
 
@@ -303,6 +305,12 @@ void ASpikeMode::SwapTeams() // switch side
 		UE_LOG(LogTemp, Warning, TEXT("GameState is null in SwapTeams"));
 		return;
 	}
+	// swap scores too
+	int ScoreA = GS->GetTeamAScore();
+	int ScoreB = GS->GetTeamBScore();
+	GS->SetTeamAScore(ScoreB);
+	GS->SetTeamBScore(ScoreA);
+
 	UE_LOG(LogTemp, Warning, TEXT("Swapping teams..."));
 	for (APlayerSlot* Slot : GS->Slots) {
 		ETeamId CurrentTeam = Slot->GetTeamId();

@@ -969,7 +969,7 @@ void AMyPlayerController::BindGameState(AShooterGameState* GS)
 {
     if (!GS || !PlayerUI) return;
 
-    H_UpdateScore = GS->OnUpdateScore.AddUObject(PlayerUI, &UPlayerUI::UpdateTeamScores);
+    H_UpdateScore = GS->OnUpdateScore.AddUObject(this, &AMyPlayerController::HandleUpdateTeamScore);
     H_UpdateRoundTime = GS->OnUpdateRoundTime.AddUObject(PlayerUI, &UPlayerUI::OnUpdateRoundTime);
     H_UpdateMatchState = GS->OnUpdateMatchState.AddUObject(PlayerUI, &UPlayerUI::UpdateGameState);
 	H_OnGameResult = GS->OnGameResult.AddUObject(PlayerUI, &UPlayerUI::ShowGameResult);
@@ -978,7 +978,7 @@ void AMyPlayerController::BindGameState(AShooterGameState* GS)
 	H_OnUpdateHeroPhase = GS->OnUpdateHeroPhase.AddUObject(PlayerUI, &UPlayerUI::UpdateHeroPhase);
 	H_OnUpdateHeroZombieCount = GS->OnUpdateHeroZombieCount.AddUObject(PlayerUI, &UPlayerUI::UpdateHeroZombieNum);
 
-	PlayerUI->UpdateTeamScores(GS->GetTeamAScore(), GS->GetTeamBScore());
+    HandleUpdateTeamScore(GS->GetTeamAScore(), GS->GetTeamBScore());
     PlayerUI->OnUpdateRoundTime(GS->GetRemainingRoundTime());
 	PlayerUI->UpdateGameState(GS->GetMatchState());
     PlayerUI->UpdateHeroPhase();
@@ -1016,6 +1016,7 @@ void AMyPlayerController::BindPlayerState(AMyPlayerState* PS)
     H_UpdateBoughtItems = PS->OnUpdateBoughtItems.AddUObject(PlayerUI->WBP_Shop, &UShopUI::UpdateBoughtItemsStatus);
 
 	PlayerUI->UpdateTeamId(PS->GetTeamId());
+	PlayerUI->UpdateCrosshairCode(PS->GetCrosshairCode());
 }
 
 void AMyPlayerController::UnbindPlayerState(AMyPlayerState* PS)
@@ -1166,4 +1167,28 @@ void AMyPlayerController::SetTimeOfDeath(float Time)
 
 void AMyPlayerController::PawnLeavingGame() {
     // handle by game mode
+}
+
+void AMyPlayerController::HandleUpdateTeamScore(int32 TeamAScore, int32 TeamBScore)
+{
+    // get my team id
+	AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
+	if (!PS) return;
+	ETeamId MyTeamId = PS->GetTeamId();
+
+	int FirstScore = TeamAScore;
+	int SecondScore = TeamBScore;
+    if (MyTeamId == ETeamId::Attacker) {
+		FirstScore = TeamAScore; // because score A is for attackers
+		SecondScore = TeamBScore;
+    }
+	else if (MyTeamId == ETeamId::Defender) {
+        FirstScore = TeamBScore; // because score B is for defenders
+		SecondScore = TeamAScore;
+	}
+
+    if (PlayerUI)
+    {
+        PlayerUI->UpdateTeamScores(FirstScore, SecondScore);
+    }
 }

@@ -27,6 +27,9 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_Money)
 	int Money = 10000;
 
+	UPROPERTY(Replicated)
+	FString CrosshairCode;
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()
@@ -87,11 +90,15 @@ public:
 
 	int GetBackendUserId() const;
 
-	void SetPlayerSlot(APlayerSlot* Slot) {
-		PlayerSlot = Slot;
-	}
+	void SetPlayerSlot(APlayerSlot* Slot);
 
 	APlayerSlot* GetPlayerSlot() const {
 		return PlayerSlot;
+	}
+	virtual FString GetPlayerNameCustom() const override;
+
+	void SetCrosshairCode(const FString& InCrosshairCode);
+	const FString& GetCrosshairCode() const {
+		return CrosshairCode;
 	}
 };

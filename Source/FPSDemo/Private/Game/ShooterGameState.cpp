@@ -118,6 +118,8 @@ void AShooterGameState::AddScoreTeam(ETeamId TeamId, int ScoreToAdd)
     {
         TeamBScore += ScoreToAdd;
     }
+
+	OnRep_Score(); // update immediately on server
 }
 
 int AShooterGameState::GetScoreTeam(ETeamId TeamId) const
@@ -228,6 +230,14 @@ void AShooterGameState::OnRep_Spike()
 void AShooterGameState::Multicast_GameResult_Implementation(ETeamId WinningTeam)
 {
 	OnGameResult.Broadcast(WinningTeam);
+
+	// back to lobby after 5 seconds
+	FTimerHandle TimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]() {
+        if (AGameModeBase* GM = GetWorld()->GetAuthGameMode<AGameModeBase>()) {
+            GM->ReturnToMainMenuHost();
+        }
+		}, 5.f, false);
 }
 
 void AShooterGameState::Multicast_SwitchSide_Implementation()
@@ -341,4 +351,80 @@ APlayerSlot* AShooterGameState::GetPlayerSlot(int32 PlayerId) {
         }
     }
     return nullptr;
+}
+
+void AShooterGameState::OnRep_PlayerSlots()
+{
+    SlotsRetryCount = 0;
+    GetWorldTimerManager().ClearTimer(SlotsRetryHandle);
+    if (AreSlotsReady()) {
+        OnUpdatePlayerSlots.Broadcast();
+		return;
+    }
+
+    GetWorldTimerManager().SetTimer(
+        SlotsRetryHandle,
+        this,
+        &AShooterGameState::TryBroadcastSlotsReady,
+        0.5f,   // interval
+        true    // looping
+    );
+}
+
+void AShooterGameState::TryBroadcastSlotsReady()
+{
+    if (AreSlotsReady())
+    {
+        GetWorldTimerManager().ClearTimer(SlotsRetryHandle);
+        OnUpdatePlayerSlots.Broadcast();
+        return;
+    }
+
+    int MaxSlotsRetry = 5;
+    if (SlotsRetryCount++ >= MaxSlotsRetry)
+    {
+        GetWorldTimerManager().ClearTimer(SlotsRetryHandle);
+        // optional log once
+        return;
+    }
+}
+
+bool AShooterGameState::AreSlotsReady() const
+{
+	UE_LOG(LogTemp, Log, TEXT("DEBUGMMM Checking if player slots are ready..."));
+    for (APlayerSlot* S : Slots)
+    {
+        if (!IsValid(S)) return false;              // NetGUID not resolved yet
+        if (!S->HasActorBegunPlay()) {
+			UE_LOG(LogTemp, Log, TEXT("DEBUGMMM Player slot %d has not begun play yet."), S->GetBackendUserId());
+            return false;  // not initialized yet
+        }
+    }
+	UE_LOG(LogTemp, Log, TEXT("DEBUGMMM All player slots are ready."));
+    return true;
+}
+
+void AShooterGameState::SetRoundRemainingTime(int TimeRemaining) {
+    int TimeEnd = GetWorld()->GetTimeSeconds() + TimeRemaining;
+	SetRoundEndTime(TimeEnd);
+}
+
+void AShooterGameState::SetRoundEndTime(int TimeEnd) {
+    if (!HasAuthority()) return;
+    RoundEndTime = TimeEnd;
+    OnRep_RoundEndTime(); // apply immediately on server too 
+}
+
+void AShooterGameState::SetHeroPhase(bool bInHeroPhase) {
+    bHeroPhase = bInHeroPhase;
+	OnRep_HeroPhase(); // apply immediately on server too
+}
+
+void AShooterGameState::SetRemainingHeroCount(int NewCount) {
+    RemainingHeroCount = NewCount;
+	OnRep_RemainingHeroCount(); // apply immediately on server too
+}
+void AShooterGameState::SetRemainingZombieCount(int NewCount) {
+    RemainingZombieCount = NewCount;
+	OnRep_RemainingZombieCount(); // apply immediately on server too
 }

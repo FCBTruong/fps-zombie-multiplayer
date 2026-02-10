@@ -35,6 +35,7 @@ protected:
 	void HandleAirdropClaimed(class AAirdropCrate* AirdropCrate, ABaseCharacter* Character);
 	AController* ChooseZombieController() const;
 	void CheckAndSpawnAirdropCrate();
+	bool ShouldEnterHeroPhase(int32 TotalPlayers, int32 AliveSoldiers) const;
 
 	FTimerHandle BuyingTimerHandle;
 	FTimerHandle FightStateTimerHandle;

@@ -107,19 +107,21 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 		}
 
 		// notify client
-		ClientNotifyItemPickup(PickupItem->GetPickupData().ItemId);
+		APlayerController* PC = Cast<APlayerController>(OwnerCharacter->GetController());
+		if (PC)
+		{
+			// only for player, not for AI
+			ClientNotifyItemPickup(PickupItem->GetPickupData().ItemId);
+		}
 	}
 }
 
 void UPickupComponent::ClientNotifyItemPickup_Implementation(
 	EItemId ItemId)
 {
+	UE_LOG(LogTemp, Warning, TEXT("ClientNotifyItemPickup called for item id: %d"), static_cast<uint8>(ItemId));
 	ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
 	if (!OwnerCharacter)
-	{
-		return;
-	}
-	if (!OwnerCharacter->IsLocallyControlled())
 	{
 		return;
 	}

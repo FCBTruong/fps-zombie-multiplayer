@@ -27,6 +27,7 @@ public:
 	ALobbyPlayerController();
 
     UFUNCTION(exec) void Login(int id);
+    UFUNCTION(exec) void Crosshair(FString CrosshairCode);
 protected:
     virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;

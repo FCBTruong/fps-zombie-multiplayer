@@ -68,6 +68,8 @@ void AShooterGameMode::InitGameState()
             FTransform::Identity, Params);
 
         Slot->SetBackendUserId(Player.PlayerId);
+		Slot->SetPlayerName(Player.PlayerName);
+		Slot->SetAvatar(Player.Avatar);
 
         int32 CharacterSkin = FGameConstants::SKIN_CHARACTER_ATTACKER;
         if (MatchMode == EMatchMode::Spike)
@@ -94,6 +96,7 @@ void AShooterGameMode::InitGameState()
 
         Slot->SetCharacterSkin(CharacterSkin);
         Slot->SetIsBot(Player.bIsBot);
+		Slot->SetCrosshairCode(Player.CrosshairCode);
         CachedGS->Slots.Add(Slot);
     }
 }
@@ -146,6 +149,7 @@ void AShooterGameMode::StartPlay()
         {
             continue;
         }
+		Slot->SetIsConnected(true);
 
         ABotAIController* BotController = SpawnBot(Slot);
     }
@@ -270,8 +274,8 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
         }
 		PS->SetPlayerSlot(Slot);
 
-        NewPlayer->StartSpot = nullptr;
-        RestartPlayer(NewPlayer);
+      /*  NewPlayer->StartSpot = nullptr;
+        RestartPlayer(NewPlayer);*/
 
         if (!this->HasMatchStarted() && !bIsAllPlayersJoined)
         {
@@ -304,6 +308,15 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 void AShooterGameMode::Logout(AController* Exiting)
 {
     APawn* LeavingPawn = Exiting ? Exiting->GetPawn() : nullptr;
+
+	AMyPlayerController* MyPC = Cast<AMyPlayerController>(Exiting);
+    if (MyPC)
+    {
+        APlayerSlot* Slot = CachedGS->GetPlayerSlot(MyPC->BackendUserId);
+        if (Slot) {
+            Slot->SetIsConnected(false);
+        }
+	}
 
     // Unpossess before calling Super (controller cleanup happens there)
     if (LeavingPawn)
@@ -401,8 +414,6 @@ FString AShooterGameMode::InitNewPlayer(
 
 void AShooterGameMode::ResetPlayers()
 {
-    // clean pawns first
-    CleanupCorpses();
     AShooterGameState* GS = GetGameState<AShooterGameState>();
 
     if (!GS) {
@@ -420,7 +431,7 @@ void AShooterGameMode::ResetPlayers()
 
             Pawn->Destroy();
             Pawn = nullptr;
-            ;
+
             if (Controller) {
                 Controller->StartSpot = nullptr;
                 Controller->UnPossess();
@@ -429,6 +440,7 @@ void AShooterGameMode::ResetPlayers()
                 if (PS) {
                     PS->SetIsSpectator(false);
                 }
+				UE_LOG(LogTemp, Warning, TEXT("Restarting player controller %s"), *Controller->GetName());
                 RestartPlayer(Controller);
             }
         }
@@ -487,6 +499,7 @@ bool AShooterGameMode::CheckAllTeamDead(ETeamId TeamID)
 
         if (MyChar->IsAlive())
         {
+			UE_LOG(LogTemp, Warning, TEXT("DEBUGYYY CheckAllTeamDead: Found alive player in team %d"), static_cast<uint8>(TeamID));
             return false; // At least 1 alive team NOT dead
         }
     }
@@ -543,6 +556,10 @@ void AShooterGameMode::StartRound() {
     UE_LOG(LogTemp, Warning, TEXT("Starting Round in AShooterGameMode"));
 
     AActorManager* AM = AActorManager::Get(GetWorld());
+    if (!AM) {
+        UE_LOG(LogTemp, Warning, TEXT("ActorManager is null in StartRound"));
+        return;
+	}
     AM->ResetPlayerStartsUsage();
 
     AShooterGameState* GS = GetGameState<AShooterGameState>();
@@ -551,16 +568,25 @@ void AShooterGameMode::StartRound() {
 
 void AShooterGameMode::EndRound(ETeamId WinningTeam)
 {
-
+	UE_LOG(LogTemp, Warning, TEXT("Ending Round in AShooterGameMode"));
 }
 
 void AShooterGameMode::EndGame(ETeamId WinningTeam)
 {
+	UE_LOG(LogTemp, Warning, TEXT(" "));
     AShooterGameState* GS = GetGameState<AShooterGameState>();
-    if (GS) {
-        GS->SetMatchState(EMyMatchState::GAME_ENDED);
-        GS->Multicast_GameResult(WinningTeam);
-    }
+
+    if (!GS) {
+        UE_LOG(LogTemp, Warning, TEXT("GameState is null in EndGame"));
+        return;
+	}
+
+    if (GS->GetMatchState() == EMyMatchState::GAME_ENDED) {
+        return; // already ended
+	}
+   
+    GS->SetMatchState(EMyMatchState::GAME_ENDED);
+    GS->Multicast_GameResult(WinningTeam);
 
     UGameManager* GM = UGameManager::Get(GetWorld());
     if (GM && GM->DsClient.IsValid()) {
@@ -575,21 +601,18 @@ void AShooterGameMode::EndGame(ETeamId WinningTeam)
     }
 
     // Delay so clients see end screen
-    FTimerHandle Timer;
+   /* FTimerHandle Timer;
     GetWorld()->GetTimerManager().SetTimer(
         Timer,
         this,
         &AShooterGameMode::TravelToLobby,
         1.5f,
         false
-    );
+    );*/
 }
 
 bool AShooterGameMode::IsDamageAllowed(AController* Killer, AController* Victim) const
 {
-    if (true) {
-        return true;
-    }
     AShooterGameState* GS = GetGameState<AShooterGameState>();
     if (!GS)
         return false;
@@ -611,7 +634,14 @@ bool AShooterGameMode::IsDamageAllowed(AController* Killer, AController* Victim)
 void AShooterGameMode::TravelToLobby()
 {
     UE_LOG(LogTemp, Warning, TEXT("Traveling to Lobby"));
-    GetWorld()->ServerTravel(FGameConstants::LEVEL_LOBBY.ToString());
+
+    const FString Url = FGameConstants::LEVEL_LOBBY.ToString();          // e.g. "/Game/Main/Levels/LEVEL_LOBBY"
+    const FString Short = FPackageName::GetShortName(Url);               // "LEVEL_LOBBY"
+
+    if (GetNetMode() == NM_ListenServer || GetNetMode() == NM_DedicatedServer)
+        GetWorld()->ServerTravel(Url + TEXT("?listen"), true);
+    else
+        UGameplayStatics::OpenLevel(this, FName(*Short));
 }
 
 APawn* AShooterGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform)
@@ -628,6 +658,11 @@ APawn* AShooterGameMode::SpawnDefaultPawnAtTransform_Implementation(AController*
     {
         return nullptr;
     }
+	ABotAIController* BotController = Cast<ABotAIController>(NewPlayer);
+    if (BotController)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("DEBUGYYY Spawning pawn for BotController"));
+	}
 
     AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>();
 

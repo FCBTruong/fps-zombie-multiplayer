@@ -21,6 +21,7 @@
 
 class UItemConfig;
 class UMinimapRadarUI;
+class UPlayerSlotUI;
 /**
  * 
  */
@@ -30,6 +31,11 @@ class FPSDEMO_API UPlayerUI : public UUserWidget
 	GENERATED_BODY()
 
 protected:
+	UPROPERTY(meta = (BindWidget))
+	UWidget* MatchResultPn;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* MatchResultLb;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* RoundLb;
 	UPROPERTY(meta = (BindWidget))
@@ -65,6 +71,11 @@ protected:
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowWeaponIcons;
 
+	UPROPERTY(meta = (BindWidget));
+	UStackBox* PlayerSlotsLeft;
+	UPROPERTY(meta = (BindWidget));
+	UStackBox* PlayerSlotsRight;
+
 	UPROPERTY(meta = (BindWidget))
 	UStackBox* GrenadesStack;
 	UPROPERTY(meta = (BindWidget))
@@ -90,6 +101,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UKillNotifySlot> KillNotifyWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenades")
+	TSubclassOf<UPlayerSlotUI> PlayerSlotClass;
 
 	UPROPERTY(meta = (BindWidget))
 	UCrosshair* WBP_Crosshair;
@@ -179,6 +193,8 @@ protected:
 	void StartRoundClock();
 	void StopRoundClock();
 	void UpdateRoundClockOnce();
+
+	void UpdatePlayerSlots();
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
 	UShopUI* WBP_Shop;
@@ -228,4 +244,5 @@ public:
 	void UpdateRoundNumber();
 	void UpdateHeroPhase();
 	void UpdateHeroZombieNum();
+	void UpdateCrosshairCode(const FString& NewCrosshairCode);
 };

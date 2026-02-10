@@ -61,6 +61,7 @@ public:
     void ApplyData(const FUECrosshairData& D);
     void NativeConstruct() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crosshair")
-	FString CrosshairCode = "0;P;h;0;d;1;z;1;a;0;0t;3;0l;14;0o;6;0a;1;0f;0;1b;0";
+	const FString CrosshairCodeDefault = "0;P;h;0;d;1;z;1;a;0;0t;3;0l;14;0o;6;0a;1;0f;0;1b;0";
+
+    void SetCrosshairCode(const FString& Code);
 };

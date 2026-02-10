@@ -44,3 +44,18 @@ FString GameUtils::GenerateMd5Token()
         FPlatformMisc::GetLoginId();
     return FMD5::HashAnsiString(*Raw);
 }
+
+FString GameUtils::SubStringWithDots(const FString& InString, int32 Length)
+{
+    if (Length <= 0)
+    {
+        return TEXT("");
+    }
+
+    if (InString.Len() <= Length)
+    {
+        return InString;
+    }
+
+    return InString.Left(Length) + TEXT("...");
+}

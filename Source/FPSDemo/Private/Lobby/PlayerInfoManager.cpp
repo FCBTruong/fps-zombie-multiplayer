@@ -38,7 +38,7 @@ void UPlayerInfoManager::SetPlayerName(const FString& InPlayerName)
 	PlayerName = InPlayerName;
 }
 
-FString UPlayerInfoManager::GetPlayerName() const
+const FString& UPlayerInfoManager::GetPlayerName() const
 {
 	return PlayerName;
 }
@@ -58,12 +58,12 @@ void UPlayerInfoManager::SetAvatar(const FString& InAvatar)
 	Avatar = InAvatar;
 }
 
-FString UPlayerInfoManager::GetAvatar() const
+const FString& UPlayerInfoManager::GetAvatar() const
 {
 	return Avatar;
 }
 
-FString UPlayerInfoManager::GetGuestId() const
+const FString& UPlayerInfoManager::GetGuestId() const
 {
     if (!CheatGuestId.IsEmpty()) {
         return CheatGuestId;
@@ -134,6 +134,7 @@ void UPlayerInfoManager::LoadOrCreateLocalInfo()
     GuestId = Save->GuestId;
     PlayerName = Save->PlayerName;
 	Avatar = Save->Avatar;
+	CrosshairCode = Save->CrosshairCode;
 
     UGameplayStatics::SaveGameToSlot(Save, SLOT, USER_INDEX);
 }
@@ -169,4 +170,37 @@ void UPlayerInfoManager::Login(int id)
 	UE_LOG(LogTemp, Log, TEXT("UPlayerInfoManager::Login with CheatGuestId: %s"), *CheatGuestId);
     // reopen 
     UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_LOBBY);
+}
+
+void UPlayerInfoManager::SetCrosshairCode(const FString& InCrosshairCode)
+{
+    CrosshairCode = InCrosshairCode;
+
+	// Save to local storage
+    using namespace PlayerLocalInfoConst;
+    UMySaveGame* Save = nullptr;
+    if (UGameplayStatics::DoesSaveGameExist(SLOT, USER_INDEX))
+    {
+        Save = Cast<UMySaveGame>(
+            UGameplayStatics::LoadGameFromSlot(SLOT, USER_INDEX)
+        );
+    }
+    if (!Save)
+    {
+        Save = Cast<UMySaveGame>(
+            UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass())
+        );
+    }
+    if (!Save)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create SaveGame object"));
+        return;
+    }
+    Save->CrosshairCode = CrosshairCode;
+	UGameplayStatics::SaveGameToSlot(Save, SLOT, USER_INDEX);
+}
+
+const FString& UPlayerInfoManager::GetCrosshairCode() const
+{
+    return CrosshairCode;
 }

@@ -69,7 +69,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	void Explode();
-	static constexpr float TimeExplode = 36.0f;
+	static constexpr float TimeExplode = 26.0f;
 	void Defused();
 
 	UFUNCTION(NetMulticast, Unreliable)

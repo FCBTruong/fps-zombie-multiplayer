@@ -7,6 +7,8 @@
 #include "Data/TeamId.h"
 #include "PlayerSlot.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnReplicatedPawnChanged)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateConnectedStatus, bool /*bIsConnected*/);
 UCLASS()
 class FPSDEMO_API APlayerSlot : public AActor
 {
@@ -18,6 +20,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void SetBackendUserId(int InBackendUserId) { BackendUserId = InBackendUserId; }
+	void SetPlayerName(const FString& InPlayerName) { PlayerName = InPlayerName; }
 	void SetTeamId(ETeamId InTeamId) { TeamId = InTeamId; }
 	void SetIsBot(bool bInIsBot) { bIsBot = bInIsBot; }
 	void SetKills(int InKills) { Kills = InKills; }
@@ -33,11 +36,24 @@ public:
 	ETeamId GetTeamId() const { return TeamId; }
 	bool IsBot() const { return bIsBot; }
 	APawn* GetPawn() const { return Pawn; }
-	void SetPawn(APawn* InPawn) { Pawn = InPawn; }
+	void SetPawn(APawn* InPawn);
 	bool IsConnected() const { return bIsConnected; }
-	void SetIsConnected(bool bInIsConnected) { bIsConnected = bInIsConnected; }
+	void SetIsConnected(bool bInIsConnected);
 	int GetCharacterSkin() const { return CharacterSkin; }
 	void SetCharacterSkin(int InCharacterSkin) { CharacterSkin = InCharacterSkin; }
+	const FString& GetPlayerName() { return PlayerName; }
+	const FString& GetAvatar() { return Avatar; }
+	void SetAvatar(const FString& InAvatar) { Avatar = InAvatar; }
+	void SetCrosshairCode(const FString& InCrosshairCode) { CrosshairCode = InCrosshairCode; }
+	const FString& GetCrosshairCode() const { return CrosshairCode; }
+
+	UFUNCTION()
+	void OnRep_Pawn();
+	UFUNCTION()
+	void OnRep_IsConnected();
+
+	FOnReplicatedPawnChanged OnReplicatedPawnChanged;
+	FOnUpdateConnectedStatus OnUpdateConnectedStatus;
 private:
 	UPROPERTY(Replicated)
 	int BackendUserId;
@@ -46,9 +62,17 @@ private:
 	ETeamId TeamId;
 
 	UPROPERTY(Replicated)
-	bool bIsBot;
+	FString PlayerName = "";
 
 	UPROPERTY(Replicated)
+	FString Avatar = "";
+
+	FString CrosshairCode = "";
+
+	UPROPERTY(Replicated)
+	bool bIsBot;
+
+	UPROPERTY(ReplicatedUsing=OnRep_IsConnected)
 	bool bIsConnected;
 	
 	UPROPERTY(Replicated)
@@ -60,7 +84,7 @@ private:
 	UPROPERTY(Replicated)
 	int Assists;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_Pawn)
 	TObjectPtr<APawn> Pawn = nullptr;
 
 	int32 CharacterSkin;
