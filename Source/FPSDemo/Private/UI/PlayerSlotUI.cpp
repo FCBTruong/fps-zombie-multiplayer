@@ -15,6 +15,10 @@ void UPlayerSlotUI::NativeConstruct()
 	{
 		HpBar->SetPercent(.0f);
 	}
+	if (DeadIcon)
+	{
+		DeadIcon->SetVisibility(ESlateVisibility::Collapsed);
+	}	
 }
 
 void UPlayerSlotUI::SetInfo(APlayerSlot* SlotInfo, bool bInIsMyTeam)

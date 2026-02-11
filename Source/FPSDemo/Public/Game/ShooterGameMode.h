@@ -50,6 +50,8 @@ public:
 		const FUniqueNetIdRepl& UniqueId,
 		FString& ErrorMessage) override;
 	virtual void Logout(AController* Exiting) override;
+	virtual void ScheduleMatchStart(float DelaySeconds);
+	virtual void StartMatchFromCountdown();
 	virtual void ResetPlayers();
 	virtual ABotAIController* SpawnBot(APlayerSlot* Slot);
 	virtual bool CheckAllTeamDead(ETeamId TeamId);
@@ -83,7 +85,6 @@ protected:
 
 	bool bRoundStarted = false;
 	int RoomId = 0;
-	bool bIsAllPlayersJoined = false;
 
 	FTimerHandle StartRoundTimerHandle;
 	UFUNCTION()
@@ -91,4 +92,8 @@ protected:
 
 	virtual FTransform GetSpawnTransformForSlot(const APlayerSlot& Slot);
 	AShooterGameState* CachedGS;
+
+	FTimerHandle MatchStartCountdownHandle;
+	float MatchStartDelayDefault = 15.f;
+	float MatchStartDelayWhenAllJoined = 3.f;
 };

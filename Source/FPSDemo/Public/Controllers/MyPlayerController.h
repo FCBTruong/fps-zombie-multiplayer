@@ -231,4 +231,5 @@ private:
     void ClientSpectateTarget(AActor* Target, float BlendTime = 0.f);
 
 	void HandleUpdateTeamScore(int32 TeamAScore, int32 TeamBScore);
+	void OnToggleChatPressed();
 };

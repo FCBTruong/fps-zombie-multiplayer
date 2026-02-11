@@ -129,10 +129,10 @@ void AShooterGameMode::StartPlay()
 
     GS->SetMatchState(EMyMatchState::PRE_MATCH);
     GS->SetCurrentRound(0);
-
-    int WaitingTime = 15; // seconds
-    GS->SetRoundEndTime(WaitingTime);
+  
     BotManager->SetMatchMode(GetMatchMode());
+
+    ScheduleMatchStart(MatchStartDelayDefault);
 
     // should notify backend that game is ready
     UGameManager* GM = UGameManager::Get(GetWorld());
@@ -153,6 +153,35 @@ void AShooterGameMode::StartPlay()
 
         ABotAIController* BotController = SpawnBot(Slot);
     }
+}
+
+void AShooterGameMode::ScheduleMatchStart(float DelaySeconds)
+{
+    if (!HasAuthority()) return;
+
+    GetWorldTimerManager().ClearTimer(MatchStartCountdownHandle);
+    GetWorldTimerManager().SetTimer(
+        MatchStartCountdownHandle,
+        this,
+        &AShooterGameMode::StartMatchFromCountdown,
+        DelaySeconds,
+        false
+    );
+
+    // keep UI countdown in sync
+    if (AShooterGameState* GS = GetGameState<AShooterGameState>())
+    {
+        GS->SetRoundEndTime((int)FMath::CeilToInt(DelaySeconds));
+    }
+}
+
+
+void AShooterGameMode::StartMatchFromCountdown()
+{
+    if (!HasAuthority()) return;
+    if (HasMatchStarted()) return;
+
+    StartMatch(); // this bypasses ReadyToStartMatch_Implementation
 }
 
 void AShooterGameMode::StartMatch()
@@ -177,12 +206,6 @@ void AShooterGameMode::StartRoundDelayed()
     if (!HasMatchStarted()) return;
 
     StartRound();
-}
-
-bool AShooterGameMode::ReadyToStartMatch_Implementation()
-{
-    UE_LOG(LogTemp, Warning, TEXT("ReadyToStartMatch called in AShooterGameMode"));
-    return bIsAllPlayersJoined;
 }
 
 void AShooterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -277,9 +300,9 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
       /*  NewPlayer->StartSpot = nullptr;
         RestartPlayer(NewPlayer);*/
 
-        if (!this->HasMatchStarted() && !bIsAllPlayersJoined)
+        if (!this->HasMatchStarted())
         {
-            bool bCheck = true;
+            bool bAllConnected = true;
             // check if all players joined
             for (const APlayerSlot* S : GS->Slots)
             {
@@ -290,16 +313,21 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 
                 if (!S->IsConnected())
                 {
-                    bCheck = false;
+                    bAllConnected = false;
                     break;
                 }
             }
-            if (bCheck)
+            if (bAllConnected)
             {
-                bIsAllPlayersJoined = true;
+                // Reduce remaining countdown to 3 seconds (only if currently longer)
+                const float Remaining = GetWorldTimerManager().IsTimerActive(MatchStartCountdownHandle)
+                    ? GetWorldTimerManager().GetTimerRemaining(MatchStartCountdownHandle)
+                    : 0.f;
 
-                // All players joined, can start match now
-                UE_LOG(LogTemp, Warning, TEXT("All players joined!"));
+                if (Remaining > MatchStartDelayWhenAllJoined)
+                {
+                    ScheduleMatchStart(MatchStartDelayWhenAllJoined);
+                }
             }
         }
     }

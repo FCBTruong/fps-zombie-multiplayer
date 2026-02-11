@@ -17,6 +17,7 @@
 #include "Lobby/PlayerInfoManager.h"
 #include "Components/ScaleBox.h"
 #include "Components/StackBoxSlot.h"
+#include "Chat/ChatUI.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -852,5 +853,11 @@ void UPlayerUI::UpdatePlayerSlots() {
 void UPlayerUI::UpdateCrosshairCode(const FString& NewCrosshairCode) {
     if (WBP_Crosshair) {
         WBP_Crosshair->SetCrosshairCode(NewCrosshairCode);
+    }
+}
+
+void UPlayerUI::ToggleChatInput() {
+    if (WBP_Chat) {
+        WBP_Chat->ToggleChat();
     }
 }

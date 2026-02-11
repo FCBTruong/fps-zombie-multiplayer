@@ -22,6 +22,7 @@
 class UItemConfig;
 class UMinimapRadarUI;
 class UPlayerSlotUI;
+class UChatUI;
 /**
  * 
  */
@@ -31,6 +32,8 @@ class FPSDEMO_API UPlayerUI : public UUserWidget
 	GENERATED_BODY()
 
 protected:
+	UPROPERTY(meta = (BindWidget))
+	UChatUI* WBP_Chat;
 	UPROPERTY(meta = (BindWidget))
 	UWidget* MatchResultPn;
 	UPROPERTY(meta = (BindWidget))
@@ -245,4 +248,5 @@ public:
 	void UpdateHeroPhase();
 	void UpdateHeroZombieNum();
 	void UpdateCrosshairCode(const FString& NewCrosshairCode);
+	void ToggleChatInput();
 };

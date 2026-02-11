@@ -24,6 +24,7 @@ public:
 
 	UFUNCTION()
 	void CloseChat();
+	void ToggleChat();
 
 protected:
 	virtual void NativeConstruct() override;

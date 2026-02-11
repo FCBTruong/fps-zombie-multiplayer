@@ -262,6 +262,8 @@ void AMyPlayerController::SetupInputComponent()
             EnhancedInput->BindAction(IA_SCOREBOARD, ETriggerEvent::Started, this, &AMyPlayerController::ShowScoreboard);
             EnhancedInput->BindAction(IA_SCOREBOARD, ETriggerEvent::Completed, this, &AMyPlayerController::HideScoreboard);
 		}
+
+        InputComponent->BindKey(EKeys::Enter, IE_Pressed, this, &AMyPlayerController::OnToggleChatPressed);
     }
 }
 
@@ -1190,5 +1192,13 @@ void AMyPlayerController::HandleUpdateTeamScore(int32 TeamAScore, int32 TeamBSco
     if (PlayerUI)
     {
         PlayerUI->UpdateTeamScores(FirstScore, SecondScore);
+    }
+}
+
+void AMyPlayerController::OnToggleChatPressed()
+{
+    if (PlayerUI)
+    {
+        PlayerUI->ToggleChatInput();
     }
 }
