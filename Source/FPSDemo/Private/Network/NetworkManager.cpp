@@ -4,7 +4,7 @@
 #include "WebSocketsModule.h"
 #include "Async/Async.h"
 #include "Network/MyNetworkSettings.h"
-#include "Lobby/PlayerInfoManager.h"
+#include "Shared/System/PlayerInfoManager.h"
 
 void UNetworkManager::Initialize(FSubsystemCollectionBase& Collection)
 {

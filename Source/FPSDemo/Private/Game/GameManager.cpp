@@ -2,18 +2,18 @@
 
 
 #include "Game/GameManager.h"
-#include "Pickup/PickupItem.h"
-#include "Game/ShooterGameState.h"
-#include "Characters/BaseCharacter.h"
-#include "Asset/CharacterAsset.h"
-#include "Game/GlobalDataAsset.h"
+#include "Game/Items/Pickup/PickupItem.h"
+#include "Game/Framework/ShooterGameState.h"
+#include "Game/Characters/BaseCharacter.h"
+#include "Game/Data/CharacterAsset.h"
+#include "Shared/Data/GlobalDataAsset.h"
 #include "Kismet/GameplayStatics.h"
 #include "Network/DedicatedServerClient.h"
-#include "Lobby/RoomManager.h"
+#include "Modules/Lobby/RoomManager.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSessionSettings.h"
-#include "Lobby/PlayerInfoManager.h"
+#include "Shared/System/PlayerInfoManager.h"
 
 void UGameManager::Init()
 {

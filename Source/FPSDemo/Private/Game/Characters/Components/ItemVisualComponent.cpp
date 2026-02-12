@@ -1,0 +1,312 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Game/Characters/Components/ItemVisualComponent.h"
+#include "Game/Characters/Components/EquipComponent.h"
+#include "Game/GameManager.h"
+#include "Game/Characters/BaseCharacter.h"
+#include "Game/Items/Weapons/WeaponFirearm.h"
+#include "Game/Items/EquippedItem.h"
+#include "Game/Subsystems/ItemsManager.h"
+#include "Game/Characters/Components/CharCameraComponent.h"
+#include "Shared/Data/Items/FirearmConfig.h"
+#include "Game/Characters/Components/AnimationComponent.h"
+
+// Sets default values for this component's properties
+UItemVisualComponent::UItemVisualComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+	SetIsReplicatedByDefault(false);
+}
+
+void UItemVisualComponent::BeginPlay()
+{
+    Super::BeginPlay();
+	UE_LOG(LogTemp, Log, TEXT("UItemVisualComponent::BeginPlay called"));
+    CachedGM = UGameManager::Get(GetWorld());
+
+	ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
+    if (!OwnerChar)
+		return;
+	EquipComp = OwnerChar->GetEquipComponent();
+
+	AnimComp = OwnerChar->GetAnimationComponent();
+
+    EquipComp->OnActiveItemChanged.AddUObject(
+        this,
+        &UItemVisualComponent::HandleActiveItemChanged
+    );
+	CameraComp = OwnerChar->GetCharCameraComponent();
+    CameraComp->OnViewModeChanged.AddUObject(
+        this,
+        &UItemVisualComponent::OnViewModeChanged
+    );
+    // Initial visual
+    RefreshVisual(EquipComp->GetActiveItemId());
+}
+
+void UItemVisualComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    DestroyVisual();
+    Super::EndPlay(EndPlayReason);
+}
+
+bool UItemVisualComponent::ShouldSpawnVisuals() const
+{
+    const UWorld* World = GetWorld();
+    if (!World) return false;
+    return World->GetNetMode() != NM_DedicatedServer;
+}
+
+ABaseCharacter* UItemVisualComponent::GetCharacter() const
+{
+    return Cast<ABaseCharacter>(GetOwner());
+}
+
+void UItemVisualComponent::HandleActiveItemChanged(EItemId NewItemId)
+{
+	UE_LOG(LogTemp, Log, TEXT("UItemVisualComponent::HandleActiveItemChanged called with ItemId: %d"), static_cast<uint8>(NewItemId));
+    RefreshVisual(NewItemId);
+
+	// play equip animation
+    if (AnimComp) {
+        // get 
+        AnimComp->PlayEquipMontage();
+    }
+}
+
+void UItemVisualComponent::DestroyVisual()
+{
+    if (EquippedActor)
+    {
+        EquippedActor->Destroy();
+        EquippedActor = nullptr;
+    }
+}
+
+void UItemVisualComponent::RefreshVisual(EItemId NewItemId)
+{
+	UE_LOG(LogTemp, Log, TEXT("UItemVisualComponent::RefreshVisual called with ItemId: %d"), static_cast<uint8>(NewItemId));
+    if (!ShouldSpawnVisuals())
+        return;
+
+    ABaseCharacter* Character = GetCharacter();
+    if (!Character)
+        return;
+
+    // Remove old visual
+    DestroyVisual();
+
+    if (NewItemId == EItemId::NONE)
+    {
+		UE_LOG(LogTemp, Log, TEXT("UItemVisualComponent: No item equipped, skipping visual spawn."));
+        return;
+    }
+
+    const UItemConfig* Data = GetItemConfig(NewItemId);
+    if (!Data)
+        return;
+
+    FActorSpawnParameters Params;
+    Params.Owner = GetOwner();
+    Params.Instigator = Cast<APawn>(GetOwner());
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	UE_LOG(LogTemp, Log, TEXT("Spawning visual for item id: %d"), static_cast<uint8>(NewItemId));
+
+	// check if is firearm
+    if (Data->GetItemType() == EItemType::Firearm)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Item is a firearm."));
+        EquippedActor = GetWorld()->SpawnActor<AWeaponFirearm>(
+            AWeaponFirearm::StaticClass(),
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            Params
+		);
+    }
+    else
+    {
+        EquippedActor = GetWorld()->SpawnActor<AEquippedItem>(
+            AEquippedItem::StaticClass(),
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            Params
+        );
+	}
+
+    if (!EquippedActor)
+        return;
+
+    EquippedActor->SetOwner(GetOwner());
+    EquippedActor->SetInstigator(Cast<APawn>(GetOwner()));
+    EquippedActor->InitFromConfig(const_cast<UItemConfig*>(Data));
+
+	UE_LOG(LogTemp, Log, TEXT("EquippedActor spawned: %s"), *EquippedActor->GetName());
+
+    AttachToHands(Data);
+}
+
+void UItemVisualComponent::AttachToHands(const UItemConfig* Data)
+{
+    ABaseCharacter* Character = GetCharacter();
+    if (!Character || !EquippedActor || !Data)
+        return;
+
+    const bool bIsFPS = Character->IsFpsViewMode();
+    USkeletalMeshComponent* Mesh = Character->GetCurrentMesh();
+    if (!Mesh)
+        return;
+
+    // You can keep your old socket rules here:
+    FName SocketName = "ik_hand_gun";
+    if (bIsFPS)
+    {
+        SocketName = Data->SocketNameFps;
+	}
+    else {
+        SocketName = Data->SocketNameTps;
+    }
+    FVector Offset = FVector::ZeroVector;
+    FVector OffsetRotEuler = FVector::ZeroVector;
+
+    EquippedActor->AttachToComponent(
+        Mesh,
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        SocketName
+    );
+    if (bIsFPS) {
+        EquippedActor->SetActorRelativeLocation(Data->OffsetFps);
+    }
+    else {
+        EquippedActor->SetActorRelativeLocation(Data->OffsetTps);
+	}
+
+
+    if (USceneComponent* Root = EquippedActor->GetRootComponent())
+    {
+       // Root->SetRelativeLocationAndRotation(Offset, FRotator::MakeFromEuler(OffsetRotEuler));
+    }
+
+    
+    EquippedActor->SetViewFps(bIsFPS);
+}
+
+void UItemVisualComponent::OnViewModeChanged(bool bIsFPS)
+{
+    const UItemConfig* Data = EquipComp ? GetItemConfig(EquipComp->GetActiveItemId()) : nullptr;
+    if (!Data || !EquippedActor)
+        return;
+
+    // Re-attach with new socket/offset
+    AttachToHands(Data);
+}
+
+void UItemVisualComponent::OnNotifyGrabMag()
+{
+    if (!EquippedActor) return;
+
+    if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(EquippedActor))
+    {
+        ABaseCharacter* Character = GetCharacter();
+        if (!Character) return;
+
+        if (!Firearm->MagMesh) return;
+
+        Firearm->MagMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+        if (Character->IsFpsViewMode())
+        {
+            Firearm->MagMesh->AttachToComponent(Character->GetCurrentMesh(),
+                FAttachmentTransformRules::KeepWorldTransform,
+                FName("hand_l"));
+        }
+        else
+        {
+            Firearm->MagMesh->AttachToComponent(Character->GetCurrentMesh(),
+                FAttachmentTransformRules::KeepRelativeTransform,
+                FName("hand_l"));
+
+            const FVector TargetLoc = Character->GetCurrentMesh()->GetSocketLocation("hand_l");
+            Firearm->MagMesh->SetWorldLocation(TargetLoc);
+        }
+    }
+}
+
+void UItemVisualComponent::OnNotifyInsertMag()
+{
+    if (!EquippedActor) return;
+
+    if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(EquippedActor))
+    {
+        if (!Firearm->MagMesh) return;
+        Firearm->MagMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+        Firearm->AttachMagToDefault();
+    }
+}
+
+const UItemConfig* UItemVisualComponent::GetItemConfig(EItemId ItemId) const
+{
+	UItemsManager* ItemsManager = UItemsManager::Get(GetWorld());
+	return ItemsManager ? ItemsManager->GetItemById(ItemId) : nullptr;
+}
+
+
+void UItemVisualComponent::PlayFireFX(FVector TargetPoint)
+{
+	UE_LOG(LogTemp, Log, TEXT("UItemVisualComponent::PlayFireFX called with TargetPoint: %s"), *TargetPoint.ToString());
+    if (!EquippedActor)
+        return;
+
+    ABaseCharacter* Character = GetCharacter();
+    if (!Character)
+		return;
+
+    if (AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(EquippedActor))
+    {
+        FRotator ViewRot;
+        FVector OutStart;
+        Character->GetActorEyesViewPoint(OutStart, ViewRot);
+        Firearm->OnFire(TargetPoint, true, OutStart);
+    }
+    // fire montage
+	
+    if (AnimComp)
+    {
+		const UItemConfig* Data = EquippedActor->GetItemConfig();
+        // cast to firearm
+		const UFirearmConfig* FirearmData = Cast<UFirearmConfig>(Data);
+        if (FirearmData) {
+            if (FirearmData->FirearmType == EFirearmType::Rifle) {
+				AnimComp->PlayFireRifleMontage(TargetPoint, FirearmData->CharFireMontage);
+                return;
+			}
+            else {
+				AnimComp->PlayFirePistolMontage(TargetPoint);
+				return;
+            }
+        }
+	}
+}
+
+void UItemVisualComponent::PlayMeleeAttack(UAnimMontage* Anim)
+{
+    ABaseCharacter* Character = GetCharacter();
+    if (Character && AnimComp)
+    {
+		AnimComp->PlayMontage(Anim);
+    }
+}
+
+void UItemVisualComponent::HideItemVisual()
+{
+    if (EquippedActor)
+    {
+        EquippedActor->SetActorHiddenInGame(true);
+    }
+}
+
+void UItemVisualComponent::OnOwnerDead()
+{
+    DestroyVisual();
+}

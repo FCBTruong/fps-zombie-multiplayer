@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "Pickup/PickupData.h"
+#include "Game/Items/Pickup/PickupData.h"
 #include "Network/DedicatedServerClient.h"
 #include "GameManager.generated.h"
 
