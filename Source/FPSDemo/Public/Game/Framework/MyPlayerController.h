@@ -125,8 +125,8 @@ public:
     void NotifyToastMessage(const FText& Message);
 
     virtual void PawnLeavingGame() override;
-
-	int BackendUserId = -1;
+	void SetBackendUserId(int InBackendUserId) { BackendUserId = InBackendUserId; }
+	int32 GetBackendUserId() const { return BackendUserId; }
 private:
     UPROPERTY()
     TWeakObjectPtr<AActor> CurrentSpectateTarget;
@@ -171,6 +171,8 @@ private:
     bool bInputMappingAdded = false;
 	float TimeOfDeath = 0.f;
     FTimerHandle ReloadDelayHandle;
+
+    int32 BackendUserId = -1;
 private:
     UPROPERTY(Transient)
     TObjectPtr<UPlayerUI> PlayerUI;

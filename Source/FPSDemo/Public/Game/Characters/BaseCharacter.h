@@ -183,7 +183,6 @@ protected:
     float CurrentCrouchCompZ = 0.f;
     float CrouchFromZ = 0.f;
     float CrouchToZ = 0.f;
-	bool bIsPermanentDead = false;
 
     UPROPERTY()
     TObjectPtr<UAudioComponent> DefuseSpikeAudioComp;
@@ -213,6 +212,9 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_IsAiming)
     bool bIsAiming = false;
 
+    UPROPERTY(ReplicatedUsing = OnRep_IsPermanentDead)
+    bool bIsPermanentDead = false;
+
     UPROPERTY(ReplicatedUsing = OnRep_CurrentMovementState)
     EMovementState CurrentMovementState = EMovementState::Normal;
 
@@ -228,13 +230,14 @@ protected:
     FTimeline CrouchTimeline;
     FTimeline SpineKickTimeline;
     FTimerHandle HitSlowTimer;
+	FTimerHandle SpectatorViewTimer;
 protected:
     // ===== Internal Functions =====
     void OnMeleeNotify();
     void PlayFootstepSound();
     void UpdateFootstepSound(float DeltaTime);
     void PlayLandingSound();
-    void HandleDeath();
+    void OnHealthDepleted();
 	bool CanPlayFootstep() const;
 	bool IsBot() const;
     void UpdateCurrentWeapon(EItemId CurrentWeaponId);
@@ -254,6 +257,7 @@ protected:
     void BecomeHero_Internal();
     void PlayZombieSpawnEffects();
 	void UpdateNameTextRotation();
+    void DisableDeadMeshTick();
 
     UFUNCTION(BlueprintPure)
     EEquippedAnimState GetEquippedAnimState() const;
@@ -282,6 +286,8 @@ protected:
     void OnRep_SpeedMultiplier();
 	UFUNCTION()
 	void OnRep_CharacterSkin();
+    UFUNCTION()
+	void OnRep_IsPermanentDead();
 
 	// ===== Client RPC =====
     UFUNCTION(Client, Reliable)
@@ -329,13 +335,10 @@ public:
     virtual void RequestReloadPressed();
     virtual bool CanAct();
 	void Revive();
-    void ApplyRealDeath(bool bDropInventory);
+    void ApplyRealDeath(bool bDropInventory, bool bInPermanentDead = true);
 	bool IsHero() const;
 	bool IsZombie() const;
-    void SetPermanentDead(bool In) {
-		bIsPermanentDead = In;
-    }
-    bool IsPermanentDead() {
+    bool IsPermanentDead() const {
 		return bIsPermanentDead;
     }
     void PlayEffectHitReact();

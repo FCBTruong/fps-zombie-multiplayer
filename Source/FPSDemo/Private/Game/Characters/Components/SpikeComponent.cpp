@@ -12,6 +12,7 @@
 #include "Game/Characters/Components/EquipComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Game/Modes/Spike/Spike.h"
 
 USpikeComponent::USpikeComponent()
 {
@@ -300,6 +301,7 @@ void USpikeComponent::MulticastStartPlantSpike_Implementation()
     {
         Character->OnPlantSpikeStarted();
     }
+	CurrentActionState = ESpikeActionState::Planting;
 	OnUpdatePlantSpikeState.Broadcast(true);
 }
 
@@ -310,6 +312,7 @@ void USpikeComponent::MulticastStopPlantSpike_Implementation()
     {
         Character->OnPlantSpikeStopped();
     }
+    CurrentActionState = ESpikeActionState::None;
     OnUpdatePlantSpikeState.Broadcast(false);
 }
 
@@ -476,6 +479,8 @@ void USpikeComponent::MulticastStartDefuseSpike_Implementation() {
 	}
     OnUpdateDefuseSpikeState.Broadcast(true);
     Character->OnDefuseSpikeStarted();
+
+	CurrentActionState = ESpikeActionState::Defusing;
 }
 
 void USpikeComponent::MulticastStopDefuseSpike_Implementation() {
@@ -485,6 +490,7 @@ void USpikeComponent::MulticastStopDefuseSpike_Implementation() {
     }
     OnUpdateDefuseSpikeState.Broadcast(false);
     Character->OnDefuseSpikeStopped(); // Changed to OnDefuseSpikeStopped()
+    CurrentActionState = ESpikeActionState::None;
 }
 
 // callback from spike actor
@@ -493,4 +499,16 @@ void USpikeComponent::OnDefuseSucceed() {
         ActionStateComp->TrySetState(EActionState::Idle);
     }
     UnlockMovement();
+}
+
+void USpikeComponent::OnOwnerDead() {
+    if (!IsEnabled()) {
+        return;
+    }
+    if (CurrentActionState == ESpikeActionState::Planting) {
+        StopPlant_Internal();
+    }
+    else if (CurrentActionState == ESpikeActionState::Defusing) {
+        StopDefuse_Internal();
+	}
 }

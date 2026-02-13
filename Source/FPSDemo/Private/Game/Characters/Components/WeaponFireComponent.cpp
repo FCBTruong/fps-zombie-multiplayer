@@ -335,7 +335,6 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 		Params.WeaponId = CurrentFirearmConfig->Id;
 		Params.DamageTypeClass = UMyDamageType::StaticClass();
 		Params.bEnableHeadshot = true;
-		Params.HeadshotMultiplier = 4.f;
 		Params.Hit = Hit;
 
 		DamageHelpers::ApplyMyPointDamage(

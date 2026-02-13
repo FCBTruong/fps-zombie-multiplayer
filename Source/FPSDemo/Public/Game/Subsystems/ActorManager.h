@@ -4,11 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Game/Items/Pickup/PickupData.h"
 #include "ActorManager.generated.h"
 
 class ATriggerBox;
 class ATargetPoint;
 class APlayerStart;
+class APickupItem;
+class ABaseCharacter;
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewPickupItemSpawned, APickupItem*);
 
 UCLASS()
 class FPSDEMO_API AActorManager : public AActor
@@ -77,4 +82,23 @@ public:
 	AActor* GetGlobalCamera() const {
 		return GlobalCamera;
 	}
+
+	void FindAndDestroyItemNode(int32 ItemOnMapId);
+	int32 GetNextItemOnMapId();
+	APickupItem* CreatePickupActor(FPickupData Data);
+	void CleanPickupItemsOnMap();
+	APickupItem* GetPickupNode(int PickupId);
+	APickupItem* GetPickupSpike() const;
+	void RegisterPlayer(ABaseCharacter* Pawn);
+	void UnregisterPlayer(ABaseCharacter* Pawn);
+	TArray<ABaseCharacter*> GetRegisteredPlayers() const { return RegisteredPlayers; }
+	void ClearRegisteredPlayers() { RegisteredPlayers.Empty(); }
+	void SetPickupSpike(APickupItem* SpikeItem);
+
+	FOnNewPickupItemSpawned OnNewPickupItemSpawned;
+private:
+	int CurrentPickupId;
+	TMap<int32, APickupItem*> PickupItemsOnMap;
+	TArray<ABaseCharacter*> RegisteredPlayers; // for clients access
+	TWeakObjectPtr<APickupItem> PickupSpike;
 };

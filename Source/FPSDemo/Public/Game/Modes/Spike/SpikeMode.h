@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Game/Framework/ShooterGameMode.h"
-#include "Game/Framework/MyPlayerController.h"
-#include "Game/Modes/Spike/Spike.h"
 #include "SpikeMode.generated.h"
 
 class UItemConfig;
@@ -18,39 +16,42 @@ class FPSDEMO_API ASpikeMode : public AShooterGameMode
 {
 	GENERATED_BODY()
 
-protected:
-	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
-	TSubclassOf<ASpike> SpikeClass;
-
-	FTimerHandle StartRoundTimerHandle;
-	FTimerHandle SwitchSideTimerHandle;
-	FTimerHandle RoundTimerHandle;
-	void OnRoundTimeExpired();
-	virtual void AutoBuyForBots() override;
-	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
-	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, 
-		ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeatShot) override;
-	void HandlePlayerDeath(AController* DeadController);
-	void HandleNewPickupItemSpawned(APickupItem* NewPickupItem);
 public:
 	virtual void StartPlay() override;
-	virtual void StartRound() override;
-	virtual void EndRound(ETeamId WinningTeam) override;
-	virtual void EndGame(ETeamId WinningTeam) override;
+
 	void PlantSpike(FVector Location, AController* Planter);
 	bool IsSpikePlanted() const;
 	void OnSpikeDefused(AController* Defuser);
-	void SpikeExploded();
+	void NotifySpikePickedUp(ABaseCharacter* Player);
+	void OnSpikeExploded();
+
+	EMatchMode GetMatchMode() const final { return EMatchMode::Spike; }
+
 	static constexpr int32 ScoreToWin = 3; // good is 7
 	static constexpr int32 RoundToSwapSides = ScoreToWin - 1;
 	static constexpr int32 TimePerRound = 90; // seconds
-	void NotifySpikePickedUp(ABaseCharacter* Player);
 
-	virtual EMatchMode GetMatchMode() const {
-		return EMatchMode::Spike;
-	}
+protected:
+	virtual void StartRound() override;
+	virtual void EndRound(ETeamId WinningTeam) override;
+	virtual void EndGame(ETeamId WinningTeam) override;
+	virtual void AutoBuyForBots() override;
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists,
+		ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
+	TSubclassOf<ASpike> SpikeClass;
 
 private:
 	void SwapTeams();
 	void GenerateInitialWeapons();
+	void HandlePlayerDeath(AController* DeadController);
+	void HandleNewPickupItemSpawned(APickupItem* NewPickupItem);
+	UFUNCTION()
+	void OnRoundTimeExpired();
+
+	FTimerHandle SwitchSideTimerHandle;
+	FTimerHandle RoundTimerHandle;
 };

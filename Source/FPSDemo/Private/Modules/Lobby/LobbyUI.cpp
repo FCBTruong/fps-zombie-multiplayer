@@ -56,6 +56,10 @@ void ULobbyUI::NativeConstruct()
 	{
 		SelfHostBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnSelfHostClicked);
 	}
+	if (DeathMatchModeBtn)
+	{
+		DeathMatchModeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnDeathMatchModeClicked);
+	}
 	if (DedicatedServerBtn)
 	{
 		DedicatedServerBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnDedicatedServerClicked);
@@ -110,6 +114,9 @@ void ULobbyUI::NativeConstruct()
 	NetworkStatusInActiveIcon->SetVisibility(
 		bNetworkConnected ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	OfflineModeTxt->SetVisibility(
+		bNetworkConnected ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+
+	InsightDevLb->SetVisibility(
 		bNetworkConnected ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 }
 
@@ -239,11 +246,22 @@ void ULobbyUI::SetMatchMode(EMatchMode InMode)
 		InMode == EMatchMode::Spike ? LobbyUIColor::Selected : LobbyUIColor::Unselected);
 	ZombieTickIcon->SetVisibility(
 		InMode == EMatchMode::Zombie ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+	DeathMatchTickIcon->SetVisibility(
+		InMode == EMatchMode::DeathMatch ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+	SetButtonNormalColor(
+		DeathMatchModeBtn,
+		InMode == EMatchMode::DeathMatch ? LobbyUIColor::Selected : LobbyUIColor::Unselected);
 }
 
 void ULobbyUI::OnSelfHostClicked()
 {
 	CachedRoomMgr->RequestChangeHostType(true);
+}
+
+void ULobbyUI::OnDeathMatchModeClicked()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Death Match Mode Clicked"));
+	CachedRoomMgr->RequestChangeGameMode(EMatchMode::DeathMatch);
 }
 
 void ULobbyUI::OnDedicatedServerClicked()

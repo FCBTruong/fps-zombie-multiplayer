@@ -31,6 +31,7 @@
 #include "Game/Modes/Practice/PracticeGameMode.h"
 #include "Game/Subsystems/ActorManager.h"
 #include "Game/Framework/PlayerSlot.h"
+#include "Game/Modes/Spike/Spike.h"
 
 AMyPlayerController::AMyPlayerController() { 
     CheatClass = UMyCheatManager::StaticClass(); 
@@ -97,17 +98,11 @@ void AMyPlayerController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: OnPossess called"));
-
-    if (IsLocalController())
-    {
-        RebindAll();
-    }
 }
 
 
 void AMyPlayerController::OnUnPossess()
 {
-    UnbindAll();
 	Super::OnUnPossess();
 }
 
@@ -120,7 +115,22 @@ void AMyPlayerController::OnRep_Pawn()
 
     if (IsLocalController())
     {
-        RebindAll();
+		// unbind from previous character
+        if (ABaseCharacter* OldChar = CachedChar.Get())
+        {
+            UnbindCharacter(OldChar);
+            CachedChar.Reset();
+		}
+
+        if (APawn* P = GetPawn())
+        {
+            ABaseCharacter* Char = Cast<ABaseCharacter>(P);
+            if (Char)
+            {
+                CachedChar = Char;
+                BindCharacter(Char);
+            }
+		}
     }
 }
 
@@ -278,7 +288,15 @@ void AMyPlayerController::OnRep_PlayerState()
 
     if (IsLocalController())
     {
-        RebindAll();
+        if (CachedPS.IsValid()) {
+            UnbindPlayerState(CachedPS.Get());
+			CachedPS.Reset();
+        }
+        if (AMyPlayerState* PS = Cast<AMyPlayerState>(PlayerState))
+        {
+            CachedPS = PS;
+            BindPlayerState(PS);
+        }
     }
 }
 
@@ -571,13 +589,13 @@ void AMyPlayerController::ServerSpectateNextPlayer_Implementation()
 
 void AMyPlayerController::SpectateNextPlayer_Internal()
 {
-	UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal called"));
-    if (!PlayerState) return;
-	AMyPlayerState* PlayerMyState = Cast<AMyPlayerState>(PlayerState);
-	if (!PlayerMyState) return;
+    UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal called"));
+    if (!IsSpectatingState()) {
+        return;
+    }
     
 	ABaseCharacter* Char = Cast<ABaseCharacter>(CurrentSpectateTarget.Get());
-    if (Char)
+    if (IsValid(Char))
     {
         // make sure current target is still alive
         if (Char->IsDead())
@@ -611,7 +629,6 @@ void AMyPlayerController::SpectateNextPlayer_Internal()
     if (!CurrentSpectateTarget.IsValid()) {
 		AActorManager* AM = AActorManager::Get(GetWorld());
 		CurrentSpectateTarget = AM->GetGlobalCamera();
-        return;
 	}
 
 	ClientSpectateTarget(CurrentSpectateTarget.Get());
@@ -625,8 +642,10 @@ AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
 	AShooterGameState* GS = World->GetGameState<AShooterGameState>();
 	if (!GS) return nullptr;
 
+	AMyPlayerState* PS = Cast<AMyPlayerState>(PlayerState);
+	if (!PS) return nullptr;
     // Replace with your team accessors
-    auto MyTeamId = CastChecked<AMyPlayerState>(PlayerState)->GetTeamId();
+    auto MyTeamId = PS->GetTeamId();
 
     TArray<AActor*> Candidates;
     

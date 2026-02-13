@@ -16,6 +16,7 @@ void UPopupDialogUI::Setup(
     TFunction<void()> InOnCancel
 )
 {
+	Button_Cancel->SetVisibility(InOnCancel ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
     TextBlock_Message->SetText(FText::FromString(InMessage));
     OnOk = MoveTemp(InOnOk);
     OnCancel = MoveTemp(InOnCancel);

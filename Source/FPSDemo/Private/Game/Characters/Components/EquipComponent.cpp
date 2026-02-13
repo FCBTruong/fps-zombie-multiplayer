@@ -417,3 +417,16 @@ void UEquipComponent::OnEnabledChanged(bool bNowEnabled)
         }
     }
 }
+
+void UEquipComponent::UnequipCurrentItem()
+{
+    if (!IsEnabled()) {
+        return;
+    }
+    if (!GetOwner()->HasAuthority())
+        return;
+    if (ActiveItemId == EItemId::NONE)
+        return;
+    ActiveItemId = EItemId::NONE;
+	OnRep_ActiveItemId();
+}

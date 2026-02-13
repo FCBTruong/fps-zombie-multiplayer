@@ -21,7 +21,7 @@ void ADeathMatchMode::StartPlay()
 	GSInner->SetRoundEndTime(TimeEnd);
 
 	// reset players
-	ResetPlayers();
+	RestartAllPlayers();
 }
 
 void ADeathMatchMode::OnRoundTimeExpired()
@@ -31,9 +31,9 @@ void ADeathMatchMode::OnRoundTimeExpired()
 	EndGame(ETeamId::None);
 }
 
-void ADeathMatchMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeatShot)
+void ADeathMatchMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
-	Super::HandleCharacterKilled(Killer, Assists, VictimPawn, DamageCauser, bWasHeatShot);
+	Super::HandleCharacterKilled(Killer, Assists, VictimPawn, DamageCauser, bWasHeadShot);
 
 	// restart victim after 3 seconds
 	VictimPawn->ApplyRealDeath(/*bDropInventory=*/false);
@@ -61,19 +61,20 @@ void ADeathMatchMode::RestartPlayer(AController* Controller)
 	Controller->StartSpot = nullptr; // clear start spot to force choosing a new one
 	Controller->UnPossess();
 	Super::RestartPlayer(Controller);
-}
 
-void ADeathMatchMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
-{
-	if (!NewPlayer) return;
 
+	APawn* Pawn = Controller->GetPawn();
+	if (!Pawn) return;
 	AActorManager* AM = AActorManager::Get(GetWorld());
 
 	const FVector RandomLoc = AM->RandomLocationOnMap();
 	const FRotator RandomRot = FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f);
 
 	FTransform SpawnTM(RandomRot, RandomLoc);
-	// Spawns DefaultPawnClass at this transform and possesses it
-	RestartPlayerAtTransform(NewPlayer, SpawnTM);
+
+	Pawn->TeleportTo(RandomLoc, RandomRot, false, true);
+	Pawn->ForceNetUpdate();
 }
+
+
 

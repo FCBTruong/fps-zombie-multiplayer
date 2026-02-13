@@ -12,6 +12,7 @@
 #include "Game/Characters/BaseCharacter.h"
 #include "Shared/Data/Items/ArmorConfig.h"
 #include "Game/Framework/ShooterGameMode.h"
+#include "Game/Subsystems/ActorManager.h"
 
 UInventoryComponent::UInventoryComponent()
 {
@@ -29,6 +30,10 @@ void UInventoryComponent::InitBasicWeapon()
 {
     AShooterGameMode* GM = GetWorld()->GetAuthGameMode<AShooterGameMode>();
 	if (!GM) return;
+	AShooterGameState* GameState = GM->GetShooterGS();
+	if (!GameState) return;
+    if (GameState->GetMatchState() == EMyMatchState::PRE_MATCH)
+		return; // do not init in pre-match state
     auto MatchMode = GM->GetMatchMode();
     // Test function to be removed later
     MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
@@ -406,11 +411,16 @@ APickupItem* UInventoryComponent::DropItem(EItemId Id) {
         return nullptr;
     }
 
+	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
+    if (!ActorMgr) {
+        return nullptr;
+	}
+
     FPickupData Data;
     Data.Location = GetOwner()->GetActorLocation();
     Data.Amount = 1;
     Data.ItemId = Id;
-    Data.Id = UGameManager::Get(GetWorld())->GetNextItemOnMapId();
+    Data.Id = ActorMgr->GetNextItemOnMapId();
 
 	const UItemConfig* ItemConfig = UItemsManager::Get(GetWorld())->GetItemById(Id);
 	if (ItemConfig && ItemConfig->GetItemType() == EItemType::Firearm) {
@@ -423,12 +433,12 @@ APickupItem* UInventoryComponent::DropItem(EItemId Id) {
 
     RemoveItem(Id);
 
-    APickupItem* Pickup = UGameManager::Get(GetWorld())->CreatePickupActor(Data);
+    APickupItem* Pickup = ActorMgr->CreatePickupActor(Data);
 
     ABaseCharacter* Character = Cast<ABaseCharacter>(this->GetOwner());
     if (Pickup)
     {
-        Pickup->PlayerDropInfo(Character);
+        Pickup->RecordDropInfo(Character);
     }
 	Pickup->SetIsActive(true);
 

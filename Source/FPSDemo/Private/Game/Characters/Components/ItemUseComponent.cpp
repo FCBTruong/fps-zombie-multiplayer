@@ -34,11 +34,18 @@ void UItemUseComponent::PrimaryPressed()
 {
 	UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::PrimaryPressed called"));
     if (!IsEnabled()) {
+		UE_LOG(LogTemp, Log, TEXT("UItemUseComponent: Not Enabled"));
         return;
     }
-    if (!OwnerChar || !EquipComp) return;
+    if (!OwnerChar || !EquipComp) {
+		UE_LOG(LogTemp, Log, TEXT("UItemUseComponent: No OwnerChar or EquipComp"));
+        return;
+    }
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();
-    if (!Item) return;
+    if (!Item) {
+		UE_LOG(LogTemp, Log, TEXT("UItemUseComponent: No Active Item"));
+        return;
+    }
 
 	UE_LOG(LogTemp, Log, TEXT("UItemUseComponent:Active Item ID: %d"), static_cast<int32>(Item->Id)); 
 

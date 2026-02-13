@@ -43,12 +43,12 @@ public:
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 		bool bFromSweep, const FHitResult& SweepResult);
 
-	FORCEINLINE FPickupData GetData() const { return Data; }
-	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
+	FPickupData GetData() const { return Data; }
+	UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
 	FString GetItemName() const;
 
 	FPickupData GetPickupData() const { return Data; }
-	void PlayerDropInfo(ABaseCharacter* Character);
+	void RecordDropInfo(ABaseCharacter* Character);
 	bool IsJustDropped(ABaseCharacter* Character) const;
 	void SetIsActive(bool bNewIsActive) { bIsActive = bNewIsActive; }
 };

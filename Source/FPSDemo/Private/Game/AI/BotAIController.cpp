@@ -91,14 +91,12 @@ void ABotAIController::OnTargetPerceptionUpdated(
 	
 }
 
-
 void ABotAIController::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 
     if (!GetPawn()) return;
 }
-
 
 void ABotAIController::ResetAIState()
 {
@@ -116,7 +114,6 @@ void ABotAIController::ResetAIState()
         PerceptionComp->ForgetAll();
     }
 }
-
 
 void ABotAIController::StartPlantingSpike() {
     ABaseCharacter* MyChar = GetBotChar();
@@ -216,13 +213,9 @@ ABaseCharacter* ABotAIController::GetTargetActor() const
 void ABotAIController::SetMatchMode(EMatchMode NewMode)
 {
     CurrentMatchMode = NewMode;
-
-    UE_LOG(LogTemp, Warning, TEXT("BotAIController: SetMatchMode"));
-
     UBlackboardComponent* BB = GetBlackboardComponent();
     if (BB)
     {
-        UE_LOG(LogTemp, Warning, TEXT("BotAIController: BBB OK"));
         Blackboard->SetValueAsEnum(
             BotBBKeys::MatchMode,
             static_cast<uint8>(NewMode)
@@ -423,11 +416,9 @@ void ABotAIController::SetCanShootTrueDelayed()
 void ABotAIController::SetMatchState(EMyMatchState NewState)
 {
     CurrentMatchState = NewState;
-    UE_LOG(LogTemp, Warning, TEXT("BotAIController: SetMatchState"));
     UBlackboardComponent* BB = GetBlackboardComponent();
     if (BB)
     {
-        UE_LOG(LogTemp, Warning, TEXT("BotAIController: BBB OK"));
         Blackboard->SetValueAsEnum(
             BotBBKeys::MatchState,
             static_cast<uint8>(NewState)

@@ -3,36 +3,51 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameMode.h"
-#include "Game/AI/BotAIController.h"
+#include "GameFramework/GameModeBase.h"
 #include "Game/AI/BotStateManager.h"
-#include "Modules/Lobby/RoomData.h"
 #include "ShooterGameMode.generated.h"
 
 class UItemConfig;
 class AShooterGameState;
 class ABaseCharacter;
 class APlayerSlot;
+class ABotAIController;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnCharacterDead, ABaseCharacter*);
 /**
  * 
  */
 UCLASS()
-class FPSDEMO_API AShooterGameMode : public AGameMode
+class FPSDEMO_API AShooterGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
 	AShooterGameMode();
+	virtual bool CheckAllTeamDead(ETeamId TeamId) const;
+	virtual void AutoBuyForBots();
+	virtual void SavePlayersGunsForNextRound();
+	AShooterGameState* GetShooterGS() const;
+	virtual void RegisterCorpse(AActor* Corpse);
+	virtual void CleanupCorpses();
+	virtual EMatchMode GetMatchMode() const {
+		return EMatchMode::None;
+	}
+	virtual bool IsDamageAllowed(AController* Killer, AController* Victim) const;
+	virtual void HandleCharacterKilled(class AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
+
+	// Delegates
+	FOnCharacterDead OnCharacterDead;
+protected:
+	virtual void RestartAllPlayers();
+	virtual ABotAIController* SpawnBot(APlayerSlot* Slot);
 	virtual void InitGame(
 		const FString& MapName,
 		const FString& Options,
 		FString& ErrorMessage) override;
 	virtual void InitGameState() override;
 	virtual void StartPlay() override;
-	virtual void StartMatch() override;
+	virtual void StartMatch();
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void HandleCharacterKilled(class AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 	virtual void RestartPlayer(AController* NewPlayer) override;
@@ -49,50 +64,34 @@ public:
 		const FUniqueNetIdRepl& UniqueId,
 		FString& ErrorMessage) override;
 	virtual void Logout(AController* Exiting) override;
-	virtual void ScheduleMatchStart(float DelaySeconds);
+	virtual void ScheduleMatchStart(int DelaySeconds);
 	virtual void StartMatchFromCountdown();
-	virtual void ResetPlayers();
-	virtual ABotAIController* SpawnBot(APlayerSlot* Slot);
-	virtual bool CheckAllTeamDead(ETeamId TeamId);
-	virtual void AutoBuyForBots();
-	virtual void SavePlayersGunsForNextRound();
-	AShooterGameState* GetShooterGS() const;
-	virtual void RegisterCorpse(AActor* Corpse);
-	virtual void CleanupCorpses();
-	virtual EMatchMode GetMatchMode() const {
-		return EMatchMode::None;
-	}
-	virtual bool IsDamageAllowed(AController* Killer, AController* Victim) const;
-
-	FOnCharacterDead OnCharacterDead;
-protected:
     virtual void PostLogin(APlayerController* NewPlayer) override;
-	virtual void HandleMatchHasStarted() override;
 	virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform) override;
 
 	virtual void StartRound();
 	virtual void EndRound(ETeamId WinningTeam);
 	virtual void EndGame(ETeamId WinningTeam);
 	void TravelToLobby();
+	UFUNCTION()
+	void StartRoundDelayed();
+	virtual FTransform GetSpawnTransformForSlot(const APlayerSlot& Slot);
+	bool AreAllPlayersConnected() const;
 
-	FTimerHandle RoundStartTimer;
 	bool bRoundInProgress = false;
+	bool bRoundStarted = false;
+	bool bMatchStarted = false;
+	int MatchStartDelayDefault = 15;
+	int MatchStartDelayWhenAllJoined = 3;
 	TUniquePtr<BotStateManager> BotManager;
-
 	UPROPERTY()
 	TArray<TWeakObjectPtr<AActor>> Corpses;
 
-	bool bRoundStarted = false;
-	int RoomId = 0;
-
+	// Timers
 	FTimerHandle StartRoundTimerHandle;
-	UFUNCTION()
-	void StartRoundDelayed();
-
-	virtual FTransform GetSpawnTransformForSlot(const APlayerSlot& Slot);
-	AShooterGameState* CachedGS;
-
+	FTimerHandle RoundStartTimer;
 	FTimerHandle MatchStartCountdownHandle;
-	float MatchStartDelayDefault = 15.f;
-	float MatchStartDelayWhenAllJoined = 3.f;
+	bool bAllowFriendlyFire = true;
+
+	AShooterGameState* CachedGS;
 };

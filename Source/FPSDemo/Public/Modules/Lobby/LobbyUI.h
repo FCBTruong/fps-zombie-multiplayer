@@ -37,6 +37,8 @@ public:
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* InsightDevLb;
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* CreateRoomBtn;
@@ -72,6 +74,9 @@ protected:
 	UButton* BombModeBtn;
 
 	UPROPERTY(meta = (BindWidget))
+	UButton* DeathMatchModeBtn;
+
+	UPROPERTY(meta = (BindWidget))
 	UButton* SelfHostBtn;
 
 	UPROPERTY(meta = (BindWidget))
@@ -94,6 +99,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* SelfHostTickIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	UWidget* DeathMatchTickIcon;
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* DedicatedTickIcon;
@@ -123,6 +131,8 @@ private:
 	void OnZombieModeClicked();
 	UFUNCTION()
 	void OnBombModeClicked();
+	UFUNCTION()
+	void OnDeathMatchModeClicked();
 	UFUNCTION()
 	void OnSelfHostClicked();
 	UFUNCTION()

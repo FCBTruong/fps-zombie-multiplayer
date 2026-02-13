@@ -9,7 +9,6 @@
 #include "Game/UI/PlayerUI.h"
 #include "Kismet/GameplayStatics.h"
 
-
 void UMyCheatManager::Live() {
 	UE_LOG(LogTemp, Warning, TEXT("CheatManager: Live called"));
     APlayerController* PC = GetOuterAPlayerController();

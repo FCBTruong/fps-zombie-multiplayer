@@ -59,6 +59,7 @@
 #include "Game/Modes/Zombie/ZombieMode.h"
 #include "Game/Modes/Spike/Spike.h"
 #include "Components/TextRenderComponent.h"
+#include "Game/Subsystems/ActorManager.h"
 
 const FVector ABaseCharacter::TPSMeshRelLoc(0.f, 0.f, -88.f);
 const FRotator ABaseCharacter::TPSMeshRelRot(0.f, -90.f, 0.f);
@@ -169,8 +170,13 @@ void ABaseCharacter::BeginPlay()
         UE_LOG(LogTemp, Warning, TEXT("GameManager is null in ABaseCharacter::BeginPlay"));
         return;
     }
+	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
+    if (!ActorMgr) {
+        UE_LOG(LogTemp, Warning, TEXT("ActorManager instance is null in ABaseCharacter::BeginPlay"));
+        return;
+    }
     CachedCharacterAsset = GameManager->CharacterAsset.Get();
-    GameManager->RegisterPlayer(this);
+    ActorMgr->RegisterPlayer(this);
 
 	// setup, delegate bindings, etc.
 	BindDelegates();
@@ -210,6 +216,19 @@ void ABaseCharacter::BeginPlay()
 	}
 }
 
+void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+
+    if (AActorManager* GM = AActorManager::Get(GetWorld()))
+    {
+        GM->UnregisterPlayer(this);
+    }
+
+    // clear timers
+    GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+}
+
 void ABaseCharacter::BindDelegates() { 
     if (EquipComp) {
         EquipComp->OnActiveItemChanged.AddUObject(
@@ -232,7 +251,7 @@ void ABaseCharacter::BindDelegates() {
 
     if (HealthComp)
     {
-        HealthComp->OnDeath.AddUObject(this, &ABaseCharacter::HandleDeath);
+        HealthComp->OnDeath.AddUObject(this, &ABaseCharacter::OnHealthDepleted);
     }
     if (RoleComp)
     {
@@ -468,6 +487,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     DOREPLIFETIME(ABaseCharacter, bIsAiming);
 	DOREPLIFETIME(ABaseCharacter, SpeedMultiplier);
 	DOREPLIFETIME(ABaseCharacter, CharacterSkin);
+	DOREPLIFETIME(ABaseCharacter, bIsPermanentDead);
     DOREPLIFETIME_CONDITION(
         ABaseCharacter,
         CurrentMovementState,
@@ -584,7 +604,7 @@ void ABaseCharacter::UpdateMaxWalkSpeed() {
     else {
         Speed = NORMAL_WALK_SPEED;
 		// sub weight penalty
-        const UItemConfig* Config = EquipComp->GetActiveItemConfig();
+        const UItemConfig* Config = EquipComp ? EquipComp->GetActiveItemConfig() : nullptr;
         if (Config) {
             Speed -= Config->Weight;
         }
@@ -626,13 +646,17 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         return 0.f; // already dead
 	}
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-    
-    UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamageDEBUG: %f"), ActualDamage);
+  
     const FArmorState& Armor = InventoryComp->GetArmorState();
     if (Armor.ArmorPoints > 0)
     {
         float DamageToHealth = ActualDamage * Armor.ArmorRatio;
         float DamageToArmor = (ActualDamage - DamageToHealth) * Armor.ArmorEfficiency;
+
+        const float ArmorRandMin = 0.9f;
+        const float ArmorRandMax = 1.1f;
+        const float ArmorRandMul = FMath::FRandRange(ArmorRandMin, ArmorRandMax);
+        DamageToArmor *= ArmorRandMul;
 
 		int32 NewArmorPoints = Armor.ArmorPoints;
         if (DamageToArmor >= Armor.ArmorPoints)
@@ -745,8 +769,8 @@ void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotify
 	}
 }
 
-// This function called on server when health reaches zero
-void ABaseCharacter::HandleDeath()
+// When health reaches zero, soldier -> become zombie
+void ABaseCharacter::OnHealthDepleted()
 {
     // Play animation, ragdoll, notify game mode, etc.
 	UE_LOG(LogTemp, Warning, TEXT("Character has died."));
@@ -769,10 +793,20 @@ void ABaseCharacter::HandleDeath()
 }
 
 // server function to apply death effects
-void ABaseCharacter::ApplyRealDeath(bool bDropInventory)
+void ABaseCharacter::ApplyRealDeath(bool bDropInventory, bool bInPermanentDead)
 {
     GetCharacterMovement()->StopMovementImmediately();
     GetCharacterMovement()->DisableMovement();
+
+    if (SpikeComp && SpikeComp->IsEnabled()) {
+		SpikeComp->OnOwnerDead();
+    }
+
+    // disable action state
+    if (ActionStateComp)
+    {
+		ActionStateComp->ForceSetState(EActionState::Disabled);
+	}
 
     if (AAIController* AI = Cast<AAIController>(GetController()))
     {
@@ -786,26 +820,35 @@ void ABaseCharacter::ApplyRealDeath(bool bDropInventory)
     {
         InventoryComp->DropAllItems();
     }
+    if (EquipComp)
+    {
+        EquipComp->UnequipCurrentItem();
+	}
 
-    MulticastCharacterDeath(); // NetMulticast trong Character
+    MulticastCharacterDeath(); 
+
+    DisableDeadMeshTick();
+    if (bIsPermanentDead != bInPermanentDead) {
+        bIsPermanentDead = bInPermanentDead;
+        OnRep_IsPermanentDead();
+    }
 }
 
 void ABaseCharacter::MulticastCharacterDeath_Implementation()
 {
-    // hide visual
-    if (ItemVisualComp) {
-        ItemVisualComp->OnOwnerDead();
-    }
-
 	// log server or client
 	UE_LOG(LogTemp, Warning, TEXT("MulticastPlayerDeath called on %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"));
-    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-    GetMesh()->SetSimulatePhysics(true);
-    GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-
     if (NameText) {
         NameText->SetVisibility(false);
     }
+    UCapsuleComponent* Capsule = GetCapsuleComponent();
+    USkeletalMeshComponent* SkelMesh = GetMesh();
+    if (!Capsule || !SkelMesh)
+        return;
+
+    Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    SkelMesh->SetCollisionProfileName(TEXT("Ragdoll"));
+    SkelMesh->SetSimulatePhysics(true);
 
     // if is hero, play sound hero dead
     if (GetCharacterRole() == ECharacterRole::Hero) {
@@ -846,17 +889,18 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
         const FVector CamLoc = CameraTps->GetComponentLocation();
         const FRotator CamRot = CameraTps->GetComponentRotation();
 
+        // request view
         TWeakObjectPtr<AMyPlayerController> WeakPC(MyPC);
 
-        FTimerHandle Handle;
+		GetWorld()->GetTimerManager().ClearTimer(SpectatorViewTimer);
         GetWorld()->GetTimerManager().SetTimer(
-            Handle,
+            SpectatorViewTimer,
             [WeakPC, this]()
             {
                 if (!WeakPC.IsValid()) return;
 
                 if (WeakPC->GetViewTarget() != this) {
-					// already switched view, maybe by user
+                    // already switched view, maybe by user
                     return;
                 }
 
@@ -1082,16 +1126,6 @@ void ABaseCharacter::PlayLandingSound()
     if (AudioComp) {
         AudioComp->PlayLanding();
         return;
-    }
-}
-
-void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    Super::EndPlay(EndPlayReason);
-    
-    if (UGameManager* GM = UGameManager::Get(GetWorld()))
-    {
-        GM->UnregisterPlayer(this);
     }
 }
 
@@ -1691,7 +1725,7 @@ void ABaseCharacter::BecomeHero_Internal() {
     AZombieMode* ZM = GetWorld()->GetAuthGameMode<AZombieMode>();
     if (ZM)
     {
-        ZM->BecomeHero(this->Controller);
+        ZM->BecomeHero(this);
     }
 }
 
@@ -1763,6 +1797,16 @@ void ABaseCharacter::Revive()
             Brain->StartLogic();
         }
     }
+
+    if (ActionStateComp)
+    {
+        ActionStateComp->ForceSetState(EActionState::Idle);
+    }
+
+    if (EquipComp)
+    {
+        EquipComp->AutoSelectBestWeapon();
+	}
 }
 
 void ABaseCharacter::PlayZombieSpawnEffects() {
@@ -1956,7 +2000,6 @@ void ABaseCharacter::PlayEffectHitReact() {
 
 void ABaseCharacter::OnSpineKickUpdate(float Value)
 {
-    UE_LOG(LogTemp, Warning, TEXT("SpineKickUpdate: %f"), Value);
     SpineKickAlpha = Value;
 
     float CamKickRawDeg = 1.0f;
@@ -1997,4 +2040,31 @@ void ABaseCharacter::SetCharacterSkin(int32 NewSkin) {
     }
     CharacterSkin = NewSkin;
     OnRep_CharacterSkin();
+}
+
+void ABaseCharacter::OnRep_IsPermanentDead() {
+    if (!IsPermanentDead())
+        return;
+    UCapsuleComponent* Capsule = GetCapsuleComponent();
+    USkeletalMeshComponent* SkelMesh = GetMesh();
+    if (!Capsule || !SkelMesh)
+        return;
+
+    Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    SkelMesh->SetCollisionProfileName(TEXT("Ragdoll"));
+    SkelMesh->SetSimulatePhysics(true);
+}
+
+void ABaseCharacter::DisableDeadMeshTick()
+{
+    //USkeletalMeshComponent* SkelMesh = GetMesh();
+    //if (!SkelMesh) return;
+
+    //// Stop anim evaluation to save CPU
+    //SkelMesh->bPauseAnims = true;
+    //SkelMesh->SetComponentTickEnabled(false);
+
+    //// Disable expensive always-tick mode
+    //SkelMesh->VisibilityBasedAnimTickOption =
+    //    EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 }

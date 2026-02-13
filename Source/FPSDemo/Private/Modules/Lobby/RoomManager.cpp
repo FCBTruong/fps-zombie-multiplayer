@@ -6,6 +6,7 @@
 #include "Shared/System/PlayerInfoManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Game/GameManager.h"
+#include "Game/Data/MatchInfo.h"
 
 void URoomManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -350,8 +351,22 @@ void URoomManager::RequestStartGame()
     }
     else {
 		UGameManager* GameMgr = UGameManager::Get(GetWorld());
+
+		// build match info
+		FMatchInfo MatchInfo;
+		MatchInfo.Mode = CurrentRoomData.Mode;
+		MatchInfo.Players.Empty();
+        for (const FPlayerRoomInfo& PlayerRoomInfo : CurrentRoomData.Players) { 
+            FPlayerMatchInfo PlayerMatchInfo;
+            PlayerMatchInfo.PlayerId = PlayerRoomInfo.PlayerId;
+            PlayerMatchInfo.PlayerName = PlayerRoomInfo.PlayerName;
+			PlayerMatchInfo.CrosshairCode = PlayerRoomInfo.CrosshairCode;
+			PlayerMatchInfo.bIsBot = PlayerRoomInfo.bIsBot;
+            PlayerMatchInfo.Avatar = PlayerRoomInfo.Avatar;
+			MatchInfo.Players.Add(PlayerMatchInfo);
+        }
         if (GameMgr) {
-            GameMgr->StartMatch();
+            GameMgr->StartMatch(MatchInfo);
         }
     }
 }

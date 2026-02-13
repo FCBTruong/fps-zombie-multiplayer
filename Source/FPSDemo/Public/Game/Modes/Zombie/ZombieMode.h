@@ -13,16 +13,23 @@ UCLASS()
 class FPSDEMO_API AZombieMode : public AShooterGameMode
 {
 	GENERATED_BODY()
-	
-protected:
+
+public:
 	virtual void StartPlay() override;
+	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	EMatchMode GetMatchMode() const final { return EMatchMode::Zombie; }
+	void BecomeHero(ABaseCharacter* Character);
+
+protected:
 	virtual void StartRound() override;
 	virtual void EndRound(ETeamId WinningTeam) override;
 	virtual void EndGame(ETeamId WinningTeam) override;
-	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer);
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+
+private:
 	void RandomZombie();
 	void EnterFightState();
-	void BecomeZombie(AController* Controller);
+	void BecomeZombie(ABaseCharacter* Char);
 	void ReviveZombie(ABaseCharacter* ZombieCharacter);
 	void HandleHumanKilled(ABaseCharacter* VictimPawn);
 	void HandleZombieKilled(ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser);
@@ -33,18 +40,14 @@ protected:
 	void StartSpectating(ABaseCharacter* VictimPawn);
 	void SpawnAirdropCrate();
 	void HandleAirdropClaimed(class AAirdropCrate* AirdropCrate, ABaseCharacter* Character);
-	AController* ChooseZombieController() const;
+	ABaseCharacter* ChooseZombie() const;
 	void CheckAndSpawnAirdropCrate();
 	bool ShouldEnterHeroPhase(int32 TotalPlayers, int32 AliveSoldiers) const;
 
 	FTimerHandle BuyingTimerHandle;
 	FTimerHandle FightStateTimerHandle;
-	FTimerHandle StartRoundTimerHandle;
 	FTimerHandle AirdropCheckTimer;
-public:
-	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
-	virtual EMatchMode GetMatchMode() const {
-		return EMatchMode::Zombie;
-	}
-	void BecomeHero(AController* Controller);
+
+	const int RoundProgressTime = 180; // seconds - 3 minutes
+	const float DelayBeforeNewRound = 3.f;
 };

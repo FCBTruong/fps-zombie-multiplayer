@@ -143,10 +143,6 @@ void AShooterGameState::OnRep_Score()
 
 void AShooterGameState::OnRep_RoundEndTime()
 {
-    // You can add any client-side logic here that needs to respond to RoundEndTime changes
-    if (RoundEndTime < 0) {
-        //return;
-	}
 	OnUpdateRoundTime.Broadcast(RoundEndTime);
 }
 
@@ -233,11 +229,31 @@ void AShooterGameState::Multicast_GameResult_Implementation(ETeamId WinningTeam)
 
 	// back to lobby after 5 seconds
 	FTimerHandle TimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this]() {
-        if (AGameModeBase* GM = GetWorld()->GetAuthGameMode<AGameModeBase>()) {
-            GM->ReturnToMainMenuHost();
-        }
-		}, 5.f, false);
+    TWeakObjectPtr<AShooterGameState> WeakThis(this);
+
+    GetWorld()->GetTimerManager().SetTimer(
+        TimerHandle,
+        [WeakThis]()
+        {
+            if (!WeakThis.IsValid())
+            {
+                return;
+            }
+
+            UWorld* World = WeakThis->GetWorld();
+            if (!World)
+            {
+                return;
+            }
+
+            if (AGameModeBase* GM = World->GetAuthGameMode<AGameModeBase>())
+            {
+                GM->ReturnToMainMenuHost();
+            }
+        },
+        5.f,
+        false
+    );
 }
 
 void AShooterGameState::Multicast_SwitchSide_Implementation()
@@ -344,7 +360,7 @@ void AShooterGameState::OnRep_RemainingZombieCount()
     OnUpdateHeroZombieCount.Broadcast();
 }
 
-APlayerSlot* AShooterGameState::GetPlayerSlot(int32 PlayerId) {
+APlayerSlot* AShooterGameState::GetPlayerSlot(int32 PlayerId) const {
     for (APlayerSlot* Slot : Slots) {
         if (Slot->GetBackendUserId() == PlayerId) {
             return Slot;
@@ -405,12 +421,11 @@ bool AShooterGameState::AreSlotsReady() const
 }
 
 void AShooterGameState::SetRoundRemainingTime(int TimeRemaining) {
-    int TimeEnd = GetWorld()->GetTimeSeconds() + TimeRemaining;
+    int TimeEnd = FMath::CeilToInt(GetWorld()->GetTimeSeconds() + TimeRemaining);
 	SetRoundEndTime(TimeEnd);
 }
 
 void AShooterGameState::SetRoundEndTime(int TimeEnd) {
-    if (!HasAuthority()) return;
     RoundEndTime = TimeEnd;
     OnRep_RoundEndTime(); // apply immediately on server too 
 }
@@ -427,4 +442,28 @@ void AShooterGameState::SetRemainingHeroCount(int NewCount) {
 void AShooterGameState::SetRemainingZombieCount(int NewCount) {
     RemainingZombieCount = NewCount;
 	OnRep_RemainingZombieCount(); // apply immediately on server too
+}
+
+void AShooterGameState::SetTeamAScore(int NewScore) {
+    if (!HasAuthority()) return;
+    TeamAScore = NewScore;
+    OnRep_Score(); // apply immediately on server too 
+}
+
+void AShooterGameState::SetTeamBScore(int NewScore) {
+    if (!HasAuthority()) return;
+    TeamBScore = NewScore;
+    OnRep_Score(); // apply immediately on server too 
+}
+
+void AShooterGameState::SetCurrentRound(int NewRound) {
+    if (!HasAuthority()) return;
+    CurrentRound = NewRound;
+    OnRep_CurrentRound(); // apply immediately on server too 
+}
+
+void AShooterGameState::SetPlantedSpike(ASpike* NewSpike) {
+    if (!HasAuthority()) return;
+    PlantedSpike = NewSpike;
+    OnRep_Spike(); // apply immediately on server too 
 }

@@ -90,7 +90,7 @@ void DedicatedServerClient::NotifyFinish(
     SendJsonRequest(TEXT("/ds/match/finish"), TEXT("POST"), ResultJson, MoveTemp(Callback));
 }
 
-bool DedicatedServerClient::ParseMatchInfo(const FString& JsonString, FRoomData& OutMatchInfo)
+bool DedicatedServerClient::ParseMatchInfo(const FString& JsonString, FMatchInfo& OutMatchInfo)
 {
     TSharedPtr<FJsonObject> RootObj;
     const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
@@ -117,12 +117,13 @@ bool DedicatedServerClient::ParseMatchInfo(const FString& JsonString, FRoomData&
                 continue;
             }
 
-            FPlayerRoomInfo Slot;
+            FPlayerMatchInfo Slot;
             Slot.PlayerId = PlayerObj->GetIntegerField(TEXT("userId"));
 
             // Use TryGet... to avoid crashes if fields are missing
             PlayerObj->TryGetStringField(TEXT("playerName"), Slot.PlayerName);
             PlayerObj->TryGetStringField(TEXT("avatar"), Slot.Avatar);
+			PlayerObj->TryGetStringField(TEXT("crosshairCode"), Slot.CrosshairCode);
 
             bool bBot = false;
             if (PlayerObj->TryGetBoolField(TEXT("isBot"), bBot))

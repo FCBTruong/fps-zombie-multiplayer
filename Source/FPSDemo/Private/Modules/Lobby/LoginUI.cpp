@@ -46,6 +46,7 @@ void ULoginUI::TryLogin()
 	Login.set_guest_id(TCHAR_TO_UTF8(*PlayerInfoMgr->GetGuestId()));
 	Login.set_player_name(TCHAR_TO_UTF8(*PlayerInfoMgr->GetPlayerName()));
 	Login.set_avatar(TCHAR_TO_UTF8(*PlayerInfoMgr->GetAvatar()));
+	Login.set_crosshair_code(TCHAR_TO_UTF8(*PlayerInfoMgr->GetCrosshairCode()));
 
 	UE_LOG(LogTemp, Warning, TEXT("UNetworkManager: Sending packet login"));
 	NetworkManager->SendPacket(ECmdId::LOGIN, Login);

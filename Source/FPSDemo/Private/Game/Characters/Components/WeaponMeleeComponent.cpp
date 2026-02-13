@@ -39,7 +39,10 @@ void UWeaponMeleeComponent::BeginPlay()
 void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 {
 	if (!IsEnabled())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RequestMeleeAttack called but component is disabled"));
 		return;
+	}
 
 	UE_LOG(LogTemp, Log, TEXT("RequestMeleeAttack called with AttackIndex: %d"), AttackIndex);
 	if (!Character || !Character->IsAlive())
@@ -156,6 +159,10 @@ void UWeaponMeleeComponent::MulticastPlayMelee_Implementation(int32 AttackIndex)
 void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 {
 	UE_LOG(LogTemp, Log, TEXT("PerformMeleeTrace called for AttackIndex: %d"), AttackIndex);
+	if (!MeleeConfig) {
+		UE_LOG(LogTemp, Warning, TEXT("PerformMeleeTrace: MeleeConfig is null"));
+		return;
+	}
 
 	TArray<FHitResult> Hits;
 	if (!DoMeleeSweepMulti(Hits, MeleeRange, MeleeRadius))
@@ -193,7 +200,6 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 		Params.WeaponId = MeleeConfig->Id;
 		Params.DamageTypeClass = UMyDamageType::StaticClass();
 		Params.bEnableHeadshot = true;
-		Params.HeadshotMultiplier = 4.f;
 		Params.Hit = Hit;
 
 		// log damage

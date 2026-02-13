@@ -21,6 +21,11 @@ public:
 	// Sets default values for this actor's properties
 	AEquippedItem();
 
+	virtual void InitFromConfig(UItemConfig* InConfig);
+	const UItemConfig* GetItemConfig() const { return Config; }
+	UMeshComponent* GetMainMesh() const;
+	virtual void SetViewFps(bool bIsFps);
+
 protected:
 	bool bIsFpsView;
 
@@ -38,15 +43,7 @@ protected:
 
 	EActiveMesh ActiveMesh = EActiveMesh::None;
 
-
 	virtual void SetActiveMeshSkeletal(USkeletalMesh* InMesh);
 	virtual void SetActiveMeshStatic(UStaticMesh* InMesh);
 	virtual void ApplyConfig();
-public:	
-	virtual void InitFromConfig(UItemConfig* InConfig);
-	const UItemConfig* GetItemConfig() const { return Config; }
-
-	UMeshComponent* GetMainMesh() const;
-
-	virtual void SetViewFps(bool bIsFps);
 };

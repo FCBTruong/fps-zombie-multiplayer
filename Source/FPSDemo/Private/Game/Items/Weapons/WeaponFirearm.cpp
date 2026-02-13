@@ -85,11 +85,12 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 	Bullet->InitFromData(FC->BulletData, TargetPoint);
 
 	if (FC->BulletTrailNS) {
+		FVector TrailStart = MuzzleLocation + (TargetPoint - MuzzleLocation).GetSafeNormal() * 20.f;
 		UNiagaraComponent* Trail =
 			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 				GetWorld(),                               // World
 				FC->BulletTrailNS,           // Niagara System
-				MuzzleLocation,                         // Location (Start)
+				TrailStart,                         // Location (Start)
 				FRotator::ZeroRotator,
 				FVector::OneVector,
 				true,   // AutoDestroy
@@ -99,7 +100,7 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		if (!Trail) return;
 
 		// log start and end points
-		Trail->SetVectorParameter(TEXT("MuzzlePosition"), MuzzleLocation);
+		Trail->SetVectorParameter(TEXT("MuzzlePosition"), TrailStart);
 		TArray<FVector> ImpactPositions;
 		ImpactPositions.Add(TargetPoint);
 

@@ -10,6 +10,7 @@
 #include "Game/Characters/Components/EquipComponent.h"
 #include "Shared/Data/GlobalDataAsset.h"
 #include <Kismet/GameplayStatics.h>
+#include "Game/Subsystems/ActorManager.h"
 
 // Sets default values for this component's properties
 UPickupComponent::UPickupComponent()
@@ -58,11 +59,7 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 		UE_LOG(LogTemp, Warning, TEXT("PickupItem called with null Item"));
 		return;
 	}
-	if (!GMR)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("GameManager subsystem not found"));
-		return;
-	}
+	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
 
 	UInventoryComponent* InventoryComp = OwnerCharacter->GetInventoryComponent();
 
@@ -85,7 +82,7 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
     bool Added = InventoryComp->AddItemFromPickup(PickupData);
 	UE_LOG(LogTemp, Warning, TEXT("PickupItem: Added = %s"), Added ? TEXT("true") : TEXT("false"));
 	if (Added) {
-		GMR->FindAndDestroyItemNode(PickupData.Id);
+		ActorMgr->FindAndDestroyItemNode(PickupData.Id);
 
 		// check if is spike, need to tell game mode
 		if (PickupData.ItemId == EItemId::SPIKE) {

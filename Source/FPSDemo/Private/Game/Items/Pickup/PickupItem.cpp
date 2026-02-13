@@ -8,6 +8,7 @@
 #include "Game/Characters/Components/PickupComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Shared/Data/Items/ItemConfig.h"
+#include "Game/Subsystems/ActorManager.h"
 
 // Sets default values
 APickupItem::APickupItem()
@@ -67,10 +68,10 @@ void APickupItem::OnLoadData(){
 	// refactor later, set spike reference
 	if (Data.ItemId == EItemId::SPIKE)
 	{
-		UGameManager* GMR = UGameManager::Get(GetWorld());
-		if (GMR)
+		AActorManager* ActorMgr = AActorManager::Get(GetWorld());
+		if (ActorMgr)
 		{
-			GMR->SetPickupSpike(this);
+			ActorMgr->SetPickupSpike(this);
 		}
 	}
 }
@@ -146,11 +147,10 @@ void APickupItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(APickupItem, Data);
 }
 
-void APickupItem::PlayerDropInfo(ABaseCharacter* Character)
+void APickupItem::RecordDropInfo(ABaseCharacter* Character)
 {
 	if (!Character) return;
 	// Record the time of drop
 	LastDropTimeMs = FPlatformTime::Seconds() * 1000.0;
 	LastOwner = Character;
-	// Optionally, you can add logic here to prevent immediate re-pickup by the dropping player
 }

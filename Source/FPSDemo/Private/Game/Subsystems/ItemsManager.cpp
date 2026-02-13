@@ -13,14 +13,11 @@ const UItemConfig* UItemsManager::GetItemById(EItemId Id) const
     return nullptr;
 }
 
-
 void UItemsManager::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 
-
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-
     TArray<FAssetData> AssetList;
     AssetRegistryModule.Get().GetAssetsByPath(FName("/Game/Main/Data/Items"), AssetList, true);
 
@@ -32,7 +29,6 @@ void UItemsManager::Initialize(FSubsystemCollectionBase& Collection)
             ItemConfigMap.Add(Data->Id, Data);
         }
     }
-
 
     UE_LOG(LogTemp, Log, TEXT("UItemsManager loaded %d weapon assets"), ItemList.Num());
 }

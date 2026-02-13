@@ -24,6 +24,7 @@ void UPlayerSlotUI::NativeConstruct()
 void UPlayerSlotUI::SetInfo(APlayerSlot* SlotInfo, bool bInIsMyTeam)
 {
 	bIsMyTeam = bInIsMyTeam;
+	HpBar->SetVisibility(bIsMyTeam ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	CachedSlot = SlotInfo;
 	if (SlotInfo)
 	{
@@ -34,7 +35,7 @@ void UPlayerSlotUI::SetInfo(APlayerSlot* SlotInfo, bool bInIsMyTeam)
 		if (SlotInfo->GetTeamId() == ETeamId::Attacker)
 		{
 			// Dark red
-			Brush.OutlineSettings.Color = FLinearColor(0.6f, 0.1f, 0.1f, 1.0f);
+			Brush.OutlineSettings.Color = FLinearColor(0.768f, 0.156f, 0.0021f, 1.0f);
 		}
 		else
 		{
@@ -78,6 +79,8 @@ void UPlayerSlotUI::HandleHealthChanged(float NewHealth, float MaxHealth)
 
 void UPlayerSlotUI::HandlePawnChanged()
 {
+	HpBar->SetPercent(.0f);
+
 	TriedNum = 0;
 	StartRetryBindPawn();
 }
@@ -150,10 +153,22 @@ void UPlayerSlotUI::HandleUpdateConnectedStatus(bool bIsConnected)
 {
 	if (bIsConnected)
 	{
+		if (!CachedSlot) {
+			this->SetRenderOpacity(1.0f);
+			return;
+		}
+		ABaseCharacter* Char = Cast<ABaseCharacter>(CachedSlot->GetPawn());
+		if (IsValid(Char)) {
+			if (Char->IsPermanentDead()) {
+				this->SetRenderOpacity(0.6f);
+				return;
+			}
+		}
+
 		this->SetRenderOpacity(1.0f);
 	}
 	else
 	{
-		this->SetRenderOpacity(0.5f);
+		this->SetRenderOpacity(0.4f);
 	}
 }

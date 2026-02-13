@@ -8,6 +8,7 @@
 #include "Engine/TriggerBox.h"
 #include "Engine/TargetPoint.h"
 #include "NavigationSystem.h"
+#include "Game/Items/Pickup/PickupItem.h"
 
 // Sets default values
 AActorManager::AActorManager()
@@ -19,6 +20,7 @@ AActorManager::AActorManager()
 void AActorManager::BeginPlay()
 {
 	Super::BeginPlay();
+    CurrentPickupId = 1000;
 	UE_LOG(LogTemp, Warning, TEXT("ActorManager: BeginPlay called"));
 	
     if (!TriggerBoxAreaA || !TriggerBoxAreaB)
@@ -117,7 +119,6 @@ APlayerStart* AActorManager::GetRandomDefenderStart()
     return GetRandomStart(DefenderStarts);
 }
 
-
 AActorManager* AActorManager::Get(UObject* WorldContextObject)
 {
     if (!WorldContextObject)
@@ -134,7 +135,6 @@ AActorManager* AActorManager::Get(UObject* WorldContextObject)
 
     return nullptr;
 }
-
 
 FVector AActorManager::GetRandomHoldLocationNearBombSite(FName BombSiteName) const {
     TArray<ATargetPoint*> HoldPoints = (BombSiteName == FName(TEXT("A"))) ? HoldPointsA : HoldPointsB;
@@ -182,4 +182,80 @@ FVector AActorManager::RandomLocationOnMap() const {
     }
 
     return Origin;
+}
+
+void AActorManager::FindAndDestroyItemNode(int32 ItemOnMapId) {
+    if (PickupItemsOnMap.Contains(ItemOnMapId)) {
+        APickupItem* Pickup = PickupItemsOnMap[ItemOnMapId];
+        if (Pickup) {
+            Pickup->Destroy();
+        }
+        PickupItemsOnMap.Remove(ItemOnMapId);
+    }
+}
+
+int32 AActorManager::GetNextItemOnMapId() {
+    return CurrentPickupId++;
+}
+
+APickupItem* AActorManager::CreatePickupActor(FPickupData Data)
+{
+    APickupItem* Pickup = GetWorld()->SpawnActor<APickupItem>(
+        APickupItem::StaticClass(),
+        FVector::ZeroVector,
+        FRotator::ZeroRotator
+    );
+
+    if (Pickup) {
+        Pickup->SetData(Data);
+        Pickup->GetItemMesh()->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+        Pickup->GetItemMesh()->SetEnableGravity(true);
+        Pickup->GetItemMesh()->SetLinearDamping(0.8f);
+        Pickup->GetItemMesh()->SetAngularDamping(0.8f);
+        Pickup->GetItemMesh()->SetPhysicsMaxAngularVelocityInDegrees(720.f);
+
+        Pickup->SetActorLocation(Data.Location);
+        PickupItemsOnMap.Add(Data.Id, Pickup);
+    }
+    return Pickup;
+}
+
+void AActorManager::CleanPickupItemsOnMap()
+{
+    for (auto& Elem : PickupItemsOnMap) {
+        APickupItem* Pickup = Elem.Value;
+        if (IsValid(Pickup))
+        {
+            Pickup->Destroy();
+        }
+    }
+    PickupItemsOnMap.Empty();
+}
+
+APickupItem* AActorManager::GetPickupNode(int PickupId) {
+    if (PickupItemsOnMap.Contains(PickupId)) {
+        return PickupItemsOnMap[PickupId];
+    }
+    return nullptr;
+}
+
+APickupItem* AActorManager::GetPickupSpike() const {
+    if (PickupSpike.IsValid()) {
+        return PickupSpike.Get();
+    }
+    return nullptr;
+}
+
+void AActorManager::SetPickupSpike(APickupItem* SpikeItem) {
+    PickupSpike = SpikeItem;
+}
+
+void AActorManager::RegisterPlayer(ABaseCharacter* Pawn) {
+    if (!Pawn) return;
+    RegisteredPlayers.Add(Pawn);
+}
+
+void AActorManager::UnregisterPlayer(ABaseCharacter* Pawn) {
+    if (!Pawn) return;
+    RegisteredPlayers.Remove(Pawn);
 }

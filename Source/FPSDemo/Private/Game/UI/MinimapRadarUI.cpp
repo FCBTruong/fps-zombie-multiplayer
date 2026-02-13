@@ -90,7 +90,9 @@ void UMinimapRadarUI::PeriodicUpdate()
 
 		AMyPlayerState* PS = Pair.Key.Get();
 		if (!PS) continue;
-		if (PS->GetTeamId() != MyTeamId) {
+
+		bool bIsEnemy = (MyTeamId == ETeamId::None) || (PS->GetTeamId() != MyTeamId);
+		if (bIsEnemy) {
 			ABaseCharacter* EnemyPawn = Cast<ABaseCharacter>(PS->GetPawn());
 			if (EnemyPawn)
 			{
@@ -119,7 +121,8 @@ void UMinimapRadarUI::PeriodicUpdate()
 		AMyPlayerState* PS = Pair.Key.Get();
 		if (!PS) continue;
 
-		if (PS->GetTeamId() == MyTeamId) {
+		// If self or teammate
+		if (PS == MyPS || (MyTeamId != ETeamId::None && PS->GetTeamId() == MyTeamId)) {
 			Dot->SetVisibility(ESlateVisibility::Visible);
 
 			ABaseCharacter* Char = Cast<ABaseCharacter>(PS->GetPawn());
@@ -160,7 +163,9 @@ void UMinimapRadarUI::UpdateSpike()
 {
 	// handled in NativeTick
 	// check if spike drop on map
-	auto Spike = UGameManager::Get(GetWorld())->GetPickupSpike();
+	AActorManager* AM = AActorManager::Get(GetWorld());
+	if (!AM) return;
+	auto Spike = AM->GetPickupSpike();
 
 	if (!SpikeIcon) return;
 

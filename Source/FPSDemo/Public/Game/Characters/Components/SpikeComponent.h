@@ -10,6 +10,12 @@ class UInventoryComponent;
 class UActionStateComponent;
 class UEquipComponent;
 
+enum class ESpikeActionState : uint8 {
+	None,
+	Planting,
+	Defusing
+};;
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnNotifyToastMessage, const FText&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdatePlantSpikeState, bool);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateDefuseSpikeState, bool);
@@ -30,6 +36,7 @@ public:
 	void RequestStartDefuseSpike();
 	void RequestStopDefuseSpike();
 	void OnDefuseSucceed();
+	void OnOwnerDead();
 	FOnNotifyToastMessage OnNotifyToastMessage;
 	FOnUpdatePlantSpikeState OnUpdatePlantSpikeState;
 	FOnUpdateDefuseSpikeState OnUpdateDefuseSpikeState;
@@ -60,7 +67,6 @@ private:
 	// Defuse
 	void StartDefuse_Internal();
 	void StopDefuse_Internal();
-	void FinishDefuseSpike();
 
 	UFUNCTION(Server, Reliable)
 	void ServerStartDefuseSpike();
@@ -75,4 +81,5 @@ private:
 	void UnlockMovement();
 
 	bool bCachedJumpAllowed;
+	ESpikeActionState CurrentActionState = ESpikeActionState::None;
 };

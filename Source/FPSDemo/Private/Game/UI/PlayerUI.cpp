@@ -18,6 +18,8 @@
 #include "Components/StackBoxSlot.h"
 #include "Modules/Chat/ChatUI.h"
 #include "Game/Framework/ShooterGameState.h"
+#include "Shared/Utils/GameUtils.h"
+#include "GameConstants.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -29,7 +31,7 @@ void UPlayerUI::NativeConstruct()
 	CreateGrenadeNodes();
 
 	MatchResultPn->SetVisibility(ESlateVisibility::Hidden);
-    for (int32 i = 1; i <= 4; i++)
+	for (int32 i = 1; i <= 4; i++) // assuming a maximum of 4 weapon slots
     {
         const FName WidgetName(*FString::Printf(TEXT("NumberWeapon%d"), i));
         if (UWidget* Widget = GetWidgetFromName(WidgetName))
@@ -89,6 +91,7 @@ void UPlayerUI::NativeConstruct()
 void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 }
+
 void UPlayerUI::ShowPickupMessage(const FString& Message)
 {
     if (UTextBlock* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("PickupLabel"))))
@@ -120,18 +123,23 @@ void UPlayerUI::UpdateHealth(float CurrentHealth, float MaxHealth)
     {
         HpBar->SetPercent(CurrentHealth / MaxHealth);
     }
-	HpValueLb->SetText(FText::AsNumber(FMath::RoundToInt(CurrentHealth)));
+    FNumberFormattingOptions Opt;
+    Opt.SetUseGrouping(false);
+    FText HpTxt = FText::AsNumber(FMath::RoundToInt(CurrentHealth), &Opt);
+	HpValueLb->SetText(HpTxt);
 }
 
 void UPlayerUI::UpdateAmmo(int CurrentAmmoValue, int RemainAmmoValue)
 {
+    FNumberFormattingOptions Opt;
+    Opt.SetUseGrouping(false);
     if (CurrentAmmo)
     {
-        CurrentAmmo->SetText(FText::AsNumber(CurrentAmmoValue));
+        CurrentAmmo->SetText(FText::AsNumber(CurrentAmmoValue, &Opt));
     }
     if (RemainingAmmo)
     {
-        RemainingAmmo->SetText(FText::AsNumber(RemainAmmoValue));
+        RemainingAmmo->SetText(FText::AsNumber(RemainAmmoValue, &Opt));
     }
 }
 
@@ -228,7 +236,6 @@ void UPlayerUI::ShowIconGrenade(EItemId ItemId, bool bShow)
 {
    
 }
-
 
 void UPlayerUI::CreateGrenadeNodes()
 {
@@ -453,6 +460,7 @@ void UPlayerUI::DoShowMatchStateToast(FText Txt)
     {
         MatchToastLb->SetText(Txt);
         MatchToastPn->SetVisibility(ESlateVisibility::Visible);
+        StopAnimation(ShowMatchStateAnim);
         PlayAnimation(ShowMatchStateAnim);
     }
 }
@@ -477,6 +485,7 @@ void UPlayerUI::UpdateGameState(EMyMatchState State) {
 	MatchTimeLb->SetVisibility(ESlateVisibility::Visible);
     bPlayedTenSec = false;
 	MatchStatePn->SetVisibility(ESlateVisibility::Hidden);
+	MatchToastPn->SetVisibility(ESlateVisibility::Hidden);
     switch (State) {
         case EMyMatchState::PRE_MATCH:
 			MatchStatePn->SetVisibility(ESlateVisibility::Visible);
@@ -617,7 +626,7 @@ void UPlayerUI::UpdateRoundClockOnce()
         return;
     }
 
-    const int32 Now = FMath::CeilToInt(World->GetTimeSeconds());
+    const int32 Now = FMath::Floor(World->GetTimeSeconds());
     const int32 Remaining = FMath::Max(RoundTimeEnd - Now, 0);
 
     // 10-second warning (same logic as before)
@@ -816,16 +825,15 @@ void UPlayerUI::UpdatePlayerSlots() {
     if (GS->GetMatchMode() != EMatchMode::Spike) {
         return;
 	}
+    if (!GS->AreSlotsReady()) {
+		return;
+    }
     auto Slots = GS->Slots;
 
 	int MyPlayerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();
 
 	ETeamId MyTeamId = ETeamId::None;
     for (APlayerSlot* PSlot : Slots) {
-        if (!IsValid(PSlot)) {
-			UE_LOG(LogTemp, Warning, TEXT("UpdatePlayerSlots: APlayerSlot is null"));
-            return;
-        }
         if (PSlot->GetBackendUserId() == MyPlayerId) {
             MyTeamId = PSlot->GetTeamId();
             break;

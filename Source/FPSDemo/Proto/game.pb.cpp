@@ -64,7 +64,8 @@ PROTOBUF_CONSTEXPR LoginRequest::LoginRequest(
     ::_pbi::ConstantInitialized)
   : guest_id_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
   , player_name_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
-  , avatar_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}){}
+  , avatar_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{})
+  , crosshair_code_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}){}
 struct LoginRequestDefaultTypeInternal {
   PROTOBUF_CONSTEXPR LoginRequestDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
@@ -354,9 +355,21 @@ struct SelfHostStartSessionReplyDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SelfHostStartSessionReplyDefaultTypeInternal _SelfHostStartSessionReply_default_instance_;
+PROTOBUF_CONSTEXPR NotiMessageReply::NotiMessageReply(
+    ::_pbi::ConstantInitialized)
+  : mess_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}){}
+struct NotiMessageReplyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NotiMessageReplyDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NotiMessageReplyDefaultTypeInternal() {}
+  union {
+    NotiMessageReply _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NotiMessageReplyDefaultTypeInternal _NotiMessageReply_default_instance_;
 }  // namespace net
 }  // namespace game
-static ::_pb::Metadata file_level_metadata_game_2eproto[26];
+static ::_pb::Metadata file_level_metadata_game_2eproto[27];
 static constexpr ::_pb::EnumDescriptor const** file_level_enum_descriptors_game_2eproto = nullptr;
 static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_game_2eproto = nullptr;
 
@@ -393,6 +406,7 @@ const uint32_t TableStruct_game_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pro
   PROTOBUF_FIELD_OFFSET(::game::net::LoginRequest, guest_id_),
   PROTOBUF_FIELD_OFFSET(::game::net::LoginRequest, player_name_),
   PROTOBUF_FIELD_OFFSET(::game::net::LoginRequest, avatar_),
+  PROTOBUF_FIELD_OFFSET(::game::net::LoginRequest, crosshair_code_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::game::net::LoginReply, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -563,34 +577,42 @@ const uint32_t TableStruct_game_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pro
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::game::net::SelfHostStartSessionReply, room_id_),
   PROTOBUF_FIELD_OFFSET(::game::net::SelfHostStartSessionReply, token_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::NotiMessageReply, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::NotiMessageReply, mess_),
 };
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, -1, sizeof(::game::net::Packet)},
   { 9, -1, -1, sizeof(::game::net::Empty)},
   { 15, -1, -1, sizeof(::game::net::HelloWorld)},
   { 23, -1, -1, sizeof(::game::net::LoginRequest)},
-  { 32, -1, -1, sizeof(::game::net::LoginReply)},
-  { 40, -1, -1, sizeof(::game::net::CreateRoomRequest)},
-  { 46, -1, -1, sizeof(::game::net::RoomInfoReply)},
-  { 61, -1, -1, sizeof(::game::net::PlayerRoomInfoReply)},
-  { 71, -1, -1, sizeof(::game::net::KickPlayerRequest)},
-  { 78, -1, -1, sizeof(::game::net::AddBotRequest)},
-  { 85, -1, -1, sizeof(::game::net::JoinRoomRequest)},
-  { 92, -1, -1, sizeof(::game::net::NewPlayerJoinRoomReply)},
-  { 100, -1, -1, sizeof(::game::net::PlayerLeaveReply)},
-  { 107, -1, -1, sizeof(::game::net::SwitchSlotRequest)},
-  { 114, -1, -1, sizeof(::game::net::SwitchSlotReply)},
-  { 122, -1, -1, sizeof(::game::net::ListRoomReply)},
-  { 129, -1, -1, sizeof(::game::net::RoomUpdateOwnerReply)},
-  { 136, -1, -1, sizeof(::game::net::ChangeGameModeRequest)},
-  { 143, -1, -1, sizeof(::game::net::ChangeHostTypeRequest)},
-  { 150, -1, -1, sizeof(::game::net::ChangeHostTypeReply)},
-  { 157, -1, -1, sizeof(::game::net::ChangeGameModeReply)},
-  { 164, -1, -1, sizeof(::game::net::GameStartedReply)},
-  { 170, -1, -1, sizeof(::game::net::ChatInRoomRequest)},
-  { 177, -1, -1, sizeof(::game::net::ChatInRoomReply)},
-  { 185, -1, -1, sizeof(::game::net::PlayerSessionReply)},
-  { 194, -1, -1, sizeof(::game::net::SelfHostStartSessionReply)},
+  { 33, -1, -1, sizeof(::game::net::LoginReply)},
+  { 41, -1, -1, sizeof(::game::net::CreateRoomRequest)},
+  { 47, -1, -1, sizeof(::game::net::RoomInfoReply)},
+  { 62, -1, -1, sizeof(::game::net::PlayerRoomInfoReply)},
+  { 72, -1, -1, sizeof(::game::net::KickPlayerRequest)},
+  { 79, -1, -1, sizeof(::game::net::AddBotRequest)},
+  { 86, -1, -1, sizeof(::game::net::JoinRoomRequest)},
+  { 93, -1, -1, sizeof(::game::net::NewPlayerJoinRoomReply)},
+  { 101, -1, -1, sizeof(::game::net::PlayerLeaveReply)},
+  { 108, -1, -1, sizeof(::game::net::SwitchSlotRequest)},
+  { 115, -1, -1, sizeof(::game::net::SwitchSlotReply)},
+  { 123, -1, -1, sizeof(::game::net::ListRoomReply)},
+  { 130, -1, -1, sizeof(::game::net::RoomUpdateOwnerReply)},
+  { 137, -1, -1, sizeof(::game::net::ChangeGameModeRequest)},
+  { 144, -1, -1, sizeof(::game::net::ChangeHostTypeRequest)},
+  { 151, -1, -1, sizeof(::game::net::ChangeHostTypeReply)},
+  { 158, -1, -1, sizeof(::game::net::ChangeGameModeReply)},
+  { 165, -1, -1, sizeof(::game::net::GameStartedReply)},
+  { 171, -1, -1, sizeof(::game::net::ChatInRoomRequest)},
+  { 178, -1, -1, sizeof(::game::net::ChatInRoomReply)},
+  { 186, -1, -1, sizeof(::game::net::PlayerSessionReply)},
+  { 195, -1, -1, sizeof(::game::net::SelfHostStartSessionReply)},
+  { 203, -1, -1, sizeof(::game::net::NotiMessageReply)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -620,52 +642,55 @@ static const ::_pb::Message* const file_default_instances[] = {
   &::game::net::_ChatInRoomReply_default_instance_._instance,
   &::game::net::_PlayerSessionReply_default_instance_._instance,
   &::game::net::_SelfHostStartSessionReply_default_instance_._instance,
+  &::game::net::_NotiMessageReply_default_instance_._instance,
 };
 
 const char descriptor_table_protodef_game_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\ngame.proto\022\010game.net\"8\n\006Packet\022\r\n\005toke"
   "n\030\001 \001(\t\022\016\n\006cmd_id\030\002 \001(\005\022\017\n\007payload\030\003 \001(\014"
   "\"\007\n\005Empty\"-\n\nHelloWorld\022\017\n\007message\030\001 \001(\t"
-  "\022\016\n\006testxx\030\002 \001(\003\"E\n\014LoginRequest\022\020\n\010gues"
+  "\022\016\n\006testxx\030\002 \001(\003\"]\n\014LoginRequest\022\020\n\010gues"
   "t_id\030\001 \001(\t\022\023\n\013player_name\030\002 \001(\t\022\016\n\006avata"
-  "r\030\003 \001(\t\",\n\nLoginReply\022\r\n\005token\030\001 \001(\t\022\017\n\007"
-  "user_id\030\002 \001(\005\"\023\n\021CreateRoomRequest\"\347\001\n\rR"
-  "oomInfoReply\022\014\n\004mode\030\001 \001(\r\022\023\n\013has_starte"
-  "d\030\002 \001(\010\022\020\n\010owner_id\030\003 \001(\005\022\024\n\014is_self_hos"
-  "t\030\004 \001(\010\022.\n\007players\030\005 \003(\0132\035.game.net.Play"
-  "erRoomInfoReply\022\017\n\007room_id\030\006 \001(\005\022\020\n\010join"
-  "_key\030\007 \001(\t\022\037\n\027enable_dedicated_server\030\010 "
-  "\001(\010\022\027\n\017enable_selfhost\030\t \001(\010\"[\n\023PlayerRo"
-  "omInfoReply\022\017\n\007user_id\030\001 \001(\005\022\023\n\013player_n"
-  "ame\030\002 \001(\t\022\016\n\006avatar\030\003 \001(\t\022\016\n\006is_bot\030\004 \001("
-  "\010\"$\n\021KickPlayerRequest\022\017\n\007user_id\030\001 \001(\005\""
-  "\035\n\rAddBotRequest\022\014\n\004team\030\001 \001(\005\"\"\n\017JoinRo"
-  "omRequest\022\017\n\007room_id\030\001 \001(\005\"^\n\026NewPlayerJ"
-  "oinRoomReply\022\020\n\010slot_idx\030\001 \001(\005\0222\n\013player"
-  "_info\030\002 \001(\0132\035.game.net.PlayerRoomInfoRep"
-  "ly\"$\n\020PlayerLeaveReply\022\020\n\010slot_idx\030\001 \001(\005"
-  "\"%\n\021SwitchSlotRequest\022\020\n\010slot_idx\030\001 \001(\005\""
-  "9\n\017SwitchSlotReply\022\022\n\nslot_idx_a\030\001 \001(\005\022\022"
-  "\n\nslot_idx_b\030\002 \001(\005\"7\n\rListRoomReply\022&\n\005r"
-  "ooms\030\001 \003(\0132\027.game.net.RoomInfoReply\",\n\024R"
-  "oomUpdateOwnerReply\022\024\n\014new_owner_id\030\001 \001("
-  "\005\"*\n\025ChangeGameModeRequest\022\021\n\tgame_mode\030"
-  "\001 \001(\005\"-\n\025ChangeHostTypeRequest\022\024\n\014is_sel"
-  "f_host\030\001 \001(\010\"+\n\023ChangeHostTypeReply\022\024\n\014i"
-  "s_self_host\030\001 \001(\010\"(\n\023ChangeGameModeReply"
-  "\022\021\n\tgame_mode\030\001 \001(\005\"\022\n\020GameStartedReply\""
-  "!\n\021ChatInRoomRequest\022\014\n\004mess\030\001 \001(\t\"/\n\017Ch"
-  "atInRoomReply\022\016\n\006sender\030\001 \001(\t\022\014\n\004mess\030\002 "
-  "\001(\t\"G\n\022PlayerSessionReply\022\n\n\002Ip\030\001 \001(\t\022\014\n"
-  "\004Port\030\002 \001(\005\022\027\n\017PlayerSessionId\030\003 \001(\t\";\n\031"
-  "SelfHostStartSessionReply\022\017\n\007room_id\030\001 \001"
-  "(\t\022\r\n\005token\030\002 \001(\tB\013\252\002\010Game.Netb\006proto3"
+  "r\030\003 \001(\t\022\026\n\016crosshair_code\030\004 \001(\t\",\n\nLogin"
+  "Reply\022\r\n\005token\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\005\"\023\n"
+  "\021CreateRoomRequest\"\347\001\n\rRoomInfoReply\022\014\n\004"
+  "mode\030\001 \001(\r\022\023\n\013has_started\030\002 \001(\010\022\020\n\010owner"
+  "_id\030\003 \001(\005\022\024\n\014is_self_host\030\004 \001(\010\022.\n\007playe"
+  "rs\030\005 \003(\0132\035.game.net.PlayerRoomInfoReply\022"
+  "\017\n\007room_id\030\006 \001(\005\022\020\n\010join_key\030\007 \001(\t\022\037\n\027en"
+  "able_dedicated_server\030\010 \001(\010\022\027\n\017enable_se"
+  "lfhost\030\t \001(\010\"[\n\023PlayerRoomInfoReply\022\017\n\007u"
+  "ser_id\030\001 \001(\005\022\023\n\013player_name\030\002 \001(\t\022\016\n\006ava"
+  "tar\030\003 \001(\t\022\016\n\006is_bot\030\004 \001(\010\"$\n\021KickPlayerR"
+  "equest\022\017\n\007user_id\030\001 \001(\005\"\035\n\rAddBotRequest"
+  "\022\014\n\004team\030\001 \001(\005\"\"\n\017JoinRoomRequest\022\017\n\007roo"
+  "m_id\030\001 \001(\005\"^\n\026NewPlayerJoinRoomReply\022\020\n\010"
+  "slot_idx\030\001 \001(\005\0222\n\013player_info\030\002 \001(\0132\035.ga"
+  "me.net.PlayerRoomInfoReply\"$\n\020PlayerLeav"
+  "eReply\022\020\n\010slot_idx\030\001 \001(\005\"%\n\021SwitchSlotRe"
+  "quest\022\020\n\010slot_idx\030\001 \001(\005\"9\n\017SwitchSlotRep"
+  "ly\022\022\n\nslot_idx_a\030\001 \001(\005\022\022\n\nslot_idx_b\030\002 \001"
+  "(\005\"7\n\rListRoomReply\022&\n\005rooms\030\001 \003(\0132\027.gam"
+  "e.net.RoomInfoReply\",\n\024RoomUpdateOwnerRe"
+  "ply\022\024\n\014new_owner_id\030\001 \001(\005\"*\n\025ChangeGameM"
+  "odeRequest\022\021\n\tgame_mode\030\001 \001(\005\"-\n\025ChangeH"
+  "ostTypeRequest\022\024\n\014is_self_host\030\001 \001(\010\"+\n\023"
+  "ChangeHostTypeReply\022\024\n\014is_self_host\030\001 \001("
+  "\010\"(\n\023ChangeGameModeReply\022\021\n\tgame_mode\030\001 "
+  "\001(\005\"\022\n\020GameStartedReply\"!\n\021ChatInRoomReq"
+  "uest\022\014\n\004mess\030\001 \001(\t\"/\n\017ChatInRoomReply\022\016\n"
+  "\006sender\030\001 \001(\t\022\014\n\004mess\030\002 \001(\t\"G\n\022PlayerSes"
+  "sionReply\022\n\n\002Ip\030\001 \001(\t\022\014\n\004Port\030\002 \001(\005\022\027\n\017P"
+  "layerSessionId\030\003 \001(\t\";\n\031SelfHostStartSes"
+  "sionReply\022\017\n\007room_id\030\001 \001(\t\022\r\n\005token\030\002 \001("
+  "\t\" \n\020NotiMessageReply\022\014\n\004mess\030\001 \001(\tB\013\252\002\010"
+  "Game.Netb\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_game_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_game_2eproto = {
-    false, false, 1478, descriptor_table_protodef_game_2eproto,
+    false, false, 1536, descriptor_table_protodef_game_2eproto,
     "game.proto",
-    &descriptor_table_game_2eproto_once, nullptr, 0, 26,
+    &descriptor_table_game_2eproto_once, nullptr, 0, 27,
     schemas, file_default_instances, TableStruct_game_2eproto::offsets,
     file_level_metadata_game_2eproto, file_level_enum_descriptors_game_2eproto,
     file_level_service_descriptors_game_2eproto,
@@ -1242,6 +1267,14 @@ LoginRequest::LoginRequest(const LoginRequest& from)
     avatar_.Set(from._internal_avatar(), 
       GetArenaForAllocation());
   }
+  crosshair_code_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    crosshair_code_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_crosshair_code().empty()) {
+    crosshair_code_.Set(from._internal_crosshair_code(), 
+      GetArenaForAllocation());
+  }
   // @@protoc_insertion_point(copy_constructor:game.net.LoginRequest)
 }
 
@@ -1257,6 +1290,10 @@ player_name_.InitDefault();
 avatar_.InitDefault();
 #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
   avatar_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+crosshair_code_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  crosshair_code_.Set("", GetArenaForAllocation());
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 }
 
@@ -1274,6 +1311,7 @@ inline void LoginRequest::SharedDtor() {
   guest_id_.Destroy();
   player_name_.Destroy();
   avatar_.Destroy();
+  crosshair_code_.Destroy();
 }
 
 void LoginRequest::SetCachedSize(int size) const {
@@ -1289,6 +1327,7 @@ void LoginRequest::Clear() {
   guest_id_.ClearToEmpty();
   player_name_.ClearToEmpty();
   avatar_.ClearToEmpty();
+  crosshair_code_.ClearToEmpty();
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -1325,6 +1364,16 @@ const char* LoginRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* 
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
           CHK_(::_pbi::VerifyUTF8(str, "game.net.LoginRequest.avatar"));
+        } else
+          goto handle_unusual;
+        continue;
+      // string crosshair_code = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 34)) {
+          auto str = _internal_mutable_crosshair_code();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "game.net.LoginRequest.crosshair_code"));
         } else
           goto handle_unusual;
         continue;
@@ -1387,6 +1436,16 @@ uint8_t* LoginRequest::_InternalSerialize(
         3, this->_internal_avatar(), target);
   }
 
+  // string crosshair_code = 4;
+  if (!this->_internal_crosshair_code().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_crosshair_code().data(), static_cast<int>(this->_internal_crosshair_code().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "game.net.LoginRequest.crosshair_code");
+    target = stream->WriteStringMaybeAliased(
+        4, this->_internal_crosshair_code(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -1424,6 +1483,13 @@ size_t LoginRequest::ByteSizeLong() const {
         this->_internal_avatar());
   }
 
+  // string crosshair_code = 4;
+  if (!this->_internal_crosshair_code().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_crosshair_code());
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
 }
 
@@ -1455,6 +1521,9 @@ void LoginRequest::MergeFrom(const LoginRequest& from) {
   if (!from._internal_avatar().empty()) {
     _internal_set_avatar(from._internal_avatar());
   }
+  if (!from._internal_crosshair_code().empty()) {
+    _internal_set_crosshair_code(from._internal_crosshair_code());
+  }
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -1485,6 +1554,10 @@ void LoginRequest::InternalSwap(LoginRequest* other) {
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
       &avatar_, lhs_arena,
       &other->avatar_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &crosshair_code_, lhs_arena,
+      &other->crosshair_code_, rhs_arena
   );
 }
 
@@ -5756,6 +5829,201 @@ void SelfHostStartSessionReply::InternalSwap(SelfHostStartSessionReply* other) {
       file_level_metadata_game_2eproto[25]);
 }
 
+// ===================================================================
+
+class NotiMessageReply::_Internal {
+ public:
+};
+
+NotiMessageReply::NotiMessageReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.NotiMessageReply)
+}
+NotiMessageReply::NotiMessageReply(const NotiMessageReply& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  mess_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    mess_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_mess().empty()) {
+    mess_.Set(from._internal_mess(), 
+      GetArenaForAllocation());
+  }
+  // @@protoc_insertion_point(copy_constructor:game.net.NotiMessageReply)
+}
+
+inline void NotiMessageReply::SharedCtor() {
+mess_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  mess_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+NotiMessageReply::~NotiMessageReply() {
+  // @@protoc_insertion_point(destructor:game.net.NotiMessageReply)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void NotiMessageReply::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  mess_.Destroy();
+}
+
+void NotiMessageReply::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void NotiMessageReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.NotiMessageReply)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  mess_.ClearToEmpty();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* NotiMessageReply::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string mess = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_mess();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "game.net.NotiMessageReply.mess"));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* NotiMessageReply::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.NotiMessageReply)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string mess = 1;
+  if (!this->_internal_mess().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_mess().data(), static_cast<int>(this->_internal_mess().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "game.net.NotiMessageReply.mess");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_mess(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.NotiMessageReply)
+  return target;
+}
+
+size_t NotiMessageReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.NotiMessageReply)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string mess = 1;
+  if (!this->_internal_mess().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_mess());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData NotiMessageReply::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    NotiMessageReply::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*NotiMessageReply::GetClassData() const { return &_class_data_; }
+
+void NotiMessageReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<NotiMessageReply *>(to)->MergeFrom(
+      static_cast<const NotiMessageReply &>(from));
+}
+
+
+void NotiMessageReply::MergeFrom(const NotiMessageReply& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.NotiMessageReply)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_mess().empty()) {
+    _internal_set_mess(from._internal_mess());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void NotiMessageReply::CopyFrom(const NotiMessageReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.NotiMessageReply)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool NotiMessageReply::IsInitialized() const {
+  return true;
+}
+
+void NotiMessageReply::InternalSwap(NotiMessageReply* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &mess_, lhs_arena,
+      &other->mess_, rhs_arena
+  );
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata NotiMessageReply::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[26]);
+}
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace net
 }  // namespace game
@@ -5863,6 +6131,10 @@ Arena::CreateMaybeMessage< ::game::net::PlayerSessionReply >(Arena* arena) {
 template<> PROTOBUF_NOINLINE ::game::net::SelfHostStartSessionReply*
 Arena::CreateMaybeMessage< ::game::net::SelfHostStartSessionReply >(Arena* arena) {
   return Arena::CreateMessageInternal< ::game::net::SelfHostStartSessionReply >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::NotiMessageReply*
+Arena::CreateMaybeMessage< ::game::net::NotiMessageReply >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::NotiMessageReply >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

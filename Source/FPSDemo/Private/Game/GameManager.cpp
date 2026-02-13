@@ -9,7 +9,7 @@
 #include "Shared/Data/GlobalDataAsset.h"
 #include "Kismet/GameplayStatics.h"
 #include "Network/DedicatedServerClient.h"
-#include "Modules/Lobby/RoomManager.h"
+#include "Game/Data/MatchInfo.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSessionSettings.h"
@@ -19,100 +19,13 @@ void UGameManager::Init()
 {
 	Super::Init();
 	DsClient = MakeUnique<DedicatedServerClient>();
-    FWorldDelegates::OnWorldCleanup.AddUObject(
-        this,
-        &UGameManager::OnWorldCleanup
-    );
-}
-
-void UGameManager::OnWorldCleanup(
-    UWorld* World,
-    bool bSessionEnded,
-    bool bCleanupResources) {
-	PickupItemsOnMap.Empty();
 }
 
 void UGameManager::OnStart()
 {
     Super::OnStart();
-    CurrentPickupId = 1000;
 }
 
-FPickupData UGameManager::GetDataPickupItem(int32 ItemOnMapId) {
-   
-	FPickupData temp;
-	temp.Id = -1;
-	return temp;
-}
-
-void UGameManager::FindAndDestroyItemNode(int32 ItemOnMapId) {
-	if (PickupItemsOnMap.Contains(ItemOnMapId)) {
-        APickupItem* Pickup = PickupItemsOnMap[ItemOnMapId];
-        if (Pickup) {
-            Pickup->Destroy();
-        }
-        PickupItemsOnMap.Remove(ItemOnMapId);
-	}
-}
-
-int32 UGameManager::GetNextItemOnMapId() {
-    return CurrentPickupId++;
-}
-
-APickupItem* UGameManager::CreatePickupActor(FPickupData Data)
-{
-    APickupItem* Pickup = GetWorld()->SpawnActor<APickupItem>(
-        APickupItem::StaticClass(),
-        FVector::ZeroVector,
-        FRotator::ZeroRotator
-    );
-
-    if (Pickup) {
-        Pickup->SetData(Data);
-        Pickup->GetItemMesh()->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
-        Pickup->GetItemMesh()->SetEnableGravity(true);
-        Pickup->GetItemMesh()->SetLinearDamping(0.8f);
-        Pickup->GetItemMesh()->SetAngularDamping(0.8f);
-        Pickup->GetItemMesh()->SetPhysicsMaxAngularVelocityInDegrees(720.f);
-
-		Pickup->SetActorLocation(Data.Location);
-		PickupItemsOnMap.Add(Data.Id, Pickup);
-
-
-    }
-    return Pickup;
-}
-
-
-void UGameManager::CleanPickupItemsOnMap()
-{
-    for (auto& Elem : PickupItemsOnMap) {
-        APickupItem* Pickup = Elem.Value;
-        if (IsValid(Pickup))
-        {
-            Pickup->Destroy();
-        }
-	}
-    PickupItemsOnMap.Empty();
-}
-
-APickupItem* UGameManager::GetPickupNode(int PickupId) {
-    if (PickupItemsOnMap.Contains(PickupId)) {
-        return PickupItemsOnMap[PickupId];
-	}
-	return nullptr;
-}
-
-APickupItem* UGameManager::GetPickupSpike() const{
-    if (PickupSpike.IsValid()) {
-        return PickupSpike.Get();
-	}
-    return nullptr;
-}
-
-void UGameManager::SetPickupSpike(APickupItem* SpikeItem) {
-    PickupSpike = SpikeItem;
-}
 
 UGameManager* UGameManager::Get(UObject* WorldContextObject) {
     if (!WorldContextObject) {
@@ -131,16 +44,6 @@ UGameManager* UGameManager::Get(UObject* WorldContextObject) {
     return GI_Cast;
 }
 
-void UGameManager::RegisterPlayer(ABaseCharacter* Pawn) {
-    if (!Pawn) return;
-	RegisteredPlayers.Add(Pawn);
-}
-
-void UGameManager::UnregisterPlayer(ABaseCharacter* Pawn) {
-    if (!Pawn) return;
-    RegisteredPlayers.Remove(Pawn);
-}
-
 void UGameManager::RequestMatchDataAndStart()
 {
 	UE_LOG(LogTemp, Log, TEXT("UGameManager::RequestMatchDataAndStart: Requesting match data from backend server"));
@@ -157,37 +60,34 @@ void UGameManager::RequestMatchDataAndStart()
                 UE_LOG(LogTemp, Error, TEXT("UGameManager::RequestMatchDataAndStart: Failed to get match info"));
                 return;
             }
-			FRoomData RoomData;
-            DedicatedServerClient::ParseMatchInfo(ResponseBody, RoomData);
-
-			URoomManager* RoomMgr = URoomManager::Get(GetWorld());
-            if (RoomMgr)
-            {
-				RoomMgr->SetCurrentRoomData(RoomData);
-				StartMatch();
-            }
+			FMatchInfo MatchInfo;
+            DedicatedServerClient::ParseMatchInfo(ResponseBody, MatchInfo);
+		
+			StartMatch(MatchInfo);
 
             UE_LOG(LogTemp, Log, TEXT("UGameManager::RequestMatchDataAndStart: Received match info: %s"), *ResponseBody);
         }
     );
 }
 
-void UGameManager::StartMatch()
+void UGameManager::StartMatch(FMatchInfo MatchInfo)
 {
-    URoomManager* RoomMgr = URoomManager::Get(GetWorld());
-    const FRoomData& RoomData = RoomMgr->GetCurrentRoomData();
-
+	CurrentMatchInfo = MatchInfo;
     PendingOptions.Empty();
     PendingMapName = FGameConstants::LEVEL_GHOST_MALL_MAP;
 
-    if (RoomData.Mode == EMatchMode::Spike)
+    if (MatchInfo.Mode == EMatchMode::Spike)
     {
         PendingOptions = TEXT("?listen?game=/Game/Main/Core/GM_Spike.GM_Spike_C");
     }
-    else if (RoomData.Mode == EMatchMode::Zombie)
+    else if (MatchInfo.Mode == EMatchMode::Zombie)
     {
         PendingOptions = TEXT("?listen?game=/Game/Main/Core/GM_Zombie.GM_Zombie_C");
     }
+    else if (MatchInfo.Mode == EMatchMode::DeathMatch)
+    {
+        PendingOptions = TEXT("?listen?game=/Game/Main/Core/GM_DeathMatch.GM_DeathMatch_C");
+	}
     else
     {
         PendingMapName = FGameConstants::LEVEL_PLAYGROUND;

@@ -12,19 +12,19 @@
 #include "Game/Modes/Zombie/AirdropCrate.h"
 #include "Game/Characters/Components/InventoryComponent.h"
 #include "Game/Framework/PlayerSlot.h"
+#include "Game/AI/BotAIController.h"
 
 void AZombieMode::StartPlay()
 {
-	UE_LOG(LogTemp, Warning, TEXT("SpikeMode Game Started!"));
+	UE_LOG(LogTemp, Warning, TEXT("Zombie Game Started!"));
 	Super::StartPlay();
-
+	bAllowFriendlyFire = false;
 }
 
 void AZombieMode::StartRound()
 {
 	UE_LOG(LogTemp, Warning, TEXT("AZombieMode: Starting Round..."));
 	Super::StartRound();
-
 
 	// clean airdrop crates and clear timer
 	GetWorldTimerManager().ClearTimer(AirdropCheckTimer);
@@ -36,15 +36,16 @@ void AZombieMode::StartRound()
 			Crate->Destroy();
 		}
 	}
+
 	CachedGS->ClearAirdropCrates();
-	
 	CachedGS->SetMatchState(EMyMatchState::BUY_PHASE);
 	CachedGS->SetHeroPhase(false);
 
 	int BuyTime = 10; // seconds
 	int TimeBuyEnd = GetWorld()->GetTimeSeconds() + BuyTime;
 	CachedGS->SetRoundEndTime(TimeBuyEnd);
-	ResetPlayers();
+
+	RestartAllPlayers();
 
 	// reassign team id
 	for (APlayerSlot* Slot : CachedGS->Slots)
@@ -54,6 +55,7 @@ void AZombieMode::StartRound()
 
 	BotManager->OnStartRoundZombieMode();
 
+	UE_LOG(LogTemp, Warning, TEXT("AZombieMode: Entering Buy Phase for %d seconds..."), BuyTime);
 	GetWorldTimerManager().SetTimer(
 		BuyingTimerHandle,
 		this,
@@ -69,7 +71,6 @@ void AZombieMode::EnterFightState()
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return;
 	GS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
-	int RoundProgressTime = 180; // seconds - 3 minutes
 	int RoundProgressTimeEnd = GetWorld()->GetTimeSeconds() + RoundProgressTime;
 	GS->SetRoundEndTime(RoundProgressTimeEnd);
 
@@ -116,16 +117,16 @@ void AZombieMode::RandomZombie()
 
 	for (int32 i = 0; i < NumZombies; ++i)
 	{
-		AController* Ctrl = ChooseZombieController();
-		if (!Ctrl) continue;
+		ABaseCharacter* Pawn = ChooseZombie();
+		if (!Pawn) continue;
 
-		BecomeZombie(Ctrl);
+		BecomeZombie(Pawn);
 	}
 }
 
 // This function chooses a random player, but skips players who were zombies before
 // Help prevent the same players from being zombies repeatedly
-AController* AZombieMode::ChooseZombieController() const {
+ABaseCharacter* AZombieMode::ChooseZombie() const {
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return nullptr;
 
@@ -163,62 +164,69 @@ AController* AZombieMode::ChooseZombieController() const {
 	AMyPlayerState* ZombiePS = Eligible[Index];
 	ZombiePS->SetChosenAsZombie(true);
 	Eligible.RemoveAtSwap(Index);
-	return Cast<AController>(ZombiePS->GetOwner());
+	
+	return Cast<ABaseCharacter>(ZombiePS->GetPawn());
 }
 
-void AZombieMode::BecomeZombie(AController* Controller) {
+void AZombieMode::BecomeZombie(ABaseCharacter* Character) {
 	UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeZombie called"));
 	// update team Id because now he is zombie
-	AMyPlayerState* PS = Controller->GetPlayerState<AMyPlayerState>();
+	AMyPlayerState* PS = Cast<AMyPlayerState>(Character->GetPlayerState());
 	if (!PS) {
 		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in BecomeZombie"));
 		return;
 	}
 
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (GS) {
-
-	}
 	PS->SetTeamId(ETeamId::Zombie);
 
-	if (ABaseCharacter* Character = Cast<ABaseCharacter>(Controller->GetPawn()))
-	{		
-		URoleComponent* RoleComp = Character->GetRoleComponent();
+	
+	URoleComponent* RoleComp = Character->GetRoleComponent();
 		
-		if (RoleComp)
-		{
-			RoleComp->SetRoleAuthoritative(ECharacterRole::Zombie);
-		}
-	}
-	if (ABotAIController* BotCtrl = Cast<ABotAIController>(Controller))
+	if (RoleComp)
 	{
-		BotManager->NotifyCharacterRole(BotCtrl, ECharacterRole::Zombie);
+		RoleComp->SetRoleAuthoritative(ECharacterRole::Zombie);
+	}
+
+	if (Character->IsBotControlled())
+	{
+		ABotAIController* BotCtrl = Cast<ABotAIController>(Character->GetController());
+		if (BotCtrl) {
+			BotManager->NotifyCharacterRole(BotCtrl, ECharacterRole::Zombie);
+		}
 	}
 }
 
-void AZombieMode::BecomeHero(AController* Controller) {
+void AZombieMode::BecomeHero(ABaseCharacter* Character) {
 	UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeHero called"));
-	// check if is in hero phase
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (!GS || !GS->IsHeroPhase()) {
-		UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeHero: Not in hero phase"));
+	if (!Character) {
+		UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeHero: Character is null"));
 		return;
 	}
 
-	if (ABaseCharacter* Character = Cast<ABaseCharacter>(Controller->GetPawn()))
-	{
-		URoleComponent* RoleComp = Character->GetRoleComponent();
-		if (RoleComp)
-		{
-			if (RoleComp->GetRole() != ECharacterRole::Human) {
-				UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeHero: Not allowed"));
-				return; 
-			}
-			RoleComp->SetRoleAuthoritative(ECharacterRole::Hero);
-		}
+	// check if is in hero phase
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) {
+		UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeHero: GameState is null"));
+		return;
 	}
-	if (ABotAIController* BotCtrl = Cast<ABotAIController>(Controller))
+	if (!GS->IsHeroPhase()) {
+		UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeHero: Not in hero phase"));
+		return;
+	}
+	
+	URoleComponent* RoleComp = Character->GetRoleComponent();
+	if (RoleComp)
 	{
+		if (RoleComp->GetRole() != ECharacterRole::Human) {
+			UE_LOG(LogTemp, Warning, TEXT("AZombieMode::BecomeHero: Not allowed"));
+			return; 
+		}
+		RoleComp->SetRoleAuthoritative(ECharacterRole::Hero);
+	}
+	
+	if (Character->IsBotControlled())
+	{
+		ABotAIController* BotCtrl = Cast<ABotAIController>(Character->GetController());
 		BotManager->NotifyCharacterRole(BotCtrl, ECharacterRole::Hero);
 	}
 }
@@ -242,19 +250,8 @@ void AZombieMode::EndRound(ETeamId WinningTeam)
 	GetWorld()->GetTimerManager().ClearTimer(FightStateTimerHandle);
 
 	// start new round after some delay
-	constexpr float DelayBeforeNewRound = 3.f;
-	GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
-		{
-			GetWorldTimerManager().SetTimer(
-				StartRoundTimerHandle,
-				[this]()
-				{
-					StartRound();
-				},
-				DelayBeforeNewRound,
-				false
-			);
-		});
+	GetWorldTimerManager().ClearTimer(StartRoundTimerHandle);
+	GetWorldTimerManager().SetTimer(StartRoundTimerHandle, this, &AZombieMode::StartRound, DelayBeforeNewRound, false);
 }
 
 void AZombieMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
@@ -294,16 +291,12 @@ void AZombieMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakO
 
 void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 {
-	if (AController* Ctrl = VictimPawn->GetController())
-	{
-		BecomeZombie(Ctrl);
-	}
+	BecomeZombie(VictimPawn);
 
 	// check if all is zombie -> end game with zombie win
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return;
 
-	bool bAllZombie = true;
 	int TotalPlayers = GS->Slots.Num();
 	int AliveSoldiers = 0;
 	for (APlayerSlot* Slot : GS->Slots)
@@ -314,14 +307,13 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 		if (Slot->GetTeamId() == ETeamId::Soldier)
 		{
 			ABaseCharacter* SoldierChar = Cast<ABaseCharacter>(Pawn);
-			if (SoldierChar && SoldierChar->IsDead()) {
+			if (!SoldierChar || SoldierChar->IsDead()) {
 				continue;
 			}
 			AliveSoldiers++;
-			bAllZombie = false;
 		}
 	}
-	if (bAllZombie)
+	if (AliveSoldiers == 0)
 	{
 		EndRound(ETeamId::Zombie);
 	}
@@ -354,7 +346,7 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 	}
 }
 
-bool AZombieMode::ShouldEnterHeroPhase(int TotalPlayers, int AliveSoldiers) const {
+bool AZombieMode::ShouldEnterHeroPhase(int32 TotalPlayers, int32 AliveSoldiers) const {
 	const bool bLargeLobbyEdgeCase =
 		(TotalPlayers >= 8) && (AliveSoldiers >= 1) && (AliveSoldiers <= 2);
 
@@ -373,7 +365,7 @@ void AZombieMode::HandleZombieKilled(
 		DamageCauser &&
 		DamageCauser->Id == EItemId::MELEE_SWORD_HERO; // special weapon that kills zombie permanently
 
-	VictimPawn->ApplyRealDeath(false);
+	VictimPawn->ApplyRealDeath(false, bPermanentDead);
 
 	if (bPermanentDead)
 	{
@@ -387,7 +379,7 @@ void AZombieMode::HandleZombieKilled(
 
 void AZombieMode::HandleHeroKilled(ABaseCharacter* VictimPawn)
 {
-	VictimPawn->ApplyRealDeath(false);
+	VictimPawn->ApplyRealDeath(false, true); // hero always dies permanently
 	StartSpectating(VictimPawn);
 
 	// check if all soldiers are dead -> end game
@@ -408,7 +400,6 @@ void AZombieMode::HandlePermanentZombieDeath(ABaseCharacter* VictimPawn)
 	if (!VictimPawn) return;
 
 	StartSpectating(VictimPawn);
-	VictimPawn->SetPermanentDead(true);
 
 	// check if all zombie are dead -> end game with soldier win
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
@@ -470,7 +461,6 @@ void AZombieMode::ReviveZombie(ABaseCharacter* ZombieCharacter)
 	AController* VictimCtrl = ZombieCharacter->GetController();
 	if (VictimCtrl)
 	{
-		
 		AActorManager* AM = AActorManager::Get(GetWorld());
 
 		const FVector RandomLoc = AM->RandomLocationOnMap();
@@ -490,6 +480,7 @@ void AZombieMode::EndGame(ETeamId WinningTeam)
 
 void AZombieMode::OnRoundTimeExpired()
 {
+	// time's up, soldiers win
 	AShooterGameState* GS = GetGameState<AShooterGameState>();	
 	EndRound(ETeamId::Soldier);
 }

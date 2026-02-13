@@ -37,6 +37,7 @@ public:
     bool GetCurrentAmmo(int32& OutClip, int32& OutReserve) const;
     const UItemConfig* GetActiveItemConfig() const;
     EEquippedAnimState GetEquippedAnimState() const { return CachedAnimState; }
+	void UnequipCurrentItem();
 
     EItemId GetActiveItemId() const { return ActiveItemId; }
 

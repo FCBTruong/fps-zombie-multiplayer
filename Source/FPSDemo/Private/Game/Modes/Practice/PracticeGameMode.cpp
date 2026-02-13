@@ -7,11 +7,17 @@
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "Game/Subsystems/ItemsManager.h"
+#include "Game/Subsystems/ActorManager.h"
 
 void APracticeGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	UGameManager* GMR = UGameManager::Get(GetWorld());
+	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
+	if (!ActorMgr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PracticeGameMode: ActorManager not found"));
+		return;
+	}
 	FVector CenterPos(1100.269357, 3047.719772, 50);
 	// gen weapons
 	// Weapon list
@@ -37,7 +43,7 @@ void APracticeGameMode::BeginPlay()
 	for (int32 i = 0; i < Count; ++i)
 	{
 		FPickupData P;
-		P.Id = GMR->GetNextItemOnMapId();
+		P.Id = ActorMgr->GetNextItemOnMapId();
 		P.ItemId = Items[i];
 		P.Amount = 1;
 
@@ -53,7 +59,7 @@ void APracticeGameMode::BeginPlay()
 		// Offset along X axis
 		P.Location = CenterPos + FVector(StartOffset + i * Distance, 0.f, 0.f);
 
-		APickupItem* PickupActor = GMR->CreatePickupActor(P);
+		APickupItem* PickupActor = ActorMgr->CreatePickupActor(P);
 		UE_LOG(LogTemp, Warning, TEXT("Pickup %d address = %p"), i, PickupActor);
 	}
 }

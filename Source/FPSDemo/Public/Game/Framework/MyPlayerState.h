@@ -23,44 +23,15 @@ class FPSDEMO_API AMyPlayerState : public APlayerState
 {
 	GENERATED_BODY()
 
-protected:
-	UPROPERTY(ReplicatedUsing = OnRep_Money)
-	int Money = 10000;
-
-	UPROPERTY(Replicated)
-	FString CrosshairCode;
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	UFUNCTION()
-	void OnRep_Money();
-
-	UPROPERTY(ReplicatedUsing = OnRep_BoughtItems)
-	TArray<EItemId> BoughtItems;
-
-	UFUNCTION()
-	void OnRep_BoughtItems();
-
-	TArray<EItemId> OwnedWeapons;
-
-	UPROPERTY(Replicated)
-	APlayerSlot* PlayerSlot = nullptr;
-
-	bool bWasChosenAsZombie = false;
 public:
 	AMyPlayerState();
-	virtual void PostInitializeComponents() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	ETeamId GetTeamId() const;
 	void SetTeamId(ETeamId NewTeamId);
 	void ProcessBuy(const UItemConfig* Item);
 	int GetMoney() const { return Money; }
 	void ResetBoughtItems() { BoughtItems.Empty(); }
-
-	FOnUpdateMoney OnUpdateMoney;
-	FOnUpdateBoughtItems OnUpdateBoughtItems;
-	FOnUpdateTeamId OnUpdateTeamId;
-
 	bool CanBuyThisItem(const UItemConfig* Item) const;
 	void AutoBuy();
 	void TryBuySlot();
@@ -73,7 +44,6 @@ public:
 	TArray<EItemId> GetOwnedWeapons() const {
 		return OwnedWeapons;
 	}
-
 	void AddKill();
 	void AddDeath();
 	void AddAssist();
@@ -87,18 +57,42 @@ public:
 	bool WasChosenAsZombie() const {
 		return bWasChosenAsZombie;
 	}
-
 	int GetBackendUserId() const;
-
 	void SetPlayerSlot(APlayerSlot* Slot);
-
 	APlayerSlot* GetPlayerSlot() const {
 		return PlayerSlot;
 	}
 	virtual FString GetPlayerNameCustom() const override;
-
 	void SetCrosshairCode(const FString& InCrosshairCode);
 	const FString& GetCrosshairCode() const {
 		return CrosshairCode;
 	}
+
+public:
+	// delegates
+	FOnUpdateMoney OnUpdateMoney;
+	FOnUpdateBoughtItems OnUpdateBoughtItems;
+	FOnUpdateTeamId OnUpdateTeamId;
+
+protected:
+	UPROPERTY(ReplicatedUsing = OnRep_Money)
+	int32 Money;
+
+	UPROPERTY(Replicated)
+	FString CrosshairCode;
+
+	UPROPERTY(ReplicatedUsing = OnRep_BoughtItems)
+	TArray<EItemId> BoughtItems;
+
+	UFUNCTION()
+	void OnRep_BoughtItems();
+
+	UFUNCTION()
+	void OnRep_Money();
+
+	UPROPERTY(Replicated)
+	APlayerSlot* PlayerSlot = nullptr;
+
+	bool bWasChosenAsZombie = false;
+	TArray<EItemId> OwnedWeapons;
 };

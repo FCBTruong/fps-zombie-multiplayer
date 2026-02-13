@@ -26,7 +26,6 @@ void AThrownProjectileFrag::OnExplode ()
 
     FVector ImpactPoint = GetActorLocation();
 
-
     float BaseDamage = 300.f;
     TSubclassOf<UDamageType> DamageType = UDamageType::StaticClass();
     AController* InstigatorController = GetInstigatorController();

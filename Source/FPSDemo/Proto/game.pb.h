@@ -98,6 +98,9 @@ extern LoginRequestDefaultTypeInternal _LoginRequest_default_instance_;
 class NewPlayerJoinRoomReply;
 struct NewPlayerJoinRoomReplyDefaultTypeInternal;
 extern NewPlayerJoinRoomReplyDefaultTypeInternal _NewPlayerJoinRoomReply_default_instance_;
+class NotiMessageReply;
+struct NotiMessageReplyDefaultTypeInternal;
+extern NotiMessageReplyDefaultTypeInternal _NotiMessageReply_default_instance_;
 class Packet;
 struct PacketDefaultTypeInternal;
 extern PacketDefaultTypeInternal _Packet_default_instance_;
@@ -145,6 +148,7 @@ template<> ::game::net::ListRoomReply* Arena::CreateMaybeMessage<::game::net::Li
 template<> ::game::net::LoginReply* Arena::CreateMaybeMessage<::game::net::LoginReply>(Arena*);
 template<> ::game::net::LoginRequest* Arena::CreateMaybeMessage<::game::net::LoginRequest>(Arena*);
 template<> ::game::net::NewPlayerJoinRoomReply* Arena::CreateMaybeMessage<::game::net::NewPlayerJoinRoomReply>(Arena*);
+template<> ::game::net::NotiMessageReply* Arena::CreateMaybeMessage<::game::net::NotiMessageReply>(Arena*);
 template<> ::game::net::Packet* Arena::CreateMaybeMessage<::game::net::Packet>(Arena*);
 template<> ::game::net::PlayerLeaveReply* Arena::CreateMaybeMessage<::game::net::PlayerLeaveReply>(Arena*);
 template<> ::game::net::PlayerRoomInfoReply* Arena::CreateMaybeMessage<::game::net::PlayerRoomInfoReply>(Arena*);
@@ -732,6 +736,7 @@ class LoginRequest final :
     kGuestIdFieldNumber = 1,
     kPlayerNameFieldNumber = 2,
     kAvatarFieldNumber = 3,
+    kCrosshairCodeFieldNumber = 4,
   };
   // string guest_id = 1;
   void clear_guest_id();
@@ -775,6 +780,20 @@ class LoginRequest final :
   std::string* _internal_mutable_avatar();
   public:
 
+  // string crosshair_code = 4;
+  void clear_crosshair_code();
+  const std::string& crosshair_code() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_crosshair_code(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_crosshair_code();
+  PROTOBUF_NODISCARD std::string* release_crosshair_code();
+  void set_allocated_crosshair_code(std::string* crosshair_code);
+  private:
+  const std::string& _internal_crosshair_code() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_crosshair_code(const std::string& value);
+  std::string* _internal_mutable_crosshair_code();
+  public:
+
   // @@protoc_insertion_point(class_scope:game.net.LoginRequest)
  private:
   class _Internal;
@@ -785,6 +804,7 @@ class LoginRequest final :
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr guest_id_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr player_name_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr avatar_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr crosshair_code_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_game_2eproto;
 };
@@ -4160,6 +4180,154 @@ class SelfHostStartSessionReply final :
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_game_2eproto;
 };
+// -------------------------------------------------------------------
+
+class NotiMessageReply final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:game.net.NotiMessageReply) */ {
+ public:
+  inline NotiMessageReply() : NotiMessageReply(nullptr) {}
+  ~NotiMessageReply() override;
+  explicit PROTOBUF_CONSTEXPR NotiMessageReply(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  NotiMessageReply(const NotiMessageReply& from);
+  NotiMessageReply(NotiMessageReply&& from) noexcept
+    : NotiMessageReply() {
+    *this = ::std::move(from);
+  }
+
+  inline NotiMessageReply& operator=(const NotiMessageReply& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NotiMessageReply& operator=(NotiMessageReply&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NotiMessageReply& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const NotiMessageReply* internal_default_instance() {
+    return reinterpret_cast<const NotiMessageReply*>(
+               &_NotiMessageReply_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    26;
+
+  friend void swap(NotiMessageReply& a, NotiMessageReply& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(NotiMessageReply* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NotiMessageReply* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NotiMessageReply* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<NotiMessageReply>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const NotiMessageReply& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const NotiMessageReply& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(NotiMessageReply* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "game.net.NotiMessageReply";
+  }
+  protected:
+  explicit NotiMessageReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMessFieldNumber = 1,
+  };
+  // string mess = 1;
+  void clear_mess();
+  const std::string& mess() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_mess(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_mess();
+  PROTOBUF_NODISCARD std::string* release_mess();
+  void set_allocated_mess(std::string* mess);
+  private:
+  const std::string& _internal_mess() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_mess(const std::string& value);
+  std::string* _internal_mutable_mess();
+  public:
+
+  // @@protoc_insertion_point(class_scope:game.net.NotiMessageReply)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr mess_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_game_2eproto;
+};
 // ===================================================================
 
 
@@ -4521,6 +4689,56 @@ inline void LoginRequest::set_allocated_avatar(std::string* avatar) {
   }
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:game.net.LoginRequest.avatar)
+}
+
+// string crosshair_code = 4;
+inline void LoginRequest::clear_crosshair_code() {
+  crosshair_code_.ClearToEmpty();
+}
+inline const std::string& LoginRequest::crosshair_code() const {
+  // @@protoc_insertion_point(field_get:game.net.LoginRequest.crosshair_code)
+  return _internal_crosshair_code();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void LoginRequest::set_crosshair_code(ArgT0&& arg0, ArgT... args) {
+ 
+ crosshair_code_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.LoginRequest.crosshair_code)
+}
+inline std::string* LoginRequest::mutable_crosshair_code() {
+  std::string* _s = _internal_mutable_crosshair_code();
+  // @@protoc_insertion_point(field_mutable:game.net.LoginRequest.crosshair_code)
+  return _s;
+}
+inline const std::string& LoginRequest::_internal_crosshair_code() const {
+  return crosshair_code_.Get();
+}
+inline void LoginRequest::_internal_set_crosshair_code(const std::string& value) {
+  
+  crosshair_code_.Set(value, GetArenaForAllocation());
+}
+inline std::string* LoginRequest::_internal_mutable_crosshair_code() {
+  
+  return crosshair_code_.Mutable(GetArenaForAllocation());
+}
+inline std::string* LoginRequest::release_crosshair_code() {
+  // @@protoc_insertion_point(field_release:game.net.LoginRequest.crosshair_code)
+  return crosshair_code_.Release();
+}
+inline void LoginRequest::set_allocated_crosshair_code(std::string* crosshair_code) {
+  if (crosshair_code != nullptr) {
+    
+  } else {
+    
+  }
+  crosshair_code_.SetAllocated(crosshair_code, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (crosshair_code_.IsDefault()) {
+    crosshair_code_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.LoginRequest.crosshair_code)
 }
 
 // -------------------------------------------------------------------
@@ -5811,9 +6029,65 @@ inline void SelfHostStartSessionReply::set_allocated_token(std::string* token) {
   // @@protoc_insertion_point(field_set_allocated:game.net.SelfHostStartSessionReply.token)
 }
 
+// -------------------------------------------------------------------
+
+// NotiMessageReply
+
+// string mess = 1;
+inline void NotiMessageReply::clear_mess() {
+  mess_.ClearToEmpty();
+}
+inline const std::string& NotiMessageReply::mess() const {
+  // @@protoc_insertion_point(field_get:game.net.NotiMessageReply.mess)
+  return _internal_mess();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void NotiMessageReply::set_mess(ArgT0&& arg0, ArgT... args) {
+ 
+ mess_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.NotiMessageReply.mess)
+}
+inline std::string* NotiMessageReply::mutable_mess() {
+  std::string* _s = _internal_mutable_mess();
+  // @@protoc_insertion_point(field_mutable:game.net.NotiMessageReply.mess)
+  return _s;
+}
+inline const std::string& NotiMessageReply::_internal_mess() const {
+  return mess_.Get();
+}
+inline void NotiMessageReply::_internal_set_mess(const std::string& value) {
+  
+  mess_.Set(value, GetArenaForAllocation());
+}
+inline std::string* NotiMessageReply::_internal_mutable_mess() {
+  
+  return mess_.Mutable(GetArenaForAllocation());
+}
+inline std::string* NotiMessageReply::release_mess() {
+  // @@protoc_insertion_point(field_release:game.net.NotiMessageReply.mess)
+  return mess_.Release();
+}
+inline void NotiMessageReply::set_allocated_mess(std::string* mess) {
+  if (mess != nullptr) {
+    
+  } else {
+    
+  }
+  mess_.SetAllocated(mess, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (mess_.IsDefault()) {
+    mess_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.NotiMessageReply.mess)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

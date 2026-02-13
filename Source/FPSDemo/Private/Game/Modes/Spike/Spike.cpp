@@ -66,10 +66,10 @@ void ASpike::BeginPlay()
         CamPitch = SpringArmComp->GetRelativeRotation().Pitch;
     }
 
-	ASpikeMode* SpikeMode = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(this));
+	/*ASpikeMode* SpikeMode = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(this));
     if (SpikeMode) {
 		SpikeMode->OnCharacterDead.AddUObject(this, &ASpike::OnCharacterDead);
-    }
+    }*/
 }
 
 void ASpike::Tick(float DeltaTime)
@@ -123,8 +123,11 @@ void ASpike::Explode()
 	GetWorld()->GetTimerManager().ClearTimer(DefuseTimerHandle);
 
 	ASpikeMode* SpikeMode = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(this));
-	SpikeMode->SpikeExploded();
-
+    if (!SpikeMode) {
+        UE_LOG(LogTemp, Warning, TEXT("Explode: No SpikeGM found"));
+        return;
+	}
+	SpikeMode->OnSpikeExploded();
 
 	Multicast_Explode();
 }

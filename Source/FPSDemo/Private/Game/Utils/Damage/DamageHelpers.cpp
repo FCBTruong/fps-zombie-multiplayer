@@ -20,6 +20,21 @@ bool DamageHelpers::IsHeadBone(const FName& BoneName)
     return HeadBones.Contains(FName(*BoneName.ToString().ToLower()));
 }
 
+bool DamageHelpers::IsBodyBone(const FName& BoneName)
+{
+    if (BoneName.IsNone())
+        return false;
+
+    static const TSet<FName> BodyBones = {
+        FName("spine_01"),
+        FName("spine_02"),
+        FName("spine_03"),
+        FName("pelvis")
+    };
+
+    return BodyBones.Contains(FName(*BoneName.ToString().ToLower()));
+}
+
 float DamageHelpers::ApplyMyPointDamage(
     AActor* Target,
     const FDamageApplyParams& Params,
@@ -32,16 +47,23 @@ float DamageHelpers::ApplyMyPointDamage(
         return 0.f;
     }
 
+    const FName Bone = Params.Hit.BoneName;
     const bool bIsHeadshot =
         Params.bEnableHeadshot &&
         Params.Hit.IsValidBlockingHit() &&
-        IsHeadBone(Params.Hit.BoneName);
+        IsHeadBone(Bone);
 
     float Damage = Params.BaseDamage;
+
+    float HeadshotMultiplier = 1.0f; // Default headshot multiplier
     if (bIsHeadshot)
     {
-        Damage *= Params.HeadshotMultiplier;
+		HeadshotMultiplier = 5.0f; // Example: 4x damage for headshots
     }
+    else if (IsBodyBone(Bone)) {
+		HeadshotMultiplier = 2.0f; // Example: 1.5x damage for body shots
+    }
+    Damage *= HeadshotMultiplier;
 
     FMyPointDamageEvent DamageEvent;
     DamageEvent.DamageTypeClass =

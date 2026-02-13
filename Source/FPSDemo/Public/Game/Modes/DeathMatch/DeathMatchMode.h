@@ -15,18 +15,16 @@ class FPSDEMO_API ADeathMatchMode : public AShooterGameMode
 	GENERATED_BODY()
 
 public:
-	virtual EMatchMode GetMatchMode() const {
-		return EMatchMode::DeathMatch;
-	}
-protected:
 	virtual void StartPlay() override;
+	EMatchMode GetMatchMode() const final { return EMatchMode::DeathMatch; }
+
+protected:
 	virtual void RestartPlayer(AController* Controller) override;
-	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists,
-		ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeatShot) override;
+		ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
 private:
 	void OnRoundTimeExpired();
 	FTimerHandle RoundTimerHandle;
 
-	static constexpr int32 TimePerRound = 60 * 5; // seconds
+	static constexpr int32 TimePerRound = 60 * 1; // seconds
 };

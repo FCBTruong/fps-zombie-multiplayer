@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Modules/Lobby/RoomData.h"
+#include "Game/Data/MatchInfo.h"
 #include "Http.h"
 /**
  * 
@@ -19,7 +19,7 @@ public:
         TFunction<void(bool bOk, const FString& ResponseBody)> Callback);
 
     void SetBearerToken(const FString& InBearerToken);
-    static bool ParseMatchInfo(const FString& JsonString, FRoomData& OutMatchInfo);
+    static bool ParseMatchInfo(const FString& JsonString, FMatchInfo& OutMatchInfo);
 private:
     FString BaseUrl;
     FString BearerToken;
