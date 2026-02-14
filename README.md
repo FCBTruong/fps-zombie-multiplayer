@@ -1,68 +1,21 @@
-# CSPUB: Survival & Zombies
+# Prototype: Survival & Zombies
 
-Dear Riot Games,  
+**Note:** This project is a prototype and includes free and AI-generated assets. If you believe any asset infringes copyright, please let me know and I will remove it immediately.
 
-Today is 27/09/2025 and I am working on my game project **CSPUB: Survival & Zombies**.  
-This project is built with **Unreal Engine 5.6.1** using **C++**.  
+An online FPS multiplayer prototype focused on technical problems such as **client prediction**, **anti-cheat**, and **AI**.
 
-I hope the recruiter team can see my value through this project.  
-Thank you.  
+## Folder Structure
+
+![Folders diagram](./Docs/Asset/Folders.drawio.svg)
+
+## Class Diagram
+
+![Class diagram](./Docs/Asset/ClassCommon.drawio.svg)
 
 ## Setup
-1. Download gamelift plugi and add it to folder Plugins (Expected: Plugins/GameLiftPlugin/)
-https://github.com/amazon-gamelift/amazon-gamelift-plugin-unreal/releases/download/v3.1.0/amazon-gamelift-plugin-unreal-release-3.1.0.zip
 
-## Build Dedicated Server
-To build dedicated server, you need to pull source code ue5
-download here https://github.com/EpicGames/UnrealEngine/releases/tag/5.6.1-release
-Run Setup.bat Genenerate file
+1. Download the Amazon GameLift plugin and add it to `Plugins/` (expected path: `Plugins/GameLiftPlugin/`):
 
-Step 0 — Build Windows editor (required for cooking on Windows)
-cd /d "C:\Workspace\GameStudio\UE5.6.1\Engine\Build\BatchFiles"
-Build.bat FPSDemoEditor Win64 Development -Project="C:\Workspace\GameStudio\FPSDemo\FPSDemo.uproject" -WaitMutex
-
-Step 1 — Build Linux server binary
-cd /d "C:\Workspace\GameStudio\UE5.6.1\Engine\Build\BatchFiles"
-Build.bat FPSDemoServer Linux Development -Project="C:\Workspace\GameStudio\FPSDemo\FPSDemo.uproject" -WaitMutex
-
-Step 2 — Cook + stage + pak + archive server (also build if needed)
-cd /d "C:\Workspace\GameStudio\UE5.6.1\Engine\Build\BatchFiles"
-RunUAT.bat BuildCookRun ^
- -project="C:\Workspace\GameStudio\FPSDemo\FPSDemo.uproject" ^
- -server -noclient ^
- -serverplatform=Linux ^
- -serverconfig=Development ^
- -build ^
- -cook -stage -pak ^
- -archive -archivedirectory="C:\Workspace\GameStudio\FPSDemo\ArchivedBuilds"
-
-## Build windows dedicated server
-cd /d "C:\Workspace\GameStudio\UE5.6.1\Engine\Build\BatchFiles"
-RunUAT.bat BuildCookRun ^
- -project="C:\Workspace\GameStudio\FPSDemo\FPSDemo.uproject" ^
- -server -noclient ^
- -serverplatform=Win64 ^
- -serverconfig=Development ^
- -build ^
- -cook -stage -pak ^
- -archive -archivedirectory="C:\Workspace\GameStudio\FPSDemo\ArchivedBuilds"
-
- # Build windows game client
- cd /d "C:\Workspace\GameStudio\UE5.6.1\Engine\Build\BatchFiles"
-RunUAT.bat BuildCookRun ^
- -project="C:\Workspace\GameStudio\FPSDemo\FPSDemo.uproject" ^
- -platform=Win64 ^
- -clientconfig=Development ^
- -build ^
- -cook -stage -pak ^
- -archive -archivedirectory="C:\Workspace\GameStudio\FPSDemo\ArchivedBuilds"
-
-The out put will  in Binaries/Linux/
-
-## Package docker image
-docker build -t fps-demo-server .
-
-## Run
-docker compose up -d
-docker compose ps
-docker logs -f fps-demo-server
+   ```text
+   https://github.com/amazon-gamelift/amazon-gamelift-plugin-unreal/releases/download/v3.1.0/amazon-gamelift-plugin-unreal-release-3.1.0.zip
+   ```

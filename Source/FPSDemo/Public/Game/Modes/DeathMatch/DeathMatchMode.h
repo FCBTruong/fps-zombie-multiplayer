@@ -26,5 +26,5 @@ private:
 	void OnRoundTimeExpired();
 	FTimerHandle RoundTimerHandle;
 
-	static constexpr int32 TimePerRound = 60 * 1; // seconds
+	static constexpr int32 TimePerRound = 60 * 3; // seconds
 };

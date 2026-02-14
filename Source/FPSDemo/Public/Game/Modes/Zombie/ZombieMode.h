@@ -48,6 +48,6 @@ private:
 	FTimerHandle FightStateTimerHandle;
 	FTimerHandle AirdropCheckTimer;
 
-	const int RoundProgressTime = 180; // seconds - 3 minutes
+	const int RoundProgressTime = 120; // seconds - 2 minutes
 	const float DelayBeforeNewRound = 3.f;
 };

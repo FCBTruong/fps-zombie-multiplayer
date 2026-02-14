@@ -17,7 +17,7 @@ public:
 	static constexpr int32 MELEE_ATTACK_INDEX_SECONDARY = 2;
 
 	static constexpr int32 INIT_HEALTH_SOLIDER = 100;
-	static constexpr int32 INIT_HEALTH_ZOMBIE = 1000;
+	static constexpr int32 INIT_HEALTH_ZOMBIE = 1000; // temporary disable and using from zombie mode for design testing
 	static constexpr int32 INIT_HEALTH_HERO = 1000;
 
 	static constexpr int32 EMPTY_PLAYER_ID = -1;

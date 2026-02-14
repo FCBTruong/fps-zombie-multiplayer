@@ -932,32 +932,34 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation, const FVector& HitN
         return;
     }
     const FRotator HitRotation = HitNormal.Rotation();
-    if (CachedCharacterAsset->BloodFx) {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-            GetWorld(),
-            CachedCharacterAsset->BloodFx,
-            HitLocation
-        );
+
+	auto CharRole = GetCharacterRole();
+    if (CharRole != ECharacterRole::Zombie) {
+        if (CachedCharacterAsset->BloodFx) {
+            UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+                GetWorld(),
+                CachedCharacterAsset->BloodFx,
+                HitLocation
+            );
+        }
     }
-    /*if (CachedCharacterAsset->AnimMontage_HitReact) {
-        PlayAnimMontage(CachedCharacterAsset->AnimMontage_HitReact);
-    }*/
+    else {
+        if (CachedCharacterAsset->HitFx)
+        {
+            FVector EffectScale(0.1f); // scale
+            FName SocketName = NAME_None; // or socket name if needed
 
-    if (CachedCharacterAsset->HitFx)
-    {
-        FVector EffectScale(0.1f); // scale
-        FName SocketName = NAME_None; // or socket name if needed
-
-        UGameplayStatics::SpawnEmitterAttached(
-            CachedCharacterAsset->HitFx,
-            GetMesh(),                 // USceneComponent* to attach to
-            SocketName,
-            HitLocation,                  // relative location
-            HitRotation,         // relative rotation
-            EffectScale,                  // relative scale
-            EAttachLocation::KeepWorldPosition,
-            true                           // auto destroy
-        );
+            UGameplayStatics::SpawnEmitterAttached(
+                CachedCharacterAsset->HitFx,
+                GetMesh(),                 // USceneComponent* to attach to
+                SocketName,
+                HitLocation,                  // relative location
+                HitRotation,         // relative rotation
+                EffectScale,                  // relative scale
+                EAttachLocation::KeepWorldPosition,
+                true                           // auto destroy
+            );
+        }
     }
     if (AudioComp) {
         //   AudioComp->PlayBloodHit();
