@@ -5,7 +5,7 @@
 #include "Game/Characters/Components/ActionStateComponent.h"
 #include "Game/Characters/Components/ItemVisualComponent.h"
 #include "Game/Characters/BaseCharacter.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Shared/Data/Items/MeleeConfig.h"
 #include "GameConstants.h"

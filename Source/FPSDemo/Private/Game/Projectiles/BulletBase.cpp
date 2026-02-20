@@ -18,7 +18,6 @@ ABulletBase::ABulletBase()
 	CollisionComp->SetHiddenInGame(true);
 	CollisionComp->SetGenerateOverlapEvents(false);
     CollisionComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-   
 
     RootComponent = CollisionComp;
     CollisionComp->OnComponentHit.AddDynamic(this, &ABulletBase::OnHit);
@@ -91,7 +90,6 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     {
         UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionFX, Hit.ImpactPoint);
     }
-
 
     // spawn decal
     if (OtherActor->IsA<APawn>() == false) {

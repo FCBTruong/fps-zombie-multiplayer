@@ -2,7 +2,7 @@
 
 
 #include "Game/Items/Pickup/PickupItem.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Game/Characters/BaseCharacter.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Game/Characters/Components/PickupComponent.h"

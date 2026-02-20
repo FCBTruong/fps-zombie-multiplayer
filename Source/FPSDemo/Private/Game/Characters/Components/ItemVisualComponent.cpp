@@ -7,7 +7,7 @@
 #include "Game/Characters/BaseCharacter.h"
 #include "Game/Items/Weapons/WeaponFirearm.h"
 #include "Game/Items/EquippedItem.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Game/Characters/Components/CharCameraComponent.h"
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "Game/Characters/Components/AnimationComponent.h"

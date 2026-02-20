@@ -5,7 +5,7 @@
 #include "Game/GameManager.h"
 #include "Game/UI/ScoreboardUI.h"
 #include "Shared/Data/Items/ItemConfig.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "Shared/Data/GlobalDataAsset.h"
 #include "Kismet/GameplayStatics.h"

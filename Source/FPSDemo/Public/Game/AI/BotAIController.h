@@ -78,8 +78,6 @@ protected:
     void OnAmmoChanged(int32 Clip, int32 Reserve);
 	virtual void UpdateControlRotation(float DeltaTime, bool bUpdatePawn = true) override;
     void StartReload();
-    UFUNCTION()
-    void StartReloadDelayed();
     void HandleFinishedReload();
 
     FTimerHandle FinishedReloadDelayHandle;

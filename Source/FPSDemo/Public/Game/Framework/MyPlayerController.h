@@ -23,12 +23,6 @@ class FPSDEMO_API AMyPlayerController : public APlayerController
 {
     GENERATED_BODY()
 
-private:
-    bool bIsShopOpen = false;
-
-    UPROPERTY(Transient)
-    TObjectPtr<UGameManager> GMR;
-
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -37,6 +31,7 @@ protected:
     virtual void OnRep_Pawn() override;
     virtual void OnRep_PlayerState() override;
     virtual void SetupInputComponent() override;
+    virtual void PawnLeavingGame() override;
 public:
     AMyPlayerController();
 
@@ -105,35 +100,44 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_SCOREBOARD;
 
-    void SpectateNextPlayer_Internal();
-
+    UPlayerUI* GetPlayerUI() const { return PlayerUI; }
     void ShowScoreboard();
     void HideScoreboard();
-    UPlayerUI* GetPlayerUI() const { return PlayerUI; }
     void RequestBuyItem(EItemId ItemId);
-    ETeamId GetTeamId() const;
-    AActor* FindNextLivingTeammate(AActor* CurrentTarget) const;
     bool IsSpectatingState() const;
     void Test();
+    void RequestSpectateNextPlayer();
+    void BindCharacter(ABaseCharacter* Char);
+    void SetTimeOfDeath(float TimeDead);
+    void NotifyToastMessage(const FText& Message);
+    void SetBackendUserId(int InBackendUserId) { BackendUserId = InBackendUserId; }
+    int32 GetBackendUserId() const { return BackendUserId; }
+    ETeamId GetTeamId() const;
+    AActor* FindNextLivingTeammate(AActor* CurrentTarget) const;
+
     UFUNCTION(Server, Reliable)
     void ServerTest();
-	void RequestSpectateNextPlayer();
+
     UFUNCTION(Server, Reliable)
 	void ServerSpectateNextPlayer();
-    void BindCharacter(ABaseCharacter* Char);
-	void SetTimeOfDeath(float TimeDead);
-    void NotifyToastMessage(const FText& Message);
-
-    virtual void PawnLeavingGame() override;
-	void SetBackendUserId(int InBackendUserId) { BackendUserId = InBackendUserId; }
-	int32 GetBackendUserId() const { return BackendUserId; }
 private:
     UPROPERTY()
     TWeakObjectPtr<AActor> CurrentSpectateTarget;
 
+    UPROPERTY(Transient)
+    TObjectPtr<UGameManager> GMR;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UPlayerUI> PlayerUI;
+
     TWeakObjectPtr<ABaseCharacter> CachedChar;
     TWeakObjectPtr<AShooterGameState> CachedGS;
     TWeakObjectPtr<AMyPlayerState> CachedPS;
+    bool bIsShopOpen = false;
+    bool bInputMappingAdded = false;
+    FTimerHandle ReloadDelayHandle;
+    float TimeOfDeath = 0.f;
+    int32 BackendUserId = -1;
 
     // Character delegate handles
     FDelegateHandle H_HealthUpdated;
@@ -167,15 +171,7 @@ private:
     FDelegateHandle H_UpdateMoney;
     FDelegateHandle H_UpdateBoughtItems;
 	FDelegateHandle H_UpdateTeamId;
-
-    bool bInputMappingAdded = false;
-	float TimeOfDeath = 0.f;
-    FTimerHandle ReloadDelayHandle;
-
-    int32 BackendUserId = -1;
 private:
-    UPROPERTY(Transient)
-    TObjectPtr<UPlayerUI> PlayerUI;
     void ToggleShop();
     void HandleSpikeChanged(bool bHasSpike);
     void NotifyItemPickedUp(EItemId ItemId);
@@ -184,8 +180,6 @@ private:
     void ClickAim();
     void StopAim();
     void StartReload();
-    UFUNCTION()
-    void StartReloadDelayed();
     void EquipSlot(const int32 SlotIndex);
     void ChangeView();
     void OnButtonE_Started();
@@ -209,29 +203,26 @@ private:
     void ShowScope();
     void HideScope();
     void BuyItem_Internal(EItemId ItemId);
-    ABaseCharacter* GetMyChar() const;
     void UnbindCharacter(ABaseCharacter* Char);
     void RebindAll();
     void UnbindAll();
-
     void BindGameState(AShooterGameState* GS);
     void UnbindGameState(AShooterGameState* GS);
-
     void BindPlayerState(AMyPlayerState* PS);
     void UnbindPlayerState(AMyPlayerState* PS);
-
-    UFUNCTION(Server, Reliable)
-    void ServerBuyItem(EItemId ItemId);
-
     void AddDefaultInputMapping();
     void RemoveDefaultInputMapping();
     void EnterUIMode();
     void EnterGameMode();
     void OnAmmoChanged(int32 Clip, int32 Reserve);
+    void HandleUpdateTeamScore(int32 TeamAScore, int32 TeamBScore);
+    void OnToggleChatPressed();
+    void SpectateNextPlayer_Internal();
+    ABaseCharacter* GetMyChar() const;
+
+    UFUNCTION(Server, Reliable)
+    void ServerBuyItem(EItemId ItemId);
 
     UFUNCTION(Client, Reliable)
     void ClientSpectateTarget(AActor* Target, float BlendTime = 0.f);
-
-	void HandleUpdateTeamScore(int32 TeamAScore, int32 TeamBScore);
-	void OnToggleChatPressed();
 };

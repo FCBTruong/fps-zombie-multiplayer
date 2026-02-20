@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Shared/Data/Items/ItemConfig.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 
@@ -15,7 +15,7 @@ const UItemConfig* UItemsManager::GetItemById(EItemId Id) const
 
 void UItemsManager::Initialize(FSubsystemCollectionBase& Collection)
 {
-    Super::Initialize(Collection);
+    Super::Initialize(Collection);  
 
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
     TArray<FAssetData> AssetList;

@@ -6,7 +6,7 @@
 #include "Game/GameManager.h"
 #include "Particles/ParticleSystem.h"
 #include "Shared/Data/Items/ThrowableConfig.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values

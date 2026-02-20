@@ -26,7 +26,6 @@ void URoomManager::OnPacketReceived(
 	const std::string& Payload
 )
 {
-
 	// Handle room-related packets here
     switch (CmdId)
     {

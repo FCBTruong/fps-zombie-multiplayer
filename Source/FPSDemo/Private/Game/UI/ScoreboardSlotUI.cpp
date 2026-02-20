@@ -43,7 +43,6 @@ void UScoreboardSlotUI::Setup(const AMyPlayerState* PS, bool isMe)
 	else {
 		BackgroundImg->SetOpacity(0.4f); // faded
 	}
-
 	
 	HighlightImg->SetVisibility(isMe ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 }

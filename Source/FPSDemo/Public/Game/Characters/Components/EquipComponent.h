@@ -30,33 +30,26 @@ class FPSDEMO_API UEquipComponent : public URoleGatedComponent
 
 public:
     UEquipComponent();
-    // Input-facing API
+
     void RequestSelectActiveItem(EItemId ItemId);
     void SelectSlot(int32 SlotIndex);
     void AutoSelectBestWeapon();
+    void RequestDropItem();
+    void UnequipCurrentItem();
     bool GetCurrentAmmo(int32& OutClip, int32& OutReserve) const;
     const UItemConfig* GetActiveItemConfig() const;
-    EEquippedAnimState GetEquippedAnimState() const { return CachedAnimState; }
-	void UnequipCurrentItem();
-
-    EItemId GetActiveItemId() const { return ActiveItemId; }
-
-    // Fired on server and clients when ActiveItemId changes
+    EEquippedAnimState GetEquippedAnimState() const;
+    EItemId GetActiveItemId() const;
+ 
+	// Delegates
     FOnActiveItemChanged OnActiveItemChanged;
 	FOnAmmoChanged OnAmmoChanged;
-    void RequestDropItem();
 protected:
     virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnEnabledChanged(bool bNowEnabled) override;
+
 private:
-    // Replicated active item id (in hands)
-    UPROPERTY(ReplicatedUsing = OnRep_ActiveItemId)
-    EItemId ActiveItemId = EItemId::NONE;
-
-    UPROPERTY()
-    EEquippedAnimState CachedAnimState = EEquippedAnimState::Unarmed;
-
     UFUNCTION()
     void OnRep_ActiveItemId();
 
@@ -65,9 +58,19 @@ private:
     void ServerRequestSelectActiveItem(EItemId ItemId);
 
 private:
+    // Replicated active item id (in hands)
+    UPROPERTY(ReplicatedUsing = OnRep_ActiveItemId)
+    EItemId ActiveItemId = EItemId::NONE;
+
+    UPROPERTY()
+    EEquippedAnimState CachedAnimState = EEquippedAnimState::Unarmed;
+
     // Dependencies (same owner actor)
-    UPROPERTY() TObjectPtr<UInventoryComponent> InventoryComp = nullptr;
-    UPROPERTY() TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
+    UPROPERTY() 
+    TObjectPtr<UInventoryComponent> InventoryComp = nullptr;
+
+    UPROPERTY() 
+    TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
 
     UPROPERTY() 
     TObjectPtr<UGameManager> CachedGM = nullptr;
@@ -76,21 +79,16 @@ private:
     // Helpers
     bool CanSelectNow() const;
     bool CanSelectItem(EItemId ItemId);
-    const UItemConfig* GetItemConfig(EItemId ItemId) const;
-
-    // Authority-only
-    void Select_Internal(EItemId ItemId);
-
-    // Slot helpers
-    EItemId ChooseThrowableToSelect();
+    bool CanDropItem() const;
     void RefreshCachedState();
-	bool CanDropItem() const;
+    void Select_Internal(EItemId ItemId);
+    void HandleDropItem();
+    void RefreshOverlapPickupActors();
+    void HandleAmmoDataChanged(EItemId ItemId, int32 Clip, int32 Reserve);
+    void BroadcastActiveItemAndAmmo();
+    const UItemConfig* GetItemConfig(EItemId ItemId) const;
+    EItemId ChooseThrowableToSelect() const;
 
 	UFUNCTION(Server, Reliable)
     void ServerDropItem();
-	void HandleDropItem();
-    void RefreshOverlapPickupActors();
-    void HandleAmmoDataChanged(
-        EItemId ItemId, int32 Clip, int32 Reserve);
-    void BroadcastActiveItemAndAmmo();
 };

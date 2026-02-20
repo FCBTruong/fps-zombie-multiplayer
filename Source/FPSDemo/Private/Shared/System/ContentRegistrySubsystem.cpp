@@ -35,6 +35,7 @@ void UContentRegistrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
         AvatarDataMap.Add(Data->AvatarId, Data);
     }
 }
+
 UTexture2D* UContentRegistrySubsystem::GetAvatarTextureById(const FString& AvatarId) const
 {
     const TObjectPtr<UAvatarData>* Found = AvatarDataMap.Find(AvatarId);

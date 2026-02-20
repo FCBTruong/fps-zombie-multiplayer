@@ -10,7 +10,7 @@
 #include "Engine/TargetPoint.h"
 #include "Game/AI/BotStateManager.h"
 #include "Game/Items/Pickup/PickupItem.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Game/Characters/Components/InventoryComponent.h"
@@ -290,7 +290,6 @@ void ASpikeMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakOb
 		}
 	}
 }
-
 
 void ASpikeMode::OnRoundTimeExpired()
 {

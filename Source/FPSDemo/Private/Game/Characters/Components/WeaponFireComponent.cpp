@@ -14,7 +14,7 @@
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "Game/Characters/Components/AnimationComponent.h"
 #include "Game/Characters/Components/CharAudioComponent.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Game/Utils/Damage/DamageHelpers.h"
 
 UWeaponFireComponent::UWeaponFireComponent()

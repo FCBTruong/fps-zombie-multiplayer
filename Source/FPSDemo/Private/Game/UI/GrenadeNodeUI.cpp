@@ -2,7 +2,7 @@
 
 
 #include "Game/UI/GrenadeNodeUI.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Shared/Data/Items/ItemConfig.h"
 
 void UGrenadeNodeUI::UpdateIcon(EItemId ItemId)

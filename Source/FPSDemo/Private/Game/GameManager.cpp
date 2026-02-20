@@ -26,7 +26,6 @@ void UGameManager::OnStart()
     Super::OnStart();
 }
 
-
 UGameManager* UGameManager::Get(UObject* WorldContextObject) {
     if (!WorldContextObject) {
         return nullptr;

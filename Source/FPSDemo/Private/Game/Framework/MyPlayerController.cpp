@@ -22,7 +22,7 @@
 #include "Game/Characters/Components/InventoryComponent.h"
 #include "Game/Characters/Components/PickupComponent.h"
 #include "Shared/Data/GlobalDataAsset.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Game/Characters/Components/SpikeComponent.h"
 #include "Game/UI/PlayerUI.h"
 #include "Game/Characters/Components/CharCameraComponent.h"
@@ -467,11 +467,6 @@ void AMyPlayerController::StartReload() {
         return;
     }
     MyChar->RequestReloadPressed();
-}
-
-void AMyPlayerController::StartReloadDelayed()
-{
-    StartReload();
 }
 
 void AMyPlayerController::Pickup() {

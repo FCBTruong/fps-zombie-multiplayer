@@ -39,7 +39,10 @@ class FPSDEMO_API AShooterGameState : public AGameStateBase
 public:
     AShooterGameState();
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    virtual void RemovePlayerState(APlayerState* PlayerState) override;
+    virtual void AddPlayerState(APlayerState* PlayerState) override;
 
+	// Multicast RPCs
     UFUNCTION(NetMulticast, Reliable)
     void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot);
     UFUNCTION(NetMulticast, Reliable)
@@ -49,67 +52,46 @@ public:
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_RoundResult(ETeamId WinningTeam);
 
+	// Setters and Getters
     void SetMatchState(EMyMatchState NewState);
-    EMyMatchState GetMatchState() const {
-        return CurrentMatchState;
-    }
+    void SetBuyEndTime(int NewBuyEndTime);
     void AddScoreTeam(ETeamId TeamId, int ScoreToAdd);
-    int GetScoreTeam(ETeamId TeamId) const;
     void SetRoundEndTime(int NewRoundEndTime);
-    int GetRoundEndTime() const {
-        return RoundEndTime;
-    }
     void SetRoundRemainingTime(int TimeRemaining);
     void SetMatchMode(EMatchMode NewMode);
-    EMatchMode GetMatchMode() const { return MatchMode; }
-    void SetBuyEndTime(int NewBuyEndTime) {
-        BuyEndTime = NewBuyEndTime;
-    }
-    int GetBuyEndTime() const {
-        return BuyEndTime;
-    }
-    int GetTeamAScore() const { // always score of attackers/soldiers team
-        return TeamAScore;
-    }
-    int GetTeamBScore() const {
-        return TeamBScore;
-    }
     void SetTeamAScore(int NewScore);
     void SetTeamBScore(int NewScore);
-    int GetCurrentRound() const {
-        return CurrentRound;
-    }
-    void SetCurrentRound(int NewRound);
-    float GetRemainingRoundTime() const;
     void SetPlantedSpike(ASpike* NewSpike);
-    ASpike* GetPlantedSpike() const {
-        return PlantedSpike;
-    }
+    void SetCurrentRound(int NewRound);
     void SetHeroPhase(bool bNewHeroPhase);
     void SetRemainingHeroCount(int NewCount);
     void SetRemainingZombieCount(int NewCount);
-    int GetRemainingHeroCount() const {
-        return RemainingHeroCount;
-    }
-    int GetRemainingZombieCount() const {
-        return RemainingZombieCount;
-    }
-    bool IsHeroPhase() const {
-        return bHeroPhase;
-    }
-    bool CanQuitMidMatch() const;
-    bool AreSlotsReady() const;
     void OnSpawnedAirdropCrate(AAirdropCrate* Crate);
     void OnClaimedAirdropCrate(AAirdropCrate* Crate, ABaseCharacter* Claimer, EItemId GiftId);
-    TArray<AAirdropCrate*> GetActiveAirdropCrates() const { return ActiveAirdropCrates; }
-    void ClearAirdropCrates() { ActiveAirdropCrates.Empty(); }
+    void ClearAirdropCrates();
+    int GetRoundEndTime() const;
+    int GetScoreTeam(ETeamId TeamId) const;
+    int GetBuyEndTime() const;
+    int GetTeamAScore() const;
+    int GetTeamBScore() const;
+    int GetCurrentRound() const;
+    int GetRemainingHeroCount() const;
+    int GetRemainingZombieCount() const;
+    bool IsHeroPhase() const;
+    bool CanQuitMidMatch() const;
+    bool AreSlotsReady() const;
+    float GetRemainingRoundTime() const;
+    ASpike* GetPlantedSpike() const;
+    EMyMatchState GetMatchState() const;
+    EMatchMode GetMatchMode() const;
     APlayerSlot* GetPlayerSlot(int32 PlayerId) const;
+    TArray<AAirdropCrate*> GetActiveAirdropCrates() const;
 
     UPROPERTY(ReplicatedUsing = OnRep_PlayerSlots)
     TArray<APlayerSlot*> Slots;
+
     FTimerHandle SlotsRetryHandle;
     int32 SlotsRetryCount = 0;
-
 public:
 	// Delegates
     FOnUpdateScore OnUpdateScore;
@@ -123,6 +105,7 @@ public:
     FOnUpdateHeroPhase OnUpdateHeroPhase;
     FOnUpdateHeroZombieCount OnUpdateHeroZombieCount;
     FOnUpdatePlayerSlots OnUpdatePlayerSlots;
+
 protected:
 	UPROPERTY(ReplicatedUsing = OnRep_MyMatchState)
 	EMyMatchState CurrentMatchState;
@@ -174,8 +157,10 @@ protected:
 
     UFUNCTION()
 	void OnRep_HeroPhase();
+
 	UFUNCTION()
 	void OnRep_RemainingHeroCount();
+
 	UFUNCTION()
 	void OnRep_RemainingZombieCount();
 
@@ -191,14 +176,11 @@ protected:
     UFUNCTION()
 	void OnRep_PlayerSlots();
 
-    void TryBroadcastSlotsReady();
-
-    virtual void RemovePlayerState(APlayerState* PlayerState) override;
-    virtual void AddPlayerState(APlayerState* PlayerState) override;
-
     UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_SpawnAirdropCrate(FVector Location);
 
     UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_ClaimAirdropCrate(ABaseCharacter* Claimer, EItemId GiftId);
+
+    void TryBroadcastSlotsReady();
 };

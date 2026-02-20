@@ -6,7 +6,7 @@
 #include "Game/Framework/MyPlayerController.h"
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Shared/Data/Items/FirearmConfig.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Game/Subsystems/ActorManager.h"
 
 void APracticeGameMode::BeginPlay()

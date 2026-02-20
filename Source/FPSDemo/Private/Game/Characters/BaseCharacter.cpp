@@ -48,7 +48,7 @@
 #include "Game/Characters/Components/ThrowableComponent.h"
 #include "Game/Characters/Components/SpikeComponent.h"
 #include "Game/Characters/Components/RoleComponent.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Game/Data/CharacterAsset.h"
 #include "Materials/MaterialInterface.h"
 #include "Shared/Data/GlobalDataAsset.h"
@@ -419,29 +419,15 @@ void ABaseCharacter::RequestUnCrouch()
 void ABaseCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
     Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-    
-    // log data
-    UE_LOG(LogTemp, Warning,
-        TEXT("OnStartCrouch: HalfHeightAdjust = %f, ScaledHalfHeightAdjust = %f"),
-        HalfHeightAdjust,
-        ScaledHalfHeightAdjust
-	);
-
-
 	CrouchToZ = BasePivotFpsZ - HalfHeightAdjust;
-  
     CrouchTimeline.PlayFromStart();
-
     UpdateMaxWalkSpeed();
 }
 
 void ABaseCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
     Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-
-   
     CrouchToZ = BasePivotFpsZ;
-
     CrouchTimeline.PlayFromStart(); // forward again (not Reverse)
     UpdateMaxWalkSpeed();
 }
@@ -538,11 +524,7 @@ void ABaseCharacter::RequestStopAiming()
 
 void ABaseCharacter::OnRep_IsAiming()
 {
- //   if (IsLocallyControlled()) {
-	//	return; // already handled locally
-	//}
 	UE_LOG(LogTemp, Warning, TEXT("OnRep_IsAiming: %s"), bIsAiming ? TEXT("true") : TEXT("false"));
-
     if (CameraComp)
         CameraComp->SetAiming(bIsAiming);
 }
@@ -640,7 +622,6 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         return 0.f;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage called with DamageAmount: %f"), DamageAmount);
     if (HealthComp && HealthComp->IsDead())
     {
         return 0.f; // already dead
@@ -826,7 +807,6 @@ void ABaseCharacter::ApplyRealDeath(bool bDropInventory, bool bInPermanentDead)
 	}
 
     MulticastCharacterDeath(); 
-
     DisableDeadMeshTick();
     if (bIsPermanentDead != bInPermanentDead) {
         bIsPermanentDead = bInPermanentDead;
@@ -918,7 +898,6 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
 void ABaseCharacter::ClientPlayHitEffect_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ClientPlayHitEffect called"));
-
 	OnHit.Broadcast();
 }
 
@@ -1061,7 +1040,6 @@ void ABaseCharacter::ServerSetIsSlow_Implementation(bool bNewIsSlow)
     }
 	UE_LOG(LogTemp, Warning, TEXT("ServerSetIsSlow called with bNewIsSlow: %s"), bNewIsSlow ? TEXT("true") : TEXT("false"));
 	CurrentMovementState = bNewIsSlow ? EMovementState::Slow : EMovementState::Normal;
-	
     UpdateMaxWalkSpeed();
 }
 
@@ -1119,7 +1097,6 @@ bool ABaseCharacter::IsDead() const
 void ABaseCharacter::Landed(const FHitResult& Hit)
 {
     Super::Landed(Hit);
-
     PlayLandingSound();
 }
 
@@ -1134,7 +1111,6 @@ void ABaseCharacter::PlayLandingSound()
 void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
 {
     Super::BecomeViewTarget(PC);
-
     if (!PC->IsLocalController()) {
         UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called - NO LOCAL"));
         return;
@@ -1147,16 +1123,10 @@ void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
         return;
     }
     MyPC->BindCharacter(this);
-
-    UE_LOG(LogTemp, Warning, TEXT("DEUBGGGG: ABaseCharacter : BecomeViewTarget"));
-
+  
     if (IsValid(CameraComp)) {
-		UE_LOG(LogTemp, Warning, TEXT("DEUBGGGG: CameraComp is valid in BecomeViewTarget"));
         CameraComp->OnBecomeViewTarget(MyPC);
     }
-    else {
-        UE_LOG(LogTemp, Warning, TEXT("DEUBGGGG: CameraComp is null in BecomeViewTarget"));
-	}
 }
 
 void ABaseCharacter::EndViewTarget(APlayerController* PC)
@@ -1196,9 +1166,6 @@ void ABaseCharacter::OnRep_Controller()
     Super::OnRep_Controller();
 
     ApplyRotationMode();
-    /* bool IsLocal = Controller->IsLocalController();
-    bool IsPlayer = Cast<APlayerController>(Controller) != nullptr;
-    ApplyRotationMode(Cast<APlayerController>(Controller) != nullptr);*/
 }
 
 FVector ABaseCharacter::GetThrowableLocation() const
@@ -1398,8 +1365,7 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
         return;
     }
     UCharacterVisualSet* VisualSet = nullptr;
-    // hard code for testing
-    //NewRole = ECharacterRole::Hero;
+
     if (NewRole == ECharacterRole::Zombie)
     {
 		VisualSet = CachedCharacterAsset->ZombieVisualSet;
@@ -1428,8 +1394,6 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("fbuggSetting character skin for spawned pawn %d"), CharacterSkin);
-
         VisualSet = CachedCharacterAsset->SoldierVisualSet;
         if (CharacterSkin == FGameConstants::SKIN_CHARACTER_ATTACKER) {
             VisualSet = CachedCharacterAsset->SoldierVisualSet;

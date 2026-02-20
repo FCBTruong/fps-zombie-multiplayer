@@ -171,7 +171,6 @@ protected:
     TObjectPtr<UAIPerceptionStimuliSourceComponent> StimuliSource;
 
 	// ===== Init Data =====
-
     UPROPERTY(Transient)
     TObjectPtr<UCharacterAsset> CachedCharacterAsset;
 protected:
@@ -220,6 +219,7 @@ protected:
 
     UPROPERTY(ReplicatedUsing = OnRep_CharacterSkin)
     int32 CharacterSkin = FGameConstants::SKIN_CHARACTER_ATTACKER;
+
     UPROPERTY(ReplicatedUsing = OnRep_SpeedMultiplier)
     float SpeedMultiplier = 1.0f;
 
@@ -238,8 +238,6 @@ protected:
     void UpdateFootstepSound(float DeltaTime);
     void PlayLandingSound();
     void OnHealthDepleted();
-	bool CanPlayFootstep() const;
-	bool IsBot() const;
     void UpdateCurrentWeapon(EItemId CurrentWeaponId);
     void HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole);
 	void ApplyDefaultsForRole(ECharacterRole NewRole);
@@ -252,12 +250,15 @@ protected:
     void SetupStunTimeline();
     void SetupPerception();
     void SetupFlashPostProcess();
-    virtual void SetupInitialInventory();
-	bool IsSpikeMode() const;
+    void SetupInitialInventory();
     void BecomeHero_Internal();
     void PlayZombieSpawnEffects();
 	void UpdateNameTextRotation();
     void DisableDeadMeshTick();
+    bool CanPlayFootstep() const;
+    bool IsBot() const;
+    bool IsSpikeMode() const;
+    FVector GetAimPointInternal(EAimPointPolicy Policy, float HeadChance01) const;
 
     UFUNCTION(BlueprintPure)
     EEquippedAnimState GetEquippedAnimState() const;
@@ -300,62 +301,56 @@ protected:
     void OnStunTimelineUpdate(float Value);
     UFUNCTION()
     void OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload);
-    FVector GetAimPointInternal(EAimPointPolicy Policy, float HeadChance01) const;
   
 public:
     // ===== Public API =====
-    virtual void RequestStartAiming();
-    virtual void RequestStopAiming();
-    virtual void UpdateMaxWalkSpeed();
-    virtual void PlayBloodFx(const FVector& HitLocation, const FVector& HitNormal);
-    virtual void PlayStunEffect(const float& Strength);
-    virtual void ChangeView();
-    virtual void OnPlantSpikeStarted();
-    virtual void OnPlantSpikeStopped();
-    virtual void OnDefuseSpikeStarted();
-    virtual void OnDefuseSpikeStopped();
-    virtual void ApplyRotationMode();
-    virtual void RequestCrouch();
-    virtual void RequestUnCrouch();
-    virtual void RequestSlowMovement(bool bEnable);
-    virtual void RequestJump();
-    virtual float GetSpeedWalkRatio() const;
-    virtual float GetAimSensitivity() const;
-    virtual bool IsAlive() const;
-    virtual bool IsDead() const;
-    virtual bool IsFpsViewMode() const;
-    virtual bool IsAiming() const;
-    virtual bool IsCharacterRole(ECharacterRole InRole) const;
-	virtual ETeamId GetTeamId() const;
-    virtual void RequestBecomeHero();
-    virtual void RequestPrimaryActionPressed();
-    virtual void RequestPrimaryActionReleased();
-    virtual void RequestSecondaryActionPressed();
-    virtual void RequestSecondaryActionReleased();
-    virtual void RequestReloadPressed();
-    virtual bool CanAct();
+    void RequestStartAiming();
+    void RequestStopAiming();
+    void UpdateMaxWalkSpeed();
+    void PlayBloodFx(const FVector& HitLocation, const FVector& HitNormal);
+    void PlayStunEffect(const float& Strength);
+    void ChangeView();
+    void OnPlantSpikeStarted();
+    void OnPlantSpikeStopped();
+    void OnDefuseSpikeStarted();
+    void OnDefuseSpikeStopped();
+    void ApplyRotationMode();
+    void RequestCrouch();
+    void RequestUnCrouch();
+    void RequestSlowMovement(bool bEnable);
+    void RequestJump();
+    void RequestBecomeHero();
+    void RequestPrimaryActionPressed();
+    void RequestPrimaryActionReleased();
+    void RequestSecondaryActionPressed();
+    void RequestSecondaryActionReleased();
+    void RequestReloadPressed();
 	void Revive();
     void ApplyRealDeath(bool bDropInventory, bool bInPermanentDead = true);
-	bool IsHero() const;
-	bool IsZombie() const;
-    bool IsPermanentDead() const {
-		return bIsPermanentDead;
-    }
     void PlayEffectHitReact();
     void SetCharacterSkin(int32 SkinId);
-    UFUNCTION()
-    void OnSpineKickUpdate(float Value);
     void SetupSpineKickTimeline();
+    float GetSpeedWalkRatio() const;
+    float GetAimSensitivity() const;
+    bool IsHero() const;
+    bool IsZombie() const;
+    bool IsPermanentDead() const {
+        return bIsPermanentDead;
+    }
+    bool CanAct();
     bool CanSeeThisActor(const APawn* Target) const;
+    bool IsAlive() const;
+    bool IsDead() const;
+    bool IsFpsViewMode() const;
+    bool IsAiming() const;
+    bool IsCharacterRole(ECharacterRole InRole) const;
+    ETeamId GetTeamId() const;
     FVector GetAimPoint(EAimPointPolicy Policy = EAimPointPolicy::Head, float HeadChance01 = 0.35f) const;
-
-	FString GetPlayerName() const;
-
-    UFUNCTION(Server, Reliable)
-    void ServerBecomeHero();
-
-    virtual ECharacterRole GetCharacterRole() const;
     FVector GetThrowableLocation() const;
+    FString GetPlayerName() const;
+    ECharacterRole GetCharacterRole() const;
+
+	// ===== Getters =====
     UPickupComponent* GetPickupComponent() const;
     UInventoryComponent* GetInventoryComponent() const;
 	UHealthComponent* GetHealthComponent() const;
@@ -382,6 +377,12 @@ public:
 
     UFUNCTION(BlueprintCallable)
     float GetSpineKickAlpha() const;
+
+    UFUNCTION(Server, Reliable)
+    void ServerBecomeHero();
+
+    UFUNCTION()
+    void OnSpineKickUpdate(float Value);
 
 	// ===== Delegates =====
     FOnHit OnHit;

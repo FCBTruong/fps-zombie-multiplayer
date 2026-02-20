@@ -4,7 +4,7 @@
 #include "Game/GameManager.h"
 #include "Game/Characters/Components/ActionStateComponent.h"
 #include "Game/Characters/Components/InventoryComponent.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Game/Characters/BaseCharacter.h"
 #include <Kismet/GameplayStatics.h>
@@ -140,7 +140,7 @@ void UEquipComponent::ServerRequestSelectActiveItem_Implementation(EItemId ItemI
     Select_Internal(ItemId);
 }
 
-EItemId UEquipComponent::ChooseThrowableToSelect()
+EItemId UEquipComponent::ChooseThrowableToSelect() const
 {
 	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::ChooseThrowableToSelect called"));
     if (!InventoryComp) return EItemId::NONE;
@@ -429,4 +429,12 @@ void UEquipComponent::UnequipCurrentItem()
         return;
     ActiveItemId = EItemId::NONE;
 	OnRep_ActiveItemId();
+}
+
+EEquippedAnimState UEquipComponent::GetEquippedAnimState() const {
+    return CachedAnimState; 
+}
+
+EItemId UEquipComponent::GetActiveItemId() const { 
+    return ActiveItemId;
 }

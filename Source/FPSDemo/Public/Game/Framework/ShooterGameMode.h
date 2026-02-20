@@ -38,15 +38,12 @@ public:
 	// Delegates
 	FOnCharacterDead OnCharacterDead;
 protected:
-	virtual void RestartAllPlayers();
-	virtual ABotAIController* SpawnBot(APlayerSlot* Slot);
 	virtual void InitGame(
 		const FString& MapName,
 		const FString& Options,
 		FString& ErrorMessage) override;
 	virtual void InitGameState() override;
 	virtual void StartPlay() override;
-	virtual void StartMatch();
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
@@ -64,11 +61,14 @@ protected:
 		const FUniqueNetIdRepl& UniqueId,
 		FString& ErrorMessage) override;
 	virtual void Logout(AController* Exiting) override;
-	virtual void ScheduleMatchStart(int DelaySeconds);
-	virtual void StartMatchFromCountdown();
     virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform) override;
 
+	virtual ABotAIController* SpawnBot(APlayerSlot* Slot);
+	virtual void StartMatch();
+	virtual void ScheduleMatchStart(int DelaySeconds);
+	virtual void StartMatchFromCountdown();
+	virtual void RestartAllPlayers();
 	virtual void StartRound();
 	virtual void EndRound(ETeamId WinningTeam);
 	virtual void EndGame(ETeamId WinningTeam);
@@ -78,6 +78,8 @@ protected:
 	virtual FTransform GetSpawnTransformForSlot(const APlayerSlot& Slot);
 	bool AreAllPlayersConnected() const;
 
+
+	// Properties
 	bool bRoundInProgress = false;
 	bool bRoundStarted = false;
 	bool bMatchStarted = false;

@@ -14,7 +14,7 @@
 #include "Shared/Data/GlobalDataAsset.h"
 #include "Game/Characters/BaseCharacter.h"
 #include "Game/Modes/Zombie/AirdropCrate.h"
-#include "Game/Subsystems/ItemsManager.h"
+#include "Shared/System/ItemsManager.h"
 #include "Game/Framework/PlayerSlot.h"
 
 AShooterGameState::AShooterGameState()
@@ -466,4 +466,60 @@ void AShooterGameState::SetPlantedSpike(ASpike* NewSpike) {
     if (!HasAuthority()) return;
     PlantedSpike = NewSpike;
     OnRep_Spike(); // apply immediately on server too 
+}
+
+void AShooterGameState::SetBuyEndTime(int NewBuyEndTime){
+    BuyEndTime = NewBuyEndTime;
+}
+
+void AShooterGameState::ClearAirdropCrates() {
+    ActiveAirdropCrates.Empty();
+}
+
+int AShooterGameState::GetRoundEndTime() const {
+    return RoundEndTime;
+}
+
+int AShooterGameState::GetBuyEndTime() const {
+    return BuyEndTime;
+}
+
+int AShooterGameState::GetTeamAScore() const { // always score of attackers/soldiers team
+    return TeamAScore;
+}
+
+int AShooterGameState::GetTeamBScore() const {
+    return TeamBScore;
+}
+
+int AShooterGameState::GetCurrentRound() const {
+    return CurrentRound;
+}
+
+ASpike* AShooterGameState::GetPlantedSpike() const {
+    return PlantedSpike;
+}
+
+int AShooterGameState::GetRemainingHeroCount() const {
+    return RemainingHeroCount;
+}
+
+int AShooterGameState::GetRemainingZombieCount() const {
+    return RemainingZombieCount;
+}
+
+bool AShooterGameState::IsHeroPhase() const {
+    return bHeroPhase;
+}
+
+EMatchMode AShooterGameState::GetMatchMode() const { 
+    return MatchMode; 
+}
+
+TArray<AAirdropCrate*> AShooterGameState::GetActiveAirdropCrates() const { 
+    return ActiveAirdropCrates; 
+}
+
+EMyMatchState AShooterGameState::GetMatchState() const {
+	return CurrentMatchState;
 }

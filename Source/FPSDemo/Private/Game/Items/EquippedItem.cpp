@@ -120,7 +120,6 @@ void AEquippedItem::SetViewFps(bool bIsFps)
     // log display name of data
     UE_LOG(LogTemp, Warning, TEXT("WeaponBase SetOwnerNoSee called with %s for weapon %s"), bIsFps ? TEXT("true") : TEXT("false"), *GetName());
 
-
     // Apply scale to stable root (one place, consistent)
     if (RootComponent)
     {

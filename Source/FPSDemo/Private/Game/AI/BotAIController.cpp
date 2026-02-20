@@ -179,11 +179,6 @@ void ABotAIController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current a
     }
 }
 
-void ABotAIController::StartReloadDelayed()
-{
-    StartReload();
-}
-
 void ABotAIController::StartReload() {
     ABaseCharacter* MyChar = GetBotChar();
     if (!MyChar) {

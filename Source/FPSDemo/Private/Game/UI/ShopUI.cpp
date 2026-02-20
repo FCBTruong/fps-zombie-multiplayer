@@ -35,10 +35,6 @@ void UShopUI::OnActive()
 {
 	// This function can be used to initialize or refresh the shop UI when it becomes active.
 	UE_LOG(LogTemp, Log, TEXT("Shop UI is now active."));
-
-	// log num slot
-	UE_LOG(LogTemp, Log, TEXT("Number of shop slots: %d"), Slots.Num());
-
 	UpdateShopMoneyStatus();
 }
 
