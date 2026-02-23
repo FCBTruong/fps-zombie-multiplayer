@@ -546,6 +546,7 @@ void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
         return; // no change
     }
 	bIsAiming = bNewAiming;
+	OnRep_IsAiming();
 
     UpdateMaxWalkSpeed();
 }
@@ -1159,6 +1160,7 @@ void ABaseCharacter::PossessedBy(AController* NewController)
     Super::PossessedBy(NewController);
 
     ApplyRotationMode();
+    UpdateInteractComponentTick();
 }
 
 void ABaseCharacter::OnRep_Controller()
@@ -1166,6 +1168,7 @@ void ABaseCharacter::OnRep_Controller()
     Super::OnRep_Controller();
 
     ApplyRotationMode();
+    UpdateInteractComponentTick();
 }
 
 FVector ABaseCharacter::GetThrowableLocation() const
@@ -2033,4 +2036,13 @@ void ABaseCharacter::DisableDeadMeshTick()
     //// Disable expensive always-tick mode
     //SkelMesh->VisibilityBasedAnimTickOption =
     //    EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
+}
+
+void ABaseCharacter::UpdateInteractComponentTick()
+{
+	UE_LOG(LogTemp, Warning, TEXT("UpdateInteractComponentTick called. IsLocallyControlled: %s"), IsLocallyControlled() ? TEXT("true") : TEXT("false"));
+    if (InteractComp)
+    {
+        InteractComp->SetComponentTickEnabled(IsLocallyControlled());
+    }
 }

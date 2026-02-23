@@ -54,6 +54,9 @@ public:
     class UInputMappingContext* IMC_FPS;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+    class UInputMappingContext* IMC_UI;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_JUMP;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
@@ -101,16 +104,18 @@ public:
     class UInputAction* IA_SCOREBOARD;
 
     UPlayerUI* GetPlayerUI() const { return PlayerUI; }
+    bool IsSpectatingState() const;
     void ShowScoreboard();
     void HideScoreboard();
     void RequestBuyItem(EItemId ItemId);
-    bool IsSpectatingState() const;
     void Test();
     void RequestSpectateNextPlayer();
     void BindCharacter(ABaseCharacter* Char);
     void SetTimeOfDeath(float TimeDead);
     void NotifyToastMessage(const FText& Message);
     void SetBackendUserId(int InBackendUserId) { BackendUserId = InBackendUserId; }
+    void SetMouseSensitivity(float InMouseSensitivity);
+    float GetMouseSensitivity() const;
     int32 GetBackendUserId() const { return BackendUserId; }
     ETeamId GetTeamId() const;
     AActor* FindNextLivingTeammate(AActor* CurrentTarget) const;
@@ -135,9 +140,10 @@ private:
     TWeakObjectPtr<AMyPlayerState> CachedPS;
     bool bIsShopOpen = false;
     bool bInputMappingAdded = false;
-    FTimerHandle ReloadDelayHandle;
     float TimeOfDeath = 0.f;
+    float MouseSensitivity = 0.3f; // Default value
     int32 BackendUserId = -1;
+    FTimerHandle ReloadDelayHandle;
 
     // Character delegate handles
     FDelegateHandle H_HealthUpdated;
@@ -218,6 +224,7 @@ private:
     void HandleUpdateTeamScore(int32 TeamAScore, int32 TeamBScore);
     void OnToggleChatPressed();
     void SpectateNextPlayer_Internal();
+    void SetGameplayInputEnabled(bool bEnabled);
     ABaseCharacter* GetMyChar() const;
 
     UFUNCTION(Server, Reliable)

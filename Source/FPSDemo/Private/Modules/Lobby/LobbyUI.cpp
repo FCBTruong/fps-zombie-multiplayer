@@ -9,6 +9,8 @@
 #include "Modules/Lobby/RoomManager.h"
 #include "Modules/Lobby/RoomSlotUI.h"
 #include "Modules/Chat/ChatUI.h"
+#include "Shared/System/PlayerInfoManager.h"
+#include "Modules/Lobby/ChangeNameUI.h"
 
 void ULobbyUI::NativeConstruct()
 {
@@ -118,6 +120,14 @@ void ULobbyUI::NativeConstruct()
 
 	InsightDevLb->SetVisibility(
 		bNetworkConnected ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+
+	// ChangeNameWidget
+	UPlayerInfoManager* PlayerInfoMgr = UPlayerInfoManager::Get(GetWorld());
+	if (PlayerInfoMgr && ChangeNameWidget) {
+		// show change name if player name is empty
+		ChangeNameWidget->SetVisibility(
+			PlayerInfoMgr->GetPlayerName().IsEmpty() ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
 }
 
 void ULobbyUI::NativeDestruct()

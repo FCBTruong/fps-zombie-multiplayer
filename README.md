@@ -3,6 +3,11 @@
 > **Note**
 > This project is a prototype and includes free and AI-generated assets. If you believe any asset infringes copyright, please let me know and I will remove it immediately.
 
+<p align="center">
+  <a href="https://youtu.be/zKZ15l_08L4" target="_blank">
+    <img src="https://img.shields.io/badge/Watch%20Full%20Video-YouTube-red?style=for-the-badge&logo=youtube" />
+  </a>
+</p>
 An online multiplayer FPS prototype inspired by **CrossFire**, **VALORANT**, and **Counter-Strike**.
 
 The project focuses on the **technical side** of **shooter development**, including:
@@ -16,28 +21,142 @@ The project focuses on the **technical side** of **shooter development**, includ
 
 The goal is to build a **reliable**, **scalable foundation** for a **competitive shooting game**.
 
-## Backend
+### Gameplay Features
+- **Item System**: Equip and use different weapon types during matches.
+- **Spike Plant Mode**: Objective-based mode focused on planting or defending the spike.
+- **Zombie Mode**: Survival-style mode where players fight against zombie enemies.
+- **Deathmatch Mode**: Fast-paced free-for-all combat focused on eliminations.
 
-Backend repository:  
+## Dedicated backend service for matchmaking/session/game services
+
 [FCBTruong/fps-zombie-multiplayer-backend](https://github.com/FCBTruong/fps-zombie-multiplayer-backend)
 
+---
+## Table of Contents
 
-## Folder Structure
+1. [Technical Documentation](#technical-documentation)
+2. [Technical Challenges Solved](#technical-challenges-solved)
+3. [Limitations](#limitations)
+4. [Quick Start](#quick-start)
+5. [Setup](#setup)
+6. [Build Dedicated Server](#build-dedicated-server)
 
-![Folders diagram](./Docs/Asset/Folders.drawio.svg)
+---
+## Technical Documentation
 
-## Architecture Overview
+### System Architecture
 
 ![Architecture Class Diagram](./Docs/Asset/ClassCommon.drawio.svg)
 
-[View diagram on Google Drive](https://drive.google.com/file/d/1zdQQeo8DQTNyPRmSnwcuFQPTmwAZ9PAv/view?usp=sharing)
-## Sequence Diagrams
+[View detailed class diagram (Draw.io)](https://drive.google.com/file/d/1zdQQeo8DQTNyPRmSnwcuFQPTmwAZ9PAv/view?usp=sharing)
 
+### Gameplay Flow
+1. Pickup Item
+2. Equip Item
+3. Primary Action Flow (Shoot/Melee/Throw/Plant Spike)
+4. Reload
+5. Damage/Death
+6. Movement (Walk/Jump/Crouch)
+7. Become Hero
+8. Match Flow
+9. Spectator
+10. Reconnect
+
+#### Shooting Sequence Diagram
+![Primary Action](./Docs/Asset/PrimaryAction.drawio.svg)
+
+[View all sequence diagrams (Draw.io)](https://drive.google.com/file/d/1zdQQeo8DQTNyPRmSnwcuFQPTmwAZ9PAv/view?usp=sharing)
+
+### Project Structure
+![Folders diagram](./Docs/Asset/Folders.drawio.svg)
+
+---
+## Technical Challenges Solved
+### 1. Recoil Prediction (Client-Side)
+![Recoil Prediction](./Docs/Asset/RecoilPrediction.png)]
+- The client starts firing with a recoil seed and sends it to the server.
+- Both client and server use the same seed and shot index to generate the same deterministic recoil/spread values.
+- The shot index is incremented on both client and server for each shot.
+- The client plays immediate local firing feedback (muzzle flash, recoil, tracer) without waiting for a server response.
+- The server performs authoritative raycast/hit validation, applies damage, and replicates the hit result to other clients.
+### 2. Latency
+#### Interpolation (Remote Player Movement)
+- Remote player movement is rendered using interpolation instead of applying network snapshots directly.
+- The client buffers incoming snapshots (position/rotation) and renders remote players slightly behind real time using two valid snapshots.
+- Movement is interpolated between snapshots to reduce visible jitter caused by packet delay and uneven packet arrival times.
+- This keeps remote movement smoother and more stable, especially when latency fluctuates.
+#### Lag Compensation (Hit Registration)
+- Hit registration is handled with lag compensation to improve fairness under network delay.
+- When a player fires, the server validates the shot using authoritative logic instead of trusting the client hit result.
+- The server uses the shot timing / network delay information to evaluate the shot against the target state more fairly (instead of only using the latest visible server state).
+- This reduces cases where shots look correct on the shooter’s screen but fail to register because of latency.
+
+#### Result
+- Remote players appear smoother during movement.
+- Hit registration is more consistent under latency.
+- Shooting remains fair while keeping server-authoritative validation.
+
+### 3. Disconnect / Reconnect Handling
+
+* When a player disconnects, their pawn is not destroyed and remains in the player slot.
+* When the player reconnects, the server should find the corresponding pawn:
+
+  * If the pawn is still alive, allow the controller to possess it again.
+  * Otherwise, switch the player to Spectator Mode.
+
+### 4. Late Join Synchronization
+
+* The game provides a **15-second pre-match phase** for players to join before the match starts.
+* If all players are ready before the timer ends, the match can start early.
+
+### 5. Edge Case Handling
+
+* Joining an in-progress match
+* Race conditions (e.g., reload + shoot, plant spike + shoot, etc.)
+* Duplicate actions caused by packet retries
+* Out-of-order RPCs
+
+---
+## Limitations
+- Some classes still have too much responsibility and need further separation/refactoring.
+- Some configuration values are still hardcoded for testing purposes.
+- Some folder contents are still mixed (different types of assets/files in the same place) and need better organization.
+- The project has only been tested in small-scale sessions and has not been stress-tested for larger player counts.
+- UI/UX polish is still in progress (feedback, transitions, effects, settings).
+- Some systems still need better modularization and clearer interfaces for easier maintenance and feature expansion.
+## Quick Start
+
+1. Install **Unreal Engine 5.6.1** or later from the **Epic Games Launcher**.
+2. Clone this repository (branch: `main`):
+
+```bash
+git clone -b main https://github.com/FCBTruong/fps-zombie-multiplayer.git
+````
+
+3. Open the project in Unreal Engine.
+
+---
 
 ## Setup
 
-1. Download the Amazon GameLift plugin and add it to `Plugins/` (expected path: `Plugins/GameLiftPlugin/`):
+1. Download the **Amazon GameLift plugin** and extract it into the `Plugins/` folder.
 
-   ```text
-   https://github.com/amazon-gamelift/amazon-gamelift-plugin-unreal/releases/download/v3.1.0/amazon-gamelift-plugin-unreal-release-3.1.0.zip
-   ```
+   Expected path:
+
+```text
+Plugins/GameLiftPlugin/
+```
+
+2. Plugin release (v3.1.0):
+
+```text
+https://github.com/amazon-gamelift/amazon-gamelift-plugin-unreal/releases/download/v3.1.0/amazon-gamelift-plugin-unreal-release-3.1.0.zip
+```
+
+3. Regenerate project files (if needed), then build the project.
+
+---
+
+## Build Dedicated Server
+See the detailed guide here:
+* [Build Dedicated Server](./Docs/Build.md)

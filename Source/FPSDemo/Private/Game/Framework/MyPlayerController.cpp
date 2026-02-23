@@ -417,7 +417,7 @@ void AMyPlayerController::Look(const FInputActionValue& Value) {
         return;
     }
     if (!MyChar) return;
-	float AimSensitivity = MyChar->GetAimSensitivity() * 0.3;
+	float AimSensitivity = MyChar->GetAimSensitivity() * MouseSensitivity;
 
     AddYawInput(Axis.X * AimSensitivity);
     AddPitchInput(-Axis.Y * AimSensitivity);
@@ -1087,6 +1087,7 @@ void AMyPlayerController::ServerTest_Implementation()
 
 void AMyPlayerController::HandleEscapePressed()
 {
+	UE_LOG(LogTemp, Warning, TEXT("HandleEscapePressed called"));
     if (bIsShopOpen)
     {
         ToggleShop();
@@ -1095,6 +1096,17 @@ void AMyPlayerController::HandleEscapePressed()
 
 	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
     if (GS && !GS->CanQuitMidMatch()) {
+		UE_LOG(LogTemp, Warning, TEXT("Cannot open settings during this match phase"));
+        if (PlayerUI->IsSettingsOpen())
+        {
+            PlayerUI->ShowSettings(false);
+            EnterGameMode();
+        }
+        else
+        {
+            PlayerUI->ShowSettings(true);
+            EnterUIMode();
+        }
         return;
     }
 
@@ -1128,10 +1140,15 @@ void AMyPlayerController::HandleEscapePressed()
 void AMyPlayerController::EnterUIMode()
 {
     bShowMouseCursor = true;
-    SetInputMode(FInputModeUIOnly());
+    FInputModeGameAndUI InputMode;
+    InputMode.SetHideCursorDuringCapture(false);
+    InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+    SetInputMode(InputMode);
 
     SetIgnoreLookInput(true);
     SetIgnoreMoveInput(true);
+
+    SetGameplayInputEnabled(false);
 }
 
 void AMyPlayerController::EnterGameMode()
@@ -1141,6 +1158,8 @@ void AMyPlayerController::EnterGameMode()
 
     SetIgnoreLookInput(false);
     SetIgnoreMoveInput(false);
+
+	SetGameplayInputEnabled(true);
 }
 
 void AMyPlayerController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current active weapon
@@ -1214,4 +1233,34 @@ void AMyPlayerController::OnToggleChatPressed()
     {
         PlayerUI->ToggleChatInput();
     }
+}
+
+void AMyPlayerController::SetGameplayInputEnabled(bool bEnabled)
+{
+    if (!IsLocalController()) return;
+
+    UEnhancedInputLocalPlayerSubsystem* Subsystem =
+        ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+    if (!Subsystem) return;
+
+    if (bEnabled)
+    {
+        if (IMC_UI)  Subsystem->RemoveMappingContext(IMC_UI);
+        if (IMC_FPS) Subsystem->AddMappingContext(IMC_FPS, 0);
+    }
+    else
+    {
+        if (IMC_FPS) Subsystem->RemoveMappingContext(IMC_FPS);
+        if (IMC_UI)  Subsystem->AddMappingContext(IMC_UI, 10); // UI priority cao
+    }
+}
+
+void AMyPlayerController::SetMouseSensitivity(float Sensitivity)
+{
+    MouseSensitivity = Sensitivity;
+}
+
+float AMyPlayerController::GetMouseSensitivity() const
+{
+    return MouseSensitivity;
 }

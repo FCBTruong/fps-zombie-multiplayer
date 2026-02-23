@@ -367,9 +367,21 @@ struct NotiMessageReplyDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NotiMessageReplyDefaultTypeInternal _NotiMessageReply_default_instance_;
+PROTOBUF_CONSTEXPR ChangeNameRequest::ChangeNameRequest(
+    ::_pbi::ConstantInitialized)
+  : new_name_(&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}){}
+struct ChangeNameRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ChangeNameRequestDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ChangeNameRequestDefaultTypeInternal() {}
+  union {
+    ChangeNameRequest _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChangeNameRequestDefaultTypeInternal _ChangeNameRequest_default_instance_;
 }  // namespace net
 }  // namespace game
-static ::_pb::Metadata file_level_metadata_game_2eproto[27];
+static ::_pb::Metadata file_level_metadata_game_2eproto[28];
 static constexpr ::_pb::EnumDescriptor const** file_level_enum_descriptors_game_2eproto = nullptr;
 static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_game_2eproto = nullptr;
 
@@ -584,6 +596,13 @@ const uint32_t TableStruct_game_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pro
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
   PROTOBUF_FIELD_OFFSET(::game::net::NotiMessageReply, mess_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::game::net::ChangeNameRequest, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::game::net::ChangeNameRequest, new_name_),
 };
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, -1, -1, sizeof(::game::net::Packet)},
@@ -613,6 +632,7 @@ static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protode
   { 186, -1, -1, sizeof(::game::net::PlayerSessionReply)},
   { 195, -1, -1, sizeof(::game::net::SelfHostStartSessionReply)},
   { 203, -1, -1, sizeof(::game::net::NotiMessageReply)},
+  { 210, -1, -1, sizeof(::game::net::ChangeNameRequest)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -643,6 +663,7 @@ static const ::_pb::Message* const file_default_instances[] = {
   &::game::net::_PlayerSessionReply_default_instance_._instance,
   &::game::net::_SelfHostStartSessionReply_default_instance_._instance,
   &::game::net::_NotiMessageReply_default_instance_._instance,
+  &::game::net::_ChangeNameRequest_default_instance_._instance,
 };
 
 const char descriptor_table_protodef_game_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
@@ -683,14 +704,15 @@ const char descriptor_table_protodef_game_2eproto[] PROTOBUF_SECTION_VARIABLE(pr
   "sionReply\022\n\n\002Ip\030\001 \001(\t\022\014\n\004Port\030\002 \001(\005\022\027\n\017P"
   "layerSessionId\030\003 \001(\t\";\n\031SelfHostStartSes"
   "sionReply\022\017\n\007room_id\030\001 \001(\t\022\r\n\005token\030\002 \001("
-  "\t\" \n\020NotiMessageReply\022\014\n\004mess\030\001 \001(\tB\013\252\002\010"
-  "Game.Netb\006proto3"
+  "\t\" \n\020NotiMessageReply\022\014\n\004mess\030\001 \001(\t\"%\n\021C"
+  "hangeNameRequest\022\020\n\010new_name\030\001 \001(\tB\013\252\002\010G"
+  "ame.Netb\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_game_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_game_2eproto = {
-    false, false, 1536, descriptor_table_protodef_game_2eproto,
+    false, false, 1575, descriptor_table_protodef_game_2eproto,
     "game.proto",
-    &descriptor_table_game_2eproto_once, nullptr, 0, 27,
+    &descriptor_table_game_2eproto_once, nullptr, 0, 28,
     schemas, file_default_instances, TableStruct_game_2eproto::offsets,
     file_level_metadata_game_2eproto, file_level_enum_descriptors_game_2eproto,
     file_level_service_descriptors_game_2eproto,
@@ -6024,6 +6046,201 @@ void NotiMessageReply::InternalSwap(NotiMessageReply* other) {
       file_level_metadata_game_2eproto[26]);
 }
 
+// ===================================================================
+
+class ChangeNameRequest::_Internal {
+ public:
+};
+
+ChangeNameRequest::ChangeNameRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor();
+  // @@protoc_insertion_point(arena_constructor:game.net.ChangeNameRequest)
+}
+ChangeNameRequest::ChangeNameRequest(const ChangeNameRequest& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  new_name_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    new_name_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_new_name().empty()) {
+    new_name_.Set(from._internal_new_name(), 
+      GetArenaForAllocation());
+  }
+  // @@protoc_insertion_point(copy_constructor:game.net.ChangeNameRequest)
+}
+
+inline void ChangeNameRequest::SharedCtor() {
+new_name_.InitDefault();
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  new_name_.Set("", GetArenaForAllocation());
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+ChangeNameRequest::~ChangeNameRequest() {
+  // @@protoc_insertion_point(destructor:game.net.ChangeNameRequest)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void ChangeNameRequest::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  new_name_.Destroy();
+}
+
+void ChangeNameRequest::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+
+void ChangeNameRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:game.net.ChangeNameRequest)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  new_name_.ClearToEmpty();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* ChangeNameRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string new_name = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_new_name();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "game.net.ChangeNameRequest.new_name"));
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* ChangeNameRequest::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:game.net.ChangeNameRequest)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // string new_name = 1;
+  if (!this->_internal_new_name().empty()) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_new_name().data(), static_cast<int>(this->_internal_new_name().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "game.net.ChangeNameRequest.new_name");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_new_name(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:game.net.ChangeNameRequest)
+  return target;
+}
+
+size_t ChangeNameRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:game.net.ChangeNameRequest)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // string new_name = 1;
+  if (!this->_internal_new_name().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_new_name());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ChangeNameRequest::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSizeCheck,
+    ChangeNameRequest::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ChangeNameRequest::GetClassData() const { return &_class_data_; }
+
+void ChangeNameRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to,
+                      const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  static_cast<ChangeNameRequest *>(to)->MergeFrom(
+      static_cast<const ChangeNameRequest &>(from));
+}
+
+
+void ChangeNameRequest::MergeFrom(const ChangeNameRequest& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:game.net.ChangeNameRequest)
+  GOOGLE_DCHECK_NE(&from, this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_new_name().empty()) {
+    _internal_set_new_name(from._internal_new_name());
+  }
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ChangeNameRequest::CopyFrom(const ChangeNameRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:game.net.ChangeNameRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ChangeNameRequest::IsInitialized() const {
+  return true;
+}
+
+void ChangeNameRequest::InternalSwap(ChangeNameRequest* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &new_name_, lhs_arena,
+      &other->new_name_, rhs_arena
+  );
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata ChangeNameRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_game_2eproto_getter, &descriptor_table_game_2eproto_once,
+      file_level_metadata_game_2eproto[27]);
+}
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace net
 }  // namespace game
@@ -6135,6 +6352,10 @@ Arena::CreateMaybeMessage< ::game::net::SelfHostStartSessionReply >(Arena* arena
 template<> PROTOBUF_NOINLINE ::game::net::NotiMessageReply*
 Arena::CreateMaybeMessage< ::game::net::NotiMessageReply >(Arena* arena) {
   return Arena::CreateMessageInternal< ::game::net::NotiMessageReply >(arena);
+}
+template<> PROTOBUF_NOINLINE ::game::net::ChangeNameRequest*
+Arena::CreateMaybeMessage< ::game::net::ChangeNameRequest >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::game::net::ChangeNameRequest >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

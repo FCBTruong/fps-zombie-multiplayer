@@ -16,13 +16,6 @@ UInteractComponent::UInteractComponent()
 void UInteractComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// Only enable ticking for the local player to optimize performance
-	ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-	if (!Character || !Character->IsLocallyControlled())
-	{
-		SetComponentTickEnabled(false);
-	}
 }
 
 

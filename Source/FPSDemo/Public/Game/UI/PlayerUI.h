@@ -23,6 +23,8 @@ class UItemConfig;
 class UMinimapRadarUI;
 class UPlayerSlotUI;
 class UChatUI;
+class UGameSettingsUI;
+
 /**
  * 
  */
@@ -34,40 +36,56 @@ class FPSDEMO_API UPlayerUI : public UUserWidget
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UChatUI* WBP_Chat;
+
 	UPROPERTY(meta = (BindWidget))
 	UWidget* MatchResultPn;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* MatchResultLb;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* RoundLb;
+
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* HpBar;
+
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* ArmorBar;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* RemainingAmmo;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* CurrentAmmo;
+
 	UPROPERTY(meta = (BindWidget))
+
 	UTextBlock* FirstTeamScore;
 	UPROPERTY(meta = (BindWidget))
+
 	UTextBlock* SecondTeamScore;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* FirstTeamLb;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* SecondTeamLb;
+
 	UPROPERTY(meta = (BindWidget))
 	UImage* BloodScreen;
+
 	UPROPERTY(meta = (BindWidget))
 	UWidget* SwitchSideEffPn;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowAnimSwitchSide;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* GetHitAnim;
+
 	UPROPERTY(meta = (BindWidget))
 	UStackBox* KillNotifyStack;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* ShowWeaponNumbers;
 
@@ -76,11 +94,13 @@ protected:
 
 	UPROPERTY(meta = (BindWidget));
 	UStackBox* PlayerSlotsLeft;
+
 	UPROPERTY(meta = (BindWidget));
 	UStackBox* PlayerSlotsRight;
 
 	UPROPERTY(meta = (BindWidget))
 	UStackBox* GrenadesStack;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* GrenadeTitle;
 
@@ -128,18 +148,22 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* PnSpike;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* StartPlantSpikeAnim;
+
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* StartDefuseSpikeAnim;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* MatchToastLb;
+
 	UPROPERTY(meta = (BindWidget))
 	UWidget* MatchToastPn;
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* MatchStatePn;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* MatchStateTxt;
 
@@ -148,6 +172,7 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* NotiToastLb;
+
 	UPROPERTY(meta = (BindWidget))
 	UWidget* NotiToastPn;
 
@@ -177,10 +202,15 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UWidget* ZombieVsHeroPn;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* HeroNumLb;
+
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ZombieNumLb;
+
+	UPROPERTY(meta = (BindWidget))
+	UGameSettingsUI* GameSettingsWidget;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* KillMarkAnim;
@@ -191,12 +221,10 @@ protected:
 	TArray<UWidget*> WeaponTextNumbers;
 	FTimerHandle RoundClockTimerHandle;
 
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	void DoShowMatchStateToast(FText Txt);
 	void StartRoundClock();
 	void StopRoundClock();
 	void UpdateRoundClockOnce();
-
 	void UpdatePlayerSlots();
 public:
 	UPROPERTY(meta = (BindWidget), Transient)
@@ -249,4 +277,6 @@ public:
 	void UpdateHeroZombieNum();
 	void UpdateCrosshairCode(const FString& NewCrosshairCode);
 	void ToggleChatInput();
+	bool IsSettingsOpen() const;
+	void ShowSettings(bool bShow);
 };

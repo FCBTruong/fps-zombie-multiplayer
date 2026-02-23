@@ -62,6 +62,9 @@ extern ChangeHostTypeReplyDefaultTypeInternal _ChangeHostTypeReply_default_insta
 class ChangeHostTypeRequest;
 struct ChangeHostTypeRequestDefaultTypeInternal;
 extern ChangeHostTypeRequestDefaultTypeInternal _ChangeHostTypeRequest_default_instance_;
+class ChangeNameRequest;
+struct ChangeNameRequestDefaultTypeInternal;
+extern ChangeNameRequestDefaultTypeInternal _ChangeNameRequest_default_instance_;
 class ChatInRoomReply;
 struct ChatInRoomReplyDefaultTypeInternal;
 extern ChatInRoomReplyDefaultTypeInternal _ChatInRoomReply_default_instance_;
@@ -136,6 +139,7 @@ template<> ::game::net::ChangeGameModeReply* Arena::CreateMaybeMessage<::game::n
 template<> ::game::net::ChangeGameModeRequest* Arena::CreateMaybeMessage<::game::net::ChangeGameModeRequest>(Arena*);
 template<> ::game::net::ChangeHostTypeReply* Arena::CreateMaybeMessage<::game::net::ChangeHostTypeReply>(Arena*);
 template<> ::game::net::ChangeHostTypeRequest* Arena::CreateMaybeMessage<::game::net::ChangeHostTypeRequest>(Arena*);
+template<> ::game::net::ChangeNameRequest* Arena::CreateMaybeMessage<::game::net::ChangeNameRequest>(Arena*);
 template<> ::game::net::ChatInRoomReply* Arena::CreateMaybeMessage<::game::net::ChatInRoomReply>(Arena*);
 template<> ::game::net::ChatInRoomRequest* Arena::CreateMaybeMessage<::game::net::ChatInRoomRequest>(Arena*);
 template<> ::game::net::CreateRoomRequest* Arena::CreateMaybeMessage<::game::net::CreateRoomRequest>(Arena*);
@@ -4328,6 +4332,154 @@ class NotiMessageReply final :
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_game_2eproto;
 };
+// -------------------------------------------------------------------
+
+class ChangeNameRequest final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:game.net.ChangeNameRequest) */ {
+ public:
+  inline ChangeNameRequest() : ChangeNameRequest(nullptr) {}
+  ~ChangeNameRequest() override;
+  explicit PROTOBUF_CONSTEXPR ChangeNameRequest(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ChangeNameRequest(const ChangeNameRequest& from);
+  ChangeNameRequest(ChangeNameRequest&& from) noexcept
+    : ChangeNameRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline ChangeNameRequest& operator=(const ChangeNameRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ChangeNameRequest& operator=(ChangeNameRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ChangeNameRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ChangeNameRequest* internal_default_instance() {
+    return reinterpret_cast<const ChangeNameRequest*>(
+               &_ChangeNameRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    27;
+
+  friend void swap(ChangeNameRequest& a, ChangeNameRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ChangeNameRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ChangeNameRequest* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ChangeNameRequest* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ChangeNameRequest>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ChangeNameRequest& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom(const ChangeNameRequest& from);
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message* to, const ::PROTOBUF_NAMESPACE_ID::Message& from);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ChangeNameRequest* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "game.net.ChangeNameRequest";
+  }
+  protected:
+  explicit ChangeNameRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kNewNameFieldNumber = 1,
+  };
+  // string new_name = 1;
+  void clear_new_name();
+  const std::string& new_name() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_new_name(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_new_name();
+  PROTOBUF_NODISCARD std::string* release_new_name();
+  void set_allocated_new_name(std::string* new_name);
+  private:
+  const std::string& _internal_new_name() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_new_name(const std::string& value);
+  std::string* _internal_mutable_new_name();
+  public:
+
+  // @@protoc_insertion_point(class_scope:game.net.ChangeNameRequest)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr new_name_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_game_2eproto;
+};
 // ===================================================================
 
 
@@ -6083,9 +6235,65 @@ inline void NotiMessageReply::set_allocated_mess(std::string* mess) {
   // @@protoc_insertion_point(field_set_allocated:game.net.NotiMessageReply.mess)
 }
 
+// -------------------------------------------------------------------
+
+// ChangeNameRequest
+
+// string new_name = 1;
+inline void ChangeNameRequest::clear_new_name() {
+  new_name_.ClearToEmpty();
+}
+inline const std::string& ChangeNameRequest::new_name() const {
+  // @@protoc_insertion_point(field_get:game.net.ChangeNameRequest.new_name)
+  return _internal_new_name();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ChangeNameRequest::set_new_name(ArgT0&& arg0, ArgT... args) {
+ 
+ new_name_.Set(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:game.net.ChangeNameRequest.new_name)
+}
+inline std::string* ChangeNameRequest::mutable_new_name() {
+  std::string* _s = _internal_mutable_new_name();
+  // @@protoc_insertion_point(field_mutable:game.net.ChangeNameRequest.new_name)
+  return _s;
+}
+inline const std::string& ChangeNameRequest::_internal_new_name() const {
+  return new_name_.Get();
+}
+inline void ChangeNameRequest::_internal_set_new_name(const std::string& value) {
+  
+  new_name_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ChangeNameRequest::_internal_mutable_new_name() {
+  
+  return new_name_.Mutable(GetArenaForAllocation());
+}
+inline std::string* ChangeNameRequest::release_new_name() {
+  // @@protoc_insertion_point(field_release:game.net.ChangeNameRequest.new_name)
+  return new_name_.Release();
+}
+inline void ChangeNameRequest::set_allocated_new_name(std::string* new_name) {
+  if (new_name != nullptr) {
+    
+  } else {
+    
+  }
+  new_name_.SetAllocated(new_name, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (new_name_.IsDefault()) {
+    new_name_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:game.net.ChangeNameRequest.new_name)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

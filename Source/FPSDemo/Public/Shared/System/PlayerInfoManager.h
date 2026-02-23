@@ -49,5 +49,6 @@ public:
 	) override;
 
 	void Login(int id);
+	void ChangeName(const FString& NewName);
 	static UPlayerInfoManager* Get(UWorld* World);
 };

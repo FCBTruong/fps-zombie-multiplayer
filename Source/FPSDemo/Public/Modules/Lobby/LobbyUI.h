@@ -22,6 +22,7 @@ class UNetworkManager;
 class URoomManager;
 class URoomSlotUI;
 class UChatUI;
+class UChangeNameUI;
 
 /**
  * 
@@ -120,6 +121,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UChatUI* ChatWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	UChangeNameUI* ChangeNameWidget;
 	
 	UPROPERTY();
 	TArray<URoomPlayerSlotUI*> PlayerSlotUIs;

@@ -255,6 +255,7 @@ protected:
     void PlayZombieSpawnEffects();
 	void UpdateNameTextRotation();
     void DisableDeadMeshTick();
+    void UpdateInteractComponentTick();
     bool CanPlayFootstep() const;
     bool IsBot() const;
     bool IsSpikeMode() const;

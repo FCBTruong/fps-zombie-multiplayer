@@ -116,11 +116,6 @@ void UPlayerInfoManager::LoadOrCreateLocalInfo()
         Save->GuestId = GameUtils::GenerateMd5Token();
     }
 
-    if (Save->PlayerName.IsEmpty())
-    {
-        Save->PlayerName = TEXT("Player");
-    }
-
     if (Save->Avatar.IsEmpty())
     if (Save->Avatar.IsEmpty())
     {
@@ -203,4 +198,41 @@ void UPlayerInfoManager::SetCrosshairCode(const FString& InCrosshairCode)
 const FString& UPlayerInfoManager::GetCrosshairCode() const
 {
     return CrosshairCode;
+}
+
+void UPlayerInfoManager::ChangeName(const FString& NewName)
+{
+    PlayerName = NewName;
+    // Save to local storage
+    using namespace PlayerLocalInfoConst;
+    UMySaveGame* Save = nullptr;
+    if (UGameplayStatics::DoesSaveGameExist(SLOT, USER_INDEX))
+    {
+        Save = Cast<UMySaveGame>(
+            UGameplayStatics::LoadGameFromSlot(SLOT, USER_INDEX)
+        );
+    }
+    if (!Save)
+    {
+        Save = Cast<UMySaveGame>(
+            UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass())
+        );
+    }
+    if (!Save)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create SaveGame object"));
+        return;
+    }
+    Save->PlayerName = PlayerName;
+    UGameplayStatics::SaveGameToSlot(Save, SLOT, USER_INDEX);
+
+	// send change name request to server
+    game::net::ChangeNameRequest Request;
+    Request.set_new_name(TCHAR_TO_UTF8(*PlayerName));
+   
+    UNetworkManager* Network = GetWorld() ? GetWorld()->GetGameInstance()->GetSubsystem<UNetworkManager>() : nullptr;
+    if (Network)
+    {
+        Network->SendPacket(ECmdId::CHANGE_NAME_REQUEST, Request);
+	}
 }

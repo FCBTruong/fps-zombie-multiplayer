@@ -20,6 +20,7 @@
 #include "Game/Framework/ShooterGameState.h"
 #include "Shared/Utils/GameUtils.h"
 #include "GameConstants.h"
+#include "Game/UI/GameSettingsUI.h"
 
 void UPlayerUI::NativeConstruct()
 {
@@ -86,10 +87,6 @@ void UPlayerUI::NativeConstruct()
             }
         }
 	}
-}
-
-void UPlayerUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime) {
-	Super::NativeTick(MyGeometry, InDeltaTime);
 }
 
 void UPlayerUI::ShowPickupMessage(const FString& Message)
@@ -868,4 +865,19 @@ void UPlayerUI::ToggleChatInput() {
     if (WBP_Chat) {
         WBP_Chat->ToggleChat();
     }
+}
+
+bool UPlayerUI::IsSettingsOpen() const
+{
+    return GameSettingsWidget && GameSettingsWidget->GetVisibility() == ESlateVisibility::Visible;
+}
+
+void UPlayerUI::ShowSettings(bool bShow)
+{
+    if (!GameSettingsWidget)
+    {
+        return;
+    }
+
+    GameSettingsWidget->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }

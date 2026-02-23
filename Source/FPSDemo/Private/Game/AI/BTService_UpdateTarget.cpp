@@ -37,8 +37,7 @@ void UBTService_UpdateTarget::TickNode(
     // Collect all perceived actors by sight
     TArray<AActor*> PerceivedActors;
     Perception->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), PerceivedActors);
-	UE_LOG(LogTemp, Log, TEXT("BTService_UpdateTarget: Perceived %d actors"), PerceivedActors.Num());
-
+	
     ABaseCharacter* BestTarget = nullptr;
 
     // Loop through perceived actors
