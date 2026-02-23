@@ -89,28 +89,27 @@ void UPlayerUI::NativeConstruct()
 	}
 }
 
-void UPlayerUI::ShowPickupMessage(const FString& Message)
+void UPlayerUI::ShowInteractMessage(const FString& Message)
 {
-    if (UTextBlock* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("PickupLabel"))))
-    {
+    if (PickupLabel) {
         if (Message == TEXT(""))
         {
-            Label->SetVisibility(ESlateVisibility::Hidden);
+            PickupLabel->SetVisibility(ESlateVisibility::Hidden);
             return;
-		}
-        Label->SetText(FText::Format(
+        }
+        PickupLabel->SetText(FText::Format(
             FText::FromString(TEXT("{0}\n(Press F)")),
             FText::FromString(Message)
         ));
-        Label->SetVisibility(ESlateVisibility::Visible);
+        PickupLabel->SetVisibility(ESlateVisibility::Visible);
     }
 }
 
-void UPlayerUI::HidePickupMessage()
+void UPlayerUI::HideInteractMessage()
 {
-    if (UTextBlock* Label = Cast<UTextBlock>(GetWidgetFromName(TEXT("PickupLabel"))))
+    if (PickupLabel && PickupLabel->IsVisible())
     {
-        Label->SetVisibility(ESlateVisibility::Hidden);
+        PickupLabel->SetVisibility(ESlateVisibility::Hidden);
     }
 }
 
@@ -163,7 +162,7 @@ void UPlayerUI::OnHit()
 void UPlayerUI::OnEnter()
 {
     // This function can be used to initialize or reset UI elements when the player enters the game
-    ShowPickupMessage(TEXT(""));
+    ShowInteractMessage(TEXT(""));
 
     KillNotifyStack->ClearChildren();
 

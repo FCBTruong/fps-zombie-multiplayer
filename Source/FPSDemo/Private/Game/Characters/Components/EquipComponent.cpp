@@ -63,11 +63,19 @@ bool UEquipComponent::CanSelectItem(EItemId ItemId)
     if (!IsEnabled()) {
         return false;
     }
-    if (!InventoryComp) return false;
-    if (ItemId == EItemId::NONE) return false;
+    if (!InventoryComp) {
+		UE_LOG(LogTemp, Warning, TEXT("UEquipComponent::CanSelectItem: InventoryComp not found"));
+        return false;
+    }
+    if (ItemId == EItemId::NONE) {
+        return false;
+    }
 
     const UItemConfig* Data = GetItemConfig(ItemId);
-    if (!Data) return false;
+    if (!Data) {
+		UE_LOG(LogTemp, Warning, TEXT("UEquipComponent::CanSelectItem: ItemConfig not found for ItemId %d"), static_cast<int32>(ItemId));
+        return false;
+    }
 
     if (Data->Id == EItemId::SPIKE) {
         return InventoryComp->HasSpike();
@@ -167,7 +175,10 @@ EItemId UEquipComponent::ChooseThrowableToSelect() const
 
 void UEquipComponent::SelectSlot(int32 SlotIndex)
 {
-    if (!CanSelectNow()) return;
+    if (!CanSelectNow()) {
+        UE_LOG(LogTemp, Warning, TEXT("SelectSlot: Error can not select now"))
+        return;
+    }
     if (!InventoryComp) return;
 
     EItemId Desired = EItemId::NONE;

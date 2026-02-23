@@ -8,6 +8,7 @@
     <img src="https://img.shields.io/badge/Watch%20Full%20Video-YouTube-red?style=for-the-badge&logo=youtube" />
   </a>
 </p>
+
 An online multiplayer FPS prototype inspired by **CrossFire**, **VALORANT**, and **Counter-Strike**.
 
 The project focuses on the **technical side** of **shooter development**, including:
@@ -73,7 +74,7 @@ The goal is to build a **reliable**, **scalable foundation** for a **competitive
 ---
 ## Technical Challenges Solved
 ### 1. Recoil Prediction (Client-Side)
-![Recoil Prediction](./Docs/Asset/RecoilPrediction.png)]
+![Recoil Prediction](./Docs/Asset/RecoilPrediction.png)
 - The client starts firing with a recoil seed and sends it to the server.
 - Both client and server use the same seed and shot index to generate the same deterministic recoil/spread values.
 - The shot index is incremented on both client and server for each shot.
@@ -115,7 +116,7 @@ The goal is to build a **reliable**, **scalable foundation** for a **competitive
 * Race conditions (e.g., reload + shoot, plant spike + shoot, etc.)
 * Duplicate actions caused by packet retries
 * Out-of-order RPCs
-
+* If a zombie is permanently killed by a hero, a reconnecting player should join as a spectator
 ---
 ## Limitations
 - Some classes still have too much responsibility and need further separation/refactoring.

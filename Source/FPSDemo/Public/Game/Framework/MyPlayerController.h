@@ -147,8 +147,8 @@ private:
 
     // Character delegate handles
     FDelegateHandle H_HealthUpdated;
-    FDelegateHandle H_ShowPickup;
-    FDelegateHandle H_HidePickup;
+    FDelegateHandle H_ShowInteractMessage;
+    FDelegateHandle H_HideInteractMessage;
     FDelegateHandle H_AmmoChanged;
     FDelegateHandle H_ActiveItemChanged;
     FDelegateHandle H_SpikeChanged;

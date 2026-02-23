@@ -85,4 +85,27 @@ private:
 	void CreateSelfHostSession(FString RoomId, FString Token);
 
 	FTimerHandle JoinRetryTimer;
+
+	TArray<FString> BotNames = {
+		TEXT("Nova"),
+		TEXT("ByteBuddy"),
+		TEXT("EchoBot"),
+		TEXT("Pixel"),
+		TEXT("Circuit"),
+		TEXT("Spark"),
+		TEXT("Orbit"),
+		TEXT("Nexus"),
+		TEXT("Bolt"),
+		TEXT("Astro"),
+		TEXT("Zephyr"),
+		TEXT("Quanta"),
+		TEXT("Titan"),
+		TEXT("Vortex"),
+		TEXT("Cosmo"),
+		TEXT("Drift"),
+		TEXT("Flux"),
+		TEXT("Vector"),
+		TEXT("Pulse"),
+		TEXT("RoboRay")
+	};
 };

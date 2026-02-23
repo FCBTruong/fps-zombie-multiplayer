@@ -142,6 +142,7 @@ ABaseCharacter::ABaseCharacter()
     }
 
     NameText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("NameText"));
+	NameText->SetVisibility(false); // hide by default, can be enabled for debugging or in specific game modes
     NameText->SetupAttachment(GetMesh()); // attach to character mesh (follows animations)
 
     NameText->SetHorizontalAlignment(EHTA_Center);
@@ -348,6 +349,7 @@ void ABaseCharacter::Tick(float DeltaTime)
 void ABaseCharacter::UpdateNameTextRotation()
 {
     if (!NameText) return;
+	if (!NameText->IsVisible()) return;
 
     APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
     if (!PC || !PC->PlayerCameraManager) return;
@@ -598,7 +600,7 @@ void ABaseCharacter::UpdateMaxWalkSpeed() {
 
         if (RoleComp) {
             if (RoleComp->GetRole() == ECharacterRole::Zombie) {
-                Speed += 20.f; // zombie role moves faster
+                Speed += 10.f; // zombie role moves faster
 			}
         }
     }
@@ -819,9 +821,7 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
 {
 	// log server or client
 	UE_LOG(LogTemp, Warning, TEXT("MulticastPlayerDeath called on %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"));
-    if (NameText) {
-        NameText->SetVisibility(false);
-    }
+   
     UCapsuleComponent* Capsule = GetCapsuleComponent();
     USkeletalMeshComponent* SkelMesh = GetMesh();
     if (!Capsule || !SkelMesh)
@@ -1295,12 +1295,13 @@ USpikeComponent* ABaseCharacter::GetSpikeComponent() const {
 }
 
 void ABaseCharacter::ApplyDefaultsForRole(ECharacterRole NewRole) {
+    // this should happens on server only
     if (NewRole == ECharacterRole::Zombie)
     {
         if (HealthComp) {
             HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_ZOMBIE);
             HealthComp->ResetHealth();
-		}
+        }
     }
     else if (NewRole == ECharacterRole::Hero)
     {
@@ -1308,14 +1309,35 @@ void ABaseCharacter::ApplyDefaultsForRole(ECharacterRole NewRole) {
             HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_HERO);
             HealthComp->ResetHealth();
         }
-	}
+    }
     else // human
     {
         if (HealthComp) {
             HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_SOLIDER);
             HealthComp->ResetHealth();
         }
-	}
+    }
+
+    if (ActionStateComp) {
+        ActionStateComp->ForceSetState(EActionState::Idle);
+    }
+
+    if (NewRole == ECharacterRole::Hero) {
+        if (InventoryComp) {
+            InventoryComp->OnBecomeHero();
+        }
+        if (EquipComp) {
+            EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
+        }
+    }
+    else if (NewRole == ECharacterRole::Zombie) {
+        if (InventoryComp) {
+            InventoryComp->OnBecomeZombie();
+        }
+        if (EquipComp) {
+            EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
+        }
+    }
 }
 
 void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole)
@@ -1327,6 +1349,7 @@ void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole Ne
     ApplyVisualByRole(NewRole);
     if (this->HasAuthority())
     {
+		UE_LOG(LogTemp, Warning, TEXT("Applying defaults for new role: %d"), (int32)NewRole);
         ApplyDefaultsForRole(NewRole);
     }
 
@@ -1334,27 +1357,12 @@ void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole Ne
     if (NewRole == ECharacterRole::Zombie)
     {
         PlayZombieSpawnEffects();
-	}
-    // temp, refactor later
-    if (NewRole == ECharacterRole::Hero) {
-        if (InventoryComp) {
-            InventoryComp->OnBecomeHero();
-		}
-        if (EquipComp) {
-            EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
-        }
+    }
+    else if (NewRole == ECharacterRole::Hero) { 
         if (AudioComp) {
             AudioComp->PlayHeroSpawn();
         }
     }
-    else if (NewRole == ECharacterRole::Zombie) {
-        if (InventoryComp) {
-            InventoryComp->OnBecomeZombie();
-        }
-        if (EquipComp) {
-            EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
-        }
-	}
 
 	// role changed mean update walk speed
 	UpdateMaxWalkSpeed();
@@ -2044,5 +2052,15 @@ void ABaseCharacter::UpdateInteractComponentTick()
     if (InteractComp)
     {
         InteractComp->SetComponentTickEnabled(IsLocallyControlled());
+    }
+}
+
+void ABaseCharacter::ShowNameText(bool bShow)
+{
+    if (NameText)
+    {
+        const FString Name = GetPlayerName();
+        NameText->SetText(FText::FromString(Name));
+        NameText->SetVisibility(bShow, true);
     }
 }

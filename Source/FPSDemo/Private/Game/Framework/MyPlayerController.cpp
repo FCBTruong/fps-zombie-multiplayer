@@ -861,8 +861,8 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
 
     if (UInteractComponent* IC = Char->GetInteractComponent())
     {
-        H_ShowPickup = IC->ShowPickupMessage.AddUObject(PlayerUI, &UPlayerUI::ShowPickupMessage);
-        H_HidePickup = IC->HidePickupMessage.AddUObject(PlayerUI, &UPlayerUI::HidePickupMessage);
+        H_ShowInteractMessage = IC->ShowInteractMessage.AddUObject(PlayerUI, &UPlayerUI::ShowInteractMessage);
+        H_HideInteractMessage = IC->HideInteractMessage.AddUObject(PlayerUI, &UPlayerUI::HideInteractMessage);
     }
 
     if (UEquipComponent* EC = Char->GetEquipComponent())
@@ -926,10 +926,10 @@ void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
 
     if (UInteractComponent* IC = Char->GetInteractComponent())
     {
-        IC->ShowPickupMessage.Remove(H_ShowPickup);
-        IC->HidePickupMessage.Remove(H_HidePickup);
-        H_ShowPickup.Reset();
-        H_HidePickup.Reset();
+        IC->ShowInteractMessage.Remove(H_ShowInteractMessage);
+        IC->HideInteractMessage.Remove(H_HideInteractMessage);
+        H_ShowInteractMessage.Reset();
+        H_HideInteractMessage.Reset();
     }
 
     if (UEquipComponent* EC = Char->GetEquipComponent())

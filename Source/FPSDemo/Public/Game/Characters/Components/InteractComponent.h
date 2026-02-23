@@ -7,8 +7,8 @@
 #include "Components/ActorComponent.h"
 #include "InteractComponent.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FShowPickupMessage, const FString&)
-DECLARE_MULTICAST_DELEGATE(FHidePickupMessage)
+DECLARE_MULTICAST_DELEGATE_OneParam(FShowInteractMessage, const FString&)
+DECLARE_MULTICAST_DELEGATE(FHideInteractMessage)
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UInteractComponent : public UActorComponent
@@ -16,7 +16,10 @@ class FPSDEMO_API UInteractComponent : public UActorComponent
 	GENERATED_BODY()
 private:
 	UPROPERTY()
-	APickupItem* FocusedPickup;
+	TWeakObjectPtr<APickupItem> FocusedPickup;
+
+	UPROPERTY()
+	TWeakObjectPtr<ABaseCharacter> FocusedChar;
 public:	
 	// Sets default values for this component's properties
 	UInteractComponent();
@@ -31,8 +34,8 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	void TraceForPickup();
+	void TraceFocus();
 	void TryPickup();	
-	FShowPickupMessage ShowPickupMessage;
-	FHidePickupMessage HidePickupMessage;
+	FShowInteractMessage ShowInteractMessage;
+	FHideInteractMessage HideInteractMessage;
 };

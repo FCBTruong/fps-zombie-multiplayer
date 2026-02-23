@@ -32,6 +32,7 @@ class FPSDEMO_API UWeaponFireComponent : public URoleGatedComponent
 
 public:
 	UWeaponFireComponent();
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	// Input-facing
 	void RequestStartFire();
@@ -123,6 +124,10 @@ private:
 	// Tunables
 	float BurstResetDelay = 0.25f;
 	int ShotCount = 0;
+
+	// Smooth recoil state
+	FVector2D RecoilCurrent = FVector2D::ZeroVector; // applied this frame (Pitch, Yaw)
+	FVector2D RecoilTarget = FVector2D::ZeroVector;  // where recoil wants to go
 
 	UPROPERTY(Transient)
 	TObjectPtr<const UFirearmConfig> CurrentFirearmConfig = nullptr;

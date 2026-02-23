@@ -22,40 +22,69 @@ void UInteractComponent::BeginPlay()
 void UInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	TraceForPickup();
+	TraceFocus();
 }
 
-void UInteractComponent::TraceForPickup()
+void UInteractComponent::TraceFocus()
 {
-	FVector Start, End;
+	if (!GetOwner() || !GetWorld())
+	{
+		return;
+	}
+
+	constexpr float CharacterTraceRange = 500.0f;
+	constexpr float PickupTraceRange = 300.0f;
+
+	FVector Start;
 	FRotator Rot;
 	GetOwner()->GetActorEyesViewPoint(Start, Rot);
-	End = Start + Rot.Vector() * 300.f;
+
+	const FVector End = Start + Rot.Vector() * CharacterTraceRange;
 
 	FHitResult Hit;
-	FCollisionQueryParams Params;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(InteractTrace), false);
 	Params.AddIgnoredActor(GetOwner());
 
-	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+	const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
 
-	FColor LineColor = bHit ? FColor::Red : FColor::Green;
-	//DrawDebugLine(GetWorld(), Start, End, LineColor, false, 0.1f, 0, 1.f);
+	AActor* HitActor = bHit ? Hit.GetActor() : nullptr;
 
-	APickupItem* NewPickup = bHit ? Cast<APickupItem>(Hit.GetActor()) : nullptr;
-	if (NewPickup != FocusedPickup)
+	// -------- Character focus --------
+	ABaseCharacter* NewFocusedChar = Cast<ABaseCharacter>(HitActor);
+	if (NewFocusedChar != FocusedChar.Get())
 	{
-		FocusedPickup = NewPickup;
-		
-		ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-		if (FocusedPickup)
+		if (FocusedChar.Get())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Focused on pickup: %s"), *FocusedPickup->GetItemName());
-			ShowPickupMessage.Broadcast(FocusedPickup->GetItemName());
+			FocusedChar->ShowNameText(false);
 		}
-		else
+
+		FocusedChar = NewFocusedChar;
+
+		if (FocusedChar.Get())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("No longer focused on any pickup"));
-			HidePickupMessage.Broadcast();
+			FocusedChar->ShowNameText(true);
+		}
+	}
+
+	// -------- Pickup focus --------
+	APickupItem* NewFocusedPickup = nullptr;
+	if (HitActor && Hit.Distance <= PickupTraceRange)
+	{
+		NewFocusedPickup = Cast<APickupItem>(HitActor);
+	}
+
+	if (!FocusedPickup.Get()) {
+		HideInteractMessage.Broadcast();
+	}
+
+	if (NewFocusedPickup != FocusedPickup.Get())
+	{
+		FocusedPickup = NewFocusedPickup;
+
+		if (NewFocusedPickup)	
+		{
+			ShowInteractMessage.Broadcast(NewFocusedPickup->GetItemName());
+			UE_LOG(LogTemp, Warning, TEXT("Test 01"));
 		}
 	}
 }
@@ -64,15 +93,15 @@ void UInteractComponent::TraceForPickup()
 void UInteractComponent::TryPickup()
 {
 	UE_LOG(LogTemp, Warning, TEXT("pressed pickup"));
-	if (FocusedPickup)
+	if (FocusedPickup.Get())
 	{
 		if (GetOwner()->HasAuthority())
 		{
-			HandlePickup_Internal(FocusedPickup);
+			HandlePickup_Internal(FocusedPickup.Get());
 		}
 		else
 		{
-			ServerTryPickup(FocusedPickup);
+			ServerTryPickup(FocusedPickup.Get());
 		}
 	}
 }

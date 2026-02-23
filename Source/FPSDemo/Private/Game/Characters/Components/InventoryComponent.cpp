@@ -70,7 +70,7 @@ void UInventoryComponent::InitBasicWeapon()
 		const UItemConfig* ItemRifle = UItemsManager::Get(GetWorld())->GetItemById(RifleState.ItemId);
         const UFirearmConfig* RifleData = Cast<UFirearmConfig>(ItemRifle);
         RifleState.AmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
-		RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 5 : 0;
+		RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 3 : 0;
         RifleState.MaxAmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
     }
 

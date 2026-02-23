@@ -288,7 +288,8 @@ void URoomManager::RequestAddBot(int team) {
             if (CurrentRoomData.Players[i].PlayerId == FGameConstants::EMPTY_PLAYER_ID)
             {
                 FPlayerRoomInfo Info;
-				Info.PlayerName = TEXT("Bot");
+                FString RandomBotName = BotNames[FMath::RandRange(0, BotNames.Num() - 1)];
+				Info.PlayerName = RandomBotName;
 				Info.Avatar = "100"; // default bot avatar
                 Info.PlayerId = FGameConstants::BOT_PLAYER_ID_START + i; // assign a bot id
                 Info.bIsBot = true;
@@ -462,7 +463,9 @@ void URoomManager::HandlePlayerSession(const std::string& payload)
 {
     game::net::PlayerSessionReply Msg;
     if (!Msg.ParseFromString(payload))
+    {
         return;
+    }
 
 	auto IpAddress = FString(Msg.ip().c_str());
 	auto Port = Msg.port();
@@ -471,7 +474,9 @@ void URoomManager::HandlePlayerSession(const std::string& payload)
 	UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandlePlayerSession: Player Session ID: %s"), *FString(SessionId));
 
     UGameInstance* GI = GetWorld()->GetGameInstance();
-    if (!GI) return;
+    if (!GI) {
+        return;
+    }
  
     FString SessionIdStr = UTF8_TO_TCHAR(SessionId);
     FString URL = FString::Printf(TEXT("%s:%d"), *IpAddress, Port);

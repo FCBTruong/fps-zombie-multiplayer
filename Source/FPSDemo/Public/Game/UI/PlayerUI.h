@@ -47,6 +47,9 @@ protected:
 	UTextBlock* RoundLb;
 
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* PickupLabel;
+
+	UPROPERTY(meta = (BindWidget))
 	UProgressBar* HpBar;
 
 	UPROPERTY(meta = (BindWidget))
@@ -237,8 +240,8 @@ public:
 	UMinimapRadarUI* RadarWidget;
 
 	void NativeConstruct() override;
-	void ShowPickupMessage(const FString& Message);
-	void HidePickupMessage();
+	void ShowInteractMessage(const FString& Message);
+	void HideInteractMessage();
 	void UpdateHealth(float CurrentHealth, float MaxHealth);
 	void UpdateAmmo(int CurrentAmmoValue, int RemainAmmoValue);
 	void UpdateTeamScores(int FirstScore, int SecondScore);

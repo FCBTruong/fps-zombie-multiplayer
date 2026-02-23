@@ -249,6 +249,12 @@ void AZombieMode::EndRound(ETeamId WinningTeam)
 	GS->Multicast_RoundResult(WinningTeam);
 	GetWorld()->GetTimerManager().ClearTimer(FightStateTimerHandle);
 
+	if (GS->GetCurrentRound() >= FGameConstants::MAX_ROUND_ZOMBIE_MODE)
+	{
+		EndGame(WinningTeam);
+		return;
+	}
+
 	// start new round after some delay
 	GetWorldTimerManager().ClearTimer(StartRoundTimerHandle);
 	GetWorldTimerManager().SetTimer(StartRoundTimerHandle, this, &AZombieMode::StartRound, DelayBeforeNewRound, false);

@@ -331,6 +331,7 @@ public:
     void PlayEffectHitReact();
     void SetCharacterSkin(int32 SkinId);
     void SetupSpineKickTimeline();
+	void ShowNameText(bool bShow);
     float GetSpeedWalkRatio() const;
     float GetAimSensitivity() const;
     bool IsHero() const;

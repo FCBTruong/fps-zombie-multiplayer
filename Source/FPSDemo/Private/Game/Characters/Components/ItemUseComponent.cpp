@@ -82,7 +82,6 @@ void UItemUseComponent::PrimaryPressed()
         }
         break;
     }
-    UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::debug03 called"));
 }
 
 void UItemUseComponent::PrimaryReleased()

@@ -19,7 +19,7 @@
 
 UWeaponFireComponent::UWeaponFireComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
 }
 
@@ -36,6 +36,28 @@ void UWeaponFireComponent::BeginPlay()
 
 		AudioComp = Character->GetAudioComponent();
 	}
+}
+
+void UWeaponFireComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+#if !UE_SERVER
+	if (!Character || !IsOwningClient()) return;
+
+	// Tune these
+	const float RecoilApplySpeed = 20.0f;   // how fast camera moves to recoil target
+
+	// Current smoothly follows target
+	const FVector2D Prev = RecoilCurrent;
+	RecoilCurrent = FMath::Vector2DInterpTo(RecoilCurrent, RecoilTarget, DeltaTime, RecoilApplySpeed);
+
+	// Apply only the frame delta
+	const FVector2D Delta = RecoilCurrent - Prev;
+
+	Character->AddControllerPitchInput(Delta.X);
+	Character->AddControllerYawInput(Delta.Y);
+#endif
 }
 
 void UWeaponFireComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -344,7 +366,7 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 			nullptr
 		);
 	}
-	UE_LOG(LogTemp, Log, TEXT("UWeaponFireComponent::FireOnce_ServerAuth called0001"));
+
 	MulticastFireFX(ShotEnd);
 	LastShotTime = Now;
 
@@ -670,11 +692,16 @@ void UWeaponFireComponent::ApplyRecoilLocal()
 		return;
 	}
 
-	const float PitchKick = CurrentFirearmConfig->RecoilPitchPerShot + FMath::FRandRange(-CurrentFirearmConfig->RecoilPitchJitter, CurrentFirearmConfig->RecoilPitchJitter);
-	const float YawKick = FMath::FRandRange(-CurrentFirearmConfig->RecoilYawPerShot, CurrentFirearmConfig->RecoilYawPerShot);
+	const float PitchKick =
+		CurrentFirearmConfig->RecoilPitchPerShot +
+		FMath::FRandRange(-CurrentFirearmConfig->RecoilPitchJitter, CurrentFirearmConfig->RecoilPitchJitter);
 
-	Character->AddControllerPitchInput(-PitchKick); // look up a bit
-	Character->AddControllerYawInput(YawKick);     // slight horizontal recoil
+	const float YawKick =
+		FMath::FRandRange(-CurrentFirearmConfig->RecoilYawPerShot, CurrentFirearmConfig->RecoilYawPerShot);
+
+	// Add recoil into target (negative pitch = camera goes up)
+	RecoilTarget.X += -PitchKick;
+	RecoilTarget.Y += YawKick;
 #endif
 }
 
