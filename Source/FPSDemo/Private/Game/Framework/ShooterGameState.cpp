@@ -522,3 +522,14 @@ TArray<AAirdropCrate*> AShooterGameState::GetActiveAirdropCrates() const {
 EMyMatchState AShooterGameState::GetMatchState() const {
 	return CurrentMatchState;
 }
+
+void AShooterGameState::Multicast_RoundStart_Implementation() {
+    UGameManager* GMR = UGameManager::Get(GetWorld());
+    AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    if (GS && GS->GetMatchMode() != EMatchMode::Spike) {
+        return;
+    }
+    if (GMR && GMR->GlobalData && GMR->GlobalData->RoundStartSound) {
+        UGameplayStatics::PlaySound2D(GetWorld(), GMR->GlobalData->RoundStartSound.Get());
+    }
+}

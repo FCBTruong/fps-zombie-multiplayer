@@ -6,7 +6,6 @@
 #include "GameFramework/GameMode.h"
 #include "DedicatedServerMode.generated.h"
 
-struct FProcessParameters;
 /**
  * 
  */
@@ -17,10 +16,4 @@ class FPSDEMO_API ADedicatedServerMode : public AGameMode
 
 protected:
 	virtual void BeginPlay() override;
-	
-private:
-	void InitGameLift();
-
-private:
-	TSharedPtr<FProcessParameters> ProcessParameters;
 };

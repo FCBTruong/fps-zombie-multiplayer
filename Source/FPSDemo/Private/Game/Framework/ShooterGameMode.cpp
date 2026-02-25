@@ -12,6 +12,11 @@
 #include "Game/Data/MatchInfo.h"
 #include "Game/AI/BotAIController.h"
 
+#if WITH_GAMELIFT
+#include "GameLiftServerSDK.h"
+#include "GameLiftServerSDKModels.h"
+#endif
+
 AShooterGameMode::AShooterGameMode()
 {
     BotManager = MakeUnique<BotStateManager>();
@@ -250,15 +255,22 @@ void AShooterGameMode::PreLogin(
     int BackendUserId = 0;
     if (IsRunningDedicatedServer())
     {
-        UE_LOG(LogTemp, Warning, TEXT("PreLogin: Validating PlayerSessionId: %s"), *PlayerSessionId);
+#if WITH_GAMELIFT
+        FGameLiftServerSDKModule* GameLiftSdkModule =
+            &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>("GameLiftServerSDK");
 
-        // use AWS GameLift to validate the session id
+        FGameLiftGenericOutcome AcceptOutcome = GameLiftSdkModule->AcceptPlayerSession(PlayerSessionId);
+        if (!AcceptOutcome.IsSuccess())
+        {
+            const FGameLiftError Error = AcceptOutcome.GetError();
+            UE_LOG(LogTemp, Warning, TEXT("AcceptPlayerSession failed for %s: %s"),
+                *PlayerSessionId,
+                Error.m_errorMessage.IsEmpty() ? TEXT("Unknown") : *Error.m_errorMessage);
 
-        // TODO: AcceptPlayerSession(PlayerSessionId)
-    }
-    else {
-        // selfhost editor, always true
-        BackendUserId = FCString::Atoi(*PlayerSessionId);
+            ErrorMessage = TEXT("Invalid or expired PlayerSessionId");
+            return;
+        }
+#endif
     }
 }
 
@@ -429,17 +441,54 @@ FString AShooterGameMode::InitNewPlayer(
     AMyPlayerController* MPC = Cast<AMyPlayerController>(NewPlayerController);
     if (MPC)
     {
-        int BackendPlayerId = 0;
+        int BackendPlayerId = -1;
         // if dedicated server, get player id from aws gamelift
         if (IsRunningDedicatedServer())
         {
-            // TODO
+#if WITH_GAMELIFT
+            FGameLiftServerSDKModule* GameLiftSdkModule =
+                &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>("GameLiftServerSDK");
+            FGameLiftDescribePlayerSessionsRequest Request;
+            Request.m_playerSessionId = PlayerSessionId;
+
+            FGameLiftDescribePlayerSessionsOutcome Outcome = GameLiftSdkModule->DescribePlayerSessions(Request);
+
+            if (Outcome.IsSuccess())
+            {
+                const TArray<FGameLiftPlayerSession>& Sessions = Outcome.GetResult().m_playerSessions;
+
+                for (const FGameLiftPlayerSession& Session : Sessions)
+                {
+                    const FString PlayerId = Session.m_playerId;
+					BackendPlayerId = FCString::Atoi(*PlayerId);
+                        
+                    UE_LOG(LogTemp, Log, TEXT("Player ID from DescribePlayerSessions: %s"), *PlayerId);
+                }
+            }
+            else
+            {
+                const FGameLiftError Error = Outcome.GetError();
+
+                ErrorMessage = Error.m_errorMessage.IsEmpty()
+                    ? TEXT("Unknown")
+                    : Error.m_errorMessage;
+
+                UE_LOG(LogTemp, Error, TEXT("DescribePlayerSessions failed: %s"), *ErrorMessage);
+            }
+#endif
         }
         else {
             // selfhost editor, use PlayerSessionId as PlayerId
             BackendPlayerId = FCString::Atoi(*PlayerSessionId);
         }
-        MPC->SetBackendUserId(BackendPlayerId);
+        if (BackendPlayerId == -1)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Failed to get BackendPlayerId for PlayerSessionId: %s"), *PlayerSessionId);
+			ErrorMessage = TEXT("Failed to get player info from PlayerSessionId");
+		}
+        else {
+            MPC->SetBackendUserId(BackendPlayerId);
+        }
     }
     return ErrorMessage;
 }

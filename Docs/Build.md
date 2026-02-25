@@ -50,7 +50,7 @@ RunUAT.bat BuildCookRun ^
 
 ## Build Windows Dedicated Server
 
-```bat
+```bat - development
 cd /d "C:\Workspace\GameStudio\UE5.6.1\Engine\Build\BatchFiles"
 RunUAT.bat BuildCookRun ^
  -project="C:\Workspace\GameStudio\FPSDemo\FPSDemo.uproject" ^

@@ -25,7 +25,7 @@ The goal is to build a **reliable**, **scalable foundation** for a **competitive
 ### Gameplay Features
 - **Item System**: Equip and use different weapon types during matches.
 - **Spike Plant Mode**: Objective-based mode focused on planting or defending the spike.
-- **Zombie Mode**: Survival-style mode where players fight against zombie enemies.
+- **Zombie Mode**: A CrossFire-style infection mode where zombies hunt and infect human players.
 - **Deathmatch Mode**: Fast-paced free-for-all combat focused on eliminations.
 
 ## Dedicated backend service for matchmaking/session/game services
@@ -90,7 +90,7 @@ The goal is to build a **reliable**, **scalable foundation** for a **competitive
 - Hit registration is handled with lag compensation to improve fairness under network delay.
 - When a player fires, the server validates the shot using authoritative logic instead of trusting the client hit result.
 - The server uses the shot timing / network delay information to evaluate the shot against the target state more fairly (instead of only using the latest visible server state).
-- This reduces cases where shots look correct on the shooter’s screen but fail to register because of latency.
+- This reduces cases where shots look correct on the shooterï¿½s screen but fail to register because of latency.
 
 #### Result
 - Remote players appear smoother during movement.

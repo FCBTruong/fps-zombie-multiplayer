@@ -32,6 +32,15 @@ void UInteractComponent::TraceFocus()
 		return;
 	}
 
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (!OwnerPawn)
+	{
+		return;
+	}
+	if (!OwnerPawn->IsLocallyControlled()) {
+		return;
+	}
+
 	constexpr float CharacterTraceRange = 500.0f;
 	constexpr float PickupTraceRange = 300.0f;
 

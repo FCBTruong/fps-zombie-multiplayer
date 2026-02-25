@@ -51,6 +51,8 @@ public:
     void Multicast_SwitchSide();
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_RoundResult(ETeamId WinningTeam);
+	UFUNCTION(NetMulticast, Unreliable) // only used for visual/audio effect, so unreliable is fine
+    void Multicast_RoundStart();
 
 	// Setters and Getters
     void SetMatchState(EMyMatchState NewState);

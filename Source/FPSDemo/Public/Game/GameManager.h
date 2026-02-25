@@ -13,6 +13,7 @@ class UGlobalDataAsset;
 class UCharacterAsset;
 class ABaseCharacter;
 
+struct FProcessParameters;
 /**
  * 
  */
@@ -22,7 +23,9 @@ class FPSDEMO_API UGameManager : public UGameInstance
 	GENERATED_BODY()
 
 private:
-
+	void InitGameLift();
+	void ShutdownGameLiftServer(bool bSuccess);
+	TSharedPtr<FProcessParameters> ProcessParameters;
 protected:
 	virtual void Init() override;
 	virtual void OnStart() override;

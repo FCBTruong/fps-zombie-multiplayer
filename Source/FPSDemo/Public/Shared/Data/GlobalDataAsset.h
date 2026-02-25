@@ -56,6 +56,9 @@ public:
 	TObjectPtr<USoundBase> KillHeadshotSound;
 
 	UPROPERTY(EditAnywhere, Category = "Sound")
+	TObjectPtr<USoundBase> RoundStartSound;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
 	TObjectPtr<USoundBase> SwitchingSideVoice;
 
 	UPROPERTY(EditAnywhere, Category = "Sound")

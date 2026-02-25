@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Game/GameManager.h"
 #include "Game/Data/MatchInfo.h"
+#include "Modules/Lobby/SceneManager.h"
 
 void URoomManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -345,6 +346,53 @@ void URoomManager::RequestLeaveRoom()
 
 void URoomManager::RequestStartGame()
 {
+	int NumPlayers = 0;
+    for (const FPlayerRoomInfo& PlayerRoomInfo : CurrentRoomData.Players) {
+        if (PlayerRoomInfo.PlayerId != FGameConstants::EMPTY_PLAYER_ID) {
+			NumPlayers++;
+            break;
+        }
+	}
+    if (NumPlayers == 1) {
+        UE_LOG(LogTemp, Warning, TEXT("At least 2 players are required to start the game"));
+        USceneManager* SceneMgr = USceneManager::Get(GetWorld());
+        if (SceneMgr)
+        {
+            USceneManager::Get(GetWorld())->OpenPopupDialogOk(
+                TEXT("At least 2 players are required to start the game"),
+                []() {
+                }
+            );
+        }
+        return;
+	}
+
+    if (CurrentRoomData.bIsSelfHost) {
+        // for selfhost, not allow start game if other players in the game
+        // EOS will be integrated later for real selfhost, at the moment selfhost means offline
+
+        for (const FPlayerRoomInfo& PlayerRoomInfo : CurrentRoomData.Players) {
+            if (PlayerRoomInfo.bIsBot) {
+                continue;
+            }
+            if (PlayerRoomInfo.PlayerId != FGameConstants::EMPTY_PLAYER_ID) {
+                if (PlayerRoomInfo.PlayerId != CurrentRoomData.OwnerId) {
+                    UE_LOG(LogTemp, Warning, TEXT("EOS not supported yet"));
+                    USceneManager* SceneMgr = USceneManager::Get(GetWorld());
+                    if (SceneMgr)
+                    {
+                        USceneManager::Get(GetWorld())->OpenPopupDialogOk(
+                            TEXT("Self-host is only available when you're alone. Use Dedicated Server to play with friends"),
+                            []() {
+                            }
+                        );
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
     if (NetworkManager && NetworkManager->IsConnected()) {
         game::net::Empty Pkg;
         NetworkManager->SendPacket(ECmdId::START_GAME, Pkg);

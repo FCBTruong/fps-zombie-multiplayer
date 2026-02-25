@@ -28,7 +28,7 @@ void UPlayerSlotUI::SetInfo(APlayerSlot* SlotInfo, bool bInIsMyTeam)
 	CachedSlot = SlotInfo;
 	if (SlotInfo)
 	{
-		auto PName = GameUtils::SubStringWithDots(SlotInfo->GetPlayerName(), 10);
+		auto PName = GameUtils::SubStringWithDots(SlotInfo->GetPlayerName(), 8);
 		PlayerNameLb->SetText(FText::FromString(PName));
 
 		FSlateBrush Brush = AvatarImg->GetBrush();

@@ -137,11 +137,14 @@ void ASpikeMode::StartRound()
 	Super::StartRound();
 
 	AShooterGameState* GS = GetShooterGS();
-
-	AShooterGameState* GSInner = GetGameState<AShooterGameState>();
+	if (!GS) {
+		UE_LOG(LogTemp, Warning, TEXT("GameState is null in StartRound"));
+		return;
+	}
+	GS->Multicast_RoundStart();
 	int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
-	GSInner->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
-	GSInner->SetRoundEndTime(TimeEnd);
+	GS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
+	GS->SetRoundEndTime(TimeEnd);
 
 	RestartAllPlayers();
 	// remove spike if planted
