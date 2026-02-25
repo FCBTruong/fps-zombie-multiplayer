@@ -39,7 +39,7 @@ AThrownProjectile::AThrownProjectile()
 
     PrimaryActorTick.bCanEverTick = true;
     bReplicates = true;
-    SetReplicateMovement(true);
+    SetReplicateMovement(false);
 }
 
 void AThrownProjectile::Tick(float DeltaSeconds)

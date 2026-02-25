@@ -203,6 +203,7 @@ void ULobbyUI::UpdateRoomState() {
 		
 		ZombieModeBtn->SetIsEnabled(true);
 		BombModeBtn->SetIsEnabled(true);
+		DeathMatchModeBtn->SetIsEnabled(true);
 		SelfHostBtn->SetIsEnabled(CachedRoomMgr->GetCurrentRoomData().bEnableSelfHost);
 		DedicatedServerBtn->SetIsEnabled(CachedRoomMgr->GetCurrentRoomData().bEnableDedicatedServer);
 		WaitingOwnerStartTxt->SetVisibility(ESlateVisibility::Collapsed);
@@ -216,6 +217,7 @@ void ULobbyUI::UpdateRoomState() {
 		BombModeBtn->SetIsEnabled(false);
 		SelfHostBtn->SetIsEnabled(false);
 		DedicatedServerBtn->SetIsEnabled(false);
+		DeathMatchModeBtn->SetIsEnabled(false);
 		WaitingOwnerStartTxt->SetVisibility(ESlateVisibility::Visible);
 	}
 

@@ -55,3 +55,17 @@ void APlayerSlot::OnRep_IsConnected()
 {
 	OnUpdateConnectedStatus.Broadcast(bIsConnected);
 }
+
+void APlayerSlot::OnRep_TeamId()
+{
+	OnUpdateTeamId.Broadcast(TeamId);
+}
+
+void APlayerSlot::SetTeamId(ETeamId InTeamId)
+{
+	if (TeamId != InTeamId)
+	{
+		TeamId = InTeamId;
+		OnRep_TeamId();
+	}
+}

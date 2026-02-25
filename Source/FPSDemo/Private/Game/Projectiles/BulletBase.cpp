@@ -6,6 +6,7 @@
 #include "NiagaraComponent.h"
 #include "Game/GameManager.h"
 #include "Shared/Data/GlobalDataAsset.h"
+#include "Components/DecalComponent.h"
 
 // Sets default values
 ABulletBase::ABulletBase()
@@ -94,9 +95,10 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     // spawn decal
     if (OtherActor->IsA<APawn>() == false) {
         if (HitDecal) {
-            UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal,
+            UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal,
                 FVector(5.f), Hit.ImpactPoint,
                 Hit.ImpactNormal.Rotation(), 10.0f);
+            Decal->SetFadeScreenSize(0.001f);
         }
 
         if (HitSurfaceSound) {

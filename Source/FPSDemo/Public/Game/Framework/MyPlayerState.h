@@ -88,9 +88,12 @@ protected:
 	void OnRep_BoughtItems();
 
 	UFUNCTION()
+	void OnRep_PlayerSlot();
+
+	UFUNCTION()
 	void OnRep_Money();
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerSlot)
 	APlayerSlot* PlayerSlot = nullptr;
 
 	bool bWasChosenAsZombie = false;

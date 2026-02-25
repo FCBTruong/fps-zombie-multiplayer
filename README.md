@@ -81,22 +81,35 @@ The goal is to build a **reliable**, **scalable foundation** for a **competitive
 - The client plays immediate local firing feedback (muzzle flash, recoil, tracer) without waiting for a server response.
 - The server performs authoritative raycast/hit validation, applies damage, and replicates the hit result to other clients.
 ### 2. Latency
-#### Interpolation (Remote Player Movement)
-- Remote player movement is rendered using interpolation instead of applying network snapshots directly.
-- The client buffers incoming snapshots (position/rotation) and renders remote players slightly behind real time using two valid snapshots.
-- Movement is interpolated between snapshots to reduce visible jitter caused by packet delay and uneven packet arrival times.
-- This keeps remote movement smoother and more stable, especially when latency fluctuates.
 #### Lag Compensation (Hit Registration)
-- Hit registration is handled with lag compensation to improve fairness under network delay.
-- When a player fires, the server validates the shot using authoritative logic instead of trusting the client hit result.
-- The server uses the shot timing / network delay information to evaluate the shot against the target state more fairly (instead of only using the latest visible server state).
-- This reduces cases where shots look correct on the shooterï¿½s screen but fail to register because of latency.
+
+```cpp
+// Test
+NetEmulation.PktLagMin 100
+NetEmulation.PktLagMax 100
+NetEmulation.PktIncomingLagMin 100
+NetEmulation.PktIncomingLagMax 100
+```
+
+* Server keeps ~200ms of hitbox history.
+* Hit checks are server-side (client doesn’t decide hits).
+* On shot, server checks against a rewound target state based on shot time / latency.
+* Helps shots register more consistently under ping.
+
+Reference https://www.youtube.com/watch?v=6EwaW2iz4iA&t=6s
+
+#### Interpolation (Remote Player Movement)
+
+* Remote players are rendered with interpolation, not raw snapshots.
+* The client buffers position/rotation snapshots and renders slightly behind real time.
+* Movement is blended between two snapshots to reduce jitter from packet delay/jitter.
+* This makes remote movement look smoother and more stable.
 
 #### Result
-- Remote players appear smoother during movement.
-- Hit registration is more consistent under latency.
-- Shooting remains fair while keeping server-authoritative validation.
 
+* Remote movement looks smoother.
+* Fewer jitter spikes when packets arrive unevenly.
+* Hit registration stays consistent with server-side validation.
 ### 3. Disconnect / Reconnect Handling
 
 * When a player disconnects, their pawn is not destroyed and remains in the player slot.

@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Modules/Lobby/RoomData.h"
 #include "Components/Button.h"
+#include "Components/TextBlock.h"
 #include "RoomSlotUI.generated.h"
 
 /**
@@ -23,6 +24,9 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* JoinBtn;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* RoomLb;
 
 private:
 	UFUNCTION()

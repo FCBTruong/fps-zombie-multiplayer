@@ -11,7 +11,6 @@ GameUtils::~GameUtils()
 {
 }
 
-
 FString GameUtils::PointNumber(int32 Number)
 {
     FString NumStr = FString::FromInt(Number);

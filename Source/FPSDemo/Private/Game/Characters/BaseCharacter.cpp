@@ -48,6 +48,7 @@
 #include "Game/Characters/Components/ThrowableComponent.h"
 #include "Game/Characters/Components/SpikeComponent.h"
 #include "Game/Characters/Components/RoleComponent.h"
+#include "Game/Characters/Components/LagCompensationComponent.h"
 #include "Shared/System/ItemsManager.h"
 #include "Game/Data/CharacterAsset.h"
 #include "Materials/MaterialInterface.h"
@@ -109,6 +110,7 @@ ABaseCharacter::ABaseCharacter()
     WeaponFireComp = CreateDefaultSubobject<UWeaponFireComponent>(TEXT("WeaponFireComponent"));
     PickupComponent = CreateDefaultSubobject<UPickupComponent>(TEXT("PickupComponent"));
     ThrowableComp = CreateDefaultSubobject<UThrowableComponent>(TEXT("ThrowableComponent"));
+	LagCompensationComp = CreateDefaultSubobject<ULagCompensationComponent>(TEXT("LagCompensationComponent"));
 
     CameraComp->Initialize(
         CameraFps,
@@ -1223,6 +1225,10 @@ UEquipComponent* ABaseCharacter::GetEquipComponent() const {
 
 UWeaponMeleeComponent* ABaseCharacter::GetWeaponMeleeComponent() const {
     return WeaponMeleeComp.Get();
+}
+
+ULagCompensationComponent* ABaseCharacter::GetLagCompensationComponent() const {
+    return LagCompensationComp.Get();
 }
 
 UActionStateComponent* ABaseCharacter::GetActionStateComponent() const {

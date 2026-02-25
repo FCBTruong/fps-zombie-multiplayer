@@ -16,6 +16,9 @@
 #include "Game/Characters/Components/CharAudioComponent.h"
 #include "Shared/System/ItemsManager.h"
 #include "Game/Utils/Damage/DamageHelpers.h"
+#include "Game/GameManager.h"
+#include "Game/Characters/Components/LagCompensationComponent.h"
+#include "EngineUtils.h"
 
 UWeaponFireComponent::UWeaponFireComponent()
 {
@@ -33,7 +36,7 @@ void UWeaponFireComponent::BeginPlay()
 		InventoryComp = Character->GetInventoryComponent();
 		ActionStateComp = Character->GetActionStateComponent();
 		VisualComp = Character->GetItemVisualComponent();
-
+		LagCompensationComp = Character->GetLagCompensationComponent();
 		AudioComp = Character->GetAudioComponent();
 	}
 }
@@ -41,6 +44,17 @@ void UWeaponFireComponent::BeginPlay()
 void UWeaponFireComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (CurrentFirearmConfig && BurstAccDeg > 0.f)
+	{
+		const bool bIsFiring = ActionStateComp && ActionStateComp->IsInState(EActionState::Firing);
+
+		if (!bIsFiring)
+		{
+			const float RecoverRate = CurrentFirearmConfig->BurstRecoverDegPerSec; // deg/sec
+			BurstAccDeg = FMath::Max(0.f, BurstAccDeg - RecoverRate * DeltaTime);
+		}
+	}
 
 #if !UE_SERVER
 	if (!Character || !IsOwningClient()) return;
@@ -170,7 +184,6 @@ void UWeaponFireComponent::RequestStartFire()
 	{
 		// should reset spread state on start
 		ShotCount = 0;
-		BurstAccDeg = 0;
 		FireOnce_PredictedLocal();
 
 		GetWorld()->GetTimerManager().SetTimer(
@@ -194,7 +207,8 @@ void UWeaponFireComponent::RequestStartFire()
 	}
 	else
 	{
-		ServerStartFire(BurstSeed);
+		double ServerTime = GetServerTimeSeconds();
+		ServerStartFire(BurstSeed, ServerTime);
 	}
 }
 
@@ -217,11 +231,12 @@ void UWeaponFireComponent::RequestStopFire()
 	}
 }
 
-void UWeaponFireComponent::ServerStartFire_Implementation(int InBurstSeed)
+void UWeaponFireComponent::ServerStartFire_Implementation(int InBurstSeed, double ShotTime)
 {
 	if (!IsEnabled())
 		return;
 	BurstSeed = InBurstSeed;
+	ClientShotTimeOffset = GetServerTimeSeconds() - ShotTime;
 	StartFire_ServerAuth();
 }
 
@@ -246,7 +261,6 @@ void UWeaponFireComponent::StartFire_ServerAuth()
 	ActionStateComp->TrySetState(EActionState::Firing);
 
 	ShotCount = 0;
-	BurstAccDeg = 0;
 
 	// Seed determinism inputs for this firing sequence
 	FireStartTimeServer = GetServerTimeSeconds();
@@ -289,10 +303,6 @@ void UWeaponFireComponent::FireOnce_PredictedLocal()
 	ShotCount++;
 
 	const float Now = GetServerTimeSeconds();
-	if (LastShotTime > 0.f && (Now - LastShotTime) > BurstResetDelay)
-	{
-		BurstAccDeg = 0.f;
-	}
 
 	FVector Start, AimDir;
 	GetAim(Start, AimDir);
@@ -302,7 +312,7 @@ void UWeaponFireComponent::FireOnce_PredictedLocal()
 
 	FHitResult Hit;
 	FVector ShotEnd;
-	TraceShot(Character, Start, ShotDir, Hit, ShotEnd);
+	TraceShot(Character, Start, ShotDir, Hit, ShotEnd, Now);
 
 	if (VisualComp)
 	{
@@ -335,10 +345,6 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 	InventoryComp->ConsumeAmmo(CurrentFirearmConfig->Id, 1);
 
 	const float Now = GetServerTimeSeconds();
-	if (LastShotTime > 0.f && (Now - LastShotTime) > BurstResetDelay)
-	{
-		BurstAccDeg = 0.f;
-	}
 
 	FVector Start, AimDir;
 	GetAim(Start, AimDir);
@@ -348,7 +354,8 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 
 	FHitResult Hit;
 	FVector ShotEnd;
-	const bool bHit = TraceShot(Character, Start, ShotDir, Hit, ShotEnd);
+	double ShotTimestamp = Now - ClientShotTimeOffset;
+	const bool bHit = TraceShot(Character, Start, ShotDir, Hit, ShotEnd, ShotTimestamp);
 
 	if (bHit && Hit.GetActor())
 	{
@@ -410,25 +417,87 @@ bool UWeaponFireComponent::TraceShot(
 	const FVector& Start,
 	const FVector& Dir,
 	FHitResult& OutHit,
-	FVector& OutEnd
+	FVector& OutEnd,
+	double ShotTime
 ) const
 {
 	UWorld* World = GetWorld();
 	if (!World) return false;
 
-	OutEnd = Start + Dir * 10000.f;
+	OutHit = FHitResult{};
+	const FVector FullTraceEnd = Start + Dir * 10000.f;
+	OutEnd = FullTraceEnd;
 
+	ABaseCharacter* Shooter = Cast<ABaseCharacter>(GetOwner());
+	if (!Shooter)
+	{
+		return false;
+	}
+
+	// 1) Rewind-check ALL characters and keep the closest valid hit
+	bool bFoundRewindCharHit = false;
+	FHitResult BestRewindHit;
+	float BestRewindDistSq = TNumericLimits<float>::Max();
+
+	for (TActorIterator<ABaseCharacter> It(World); It; ++It)
+	{
+		ABaseCharacter* TargetChar = *It;
+		if (!TargetChar) continue;
+		if (TargetChar == Shooter) continue;
+		if (IgnoredActor && TargetChar == IgnoredActor) continue;
+		if (!TargetChar->IsAlive()) continue;
+
+		ULagCompensationComponent* LagComp = TargetChar->GetLagCompensationComponent();
+		if (!LagComp) continue;
+
+		FHitResult RewindHit;
+		const bool bConfirmed = LagComp->ConfirmHitRewind(
+			Shooter,
+			Start,
+			FullTraceEnd,
+			ShotTime,
+			RewindHit
+		);
+
+		if (!bConfirmed) continue;
+
+		const float DistSq = FVector::DistSquared(Start, RewindHit.ImpactPoint);
+		if (!bFoundRewindCharHit || DistSq < BestRewindDistSq)
+		{
+			bFoundRewindCharHit = true;
+			BestRewindDistSq = DistSq;
+			BestRewindHit = RewindHit;
+		}
+	}
+
+	if (bFoundRewindCharHit)
+	{
+		OutHit = BestRewindHit;
+		OutEnd = BestRewindHit.ImpactPoint;
+		return true;
+	}
+
+	// 2) No character hit by rewind -> do normal trace for world / non-character hits
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponTrace), false);
-	if (IgnoredActor) Params.AddIgnoredActor(IgnoredActor);
+	if (IgnoredActor)
+	{
+		Params.AddIgnoredActor(IgnoredActor);
+	}
 
-	const bool bHit = World->LineTraceSingleByChannel(OutHit, Start, OutEnd, ECC_Visibility, Params);
+	const bool bHitWorld = World->LineTraceSingleByChannel(
+		OutHit,
+		Start,
+		FullTraceEnd,
+		ECC_Visibility, // Or use WeaponTraceChannel if that is your main weapon channel
+		Params
+	);
 
-	UE_LOG(LogTemp, Log, TEXT("TraceShot: Start=%s, Dir=%s, End=%s, Hit=%s"),
-		*Start.ToString(), *Dir.ToString(), *OutEnd.ToString(),
-		bHit ? *OutHit.ImpactPoint.ToString() : TEXT("None"));
-	if (bHit) OutEnd = OutHit.ImpactPoint;
+	if (bHitWorld)
+	{
+		OutEnd = OutHit.ImpactPoint;
+	}
 
-	return bHit;
+	return bHitWorld;
 }
 
 float UWeaponFireComponent::GetServerTimeSeconds() const
@@ -722,4 +791,9 @@ void UWeaponFireComponent::OnEnabledChanged(bool bNowEnabled)
 		BurstAccDeg = 0.f;
 		LastShotTime = 0.f;
 	}
+}
+
+bool UWeaponFireComponent::IsFiring() const
+{
+	return ActionStateComp && ActionStateComp->IsInState(EActionState::Firing);
 }

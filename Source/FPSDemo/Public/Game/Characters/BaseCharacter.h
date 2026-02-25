@@ -49,6 +49,7 @@ class UItemConfig;
 class URoleComponent;
 class UItemUseComponent;
 class UTextRenderComponent;
+class ULagCompensationComponent;
 
 DECLARE_MULTICAST_DELEGATE(FOnHit);
 
@@ -142,6 +143,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UWeaponMeleeComponent> WeaponMeleeComp;
+
+    UPROPERTY(VisibleAnywhere, Category = "Components")
+    TObjectPtr<ULagCompensationComponent> LagCompensationComp;
 
     UPROPERTY(VisibleAnywhere, Category = "Components")
     TObjectPtr<URoleComponent> RoleComp;
@@ -370,6 +374,7 @@ public:
 	UCharAudioComponent* GetAudioComponent() const;
 	URoleComponent* GetRoleComponent() const;
 	UCharCameraComponent* GetCharCameraComponent() const;
+	ULagCompensationComponent* GetLagCompensationComponent() const;
 
     UFUNCTION(BlueprintCallable)
     EMovementState GetCurrentMovementState() const;

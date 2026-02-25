@@ -54,6 +54,7 @@ void ABotAIController::OnPossess(APawn* InPawn)
     if (GMR && GMR->GlobalData)
     {
         if (GMR->GlobalData->BotBehaviorTree) {
+			UE_LOG(LogTemp, Warning, TEXT("BotAIController: Starting Behavior Tree"));
             RunBehaviorTree(GMR->GlobalData->BotBehaviorTree);
         }
     }
@@ -198,6 +199,15 @@ void ABotAIController::SetTargetActor(ABaseCharacter* NewTarget)
     {
         BB->SetValueAsObject(BotBBKeys::TargetActor, NewTarget);
     }
+
+    if (!NewTarget) {
+        ABaseCharacter* MyChar = GetBotChar();
+        if (!MyChar) return;
+        UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent();
+        if (WFC && WFC->IsFiring()) {
+            MyChar->RequestPrimaryActionReleased();
+		}
+    }
 }
 
 ABaseCharacter* ABotAIController::GetTargetActor() const
@@ -207,6 +217,7 @@ ABaseCharacter* ABotAIController::GetTargetActor() const
 
 void ABotAIController::SetMatchMode(EMatchMode NewMode)
 {
+    if (!HasAuthority()) return;
     CurrentMatchMode = NewMode;
     UBlackboardComponent* BB = GetBlackboardComponent();
     if (BB)
@@ -220,6 +231,7 @@ void ABotAIController::SetMatchMode(EMatchMode NewMode)
 
 void ABotAIController::SetSpikeRole(EBotRole NewRole)
 {
+    if (!HasAuthority()) return;
 	SpikeRole = NewRole;
     UBlackboardComponent* BB = GetBlackboardComponent();
     if (BB)
@@ -246,6 +258,7 @@ void ABotAIController::SetSpikeActor(AActor* NewSpikeActor)
 
 void ABotAIController::SetIsAttacker(bool bAttacker)
 {
+    if (!HasAuthority()) return;
 	bIsAttacker = bAttacker;
     UBlackboardComponent* BB = GetBlackboardComponent();
     if (BB)
@@ -272,6 +285,7 @@ void ABotAIController::SetPlantLocation(const FVector& NewLocation)
 
 void ABotAIController::SetCharacterRole(ECharacterRole NewRole)
 {
+    if (!HasAuthority()) return;
 	CharacterRole = NewRole;
     UBlackboardComponent* BB = GetBlackboardComponent();
     if (BB)
@@ -379,6 +393,7 @@ void ABotAIController::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
 
 void ABotAIController::SetCanShoot(bool bInCanShoot)
 {
+	if (!HasAuthority()) return;
 	bCanShoot = bInCanShoot;
     UBlackboardComponent* BB = GetBlackboardComponent();
     if (BB)
@@ -410,6 +425,8 @@ void ABotAIController::SetCanShootTrueDelayed()
 
 void ABotAIController::SetMatchState(EMyMatchState NewState)
 {
+	if (!HasAuthority()) return;
+	UE_LOG(LogTemp, Warning, TEXT("BotAIController: SetMatchState called with state=%d"), (uint8)NewState);
     CurrentMatchState = NewState;
     UBlackboardComponent* BB = GetBlackboardComponent();
     if (BB)
@@ -418,5 +435,8 @@ void ABotAIController::SetMatchState(EMyMatchState NewState)
             BotBBKeys::MatchState,
             static_cast<uint8>(NewState)
         );
+    }
+    else {
+		UE_LOG(LogTemp, Warning, TEXT("BotAIController: SetMatchState failed to get BlackboardComponent"));
     }
 }

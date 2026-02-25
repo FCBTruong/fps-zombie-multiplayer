@@ -350,7 +350,7 @@ void URoomManager::RequestStartGame()
     for (const FPlayerRoomInfo& PlayerRoomInfo : CurrentRoomData.Players) {
         if (PlayerRoomInfo.PlayerId != FGameConstants::EMPTY_PLAYER_ID) {
 			NumPlayers++;
-            break;
+            continue;
         }
 	}
     if (NumPlayers == 1) {
@@ -367,9 +367,8 @@ void URoomManager::RequestStartGame()
         return;
 	}
 
-    if (CurrentRoomData.bIsSelfHost) {
-        // for selfhost, not allow start game if other players in the game
-        // EOS will be integrated later for real selfhost, at the moment selfhost means offline
+    if (CurrentRoomData.bIsSelfHost && !GIsEditor) {
+		// EOS currently not supported, so we only allow self-host when there's no friend in the room
 
         for (const FPlayerRoomInfo& PlayerRoomInfo : CurrentRoomData.Players) {
             if (PlayerRoomInfo.bIsBot) {

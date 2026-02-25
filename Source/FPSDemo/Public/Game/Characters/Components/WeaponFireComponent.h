@@ -15,6 +15,7 @@ class UActionStateComponent;
 class UItemVisualComponent;
 class UCharAudioComponent;
 class UFirearmConfig;
+class ULagCompensationComponent;
 
 enum EFireEnableReason
 {
@@ -32,21 +33,22 @@ class FPSDEMO_API UWeaponFireComponent : public URoleGatedComponent
 
 public:
 	UWeaponFireComponent();
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 	// Input-facing
 	void RequestStartFire();
 	void RequestStopFire();
 	void RequestReload();
 
 	bool CanWeaponAim() const;
+	bool IsFiring() const;
 	UFUNCTION()
 	void OnActiveItemChanged(EItemId NewId);
 	EFireEnableReason CanFireNow() const;
 
+	// Delegates
 	FOnFinishedReload OnFinishedReload;
 protected:
 	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnEnabledChanged(bool bNowEnabled) override;
@@ -72,7 +74,7 @@ private:
 
 	void GetAim(FVector& OutStart, FVector& OutDir) const;
 	bool TraceShot(const AActor* IgnoredActor, const FVector& Start, const FVector& Dir,
-		FHitResult& OutHit, FVector& OutEnd) const;
+		FHitResult& OutHit, FVector& OutEnd, double ShotTime) const;
 
 	float GetServerTimeSeconds() const;
 	int32 ComputeShotIndex(float NowServerTime) const;
@@ -81,7 +83,7 @@ private:
 
 	// RPC
 	UFUNCTION(Server, Reliable)
-	void ServerStartFire(int InBurstSeed);
+	void ServerStartFire(int InBurstSeed, double ShotTime);
 
 	UFUNCTION(Server, Reliable)
 	void ServerStopFire();
@@ -95,13 +97,23 @@ private:
 	void ServerReload();
 private:
 	// Dependencies
-	UPROPERTY(Transient) TObjectPtr<UInventoryComponent> InventoryComp = nullptr;
-	UPROPERTY(Transient) TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
-	UPROPERTY(Transient) TObjectPtr<UItemVisualComponent> VisualComp = nullptr;
+	UPROPERTY(Transient) 
+	TObjectPtr<UInventoryComponent> InventoryComp = nullptr;
 
-	UPROPERTY(Transient) TObjectPtr<UCharAudioComponent> AudioComp = nullptr;
+	UPROPERTY(Transient) 
+	TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
 
-	UPROPERTY(Transient) TObjectPtr<ABaseCharacter> Character = nullptr;
+	UPROPERTY(Transient) 
+	TObjectPtr<UItemVisualComponent> VisualComp = nullptr;
+
+	UPROPERTY(Transient) 
+	TObjectPtr<UCharAudioComponent> AudioComp = nullptr;
+
+	UPROPERTY(Transient)
+	TObjectPtr<ULagCompensationComponent> LagCompensationComp = nullptr;
+
+	UPROPERTY(Transient) 
+	TObjectPtr<ABaseCharacter> Character = nullptr;
 
 	// Timers
 	FTimerHandle FireTimer_Server;
@@ -116,6 +128,7 @@ private:
 	float FireStartTimeServer = 0.f;
 
 	int32 BurstSeed = 0;
+	double ClientShotTimeOffset = 0.0;
 
 	// Local spread state (used for both predicted + server firing)
 	float BurstAccDeg = 0.f;

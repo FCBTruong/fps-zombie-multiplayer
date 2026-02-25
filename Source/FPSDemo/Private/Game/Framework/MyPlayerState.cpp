@@ -210,9 +210,23 @@ void AMyPlayerState::SetPlayerSlot(APlayerSlot* Slot)
 	if (PlayerSlot) {
 		SetCrosshairCode(PlayerSlot->GetCrosshairCode());
 	}
+
+	OnRep_PlayerSlot();
 }
 
 void AMyPlayerState::SetCrosshairCode(const FString& InCrosshairCode)
 {
 	CrosshairCode = InCrosshairCode;
+}
+
+void AMyPlayerState::OnRep_PlayerSlot()
+{
+	UE_LOG(LogTemp, Warning, TEXT("PlayerSlot updated on client for player %s"), *GetName());
+	if (PlayerSlot)
+	{
+		PlayerSlot->OnUpdateTeamId
+			.AddLambda([this](ETeamId NewTeamId) {
+				OnUpdateTeamId.Broadcast(NewTeamId);
+				});
+	}
 }

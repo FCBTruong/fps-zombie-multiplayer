@@ -9,6 +9,8 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnReplicatedPawnChanged)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateConnectedStatus, bool /*bIsConnected*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateTeamId, ETeamId);
+
 UCLASS()
 class FPSDEMO_API APlayerSlot : public AActor
 {
@@ -21,7 +23,7 @@ public:
 
 	void SetBackendUserId(int InBackendUserId) { BackendUserId = InBackendUserId; }
 	void SetPlayerName(const FString& InPlayerName) { PlayerName = InPlayerName; }
-	void SetTeamId(ETeamId InTeamId) { TeamId = InTeamId; }
+	void SetTeamId(ETeamId InTeamId);
 	void SetIsBot(bool bInIsBot) { bIsBot = bInIsBot; }
 	void SetKills(int InKills) { Kills = InKills; }
 	void SetDeaths(int InDeaths) { Deaths = InDeaths; }
@@ -51,16 +53,21 @@ public:
 
 	UFUNCTION()
 	void OnRep_Pawn();
+
+	UFUNCTION()
+	void OnRep_TeamId();
+
 	UFUNCTION()
 	void OnRep_IsConnected();
 
 	FOnReplicatedPawnChanged OnReplicatedPawnChanged;
 	FOnUpdateConnectedStatus OnUpdateConnectedStatus;
+	FOnUpdateTeamId OnUpdateTeamId;
 private:
 	UPROPERTY(Replicated)
 	int BackendUserId;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_TeamId)
 	ETeamId TeamId;
 
 	UPROPERTY(Replicated)
