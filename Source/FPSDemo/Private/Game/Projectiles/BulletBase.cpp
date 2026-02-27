@@ -95,10 +95,19 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     // spawn decal
     if (OtherActor->IsA<APawn>() == false) {
         if (HitDecal) {
+			const float LifeTime = 10.0f;
             UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal,
                 FVector(5.f), Hit.ImpactPoint,
-                Hit.ImpactNormal.Rotation(), 10.0f);
+                Hit.ImpactNormal.Rotation(), LifeTime);
             Decal->SetFadeScreenSize(0.001f);
+
+            if (Decal)
+            {
+                const float FadeDuration = 3.0f;   // last 3 seconds
+                const float FadeStartDelay = FMath::Max(0.f, LifeTime - FadeDuration);
+
+                Decal->SetFadeOut(FadeStartDelay, FadeDuration, true);
+            }
         }
 
         if (HitSurfaceSound) {
@@ -109,13 +118,15 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
         if (Data->HitBodySound) {
             UGameplayStatics::PlaySoundAtLocation(this, Data->HitBodySound, Hit.ImpactPoint);
         }
-    }
 
-    // blood fx
-    ABaseCharacter* Enemy = Cast<ABaseCharacter>(OtherActor);
-    if (Enemy)
-    {
-        Enemy->PlayBloodFx(Hit.ImpactPoint, Hit.ImpactNormal);
+        // blood fx
+        ABaseCharacter* Enemy = Cast<ABaseCharacter>(OtherActor);
+        if (Enemy)
+        {
+            Enemy->PlayBloodFx(Hit.ImpactPoint, Hit.ImpactNormal);
+        }
+		// continue to trace to find the surface behind the character and spawn blood fx there
+		TraceBehindPawnAndSpawnBloodDecal(Hit);
     }
 
     SetLifeSpan(0.5f);
@@ -152,18 +163,82 @@ void ABulletBase::FireTowards(const FVector& Target)
 	SetActorRelativeRotation(Dir.Rotation());
     ProjectileMovement->SetVelocityInLocalSpace(FVector::ForwardVector * ProjectileMovement->InitialSpeed);
     ProjectileMovement->Activate(true);
-	UGameManager* GMR = UGameManager::Get(GetWorld());  
-  /*  UNiagaraSystem* BulletTrailNS = GMR->GlobalData->BulletTrailNS;
-    if (BulletTrailNS)
+}
+
+void ABulletBase::TraceBehindPawnAndSpawnBloodDecal(const FHitResult& PawnHit)
+{
+    if (!GetWorld() || !HitDecal) // replace HitDecal with BloodDecal if you have a separate one
+        return;
+
+    FVector Dir = ProjectileMovement ? ProjectileMovement->Velocity.GetSafeNormal() : GetActorForwardVector();
+    if (Dir.IsNearlyZero())
+        Dir = GetActorForwardVector();
+
+    const float TraceDistance = 300.f;
+    const float StartOffset = 5.f; // start just past the pawn hit so we don't re-hit the pawn
+
+    const FVector TraceStart = PawnHit.ImpactPoint + Dir * StartOffset;
+    const FVector TraceEnd = TraceStart + Dir * TraceDistance;
+
+    FCollisionQueryParams Params(SCENE_QUERY_STAT(BloodBehindPawnTrace), /*bTraceComplex*/ true);
+    Params.AddIgnoredActor(this);
+    if (AActor* OwnerActor = GetOwner()) Params.AddIgnoredActor(OwnerActor);
+    if (APawn* Inst = GetInstigator())   Params.AddIgnoredActor(Inst);
+    if (AActor* PawnActor = PawnHit.GetActor()) Params.AddIgnoredActor(PawnActor);
+
+    FHitResult BehindHit;
+    const bool bHit = GetWorld()->LineTraceSingleByChannel(
+        BehindHit,
+        TraceStart,
+        TraceEnd,
+        ECC_Visibility, // or your bullet channel
+        Params
+    );
+
+    if (!bHit || !BehindHit.bBlockingHit)
+        return;
+
+    // Spawn blood decal only on non-pawn surfaces behind the pawn
+    if (BehindHit.GetActor())
     {
-        UNiagaraComponent* Trail = UNiagaraFunctionLibrary::SpawnSystemAttached(
-            BulletTrailNS,
-            CollisionComp,
-            NAME_None,
-            FVector::ZeroVector,
-            FRotator::ZeroRotator,
-            EAttachLocation::SnapToTarget,
-            true
+        UGameManager* GM = UGameManager::Get(this);
+        UGlobalDataAsset* DataAsset = GM ? GM->GlobalData : nullptr;
+        UMaterialInterface* BloodDecal = DataAsset ? DataAsset->BloodDecal : nullptr;
+
+        if (!BloodDecal)
+            return;
+        // Random size 30-40 and add a small random roll (rotation) to avoid identical decals
+
+        const float RandomSize = FMath::RandRange(40.f, 50.f);
+
+        // Base rotation from surface normal
+        FRotator DecalRot = BehindHit.ImpactNormal.Rotation();
+
+        // Add random roll around the normal (this is what changes "spin" on the surface)
+        DecalRot.Roll = FMath::RandRange(0.f, 360.f);
+
+        const float LifeTime = 25.0f;
+        UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(
+            GetWorld(),
+            BloodDecal,
+            FVector(RandomSize),
+            BehindHit.ImpactPoint,
+            DecalRot,
+            LifeTime
         );
-    }*/
+
+        if (Decal)
+        {
+            const float FadeDuration = 5.0f;   // last 3 seconds
+            const float FadeStartDelay = FMath::Max(0.f, LifeTime - FadeDuration);
+
+            Decal->SetFadeOut(FadeStartDelay, FadeDuration, true);
+        }
+
+
+        if (Decal)
+        {
+            Decal->SetFadeScreenSize(0.001f);
+        }
+    }
 }

@@ -13,6 +13,7 @@
 #include "Game/Characters/Components/InventoryComponent.h"
 #include "Game/Framework/PlayerSlot.h"
 #include "Game/AI/BotAIController.h"
+#include "Game/Modes/Zombie/HealthPack.h"
 
 void AZombieMode::StartPlay()
 {
@@ -28,6 +29,7 @@ void AZombieMode::StartRound()
 
 	// clean airdrop crates and clear timer
 	GetWorldTimerManager().ClearTimer(AirdropCheckTimer);
+	GetWorldTimerManager().ClearTimer(HealPackCheckTimer);
 	auto Airdopes = CachedGS->GetActiveAirdropCrates();
 	for (AAirdropCrate* Crate : Airdopes)
 	{
@@ -36,8 +38,16 @@ void AZombieMode::StartRound()
 			Crate->Destroy();
 		}
 	}
+	auto HealthPacks = CachedGS->GetActiveHealthPacks();
+	for (AHealthPack* HealthPack : HealthPacks)
+	{
+		if (HealthPack && !HealthPack->IsPendingKillPending())
+		{
+			HealthPack->Destroy();
+		}
+	}
 
-	CachedGS->ClearAirdropCrates();
+	CachedGS->ClearActiveItems();
 	CachedGS->SetMatchState(EMyMatchState::BUY_PHASE);
 	CachedGS->SetHeroPhase(false);
 
@@ -89,6 +99,13 @@ void AZombieMode::EnterFightState()
 		this,
 		&AZombieMode::CheckAndSpawnAirdropCrate,
 		20.0f,
+		true
+	);
+	GetWorldTimerManager().SetTimer(
+		HealPackCheckTimer,
+		this,
+		&AZombieMode::CheckAndSpawnHealPack,
+		5.0f,
 		true
 	);
 }
@@ -302,6 +319,10 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 	// check if all is zombie -> end game with zombie win
 	AShooterGameState* GS = GetGameState<AShooterGameState>();
 	if (!GS) return;
+
+	if (GS->IsHeroPhase()) {
+		GS->SetRemainingHeroCount(GS->GetRemainingHeroCount() - 1);
+	}
 
 	int TotalPlayers = GS->Slots.Num();
 	int AliveSoldiers = 0;
@@ -524,34 +545,6 @@ void AZombieMode::SpawnAirdropCrate() {
 	FTransform SpawnTM(RandomRot, RandomLoc);
 	auto Crate = GetWorld()->SpawnActor<AAirdropCrate>(AAirdropCrate::StaticClass(), SpawnTM);
 	GS->OnSpawnedAirdropCrate(Crate);
-	if (Crate) {
-		Crate->OnAirdropClaimed.AddUObject(this, &AZombieMode::HandleAirdropClaimed);
-	}
-}
-
-void AZombieMode::HandleAirdropClaimed(AAirdropCrate* AirdropCrate, ABaseCharacter* Character) {
-	if (!AirdropCrate || !Character) return;
-	
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (!GS) return;
-
-	EItemId GiftId = EItemId::NONE;
-
-	int32 A = FMath::RandRange(1, 100);
-	/*if (A > 80)
-	{
-		GiftId = static_cast<EItemId>(
-			FMath::RandRange(
-				static_cast<int32>(EItemId::RIFLE_M16A),
-				static_cast<int32>(EItemId::RIFLE_QBZ)
-			)
-			);
-	}*/
-	GS->OnClaimedAirdropCrate(AirdropCrate, Character, GiftId);
-	// add gifts to character
-	// right now only bullets to main gun
-	Character->GetInventoryComponent()->AddAmmoToMainGun(90); // add 90 bullets
-	AirdropCrate->Destroy();
 }
 
 void AZombieMode::CheckAndSpawnAirdropCrate() {
@@ -565,4 +558,30 @@ void AZombieMode::CheckAndSpawnAirdropCrate() {
 	if (CurrentAirdropNum < MaxAirdropNum) {
 		SpawnAirdropCrate();
 	}
+}
+
+void AZombieMode::CheckAndSpawnHealPack() {
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) return;
+	if (GS->GetMatchState() != EMyMatchState::ROUND_IN_PROGRESS) {
+		return; // only spawn during round in progress
+	}
+	const int CurrentHealthPackNum = GS->GetActiveHealthPacks().Num();
+	const int MaxHealthPackNum = 2;
+	if (CurrentHealthPackNum < MaxHealthPackNum) {
+		SpawnHealPack();
+	}
+}
+
+void AZombieMode::SpawnHealPack() {
+	AShooterGameState* GS = GetGameState<AShooterGameState>();
+	if (!GS) return;
+
+	AActorManager* AM = AActorManager::Get(GetWorld());
+	FVector RandomLoc = AM->RandomLocationOnMap();
+	RandomLoc.Z += 80.f; // spawn above ground
+	const FRotator RandomRot = FRotator::ZeroRotator;
+	FTransform SpawnTM(RandomRot, RandomLoc);
+	auto HealPack = GetWorld()->SpawnActor<AHealthPack>(AHealthPack::StaticClass(), SpawnTM);
+	GS->OnSpawnedHealthPack(HealPack);
 }

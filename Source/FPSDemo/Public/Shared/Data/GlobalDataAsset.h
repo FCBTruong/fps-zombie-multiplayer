@@ -25,6 +25,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterialInterface* TrajectoryMaterial;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Decals")
+	UMaterialInterface* BloodDecal;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Helicopter")
 	TSubclassOf<AActor> HelicopterClass;
 
@@ -103,4 +106,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Crates")
 	TObjectPtr<UStaticMesh> CrateMesh;
+
+	UPROPERTY(EditAnywhere, Category = "Items")
+	TObjectPtr<UStaticMesh> HealPackMesh;
 };

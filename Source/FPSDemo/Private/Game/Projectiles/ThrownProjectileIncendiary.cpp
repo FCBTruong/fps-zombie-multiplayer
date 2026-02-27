@@ -5,14 +5,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Shared/Data/Items/ThrowableConfig.h"
-
+#include "Components/DecalComponent.h"
 
 void AThrownProjectileIncendiary::OnExplode()
 {
     UE_LOG(LogTemp, Log, TEXT("AThrownProjectileIncendiary::ExplodeNow"));
     FVector ImpactPoint = GetActorLocation();
     MulticastExplode(ImpactPoint);
-    SetLifeSpan(6.0f);
+    SetLifeSpan(LifeTime);
 
     FTimerHandle DamageTimer;
     GetWorld()->GetTimerManager().SetTimer(
@@ -23,15 +23,15 @@ void AThrownProjectileIncendiary::OnExplode()
         true
     );
 
-    //DrawDebugSphere(
-    //    GetWorld(),
-    //    GetActorLocation(),
-    //    Data->ExplosionRadius,
-    //    16,                 // segments
-    //    FColor::Red,
-    //    false,              // bPersistentLines
-    //    5.0f                // life time
-    //);
+    DrawDebugSphere(
+        GetWorld(),
+        GetActorLocation(),
+        Data->ExplosionRadius,
+        16,                 // segments
+        FColor::Red,
+        false,              // bPersistentLines
+        LifeTime                // life time
+    );
 }
 
 void AThrownProjectileIncendiary::MulticastExplode_Implementation(const FVector& ImpactPoint)
@@ -48,6 +48,12 @@ void AThrownProjectileIncendiary::MulticastExplode_Implementation(const FVector&
     }
 
     UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::MulticastExplode_Implementation"));
+
+    if (Data && Data->ExplosionSFX)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, Data->ExplosionSFX, ImpactPoint);
+    }
+
     if (Data && Data->SmokeFX)
     {
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(
@@ -57,16 +63,23 @@ void AThrownProjectileIncendiary::MulticastExplode_Implementation(const FVector&
         );
     }
 
-    if (Data && Data->ExplosionSFX)
-    {
-        UGameplayStatics::PlaySoundAtLocation(this, Data->ExplosionSFX, ImpactPoint);
-    }
-
     if (Data && Data->DecalMat)
     {
-        UGameplayStatics::SpawnDecalAtLocation(GetWorld(), Data->DecalMat,
+        auto Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), Data->DecalMat,
             FVector(Data->DecalSize), ImpactPoint,
-            Rotation, Data->DecalLife);
+            Rotation, LifeTime);
+
+        if (Decal)
+        {
+			UE_LOG(LogTemp, Log, TEXT("Spawned explosion decal at location: %s"), *ImpactPoint.ToString());
+            const float FadeDuration = 1.0f;   // last 3 seconds
+            const float FadeStartDelay = FMath::Max(0.f, LifeTime - FadeDuration);
+
+            Decal->SetFadeOut(FadeStartDelay, FadeDuration, true);
+
+            UE_LOG(LogTemp, Log, TEXT("Decal LifeTime=%.2f FadeStart=%.2f FadeDur=%.2f"),
+                LifeTime, FadeStartDelay, FadeDuration);
+        }
     }
 
     // Stop movement

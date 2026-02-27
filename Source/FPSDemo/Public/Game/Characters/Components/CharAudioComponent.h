@@ -33,6 +33,7 @@ public:
 	void PlayZombieDeath();
 	void PlaySoldierDeath();
 	void PlayHeroSpawn();
+	void PlayHeal();
 protected:
     virtual void BeginPlay() override;
 

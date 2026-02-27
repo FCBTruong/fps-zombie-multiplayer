@@ -6,6 +6,7 @@
 #include "Shared/Data/Items/ThrowableConfig.h"
 #include "Game/GameManager.h"
 #include "Shared/Data/GlobalDataAsset.h"
+#include "Components/DecalComponent.h"
 
 void AThrownProjectileFrag::BeginPlay()
 {
@@ -87,9 +88,17 @@ void AThrownProjectileFrag::MulticastExplode_Implementation(const FVector& Impac
 
     if (Data && Data->DecalMat)
     {
-        UGameplayStatics::SpawnDecalAtLocation(GetWorld(), Data->DecalMat,
+        auto Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), Data->DecalMat,
             FVector(Data->DecalSize), ImpactPoint,
             Rotation, Data->DecalLife);
+
+        if (Decal)
+        {
+            const float FadeDuration = 2.0f;   // last 3 seconds
+            const float FadeStartDelay = FMath::Max(0.f, Data->DecalLife - FadeDuration);
+
+            Decal->SetFadeOut(FadeStartDelay, FadeDuration, true);
+        }
     }
 
     // Stop movement

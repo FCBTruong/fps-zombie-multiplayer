@@ -89,20 +89,21 @@ void UPlayerUI::NativeConstruct()
 	}
 }
 
-void UPlayerUI::ShowInteractMessage(const FString& Message)
+void UPlayerUI::ShowInteractMessage(const FText& Message)
 {
-    if (PickupLabel) {
-        if (Message == TEXT(""))
-        {
-            PickupLabel->SetVisibility(ESlateVisibility::Hidden);
-            return;
-        }
-        PickupLabel->SetText(FText::Format(
-            FText::FromString(TEXT("{0}\n(Press F)")),
-            FText::FromString(Message)
-        ));
-        PickupLabel->SetVisibility(ESlateVisibility::Visible);
+    if (!PickupLabel)
+    {
+        return;
     }
+
+    if (Message.IsEmpty())
+    {
+        PickupLabel->SetVisibility(ESlateVisibility::Hidden);
+        return;
+    }
+
+    PickupLabel->SetText(Message);
+    PickupLabel->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UPlayerUI::HideInteractMessage()
@@ -162,7 +163,7 @@ void UPlayerUI::OnHit()
 void UPlayerUI::OnEnter()
 {
     // This function can be used to initialize or reset UI elements when the player enters the game
-    ShowInteractMessage(TEXT(""));
+    ShowInteractMessage(FText::FromString(TEXT("")));
 
     KillNotifyStack->ClearChildren();
 
@@ -879,4 +880,8 @@ void UPlayerUI::ShowSettings(bool bShow)
     }
 
     GameSettingsWidget->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void UPlayerUI::ResetAll() {
+	WBP_Crosshair->SetVisibility(ESlateVisibility::Hidden);
 }

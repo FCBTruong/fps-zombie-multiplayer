@@ -9,6 +9,7 @@
 
 class ASpike;
 class AAirdropCrate;
+class AHealthPack;
 class ABaseCharacter;
 class APlayerSlot;
 
@@ -69,8 +70,10 @@ public:
     void SetRemainingHeroCount(int NewCount);
     void SetRemainingZombieCount(int NewCount);
     void OnSpawnedAirdropCrate(AAirdropCrate* Crate);
+	void OnSpawnedHealthPack(AHealthPack* HealthPack);
+	void OnClaimedHealthPack(AHealthPack* HealthPack);
     void OnClaimedAirdropCrate(AAirdropCrate* Crate, ABaseCharacter* Claimer, EItemId GiftId);
-    void ClearAirdropCrates();
+	void ClearActiveItems();
     int GetRoundEndTime() const;
     int GetScoreTeam(ETeamId TeamId) const;
     int GetBuyEndTime() const;
@@ -88,6 +91,7 @@ public:
     EMatchMode GetMatchMode() const;
     APlayerSlot* GetPlayerSlot(int32 PlayerId) const;
     TArray<AAirdropCrate*> GetActiveAirdropCrates() const;
+    TArray<AHealthPack*> GetActiveHealthPacks() const;
 
     UPROPERTY(ReplicatedUsing = OnRep_PlayerSlots)
     TArray<APlayerSlot*> Slots;
@@ -141,6 +145,9 @@ protected:
 
     UPROPERTY() // zombie mode, Airdrop Crates
 	TArray<AAirdropCrate*> ActiveAirdropCrates;
+
+    UPROPERTY() // zombie mode, HealthPacks
+    TArray<AHealthPack*> ActiveHealthPacks;
 
     UFUNCTION()
 	void OnRep_Spike();

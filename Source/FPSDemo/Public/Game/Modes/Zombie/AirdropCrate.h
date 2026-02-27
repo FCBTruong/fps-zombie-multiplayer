@@ -7,7 +7,6 @@
 #include "AirdropCrate.generated.h"
 
 class ABaseCharacter;
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAirdropClaimed, AAirdropCrate*, ABaseCharacter*);
 UCLASS()
 class FPSDEMO_API AAirdropCrate : public AActor
 {
@@ -17,8 +16,6 @@ public:
 	// Sets default values for this actor's properties
 	AAirdropCrate();
 	void SetClaimed(bool bNewIsClaimed) { bIsClaimed = bNewIsClaimed; }
-
-	FOnAirdropClaimed OnAirdropClaimed;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

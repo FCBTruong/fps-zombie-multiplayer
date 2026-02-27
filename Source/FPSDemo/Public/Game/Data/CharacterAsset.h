@@ -75,6 +75,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	TObjectPtr<USoundBase> Audio_HeroSpawn = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TObjectPtr<USoundBase> Audio_Heal = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Camera")
 	TSubclassOf<AActor> DeathCameraProxyClass;
 
@@ -89,6 +92,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	TObjectPtr<UParticleSystem> HeroFx;
+
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	TObjectPtr<UNiagaraSystem> HealFx;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Characters")
 	TObjectPtr<UCharacterVisualSet> HeroVisualSet;

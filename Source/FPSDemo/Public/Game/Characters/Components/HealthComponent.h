@@ -33,24 +33,23 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	UFUNCTION(BlueprintCallable)
+	float GetHealthPercent() const { return Health / MaxHealth; }
+	float GetHealth() const { return Health; }
+	float GetMaxHealth() const { return MaxHealth; }
 
 	void ApplyDamage(float DamageAmount);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	UFUNCTION(BlueprintCallable)
-	float GetHealthPercent() const { return Health / MaxHealth; }
-
-	FOnHealthUpdated OnHealthUpdated;
-
-	float GetHealth() const { return Health; }
-	float GetMaxHealth() const { return MaxHealth; }
 	void HealthDeath();
-	FOnDeath OnDeath;
+	void ResetHealth();
 	void SetHealth(float NewHealth);
 	void SetMaxHealth(float NewMaxHealth);
 	bool IsAlive() const { return Health > 0.f; }
 	bool IsDead() const { return Health <= 0.f; }
-	void ResetHealth();
+	bool IsAtMaxHealth() const { return Health >= MaxHealth; }
+	bool ApplyHeal(float Amount);
+
+	// Delegates
+	FOnHealthUpdated OnHealthUpdated;
+	FOnDeath OnDeath;
 };

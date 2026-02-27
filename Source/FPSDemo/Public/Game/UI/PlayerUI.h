@@ -240,7 +240,7 @@ public:
 	UMinimapRadarUI* RadarWidget;
 
 	void NativeConstruct() override;
-	void ShowInteractMessage(const FString& Message);
+	void ShowInteractMessage(const FText& Message);
 	void HideInteractMessage();
 	void UpdateHealth(float CurrentHealth, float MaxHealth);
 	void UpdateAmmo(int CurrentAmmoValue, int RemainAmmoValue);
@@ -282,4 +282,5 @@ public:
 	void ToggleChatInput();
 	bool IsSettingsOpen() const;
 	void ShowSettings(bool bShow);
+	void ResetAll();
 };

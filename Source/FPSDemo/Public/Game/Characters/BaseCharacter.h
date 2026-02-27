@@ -336,6 +336,7 @@ public:
     void SetCharacterSkin(int32 SkinId);
     void SetupSpineKickTimeline();
 	void ShowNameText(bool bShow);
+	bool Heal(float HealAmount);
     float GetSpeedWalkRatio() const;
     float GetAimSensitivity() const;
     bool IsHero() const;

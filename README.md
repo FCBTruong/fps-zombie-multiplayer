@@ -92,7 +92,7 @@ NetEmulation.PktIncomingLagMax 100
 ```
 
 * Server keeps ~200ms of hitbox history.
-* Hit checks are server-side (client doesn’t decide hits).
+* Hit checks are server-side (client doesnï¿½t decide hits).
 * On shot, server checks against a rewound target state based on shot time / latency.
 * Helps shots register more consistently under ping.
 
@@ -105,7 +105,7 @@ Reference https://www.youtube.com/watch?v=6EwaW2iz4iA&t=6s
 * Movement is blended between two snapshots to reduce jitter from packet delay/jitter.
 * This makes remote movement look smoother and more stable.
 
-#### Result
+  #### Result
 
 * Remote movement looks smoother.
 * Fewer jitter spikes when packets arrive unevenly.

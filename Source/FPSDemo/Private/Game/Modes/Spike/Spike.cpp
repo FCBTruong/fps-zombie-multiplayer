@@ -96,7 +96,7 @@ void ASpike::Tick(float DeltaTime)
     if (bIsExploding && ExplodeSphere)
     {
         ExplodeTimer += DeltaTime;
-        float Alpha = FMath::Clamp(ExplodeTimer / 0.5f, 0.f, 1.f);
+        float Alpha = FMath::Clamp(ExplodeTimer / 1.0f, 0.f, 1.f);
 
         // scale animation: 0 - 3
         float Scale = FMath::Lerp(0.f, 20.f, Alpha);
@@ -308,6 +308,14 @@ void ASpike::AddCameraYaw(float Value)
 {
     if (!SpringArmComp || FMath::IsNearlyZero(Value)) return;
     CamYaw += Value * LookSensitivity;
+    SpringArmComp->SetRelativeRotation(FRotator(CamPitch, CamYaw, 0.f));
+}
+
+void ASpike::AddCameraPitch(float Value)
+{
+    if (!SpringArmComp || FMath::IsNearlyZero(Value)) return;
+    CamPitch = FMath::Clamp(CamPitch + Value * LookSensitivity, -70.f, 70.f);
+    SpringArmComp->SetRelativeRotation(FRotator(CamPitch, CamYaw, 0.f));
     SpringArmComp->SetRelativeRotation(FRotator(CamPitch, CamYaw, 0.f));
 }
 

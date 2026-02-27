@@ -406,6 +406,7 @@ void AMyPlayerController::Look(const FInputActionValue& Value) {
     if (ASpike* Spike = Cast<ASpike>(GetViewTarget()))
     {
         Spike->AddCameraYaw(Axis.X);
+		Spike->AddCameraPitch(-Axis.Y);
         return;
     }
     if (IsSpectatingState()) {
@@ -863,6 +864,7 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
     {
         H_ShowInteractMessage = IC->ShowInteractMessage.AddUObject(PlayerUI, &UPlayerUI::ShowInteractMessage);
         H_HideInteractMessage = IC->HideInteractMessage.AddUObject(PlayerUI, &UPlayerUI::HideInteractMessage);
+		PlayerUI->HideInteractMessage();
     }
 
     if (UEquipComponent* EC = Char->GetEquipComponent())
@@ -909,6 +911,7 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
     if (UCharCameraComponent* CamComp = Char->GetCharCameraComponent())
     {
         H_AimingChanged = CamComp->OnAimingVisualsChanged.AddUObject(this, &AMyPlayerController::HandleAimingChanged);
+		HandleAimingChanged(Char->IsAiming());
 	}
 
 	PlayerUI->UpdatePlayerName(Char->GetPlayerName());
@@ -930,6 +933,10 @@ void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
         IC->HideInteractMessage.Remove(H_HideInteractMessage);
         H_ShowInteractMessage.Reset();
         H_HideInteractMessage.Reset();
+        if (PlayerUI)
+        {
+            PlayerUI->HideInteractMessage();
+		}
     }
 
     if (UEquipComponent* EC = Char->GetEquipComponent())
@@ -975,6 +982,7 @@ void AMyPlayerController::UnbindCharacter(ABaseCharacter* Char)
     if (UCharCameraComponent* CamComp = Char->GetCharCameraComponent())
     {
 		CamComp->OnAimingVisualsChanged.Remove(H_AimingChanged);
+		HandleAimingChanged(false); // reset to non-aiming visuals
     }
     H_OnHit.Reset();
     H_AimingChanged.Reset();
@@ -1189,6 +1197,15 @@ void AMyPlayerController::ClientSpectateTarget_Implementation(AActor* Target, fl
     {
         return;
     }
+
+    // if is not basecharacter, reset player ui
+    if (!Target->IsA(ABaseCharacter::StaticClass()))
+    {
+        if (PlayerUI)
+        {
+            PlayerUI->ResetAll();
+        }
+	}
 
     // This is the only thing you said you want: view through teammate.
     SetViewTargetWithBlend(Target, BlendTime);

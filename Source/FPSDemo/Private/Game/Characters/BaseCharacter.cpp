@@ -597,7 +597,7 @@ void ABaseCharacter::UpdateMaxWalkSpeed() {
         }
 
         if (bIsAiming) {
-            Speed *= 0.2f; // aiming penalty
+         //   Speed *= 0.2f; // aiming penalty
         }
 
         if (RoleComp) {
@@ -896,6 +896,8 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
             false
         );
     }
+
+	NameText->SetVisibility(false);
 }
 
 void ABaseCharacter::ClientPlayHitEffect_Implementation()
@@ -2065,8 +2067,40 @@ void ABaseCharacter::ShowNameText(bool bShow)
 {
     if (NameText)
     {
-        const FString Name = GetPlayerName();
-        NameText->SetText(FText::FromString(Name));
         NameText->SetVisibility(bShow, true);
+
+        if (bShow)
+        {
+            NameText->SetText(FText::FromString(GetPlayerName()));
+		}
     }
+}
+
+bool ABaseCharacter::Heal(float HealAmount)
+{
+    UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter: Heal called with HealAmount: %f"), HealAmount);
+
+    if (!HealthComp) return false;
+
+    const bool bHealed = HealthComp->ApplyHeal(HealAmount);
+    if (!bHealed) return false;
+
+    // Play effect heal (feedback belongs to character)
+    if (CachedCharacterAsset && CachedCharacterAsset->HealFx)
+    {
+        UNiagaraFunctionLibrary::SpawnSystemAttached(
+            CachedCharacterAsset->HealFx,
+            GetRootComponent(),
+            NAME_None,
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            EAttachLocation::SnapToTarget,
+            true
+        );
+    }
+    if (AudioComp) {
+        AudioComp->PlayHeal();
+	}
+
+    return true;
 }

@@ -319,17 +319,13 @@ void ASpikeMode::SwapTeams() // switch side
 		UE_LOG(LogTemp, Warning, TEXT("GameState is null in SwapTeams"));
 		return;
 	}
-	// swap scores too
-	int ScoreA = GS->GetTeamAScore();
-	int ScoreB = GS->GetTeamBScore();
-	GS->SetTeamAScore(ScoreB);
-	GS->SetTeamBScore(ScoreA);
 
 	UE_LOG(LogTemp, Warning, TEXT("Swapping teams..."));
 	for (APlayerSlot* Slot : GS->Slots) {
 		ETeamId CurrentTeam = Slot->GetTeamId();
 		ETeamId NewTeam = (CurrentTeam == ETeamId::Attacker) ? ETeamId::Defender : ETeamId::Attacker;
 		Slot->SetTeamId(NewTeam);
+		Slot->ForceNetUpdate();
 
 		// update skin 
 		if (NewTeam == ETeamId::Attacker) {
@@ -339,6 +335,12 @@ void ASpikeMode::SwapTeams() // switch side
 			Slot->SetCharacterSkin(FGameConstants::SKIN_CHARACTER_DEFENDER);
 		}
 	}
+
+	// swap scores too
+	int ScoreA = GS->GetTeamAScore();
+	int ScoreB = GS->GetTeamBScore();
+	GS->SetTeamAScore(ScoreB);
+	GS->SetTeamBScore(ScoreA);
 }
 
 void ASpikeMode::GenerateInitialWeapons()

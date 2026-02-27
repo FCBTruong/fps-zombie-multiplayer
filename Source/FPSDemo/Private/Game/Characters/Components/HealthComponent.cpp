@@ -10,7 +10,7 @@ UHealthComponent::UHealthComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 	MaxHealth = 100.0f;
 	Health = MaxHealth;
 	SetIsReplicatedByDefault(true);
@@ -24,15 +24,6 @@ void UHealthComponent::BeginPlay()
 
 	// ...
 	
-}
-
-
-// Called every frame
-void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
 }
 
 void UHealthComponent::ApplyDamage(float DamageAmount)
@@ -88,4 +79,18 @@ void UHealthComponent::SetMaxHealth(float NewMaxHealth)
 void UHealthComponent::ResetHealth()
 {
 	SetHealth(MaxHealth);
+}
+
+bool UHealthComponent::ApplyHeal(float Amount)
+{
+	if (Amount <= 0.f) return false;
+	if (IsAtMaxHealth()) return false;
+
+	float NewHealth = FMath::Clamp(Health + Amount, 0.f, MaxHealth);
+
+	if (NewHealth == Health) return false;
+
+	SetHealth(NewHealth);
+	
+	return true;
 }

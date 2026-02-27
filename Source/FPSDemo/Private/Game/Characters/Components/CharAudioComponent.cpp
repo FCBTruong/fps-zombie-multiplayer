@@ -153,3 +153,11 @@ void UCharAudioComponent::PlayHeroSpawn()
     }
     PlaySound3D(CachedCharacterAsset->Audio_HeroSpawn);
 }
+
+void UCharAudioComponent::PlayHeal()
+{
+    if (!CachedCharacterAsset) {
+        return;
+    }
+    PlaySound3D(CachedCharacterAsset->Audio_Heal);
+}

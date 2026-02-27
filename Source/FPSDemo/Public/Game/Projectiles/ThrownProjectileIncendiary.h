@@ -15,7 +15,7 @@ class FPSDEMO_API AThrownProjectileIncendiary : public AThrownProjectile
 	GENERATED_BODY()
 protected:
 	void OnExplode() override;
-
+	const float LifeTime = 6.f; // seconds, should move to config instead of hardcoded
 public:
 	virtual void MulticastExplode_Implementation(const FVector& ImpactPoint) override;
 	void DoDamage();

@@ -16,6 +16,7 @@
 #include "Game/Modes/Zombie/AirdropCrate.h"
 #include "Shared/System/ItemsManager.h"
 #include "Game/Framework/PlayerSlot.h"
+#include "Game/Modes/Zombie/HealthPack.h"
 
 AShooterGameState::AShooterGameState()
 {
@@ -275,6 +276,18 @@ bool AShooterGameState::CanQuitMidMatch() const
     return false;
 }
 
+void AShooterGameState::OnSpawnedHealthPack(AHealthPack* NewPack)
+{
+    if (!HasAuthority() || !NewPack) return;
+    ActiveHealthPacks.Add(NewPack);
+}
+
+void AShooterGameState::OnClaimedHealthPack(AHealthPack* ClaimedPack)
+{
+    if (!HasAuthority() || !ClaimedPack) return;
+    ActiveHealthPacks.Remove(ClaimedPack);
+}
+
 void AShooterGameState::OnSpawnedAirdropCrate(AAirdropCrate* NewCrate)
 {
     if (!HasAuthority() || !NewCrate) return;
@@ -471,8 +484,9 @@ void AShooterGameState::SetBuyEndTime(int NewBuyEndTime){
     BuyEndTime = NewBuyEndTime;
 }
 
-void AShooterGameState::ClearAirdropCrates() {
+void AShooterGameState::ClearActiveItems() {
     ActiveAirdropCrates.Empty();
+    ActiveHealthPacks.Empty();
 }
 
 int AShooterGameState::GetRoundEndTime() const {
@@ -517,6 +531,10 @@ EMatchMode AShooterGameState::GetMatchMode() const {
 
 TArray<AAirdropCrate*> AShooterGameState::GetActiveAirdropCrates() const { 
     return ActiveAirdropCrates; 
+}
+
+TArray<AHealthPack*> AShooterGameState::GetActiveHealthPacks() const {
+    return ActiveHealthPacks;
 }
 
 EMyMatchState AShooterGameState::GetMatchState() const {

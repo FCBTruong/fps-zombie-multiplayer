@@ -39,14 +39,16 @@ private:
 	void OnRoundTimeExpired();
 	void StartSpectating(ABaseCharacter* VictimPawn);
 	void SpawnAirdropCrate();
-	void HandleAirdropClaimed(class AAirdropCrate* AirdropCrate, ABaseCharacter* Character);
-	ABaseCharacter* ChooseZombie() const;
+	void SpawnHealPack();
 	void CheckAndSpawnAirdropCrate();
+	void CheckAndSpawnHealPack();
+	ABaseCharacter* ChooseZombie() const;
 	bool ShouldEnterHeroPhase(int32 TotalPlayers, int32 AliveSoldiers) const;
 
 	FTimerHandle BuyingTimerHandle;
 	FTimerHandle FightStateTimerHandle;
 	FTimerHandle AirdropCheckTimer;
+	FTimerHandle HealPackCheckTimer;
 
 	const int RoundProgressTime = 120; // seconds - 2 minutes
 	const float DelayBeforeNewRound = 3.f;

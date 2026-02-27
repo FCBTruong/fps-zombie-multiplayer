@@ -91,7 +91,7 @@ public:
 	bool IsDefused() const { return bIsDefused; }
 	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void AddCameraYaw(float DeltaYaw);
-
+	void AddCameraPitch(float DeltaPitch);
 private:
 	void OnCompleteExplode();
 	void OnCharacterDead(ABaseCharacter* DeadCharacter);

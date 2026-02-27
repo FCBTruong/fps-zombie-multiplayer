@@ -6,6 +6,9 @@
 #include "Game/GameManager.h"
 #include "Shared/Data/GlobalDataAsset.h"
 #include "Game/Modes/Zombie/ZombieMode.h"
+#include "Game/Framework/ShooterGameState.h"
+#include "Game/Characters/BaseCharacter.h"
+#include "Game/Characters/Components/InventoryComponent.h"
 
 // Sets default values
 AAirdropCrate::AAirdropCrate()
@@ -69,8 +72,33 @@ void AAirdropCrate::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* 
 	if (Character && Character->IsAlive() && Character->IsCharacterRole(ECharacterRole::Human))
 	{
 		bIsClaimed = true;
-		OnAirdropClaimed.Broadcast(this, Character);
 		UE_LOG(LogTemp, Warning, TEXT("AirdropCrate claimed by character"));
+		AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+		if (!GS) return;
+
+		EItemId GiftId = EItemId::NONE;
+
+		int32 A = FMath::RandRange(1, 100);
+		/*if (A > 80)
+		{
+			GiftId = static_cast<EItemId>(
+				FMath::RandRange(
+					static_cast<int32>(EItemId::RIFLE_M16A),
+					static_cast<int32>(EItemId::RIFLE_QBZ)
+				)
+				);
+		}*/
+		GS->OnClaimedAirdropCrate(this, Character, GiftId);
+		// add gifts to character
+		// right now only bullets to main gun
+		UInventoryComponent* Inventory = Character->GetInventoryComponent();
+		if (!Inventory)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("AirdropCrate::OnOverlapBegin: Character's InventoryComponent is null"));
+			return;
+		}
+		Inventory->AddAmmoToMainGun(90); // add 90 bullets
+		this->Destroy();
 	}
 }
 
