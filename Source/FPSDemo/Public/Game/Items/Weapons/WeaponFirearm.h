@@ -25,7 +25,7 @@ public:
 	void PlayReloadSound();
 
 	UPROPERTY()
-	UStaticMeshComponent* MagMesh;
+	TObjectPtr<UStaticMeshComponent> MagMesh = nullptr;
 	void AttachMagToDefault();
 	int32 GetMaxAmmo() const;
 	void Destroyed() override;

@@ -19,17 +19,11 @@ public:
 	UPickupComponent();
 
 protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-	UGameManager* GMR;
-
 	UFUNCTION(Client, Unreliable)
 	void ClientNotifyItemPickup(EItemId ItemId);
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 	void PickupItem(class APickupItem* Item, bool AutoEquip = false);
 
+	// Delegates
 	FOnNewItemPickup OnNewItemPickup;
 };

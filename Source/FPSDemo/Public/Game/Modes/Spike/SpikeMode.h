@@ -17,14 +17,11 @@ class FPSDEMO_API ASpikeMode : public AShooterGameMode
 	GENERATED_BODY()
 
 public:
-	virtual void StartPlay() override;
-
 	void PlantSpike(FVector Location, AController* Planter);
 	bool IsSpikePlanted() const;
 	void OnSpikeDefused(AController* Defuser);
 	void NotifySpikePickedUp(ABaseCharacter* Player);
 	void OnSpikeExploded();
-
 	EMatchMode GetMatchMode() const final { return EMatchMode::Spike; }
 
 	static constexpr int32 ScoreToWin = 3; // good is 7
@@ -32,10 +29,10 @@ public:
 	static constexpr int32 TimePerRound = 90; // seconds
 
 protected:
+	virtual void StartPlay() override;
 	virtual void StartRound() override;
 	virtual void EndRound(ETeamId WinningTeam) override;
 	virtual void EndGame(ETeamId WinningTeam) override;
-	virtual void AutoBuyForBots() override;
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists,
 		ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
@@ -45,6 +42,7 @@ protected:
 	TSubclassOf<ASpike> SpikeClass;
 
 private:
+	void AutoBuyForBots();
 	void SwapTeams();
 	void GenerateInitialWeapons();
 	void HandlePlayerDeath(AController* DeadController);

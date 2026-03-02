@@ -8,7 +8,6 @@
 
 class UCameraComponent;
 class USpringArmComponent;
-class USceneCaptureComponent2D;
 class USkeletalMeshComponent;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnViewModeChanged, bool /*bIsFPS*/);

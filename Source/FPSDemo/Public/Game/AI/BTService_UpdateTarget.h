@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BehaviorTree/Services/BTService_BlueprintBase.h"
+#include "BehaviorTree/BTService.h"
 #include "BTService_UpdateTarget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class FPSDEMO_API UBTService_UpdateTarget : public UBTService_BlueprintBase
+class FPSDEMO_API UBTService_UpdateTarget : public UBTService
 {
     GENERATED_BODY()
 

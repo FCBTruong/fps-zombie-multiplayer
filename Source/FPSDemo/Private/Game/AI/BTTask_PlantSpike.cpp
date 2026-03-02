@@ -18,8 +18,7 @@ EBTNodeResult::Type UBTTask_PlantSpike::ExecuteTask(
     ABotAIController* AI = Cast<ABotAIController>(OwnerComp.GetAIOwner());
     if (!AI)
     {
-        FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
-        return EBTNodeResult::Failed;     // MUST return a value
+        return EBTNodeResult::Failed;
     }
 
     // Start async planting animation / behavior
@@ -27,12 +26,4 @@ EBTNodeResult::Type UBTTask_PlantSpike::ExecuteTask(
 
     // Tell the BT we are running an async task
     return EBTNodeResult::InProgress;
-}
-
-void UBTTask_PlantSpike::TickTask(
-    UBehaviorTreeComponent& OwnerComp,
-    uint8* NodeMemory,
-    float DeltaSeconds)
-{
-    
 }

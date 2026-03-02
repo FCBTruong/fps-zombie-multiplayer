@@ -25,12 +25,10 @@ class FPSDEMO_API AMyPlayerState : public APlayerState
 
 public:
 	AMyPlayerState();
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	ETeamId GetTeamId() const;
 	void SetTeamId(ETeamId NewTeamId);
 	void ProcessBuy(const UItemConfig* Item);
-	int GetMoney() const { return Money; }
 	void ResetBoughtItems() { BoughtItems.Empty(); }
 	bool CanBuyThisItem(const UItemConfig* Item) const;
 	void AutoBuy();
@@ -41,15 +39,19 @@ public:
 	void ClearOwnedWeapons() {
 		OwnedWeapons.Empty();
 	}
-	TArray<EItemId> GetOwnedWeapons() const {
-		return OwnedWeapons;
-	}
 	void AddKill();
 	void AddDeath();
 	void AddAssist();
+
 	int GetKills() const;
 	int GetDeaths() const;
 	int GetAssists() const;
+	int GetMoney() const { return Money; }
+	int GetBackendUserId() const;
+
+	TArray<EItemId> GetOwnedWeapons() const {
+		return OwnedWeapons;
+	}
 
 	void SetChosenAsZombie(bool bChosen) {
 		bWasChosenAsZombie = bChosen;
@@ -57,7 +59,6 @@ public:
 	bool WasChosenAsZombie() const {
 		return bWasChosenAsZombie;
 	}
-	int GetBackendUserId() const;
 	void SetPlayerSlot(APlayerSlot* Slot);
 	APlayerSlot* GetPlayerSlot() const {
 		return PlayerSlot;
@@ -75,6 +76,8 @@ public:
 	FOnUpdateTeamId OnUpdateTeamId;
 
 protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	UPROPERTY(ReplicatedUsing = OnRep_Money)
 	int32 Money;
 
@@ -92,6 +95,7 @@ protected:
 
 	UFUNCTION()
 	void OnRep_Money();
+	void HandlePlayerSlotTeamIdUpdated(ETeamId NewTeamId);
 
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerSlot)
 	APlayerSlot* PlayerSlot = nullptr;

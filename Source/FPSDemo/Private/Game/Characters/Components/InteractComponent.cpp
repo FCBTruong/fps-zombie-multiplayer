@@ -12,42 +12,39 @@ UInteractComponent::UInteractComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-
-// Called when the game starts
 void UInteractComponent::BeginPlay()
 {
 	Super::BeginPlay();
-}
 
+	OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
+	check(OwnerCharacter);
+}
 
 void UInteractComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	TraceFocus();
+
+	if (OwnerCharacter->IsLocallyControlled()) {
+		TraceFocus();
+	}
 }
 
 void UInteractComponent::TraceFocus()
 {
-	if (!GetOwner() || !GetWorld())
-	{
-		return;
-	}
-
-	ABaseCharacter* OwnerPawn = Cast<ABaseCharacter>(GetOwner());
-	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled() || OwnerPawn->IsDead())
+	if (!OwnerCharacter->IsLocallyControlled() || OwnerCharacter->IsDead())
 	{
 		return;
 	}
 
 	FVector Start;
 	FRotator Rot;
-	GetOwner()->GetActorEyesViewPoint(Start, Rot);
+	OwnerCharacter->GetActorEyesViewPoint(Start, Rot);
 
 	const FVector End = Start + Rot.Vector() * FocusRange;
 
 	FHitResult Hit;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(FocusTrace), false);
-	Params.AddIgnoredActor(GetOwner());
+	Params.AddIgnoredActor(OwnerCharacter);
 
 	const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
 	AActor* NewActor = bHit ? Hit.GetActor() : nullptr;
@@ -75,12 +72,10 @@ void UInteractComponent::StartFocus(AActor* Actor)
 		ShowInteractMessage.Broadcast(
 			FText::FromString(FString::Printf(TEXT("%s\n(Press F)"), *Pickup->GetItemName()))
 		);
-		return;
 	}
-	else if (ASpike* Spike = Cast<ASpike>(Actor))
+	else if (Cast<ASpike>(Actor))
 	{
 		ShowInteractMessage.Broadcast(FText::FromString(TEXT("Press 'E' to defuse")));
-		return;
 	}
 }
 
@@ -122,33 +117,34 @@ void UInteractComponent::SetFocus(AActor* NewActor)
 	}
 }
 
-// Deprecated
 void UInteractComponent::TryPickup()
 {
-	UE_LOG(LogTemp, Warning, TEXT("pressed pickup"));
 	APickupItem* FocusedPickup = Cast<APickupItem>(FocusedActor.Get());
-	if (FocusedPickup)
+	if (!FocusedPickup)
 	{
-		if (GetOwner()->HasAuthority())
-		{
-			HandlePickup_Internal(FocusedPickup);
-		}
-		else
-		{
-			ServerTryPickup(FocusedPickup);
-		}
+		return;
+	}
+
+	if (OwnerCharacter->HasAuthority())
+	{
+		HandlePickup_Internal(FocusedPickup);
+	}
+	else
+	{
+		ServerTryPickup(FocusedPickup);
 	}
 }
 
 void UInteractComponent::HandlePickup_Internal(APickupItem* Item)
 {
-	if (Item)
+	if (!Item)
 	{
-		if (auto PickupComp = GetOwner()->FindComponentByClass<UPickupComponent>())
-		{
-			PickupComp->PickupItem(Item, true);
-		}
+		return;
 	}
+
+	UPickupComponent* PickupComp = OwnerCharacter->GetPickupComponent();
+	check(PickupComp);
+	PickupComp->PickupItem(Item, true);
 }
 
 void UInteractComponent::ServerTryPickup_Implementation(APickupItem* Item)

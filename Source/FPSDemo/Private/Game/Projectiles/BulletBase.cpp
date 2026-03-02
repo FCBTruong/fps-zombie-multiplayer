@@ -11,8 +11,7 @@
 // Sets default values
 ABulletBase::ABulletBase()
 {
-    // Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-    PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bCanEverTick = false;
 
     CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
     CollisionComp->InitSphereRadius(1.f);
@@ -22,11 +21,6 @@ ABulletBase::ABulletBase()
 
     RootComponent = CollisionComp;
     CollisionComp->OnComponentHit.AddDynamic(this, &ABulletBase::OnHit);
-
-   /* BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BulletMesh"));
-    BulletMesh->SetupAttachment(RootComponent);
-    BulletMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	BulletMesh->SetRelativeScale3D(FVector(0.01f));*/
 
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
     ProjectileMovement->UpdatedComponent = CollisionComp;
@@ -38,12 +32,6 @@ ABulletBase::ABulletBase()
     ProjectileMovement->ProjectileGravityScale = 0.0f;
 
     InitialLifeSpan = 2.0f;
-
-    static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Engine/EditorMeshes/ArcadeEditorSphere.ArcadeEditorSphere"));
-    if (MeshAsset.Succeeded())
-    {
-        //BulletMesh->SetStaticMesh(MeshAsset.Object);
-    }
 }
 
 // Called when the game starts or when spawned
@@ -53,26 +41,15 @@ void ABulletBase::BeginPlay()
     CollisionComp->SetCollisionProfileName(TEXT("Bullet"));
     if (AActor* MyOwner = GetOwner())
     {        
-        UE_LOG(LogTemp, Warning, TEXT("MyInstigatorOWner %s"), *MyOwner->GetName());
         CollisionComp->IgnoreActorWhenMoving(MyOwner, true);
     }
 
     if (APawn* MyInstigator = GetInstigator())
     {
-        UE_LOG(LogTemp, Warning, TEXT("MyInstigator: %s"), *MyInstigator->GetName());
-
-
         CollisionComp->IgnoreActorWhenMoving(MyInstigator, true);
     }
 
 	ProjectileMovement->Activate(true);
-}
-
-// Called every frame
-void ABulletBase::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
-
 }
 
 void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
@@ -80,11 +57,8 @@ void ABulletBase::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     const FHitResult& Hit)
 {
 	// print debug message
-	UE_LOG(LogTemp, Warning, TEXT("Bullet hit something: %s"), *GetName());
     if (!OtherActor || OtherActor == this || !OtherComp)
         return;
-
-    UE_LOG(LogTemp, Warning, TEXT("Hit actor: %s"), *OtherActor->GetName());
 
     // explosion FX
     if ((!OtherActor->IsA<APawn>()) && ExplosionFX)
@@ -167,7 +141,7 @@ void ABulletBase::FireTowards(const FVector& Target)
 
 void ABulletBase::TraceBehindPawnAndSpawnBloodDecal(const FHitResult& PawnHit)
 {
-    if (!GetWorld() || !HitDecal) // replace HitDecal with BloodDecal if you have a separate one
+    if (!HitDecal) // replace HitDecal with BloodDecal if you have a separate one
         return;
 
     FVector Dir = ProjectileMovement ? ProjectileMovement->Velocity.GetSafeNormal() : GetActorForwardVector();

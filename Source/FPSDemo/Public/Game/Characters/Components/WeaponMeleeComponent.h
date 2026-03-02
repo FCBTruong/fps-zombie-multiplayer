@@ -30,14 +30,16 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void StartMelee_ServerAuth(int32 AttackIndex);
-	void PerformMeleeTrace(int32 AttackIndex);
-
 	UFUNCTION(Server, Reliable)
 	void ServerStartMelee(int32 AttackIndex);
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayMelee(int32 AttackIndex);
+
+	void StartMelee_ServerAuth(int32 AttackIndex);
+	void PerformMeleeTrace(int32 AttackIndex);
+	void PredictMeleeHitFX();
+
 	bool CanMeleeNow() const;
 	bool IsOwningClient() const;
 	bool DoMeleeSweepMulti(
@@ -45,17 +47,15 @@ private:
 		float Range,
 		float Radius
 	) const;
-	void PredictMeleeHitFX();
 private:
 	UPROPERTY(Transient) 
 	TObjectPtr<const UMeleeConfig> MeleeConfig = nullptr;
-	UPROPERTY(Transient) 
-	TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
-	UPROPERTY(Transient) TObjectPtr<UItemVisualComponent> VisualComp = nullptr;
 
-	UPROPERTY(Transient) TObjectPtr<ABaseCharacter> Character = nullptr;
+	UActionStateComponent* ActionStateComp = nullptr;
+	UItemVisualComponent* VisualComp = nullptr;
+	ABaseCharacter* Character = nullptr;
+
 	FTimerHandle MeleeTraceTimer;
-
 	FTimerHandle MeleeClientFxTimer;
 
 	float MeleeRange = 100.f;

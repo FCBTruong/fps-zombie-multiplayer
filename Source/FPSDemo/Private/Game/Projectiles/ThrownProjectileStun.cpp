@@ -10,7 +10,6 @@
 
 void AThrownProjectileStun::OnExplode()
 {
-    UE_LOG(LogTemp, Log, TEXT("AThrownProjectileStun::ExplodeNow"));
     FVector ImpactPoint = GetActorLocation();
     MulticastExplode(ImpactPoint);
     SetLifeSpan(0.1f);
@@ -79,7 +78,6 @@ void AThrownProjectileStun::MulticastExplode_Implementation(const FVector& Impac
 
     if (!bCanSeeFlash)
     {
-		UE_LOG(LogTemp, Log, TEXT("Flash blocked by %s"), *Hit.GetActor()->GetName());
         return;
     }
 

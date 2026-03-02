@@ -9,6 +9,7 @@
 class UInventoryComponent;
 class UActionStateComponent;
 class UEquipComponent;
+class ABaseCharacter;
 
 enum class ESpikeActionState : uint8 {
 	None,
@@ -37,13 +38,20 @@ public:
 	void RequestStopDefuseSpike();
 	void OnDefuseSucceed();
 	void OnOwnerDead();
+
+	// Delegates
 	FOnNotifyToastMessage OnNotifyToastMessage;
 	FOnUpdatePlantSpikeState OnUpdatePlantSpikeState;
 	FOnUpdateDefuseSpikeState OnUpdateDefuseSpikeState;
+
+	const float DefuseDistance = 200.f;
+	const float PlantTime = 3.f;
 private:
-	UPROPERTY(Transient) TObjectPtr<UInventoryComponent> InventoryComp = nullptr;
-	UPROPERTY(Transient) TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
-	UPROPERTY(Transient) TObjectPtr<UEquipComponent> EquipComp = nullptr;
+	UInventoryComponent* InventoryComp = nullptr;
+	UActionStateComponent* ActionStateComp = nullptr;
+	UEquipComponent* EquipComp = nullptr;
+	ABaseCharacter* Character = nullptr;
+
 	FTimerHandle PlantTimerHandle;
 
 	UFUNCTION(Server, Reliable)
@@ -52,21 +60,11 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerStopPlantSpike();
 
-	void FinishPlantSpike();
-
-	bool CanPlantHere() const;
-	void StartPlant_Internal();
-	void StopPlant_Internal();
-
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastStartPlantSpike();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastStopPlantSpike();
-
-	// Defuse
-	void StartDefuse_Internal();
-	void StopDefuse_Internal();
 
 	UFUNCTION(Server, Reliable)
 	void ServerStartDefuseSpike();
@@ -79,7 +77,13 @@ private:
 
 	void LockMovement();
 	void UnlockMovement();
+	// Defuse
+	void StartDefuse_Internal();
+	void StopDefuse_Internal();
+	void FinishPlantSpike();
+	void StartPlant_Internal();
+	void StopPlant_Internal();
+	bool CanPlantHere() const;
 
 	bool bCachedJumpAllowed;
-	ESpikeActionState CurrentActionState = ESpikeActionState::None;
 };

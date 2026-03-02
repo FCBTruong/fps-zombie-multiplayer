@@ -26,7 +26,11 @@ void BotStateManager::Initialize(AActorManager* ActorMgr)
 
 void BotStateManager::AddBot(ABotAIController* NewBot)
 {
-	ManagedBots.Add(NewBot);
+	if (!IsValid(NewBot))
+	{
+		return;
+	}
+	ManagedBots.AddUnique(NewBot);
 }
 
 void BotStateManager::OnSpikePlanted(AActor* SpikeActor)
@@ -114,9 +118,13 @@ void BotStateManager::OnSpikeDropped(AActor* SpikeActor)
 		ABaseCharacter* BotCharacter = Cast<ABaseCharacter>(Bot->GetPawn());
 		if (!BotCharacter || BotCharacter->IsDead()) continue;
 
+		if (PS->GetTeamId() != ETeamId::Attacker)
+		{
+			continue;
+		}
 		Bot->SetSpikeRole(EBotRole::A_FindSpike);
 		Bot->SetSpikeActor(SpikeActor);
-		break;
+		return;
 	}
 }
 
@@ -157,6 +165,9 @@ void BotStateManager::OnStartRound(AActor* SpikeActor)
 	{
 		Bot->ResetAIState();
 		AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
+		if (!PS) {
+			continue;
+		}
 		bool IsAttacker = (PS->GetTeamId() == ETeamId::Attacker);
 
 		Bot->SetIsAttacker(IsAttacker);

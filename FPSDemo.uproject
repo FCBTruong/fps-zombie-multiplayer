@@ -18,6 +18,10 @@
 	],
 	"Plugins": [
 		{
+			"Name": "IVSmoke",
+			"Enabled": false
+		},
+		{
 			"Name": "NiagaraFluids",
 			"Enabled": true
 		}

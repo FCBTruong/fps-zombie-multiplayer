@@ -42,7 +42,6 @@ void UShopSlotUI::OnClicked()
 		UE_LOG(LogTemp, Warning, TEXT("Clicked on shop slot %d with null Data"), SlotIndex);
 		return;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Clicked on shop slot %d"), SlotIndex);
 
 	if (!bCanBuy)
 	{
@@ -54,9 +53,6 @@ void UShopSlotUI::OnClicked()
 	if (PC)
 	{
 		double Time = FPlatformTime::Seconds();
-
-		UE_LOG(LogTemp, Warning, TEXT("DebugTime - CLICK: %.3f"), Time);
-
 		PC->RequestBuyItem(Data->Id);
 	}
 }

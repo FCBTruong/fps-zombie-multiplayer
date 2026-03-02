@@ -233,13 +233,12 @@ void UCrosshair::NativeConstruct()
 
 void UCrosshair::SetCrosshairCode(const FString& NewCode)
 {
-    FUECrosshairData Data;
     if (NewCode.IsEmpty())
     {
-        Data = ParseCrosshairCode(NewCode);
+        UE_LOG(LogTemp, Warning, TEXT("SetCrosshairCode: Empty code, using default"));
+        return SetCrosshairCode(CrosshairCodeDefault);
 	}
-    else {
-        Data = ParseCrosshairCode(NewCode);
-    }
+    FUECrosshairData Data;
+    Data = ParseCrosshairCode(NewCode);
     ApplyData(Data);
 }

@@ -20,11 +20,6 @@ void ULoginUI::NativeConstruct()
 void ULoginUI::TryLogin()
 {
 	auto GameInstance = GetWorld()->GetGameInstance();
-	if (GameInstance == nullptr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("LoginUI: GameInstance is null"));
-		return;
-	}
 	UNetworkManager* NetworkManager =
 		GameInstance->GetSubsystem<UNetworkManager>();
 
@@ -34,20 +29,18 @@ void ULoginUI::TryLogin()
 		return;
 	}
 	// send packet login request
-
-	game::net::LoginRequest Login;
-
 	UPlayerInfoManager* PlayerInfoMgr = UPlayerInfoManager::Get(GetWorld());
 	if (PlayerInfoMgr == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("LoginUI: PlayerInfoMgr subsystem not found"));
 		return;
 	}
+
+	game::net::LoginRequest Login;
 	Login.set_guest_id(TCHAR_TO_UTF8(*PlayerInfoMgr->GetGuestId()));
 	Login.set_player_name(TCHAR_TO_UTF8(*PlayerInfoMgr->GetPlayerName()));
 	Login.set_avatar(TCHAR_TO_UTF8(*PlayerInfoMgr->GetAvatar()));
 	Login.set_crosshair_code(TCHAR_TO_UTF8(*PlayerInfoMgr->GetCrosshairCode()));
 
-	UE_LOG(LogTemp, Warning, TEXT("UNetworkManager: Sending packet login"));
 	NetworkManager->SendPacket(ECmdId::LOGIN, Login);
 }

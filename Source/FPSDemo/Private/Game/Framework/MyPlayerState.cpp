@@ -32,8 +32,6 @@ void AMyPlayerState::ProcessBuy(const UItemConfig* Item)
 		UE_LOG(LogTemp, Warning, TEXT("Item %s has already been bought"), *Item->GetName());
 		return;
 	}
-	// Implement your buy logic here
-	UE_LOG(LogTemp, Warning, TEXT("Processing buy for item: %s"), *Item->GetName());
 
 	if (Money >= Item->Price)
 	{
@@ -58,7 +56,6 @@ void AMyPlayerState::ProcessBuy(const UItemConfig* Item)
 			}
 			InvComp->AddItemFromShop(PickupData);
 		}
-		double Time = FPlatformTime::Seconds();
 	}
 	else
 	{
@@ -75,18 +72,11 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void AMyPlayerState::OnRep_Money()
 {
-	// This function is called on clients when Money is updated on the server
-	UE_LOG(LogTemp, Warning, TEXT("Money updated: %d"), Money);
-
 	OnUpdateMoney.Broadcast();
 }
 
 void AMyPlayerState::OnRep_BoughtItems()
 {
-	// This function is called on clients when BoughtItems is updated on the server
-	UE_LOG(LogTemp, Warning, TEXT("BoughtItems updated. Total items bought: %d"), BoughtItems.Num());
-	double Time = FPlatformTime::Seconds();
-	UE_LOG(LogTemp, Warning, TEXT("DebugTime - OnRep_BoughtItems: %.3f"), Time);
 	OnUpdateBoughtItems.Broadcast();
 }
 
@@ -114,16 +104,6 @@ bool AMyPlayerState::CanBuyThisItem(const UItemConfig* Item) const
 }
 
 void AMyPlayerState::AutoBuy() {
-	// Print current owned weapons
-	UE_LOG(LogTemp, Log, TEXT("PlayerState [%s] this=%p OwnedWeapons:"),
-		*GetName(), this);
-
-	for (EItemId Item : OwnedWeapons)
-	{
-		UE_LOG(LogTemp, Log, TEXT("  - %s"),
-			*UEnum::GetValueAsString(Item));
-	}
-
 	TryBuySlot();
 }
 
@@ -204,8 +184,13 @@ FString AMyPlayerState::GetPlayerNameCustom() const
 
 void AMyPlayerState::SetPlayerSlot(APlayerSlot* Slot)
 {
-	PlayerSlot = Slot;
+	// unbind from old slot's events
+	if (PlayerSlot)
+	{
+		PlayerSlot->OnUpdateTeamId.RemoveAll(this);
+	}
 
+	PlayerSlot = Slot;
 	// set crosshair code
 	if (PlayerSlot) {
 		SetCrosshairCode(PlayerSlot->GetCrosshairCode());
@@ -221,12 +206,14 @@ void AMyPlayerState::SetCrosshairCode(const FString& InCrosshairCode)
 
 void AMyPlayerState::OnRep_PlayerSlot()
 {
-	UE_LOG(LogTemp, Warning, TEXT("PlayerSlot updated on client for player %s"), *GetName());
 	if (PlayerSlot)
 	{
-		PlayerSlot->OnUpdateTeamId
-			.AddLambda([this](ETeamId NewTeamId) {
-				OnUpdateTeamId.Broadcast(NewTeamId);
-				});
+		PlayerSlot->OnUpdateTeamId.RemoveAll(this);
+		PlayerSlot->OnUpdateTeamId.AddUObject(this, &AMyPlayerState::HandlePlayerSlotTeamIdUpdated);
 	}
+}
+
+void AMyPlayerState::HandlePlayerSlotTeamIdUpdated(ETeamId NewTeamId)
+{
+	OnUpdateTeamId.Broadcast(NewTeamId);
 }

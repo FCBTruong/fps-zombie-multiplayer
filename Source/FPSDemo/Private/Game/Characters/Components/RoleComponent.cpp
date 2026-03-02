@@ -14,13 +14,7 @@ URoleComponent::URoleComponent()
 void URoleComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// Initialize only on server (authoritative).
-	if (GetOwner() && GetOwner()->HasAuthority())
-	{
-		// Set initial role once. This will replicate to clients.
-		SetRole_Internal(InitialRole);
-	}
+	HandleRoleChanged(CurrentRole, CurrentRole);
 }
 
 void URoleComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -28,22 +22,6 @@ void URoleComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(URoleComponent, CurrentRole);
-}
-
-void URoleComponent::RequestSetRole(ECharacterRole NewRole)
-{
-	if (!GetOwner())
-		return;
-
-	// If already server, set directly.
-	if (GetOwner()->HasAuthority())
-	{
-		SetRoleAuthoritative(NewRole);
-		return;
-	}
-
-	// Client -> server request
-	ServerSetRole(NewRole);
 }
 
 bool URoleComponent::SetRoleAuthoritative(ECharacterRole NewRole)
@@ -63,19 +41,18 @@ bool URoleComponent::SetRole_Internal(ECharacterRole NewRole)
 	CurrentRole = NewRole;
 
 	// On server, broadcast immediately as well (clients will broadcast via OnRep).
-	OnRoleChanged.Broadcast(OldRole, NewRole);
+	HandleRoleChanged(OldRole, CurrentRole);
 
 	return true;
 }
 
 void URoleComponent::OnRep_CurrentRole(ECharacterRole OldRole)
 {
-	// This runs on clients when CurrentRole changes via replication.
-	OnRoleChanged.Broadcast(OldRole, CurrentRole);
+	HandleRoleChanged(OldRole, CurrentRole);
 }
 
-void URoleComponent::ServerSetRole_Implementation(ECharacterRole NewRole)
+// Use to update visuals, meshes, etc. when role changes. Called on both server and clients.
+void URoleComponent::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole)
 {
-	// Server decides if allowed. Keep logic here or delegate to GameMode/authority systems.
-	SetRole_Internal(NewRole);
+	OnRoleChanged.Broadcast(OldRole, NewRole);
 }

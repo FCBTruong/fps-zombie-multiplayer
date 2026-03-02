@@ -3,17 +3,11 @@
 
 #include "Game/Characters/Components/CharCameraComponent.h"
 
-
 #include "Camera/CameraComponent.h"
-#include "Components/SceneCaptureComponent2D.h"
-#include "Engine/TextureRenderTarget2D.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "Materials/Material.h"
-#include "Materials/MaterialInstanceDynamic.h"
 #include "Game/Framework/MyPlayerController.h"
 #include "Kismet/GameplayStatics.h"
-
 
 UCharCameraComponent::UCharCameraComponent()
 {
@@ -37,40 +31,40 @@ void UCharCameraComponent::Initialize(
     TargetFOV = DefaultFpsFov;
     bIsFPS = false;
 
-    if (MeshFps) {
-		MeshFps->SetOnlyOwnerSee(true);
-        MeshFps->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
-    }
-    if (CameraFps) {
-		CameraFps->bEnableFirstPersonFieldOfView = true;
-		CameraFps->bEnableFirstPersonScale = true;
-        CameraFps->SetFirstPersonScale(FIRST_PERSON_SCALE);
-		CameraFps->SetFirstPersonFieldOfView(DefaultFpsFov);
-    }
-    if (CameraBoom) {
-        CameraBoom->bUsePawnControlRotation = true; // camera rotates with mouse
-        CameraBoom->bInheritYaw = true;
-        CameraBoom->bInheritPitch = true;
-        CameraBoom->bInheritRoll = false;
-        CameraBoom->SetRelativeLocation(FVector(0, 30, 100));
-		CameraBoom->TargetArmLength = 300.f;
-    }
-    if (CameraTps) {
-        CameraTps->bUsePawnControlRotation = false; // camera does not rotate with mouse
-	}   
-	UE_LOG(LogTemp, Warning, TEXT("UCharCameraComponent::Initialize called"));
+	check(CameraFps);
+	check(CameraTps);
+	check(CameraBoom);
+	check(MeshFps);
+	check(MeshTps);
+
+	MeshFps->SetOnlyOwnerSee(true);
+    MeshFps->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+	CameraFps->bEnableFirstPersonFieldOfView = true;
+	CameraFps->bEnableFirstPersonScale = true;
+    CameraFps->SetFirstPersonScale(FIRST_PERSON_SCALE);
+	CameraFps->SetFirstPersonFieldOfView(DefaultFpsFov);
+   
+    CameraBoom->bUsePawnControlRotation = true; // camera rotates with mouse
+    CameraBoom->bInheritYaw = true;
+    CameraBoom->bInheritPitch = true;
+    CameraBoom->bInheritRoll = false;
+    CameraBoom->SetRelativeLocation(FVector(0, 30, 100));
+	CameraBoom->TargetArmLength = 300.f;
+
+    CameraTps->bUsePawnControlRotation = false; // camera does not rotate with mouse
 }
 
 void UCharCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    if (!CameraFps)
+    const float CurrentFOV = CameraFps->FieldOfView;
+
+    if (FMath::IsNearlyEqual(CurrentFOV, TargetFOV, 0.05f))
     {
         return;
     }
 
-    const float CurrentFOV = CameraFps->FieldOfView;
     const float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 10.f);
     CameraFps->SetFieldOfView(NewFOV);
 	CameraFps->SetFirstPersonFieldOfView(NewFOV);
@@ -106,11 +100,6 @@ void UCharCameraComponent::ToggleView()
 
 void UCharCameraComponent::ApplyView()
 {
-    if (!CameraFps || !CameraTps || !MeshTps)
-    {
-        return;
-    }
-
     if (bIsFPS)
     {
         CameraFps->SetActive(true);
@@ -133,7 +122,6 @@ void UCharCameraComponent::ApplyView()
 
 void UCharCameraComponent::OnBecomeViewTarget(APlayerController* PC)
 {
-	UE_LOG(LogTemp, Warning, TEXT("UCharCameraComponent::OnBecomeViewTarget called"));
     if (!PC || !PC->IsLocalController())
     {
         return;
@@ -142,13 +130,15 @@ void UCharCameraComponent::OnBecomeViewTarget(APlayerController* PC)
     CachedLocalPC = PC;
     bIsFPS = true;
     TargetFOV = DefaultFpsFov;
+
     if (PC == UGameplayStatics::GetPlayerController(GetOwner(), 0))
     {
-		CameraBoom->bEnableCameraLag = false;
-	}
+        CameraBoom->bEnableCameraLag = false;
+    }
     else {
         CameraBoom->bEnableCameraLag = true;
     }
+
     ApplyView();
 }
 
@@ -203,14 +193,18 @@ void UCharCameraComponent::SetAiming(bool bAiming)
 bool UCharCameraComponent::IsLocalViewingOwner() const
 {
     AActor* Owner = GetOwner();
-    if (!Owner) return false;
+    if (!Owner) {
+        return false;
+    }
 
     APlayerController* PC = CachedLocalPC.Get();
     if (!PC)
     {
         PC = UGameplayStatics::GetPlayerController(Owner, 0);
     }
-    if (!PC || !PC->IsLocalController()) return false;
+    if (!PC || !PC->IsLocalController()) {
+        return false;
+    }
 
     return (PC->GetViewTarget() == Owner);
 }

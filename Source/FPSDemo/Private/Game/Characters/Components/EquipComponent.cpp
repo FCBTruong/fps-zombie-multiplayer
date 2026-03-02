@@ -16,23 +16,30 @@
 UEquipComponent::UEquipComponent()
 {
     SetIsReplicatedByDefault(true);
+    PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UEquipComponent::BeginPlay()
 {
     Super::BeginPlay();
-	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::BeginPlay called"));
 
-    CachedGM = UGameManager::Get(GetWorld());
-	ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
-    if (OwnerChar) {
-		InventoryComp = OwnerChar->GetInventoryComponent();
-		ActionStateComp = OwnerChar->GetActionStateComponent();
-	}
-    if (InventoryComp) {
-        InventoryComp->OnAmmoDataChanged.AddUObject(
-            this, &UEquipComponent::HandleAmmoDataChanged);
-    }
+    OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
+    check(OwnerCharacter);
+
+    InventoryComp = OwnerCharacter->GetInventoryComponent();
+    ActionStateComp = OwnerCharacter->GetActionStateComponent();
+
+    check(InventoryComp);
+    check(ActionStateComp);
+
+    InventoryComp->OnAmmoDataChanged.AddUObject(
+        this, &UEquipComponent::HandleAmmoDataChanged);
+}
+
+void UEquipComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    InventoryComp->OnAmmoDataChanged.RemoveAll(this);
+    Super::EndPlay(EndPlayReason);
 }
 
 void UEquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -44,7 +51,6 @@ void UEquipComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 void UEquipComponent::OnRep_ActiveItemId()
 {
     RefreshCachedState();
-	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::OnRep_ActiveItemId: New ActiveItemId = %d"), static_cast<int32>(ActiveItemId));
     BroadcastActiveItemAndAmmo();
 }
 
@@ -53,20 +59,15 @@ bool UEquipComponent::CanSelectNow() const
     if (!IsEnabled()) {
         return false;
     }
-    // Single gate: only allow selecting while idle
-    if (!ActionStateComp) return false;
     return ActionStateComp->IsIdle();
 }
 
-bool UEquipComponent::CanSelectItem(EItemId ItemId)
+bool UEquipComponent::CanSelectItem(EItemId ItemId) const
 {
     if (!IsEnabled()) {
         return false;
     }
-    if (!InventoryComp) {
-		UE_LOG(LogTemp, Warning, TEXT("UEquipComponent::CanSelectItem: InventoryComp not found"));
-        return false;
-    }
+ 
     if (ItemId == EItemId::NONE) {
         return false;
     }
@@ -101,11 +102,15 @@ void UEquipComponent::Select_Internal(EItemId ItemId)
     if (!IsEnabled()) {
         return;
     }
-    if (!GetOwner() || !GetOwner()->HasAuthority())
+    if (!OwnerCharacter->HasAuthority())
+    {
         return;
+    }
 
     if (ActiveItemId == ItemId)
+    {
         return;
+    }
 
     ActiveItemId = ItemId;
 
@@ -115,23 +120,17 @@ void UEquipComponent::Select_Internal(EItemId ItemId)
 
 void UEquipComponent::RequestSelectActiveItem(EItemId ItemId)
 {
-    if (!IsEnabled()) {
-        return;
-    }
-    if (!GetOwner()) return;
-
     if (!CanSelectNow()) {
-        // log debug
-		UE_LOG(LogTemp, Warning, TEXT("UEquipComponent::RequestSelectActiveItem: Cannot select item now."));
         return;
     }
+
     if (!CanSelectItem(ItemId)) {
 		// log debug
-		UE_LOG(LogTemp, Warning, TEXT("UEquipComponent::RequestSelectActiveItem: Cannot select item %d."), static_cast<int32>(ItemId));
+		UE_LOG(LogTemp, Verbose, TEXT("UEquipComponent::RequestSelectActiveItem: Cannot select item %d."), static_cast<int32>(ItemId));
         return;
     }
 
-    if (!GetOwner()->HasAuthority())
+    if (!OwnerCharacter->HasAuthority())
     {
         ServerRequestSelectActiveItem(ItemId);
         return;
@@ -150,9 +149,6 @@ void UEquipComponent::ServerRequestSelectActiveItem_Implementation(EItemId ItemI
 
 EItemId UEquipComponent::ChooseThrowableToSelect() const
 {
-	UE_LOG(LogTemp, Log, TEXT("UEquipComponent::ChooseThrowableToSelect called"));
-    if (!InventoryComp) return EItemId::NONE;
-
     const TArray<EItemId>& Throwables = InventoryComp->GetThrowables();
 
     if (Throwables.Num() == 0) return EItemId::NONE;
@@ -176,13 +172,11 @@ EItemId UEquipComponent::ChooseThrowableToSelect() const
 void UEquipComponent::SelectSlot(int32 SlotIndex)
 {
     if (!CanSelectNow()) {
-        UE_LOG(LogTemp, Warning, TEXT("SelectSlot: Error can not select now"))
+        UE_LOG(LogTemp, Warning, TEXT("SelectSlot: Error can not select now"));
         return;
     }
-    if (!InventoryComp) return;
-
+   
     EItemId Desired = EItemId::NONE;
-
     switch (SlotIndex)
     {
     case FGameConstants::SLOT_THROWABLE:
@@ -216,12 +210,8 @@ void UEquipComponent::SelectSlot(int32 SlotIndex)
 
 void UEquipComponent::AutoSelectBestWeapon()
 {
-    if (!IsEnabled()) {
-        return;
-    }
     if (!CanSelectNow()) return;
-    if (!InventoryComp) return;
-
+ 
     // Priority: Rifle > Pistol > Melee
     if (InventoryComp->GetRifleId() != EItemId::NONE)
     {
@@ -242,13 +232,15 @@ void UEquipComponent::AutoSelectBestWeapon()
     }
 }
 
-
 const UItemConfig* UEquipComponent::GetItemConfig(EItemId ItemId) const
 {
-    if (ItemId == EItemId::NONE) return nullptr;
-    return UItemsManager::Get(GetWorld())->GetItemById(ItemId);
-}
+    if (ItemId == EItemId::NONE) {
+        return nullptr;
+    }
 
+    UItemsManager* ItemsManager = UItemsManager::Get(GetWorld());
+    return ItemsManager->GetItemById(ItemId);
+}
 
 const UItemConfig* UEquipComponent::GetActiveItemConfig() const
 {
@@ -284,14 +276,15 @@ void UEquipComponent::RequestDropItem() {
     if (!IsEnabled()) {
         return;
     }
-    UE_LOG(LogTemp, Warning, TEXT("DropItem called"));
-    if (CanDropItem()) {
-        if (!GetOwner()->HasAuthority()) {
-            ServerDropItem();
-        }
-        else {
-            HandleDropItem();
-        }
+    if (!CanDropItem()) {
+        return;
+    }
+
+    if (!OwnerCharacter->HasAuthority()) {
+        ServerDropItem();
+    }
+    else {
+        HandleDropItem();
     }
 }
 
@@ -309,25 +302,19 @@ void UEquipComponent::HandleDropItem() {
         UE_LOG(LogTemp, Warning, TEXT("HandleDropItem: Current item can not be dropped"));
         return;
     }
-	const UItemConfig* ItemConf = GetActiveItemConfig();
 
-    // spawn new pickup item on map
-	ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character) {
-        UE_LOG(LogTemp, Warning, TEXT("HandleDropWeapon: Owner is not ABaseCharacter"));
-        return;
-	}
-    FVector DropPoint = GetOwner()->GetActorLocation() + FVector(0.f, 0.f, 60.f) + Character->GetActorForwardVector() * 30;
-    
-
-    FVector LookDir = Character->GetControlRotation().Vector();
+    FVector DropPoint = OwnerCharacter->GetActorLocation() + FVector(0.f, 0.f, 60.f) + OwnerCharacter->GetActorForwardVector() * 30;
+    FVector LookDir = OwnerCharacter->GetControlRotation().Vector();
     FVector LaunchVelocity = LookDir * 600.f;
 
     // Spawn Pickup item
     APickupItem* Pickup = InventoryComp->DropItem(ActiveItemId);
+    if (!Pickup) {
+        UE_LOG(LogTemp, Warning, TEXT("HandleDropItem: Failed to drop item from inventory"));
+        return;
+	}
 	Pickup->SetActorLocation(DropPoint);
-
-    if (Pickup && Pickup->GetItemMesh())
+    if (Pickup->GetItemMesh())
     {
         Pickup->GetItemMesh()->AddImpulse(LaunchVelocity, NAME_None, true);
     }
@@ -337,33 +324,29 @@ void UEquipComponent::HandleDropItem() {
  
     // refresh overlapping actors
     RefreshOverlapPickupActors();
-
     AutoSelectBestWeapon();
 }
 
 void UEquipComponent::RefreshOverlapPickupActors() {
-	ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-	if (!Character) return;
-
-    if (Character->HasAuthority())
+    if (!OwnerCharacter->HasAuthority())
     {
         return; // server-only
     }
 
-    UCapsuleComponent* Cap = Character->GetCapsuleComponent();
+    UCapsuleComponent* Cap = OwnerCharacter->GetCapsuleComponent();
+	check(Cap);
+    UPickupComponent* PickupComp = OwnerCharacter->GetPickupComponent();
+    check(PickupComp);
+
     TArray<AActor*> OverlappingActors;
     Cap->GetOverlappingActors(OverlappingActors);
     for (AActor* A : OverlappingActors)
     {
         APickupItem* Item = Cast<APickupItem>(A);
-        if (Item && !Item->IsJustDropped(Character))
+        if (Item && !Item->IsJustDropped(OwnerCharacter))
         {
-            UE_LOG(LogTemp, Warning, TEXT("Overlapping PickupItem: %s"), *Item->GetName());
             // call pickup component to manually trigger overlap
-            UPickupComponent* PickupComp = Character->GetPickupComponent();
-            if (PickupComp) {
-                PickupComp->PickupItem(Item);
-            }
+            PickupComp->PickupItem(Item);
         }
     }
 }
@@ -372,7 +355,9 @@ void UEquipComponent::HandleAmmoDataChanged(
     EItemId ItemId, int32 Clip, int32 Reserve)
 {
     if (ItemId != ActiveItemId)
+    {
         return;
+    }
 
     OnAmmoChanged.Broadcast(Clip, Reserve);
 }
@@ -381,11 +366,6 @@ bool UEquipComponent::GetCurrentAmmo(int32& OutClip, int32& OutReserve) const
 {
     OutClip = 0;
     OutReserve = 0;
-
-    if (!InventoryComp)
-    {
-        return false;
-    }
 
     if (ActiveItemId == EItemId::NONE)
     {
@@ -421,7 +401,7 @@ void UEquipComponent::OnEnabledChanged(bool bNowEnabled)
 {
     if (!bNowEnabled)
     {
-        if (GetOwner() && GetOwner()->HasAuthority())
+        if (!OwnerCharacter->HasAuthority())
         {
             ActiveItemId = EItemId::NONE;
             BroadcastActiveItemAndAmmo();
@@ -429,15 +409,20 @@ void UEquipComponent::OnEnabledChanged(bool bNowEnabled)
     }
 }
 
+// Server function
 void UEquipComponent::UnequipCurrentItem()
 {
     if (!IsEnabled()) {
         return;
     }
-    if (!GetOwner()->HasAuthority())
+    if (!OwnerCharacter->HasAuthority())
+    {
         return;
+    }
     if (ActiveItemId == EItemId::NONE)
+    {
         return;
+    }
     ActiveItemId = EItemId::NONE;
 	OnRep_ActiveItemId();
 }

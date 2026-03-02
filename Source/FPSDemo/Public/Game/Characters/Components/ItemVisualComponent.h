@@ -14,6 +14,7 @@ class ABaseCharacter;
 class AEquippedItem;
 class UCharCameraComponent;
 class UAnimationComponent;
+class ABaseCharacter;
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -35,34 +36,25 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
-	void OnViewModeChanged(bool bIsFPS);
     void PlayFireFX(FVector TargetPoint);
     void PlayMeleeAttack(UAnimMontage* Anim);
 
-private:
-    UPROPERTY(Transient) 
-    TObjectPtr<UEquipComponent> EquipComp = nullptr;
-    UPROPERTY(Transient)
-    TObjectPtr<UCharCameraComponent> CameraComp;
-    UPROPERTY(Transient)
-	TObjectPtr<UAnimationComponent> AnimComp = nullptr;
-    UPROPERTY(Transient) 
-    TObjectPtr<UGameManager> CachedGM = nullptr;
+private: 
+    UEquipComponent* EquipComp = nullptr;
+    UCharCameraComponent* CameraComp = nullptr;
+    UAnimationComponent* AnimComp = nullptr;
+	ABaseCharacter* Character = nullptr;
 
     // Cosmetic weapon actor (NOT replicated)
-    UPROPERTY(Transient) TObjectPtr<AEquippedItem> EquippedActor = nullptr;
+    UPROPERTY(Transient) 
+    TObjectPtr<AEquippedItem> EquippedActor = nullptr;
 
     // Delegate handler
     UFUNCTION()
     void HandleActiveItemChanged(EItemId NewItemId);
-
-    // Core
     void RefreshVisual(EItemId NewItemId);
     void DestroyVisual();
-
-    ABaseCharacter* GetCharacter() const;
-
     void AttachToHands(const UItemConfig* Data);
-    bool ShouldSpawnVisuals() const;
 	const UItemConfig* GetItemConfig(EItemId ItemId) const;
+    void OnViewModeChanged(bool bIsFPS);
 };

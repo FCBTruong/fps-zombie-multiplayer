@@ -5,14 +5,10 @@
 #include "Game/Projectiles/BulletBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
-#include "Game/Framework/MyPlayerController.h"
-#include "Net/UnrealNetwork.h"
-#include "GameFramework/Character.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Shared/Data/Items/FirearmConfig.h"
-#include "Shared/Data/GlobalDataAsset.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 
 AWeaponFirearm::AWeaponFirearm()
@@ -30,7 +26,6 @@ void AWeaponFirearm::BeginPlay()
 void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint)
 {
 	// Implement firing logic here
-	UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
 	const UFirearmConfig* FC = Cast<UFirearmConfig>(Config);
 	if (!FC) {
 		return;
@@ -48,15 +43,10 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 
 		if (PSC)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));
 			PSC->SetWorldScale3D(FVector(0.15f));
-
 			if (bIsFpsView) {
 				PSC->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 			}
-		}
-		else {
-			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn Muzzle Flash"));
 		}
 	}
 
@@ -97,20 +87,18 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 				false    // AutoActivate
 			);
 
-		if (!Trail) return;
+		if (Trail) {
+			Trail->SetVectorParameter(TEXT("MuzzlePosition"), TrailStart);
+			TArray<FVector> ImpactPositions;
+			ImpactPositions.Add(TargetPoint);
 
-		// log start and end points
-		Trail->SetVectorParameter(TEXT("MuzzlePosition"), TrailStart);
-		TArray<FVector> ImpactPositions;
-		ImpactPositions.Add(TargetPoint);
-
-		UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
-			Trail,
-			FName("User.ImpactPositions"),
-			ImpactPositions
-		);
-
-		Trail->Activate(true);
+			UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
+				Trail,
+				FName("User.ImpactPositions"),
+				ImpactPositions
+			);
+			Trail->Activate(true);
+		}
 	}
 
 	// Play sound
@@ -153,44 +141,19 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		if (bIsFpsView) {
 			MuzzleFlash->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 		}
-
-		UE_LOG(LogTemp, Warning, TEXT("Spawned Niagara Muzzle Flash"));
 	}
 	
-	if (WeaponMesh) {
-
-		if (FC && FC->FireAnimation) // FireAnimation: UAnimSequenceBase* (or UAnimationAsset*)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Playing Fire Animation (no montage)"));
-
-			// This switches the mesh to Single Node mode and plays the asset
-			WeaponMesh->PlayAnimation(FC->FireAnimation, /*bLoop*/ false);
-		}
+	if (FC->FireAnimation) {	
+		WeaponMesh->PlayAnimation(FC->FireAnimation, /*bLoop*/ false);
 	}
 }
 
 void AWeaponFirearm::PlayOutOfAmmoSound()
 {
-	const UFirearmConfig* FC = Cast<UFirearmConfig>(Config);
-	if (!FC) {
-		return;
-	}
-	/*if (FC->OutOfAmmoSFX)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FC->OutOfAmmoSFX, GetActorLocation());
-	}*/
 }
 
 void AWeaponFirearm::PlayReloadSound()
 {
-	const UFirearmConfig* FC = Cast<UFirearmConfig>(Config);
-	if (!FC) {
-		return;
-	}
-	/*if (FC->ReloadSFX)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FC->ReloadSFX, GetActorLocation());
-	}*/
 }
 
 void AWeaponFirearm::ApplyConfig()
@@ -201,12 +164,9 @@ void AWeaponFirearm::ApplyConfig()
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Applying Weapon Data in Firearm"));
-	if (WeaponMesh) {
-		WeaponMesh->HideBoneByName(FName("b_gun_mag"), EPhysBodyOp::PBO_None);
-	}
+	WeaponMesh->HideBoneByName(FName("b_gun_mag"), EPhysBodyOp::PBO_None);
 	// Get Mag Mesh
-	if (MagMesh && Config && FC->MagMesh)
+	if (MagMesh && FC->MagMesh)
 	{
 		MagMesh->SetStaticMesh(FC->MagMesh);
 	}
@@ -245,7 +205,6 @@ void AWeaponFirearm::Destroyed()
 void AWeaponFirearm::SetViewFps(bool bFps)
 {
 	Super::SetViewFps(bFps);
-	UE_LOG(LogTemp, Warning, TEXT("AWeaponFirearm::SetViewFps called with bFps=%d"), bFps);
 	if (MagMesh)
 	{
 		if (bFps) {

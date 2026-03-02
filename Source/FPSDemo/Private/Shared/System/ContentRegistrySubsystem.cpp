@@ -15,8 +15,6 @@ void UContentRegistrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
     TArray<FPrimaryAssetId> AssetIds;
     AM.GetPrimaryAssetIdList(FPrimaryAssetType(TEXT("AvatarData")), AssetIds);
 
-    UE_LOG(LogTemp, Log, TEXT("UContentRegistrySubsystem: Found %d AvatarData assets"), AssetIds.Num());
-
     for (const FPrimaryAssetId& AssetId : AssetIds)
     {
         TSharedPtr<FStreamableHandle> Handle = UAssetManager::Get().LoadPrimaryAsset(AssetId);
@@ -31,7 +29,6 @@ void UContentRegistrySubsystem::Initialize(FSubsystemCollectionBase& Collection)
             UE_LOG(LogTemp, Warning, TEXT("Failed to load %s"), *AssetId.ToString());
             continue;
         }
-
         AvatarDataMap.Add(Data->AvatarId, Data);
     }
 }

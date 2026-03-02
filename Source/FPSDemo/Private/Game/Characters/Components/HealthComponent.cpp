@@ -8,32 +8,21 @@
 // Sets default values for this component's properties
 UHealthComponent::UHealthComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	MaxHealth = 100.0f;
 	Health = MaxHealth;
 	SetIsReplicatedByDefault(true);
 }
 
-
-// Called when the game starts
-void UHealthComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// ...
-	
-}
-
 void UHealthComponent::ApplyDamage(float DamageAmount)
 {
-	float CurHealth = Health;
-	float NewHealth = CurHealth - DamageAmount;
-	if (NewHealth < 0.0f)
+	if (DamageAmount <= 0.f)
 	{
-		NewHealth = 0.0f;
+		UE_LOG(LogTemp, Warning, TEXT("ApplyDamage called with non-positive damage amount: %f"), DamageAmount);
+		return;
 	}
+
+	const float NewHealth = FMath::Max(0.0f, Health - DamageAmount);
 	SetHealth(NewHealth);
 }
 
@@ -46,34 +35,69 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void UHealthComponent::OnRep_Health()
 {
+	BroadcastHealthUpdated();
+}
+
+void UHealthComponent::BroadcastHealthUpdated()
+{
 	OnHealthUpdated.Broadcast(Health, MaxHealth);
 }
 
-void UHealthComponent::HealthDeath()
+void UHealthComponent::HandleDeath()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Health has reached zero!"));
 	OnDeath.Broadcast();
 }
 
 void UHealthComponent::SetHealth(float NewHealth)
 {
-	Health = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
-	if (Health == 0.0f)
+	AActor* Owner = GetOwner();
+	if (!Owner->HasAuthority())
 	{
-		HealthDeath();
+		return;
 	}
 
-	OnRep_Health();
+	const float ClampedHealth = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
+	if (FMath::IsNearlyEqual(Health, ClampedHealth))
+	{
+		return;
+	}
+
+	const float OldHealth = Health;
+	Health = ClampedHealth;
+
+	if (OldHealth > 0.0f && Health == 0.0f)
+	{
+		HandleDeath();
+	}
+
+	BroadcastHealthUpdated();
 }
 
 void UHealthComponent::SetMaxHealth(float NewMaxHealth)
 {
-	MaxHealth = FMath::Max(0.0f, NewMaxHealth);
+	AActor* Owner = GetOwner();
+	if (!Owner->HasAuthority())
+	{
+		return;
+	}
+
+	const float OldMaxHealth = MaxHealth;
+	const float ClampedMaxHealth = FMath::Max(0.0f, NewMaxHealth);
+
+	if (FMath::IsNearlyEqual(OldMaxHealth, ClampedMaxHealth))
+	{
+		return;
+	}
+
+	MaxHealth = ClampedMaxHealth;
+
 	if (Health > MaxHealth)
 	{
 		SetHealth(Health);
-		OnHealthUpdated.Broadcast(Health, MaxHealth);
+		return;
 	}
+
+	BroadcastHealthUpdated();
 }
 
 void UHealthComponent::ResetHealth()
@@ -83,14 +107,28 @@ void UHealthComponent::ResetHealth()
 
 bool UHealthComponent::ApplyHeal(float Amount)
 {
-	if (Amount <= 0.f) return false;
-	if (IsAtMaxHealth()) return false;
+	if (Amount <= 0.f) {
+		return false;
+	}
+	if (IsAtMaxHealth()) {
+		return false;
+	}
 
 	float NewHealth = FMath::Clamp(Health + Amount, 0.f, MaxHealth);
 
-	if (NewHealth == Health) return false;
+	if (NewHealth == Health) {
+		return false;
+	}
 
 	SetHealth(NewHealth);
 	
 	return true;
+}
+
+float UHealthComponent::GetHealthPercent() const
+{
+	if (MaxHealth <= 0.f) {
+		return 0.f;
+	}
+	return Health / MaxHealth;
 }

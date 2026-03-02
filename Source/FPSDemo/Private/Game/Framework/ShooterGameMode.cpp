@@ -27,7 +27,6 @@ void AShooterGameMode::InitGame(
     const FString& Options,
     FString& ErrorMessage)
 {
-    UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode: InitGame called"));
     Super::InitGame(MapName, Options, ErrorMessage);
 
     AActorManager* ActorMgr = AActorManager::Get(GetWorld());
@@ -37,23 +36,14 @@ void AShooterGameMode::InitGame(
 void AShooterGameMode::InitGameState()
 {
     Super::InitGameState();
-    UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode: InitGameState called"));
-
     UGameManager* GMR = UGameManager::Get(GetWorld());
-    if (!GMR)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("GameManager is null in InitGameState"));
-        return;
-	}
+	check(GMR);
     // get current room data
     const FMatchInfo& MatchInfo = GMR->GetCurrentMatchInfo();
 
     CachedGS = GetGameState<AShooterGameState>();
-    if (!CachedGS)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("GameState is null in InitGameState"));
-        return;
-    }
+	check(CachedGS);
+
     EMatchMode MatchMode = GetMatchMode();
     CachedGS->SetMatchMode(MatchMode);
     CachedGS->Slots.Empty();
@@ -71,7 +61,7 @@ void AShooterGameMode::InitGameState()
 
         APlayerSlot* Slot = GetWorld()->SpawnActor<APlayerSlot>(APlayerSlot::StaticClass(),
             FTransform::Identity, Params);
-
+		check(Slot);
         Slot->SetBackendUserId(Player.PlayerId);
         Slot->SetPlayerName(Player.PlayerName);
         Slot->SetAvatar(Player.Avatar);
@@ -117,10 +107,10 @@ void AShooterGameMode::InitGameState()
 FTransform AShooterGameMode::GetSpawnTransformForSlot(const APlayerSlot& Slot)
 {
     AActorManager* AM = AActorManager::Get(GetWorld());
+	check(AM);
 
     const FVector RandomLoc = AM->RandomLocationOnMap();
     const FRotator RandomRot = FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f);
-
     FTransform SpawnTM(RandomRot, RandomLoc);
     return SpawnTM;
 }
@@ -130,16 +120,9 @@ void AShooterGameMode::StartPlay()
     Super::StartPlay();
 
     UE_LOG(LogTemp, Warning, TEXT("AShooterGameMode:Game Started!"));
-
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-    if (!GS)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("GameState is null in InitGame"));
-        return;
-    }
-
-    GS->SetMatchState(EMyMatchState::PRE_MATCH);
-    GS->SetCurrentRound(0);
+  
+    CachedGS->SetMatchState(EMyMatchState::PRE_MATCH);
+    CachedGS->SetCurrentRound(0);
 
     BotManager->SetMatchMode(GetMatchMode());
 
@@ -155,20 +138,19 @@ void AShooterGameMode::StartPlay()
     // should notify backend that game is ready
     UGameManager* GM = UGameManager::Get(GetWorld());
     if (GM && GM->DsClient.IsValid()) {
-        GM->DsClient->NotifyReady([this](bool bOk, const FString& ResponseBody)
+        GM->DsClient->NotifyReady([](bool bOk, const FString& ResponseBody)
             {
             });
     }
 
     // Spawn Bot
-    for (APlayerSlot* Slot : GS->Slots)
+    for (APlayerSlot* Slot : CachedGS->Slots)
     {
         if (!Slot->IsBot())
         {
             continue;
         }
         Slot->SetIsConnected(true);
-
         ABotAIController* BotController = SpawnBot(Slot);
         Slot->SetController(BotController);
     }
@@ -177,7 +159,6 @@ void AShooterGameMode::StartPlay()
 void AShooterGameMode::ScheduleMatchStart(int DelaySeconds)
 {
     GetWorldTimerManager().ClearTimer(MatchStartCountdownHandle);
-
     GetWorldTimerManager().SetTimer(
         MatchStartCountdownHandle,
         this,
@@ -187,15 +168,11 @@ void AShooterGameMode::ScheduleMatchStart(int DelaySeconds)
     );
 
     // keep UI countdown in sync
-    if (AShooterGameState* GS = GetGameState<AShooterGameState>())
-    {
-        GS->SetRoundRemainingTime(DelaySeconds);
-    }
+    CachedGS->SetRoundRemainingTime(DelaySeconds);
 }
 
 void AShooterGameMode::StartMatchFromCountdown()
 {
-	UE_LOG(LogTemp, Warning, TEXT("DEBUGYYY Starting match from countdown"));
     StartMatch(); // this bypasses ReadyToStartMatch_Implementation
 }
 
@@ -206,14 +183,16 @@ void AShooterGameMode::StartMatch()
 		UE_LOG(LogTemp, Warning, TEXT("Match already started, ignoring StartMatch call"));
         return;
     }
-
 	bMatchStarted = true;
     StartRound();
 }
 
 void AShooterGameMode::StartRoundDelayed()
 {
-	if (!bMatchStarted) return;
+    if (!bMatchStarted) 
+    {
+        return;
+    }
     StartRound();
 }
 
@@ -221,12 +200,6 @@ void AShooterGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     BotManager.Reset();
     Super::EndPlay(EndPlayReason);
-}
-
-void AShooterGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
-{
-    Super::HandleStartingNewPlayer_Implementation(NewPlayer);
-    UE_LOG(LogTemp, Warning, TEXT("HandleStartingNewPlayer called in AShooterGameMode"));
 }
 
 // This function is first step when a player tries to join the server
@@ -252,7 +225,6 @@ void AShooterGameMode::PreLogin(
         return;
     }
 
-    int BackendUserId = 0;
     if (IsRunningDedicatedServer())
     {
 #if WITH_GAMELIFT
@@ -274,95 +246,74 @@ void AShooterGameMode::PreLogin(
     }
 }
 
-APlayerController* AShooterGameMode::Login(
-    UPlayer* NewPlayer,
-    ENetRole InRemoteRole,
-    const FString& Portal,
-    const FString& Options,
-    const FUniqueNetIdRepl& UniqueId,
-    FString& ErrorMessage)
-{
-    auto X = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
-    return X;
-}
-
 void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 {
     Super::PostLogin(NewPlayer);
     AMyPlayerController* MyPC = Cast<AMyPlayerController>(NewPlayer);
-
-    if (MyPC)
+    if (!MyPC) 
     {
-        AShooterGameState* GS = GetGameState<AShooterGameState>();
-        if (!GS)
+        UE_LOG(LogTemp, Warning, TEXT("NewPlayer is not AMyPlayerController in PostLogin"));
+        return;
+	}
+
+    EMyMatchState MatchState = CachedGS->GetMatchState();
+    if (MatchState == EMyMatchState::GAME_ENDED)
+    {
+        return;
+    }
+
+    AMyPlayerState* PS = MyPC->GetPlayerState<AMyPlayerState>();
+    if (!PS) {
+        UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in PostLogin"));
+        return;
+    }
+
+    APlayerSlot* Slot = CachedGS->GetPlayerSlot(MyPC->GetBackendUserId());
+    if (!Slot) {
+        UE_LOG(LogTemp, Warning, TEXT("No PlayerSlot found for user PostLogin"));
+        return;
+	}
+    Slot->SetIsConnected(true);
+    Slot->SetController(NewPlayer);
+    PS->SetPlayerSlot(Slot);
+
+    if (!bMatchStarted)
+    {
+        bool bAllConnected = AreAllPlayersConnected();
+        if (bAllConnected)
         {
-            UE_LOG(LogTemp, Warning, TEXT("GameState is null in PostLogin"));
-            return;
-		}
+            // Reduce remaining countdown to 3 seconds (only if currently longer)
+            const float Remaining = GetWorldTimerManager().IsTimerActive(MatchStartCountdownHandle)
+                ? GetWorldTimerManager().GetTimerRemaining(MatchStartCountdownHandle)
+                : 0.f;
 
-		EMyMatchState MatchState = GS->GetMatchState();
-        if (MatchState == EMyMatchState::GAME_ENDED)
-        {
-            return;
-		}
-
-        AMyPlayerState* PS = MyPC->GetPlayerState<AMyPlayerState>();
-
-        if (!PS) {
-            UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in PostLogin"));
-            return;
-        }
-
-        APlayerSlot* Slot = GS->GetPlayerSlot(MyPC->GetBackendUserId());
-        if (Slot) {
-            Slot->SetIsConnected(true);
-            Slot->SetController(NewPlayer);
-        }
-        PS->SetPlayerSlot(Slot);
-
-        /*  NewPlayer->StartSpot = nullptr;
-          RestartPlayer(NewPlayer);*/
-        if (!bMatchStarted)
-        {
-			bool bAllConnected = AreAllPlayersConnected();
-            if (bAllConnected)
+            if (Remaining > MatchStartDelayWhenAllJoined)
             {
-                // Reduce remaining countdown to 3 seconds (only if currently longer)
-                const float Remaining = GetWorldTimerManager().IsTimerActive(MatchStartCountdownHandle)
-                    ? GetWorldTimerManager().GetTimerRemaining(MatchStartCountdownHandle)
-                    : 0.f;
-
-                if (Remaining > MatchStartDelayWhenAllJoined)
-                {
-                    ScheduleMatchStart(MatchStartDelayWhenAllJoined);
-                }
+                ScheduleMatchStart(MatchStartDelayWhenAllJoined);
             }
         }
-		//RestartPlayer(NewPlayer);
-        if (!bMatchStarted) {
-			RestartPlayer(MyPC);
+    }
+    //RestartPlayer(NewPlayer);
+    if (!bMatchStarted) {
+        RestartPlayer(MyPC);
+    }
+    else {
+        APawn* Pawn = Slot->GetPawn();
+        ABaseCharacter* Character = Cast<ABaseCharacter>(Pawn);
+        if (IsValid(Character) && !Character->IsPermanentDead())
+        {
+            MyPC->Possess(Slot->GetPawn());
         }
         else {
-			APawn* Pawn = Slot->GetPawn();
-			ABaseCharacter* Character = Cast<ABaseCharacter>(Pawn);
-            if (IsValid(Character) && !Character->IsPermanentDead())
-            {
-                MyPC->Possess(Slot->GetPawn());
-            }
-            else {
-				// change to spectator        
-                PS->SetIsSpectator(true);
-				MyPC->RequestSpectateNextPlayer();
-            }
+            // change to spectator        
+            PS->SetIsSpectator(true);
+            MyPC->RequestSpectateNextPlayer();
         }
     }
 }
 
 void AShooterGameMode::Logout(AController* Exiting)
 {
-    if (!CachedGS) {
-        return;
-    }
     APawn* LeavingPawn = Exiting ? Exiting->GetPawn() : nullptr;
 
     AMyPlayerController* MyPC = Cast<AMyPlayerController>(Exiting);
@@ -381,19 +332,16 @@ void AShooterGameMode::Logout(AController* Exiting)
         LeavingPawn->SetOwner(nullptr);
     }
     Super::Logout(Exiting);
-    UE_LOG(LogTemp, Warning, TEXT("Logout called in AShooterGameMode"));
 }
 
 void AShooterGameMode::HandleCharacterKilled(class AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
-    UE_LOG(LogTemp, Warning, TEXT("NotifyPlayerKilled called in AShooterGameMode"));
     if (!DamageCauser) {
         UE_LOG(LogTemp, Warning, TEXT("DamageCauser is null in NotifyPlayerKilled"));
         return;
 	}
     if (DamageCauser->Id == EItemId::SPIKE) {
         Killer = nullptr; // spike planting is not counted as kill
-        UE_LOG(LogTemp, Warning, TEXT("DamageCauser is None in NotifyPlayerKilled"));
     }
 
     AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
@@ -422,11 +370,7 @@ void AShooterGameMode::HandleCharacterKilled(class AController* Killer, const TA
         }
     }
 
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-    if (GS)
-    {
-        GS->MulticastKillNotify(KillerPS, VictimPS, DamageCauser, bWasHeadShot);
-    }
+    CachedGS->MulticastKillNotify(KillerPS, VictimPS, DamageCauser, bWasHeadShot);
 }
 
 FString AShooterGameMode::InitNewPlayer(
@@ -460,9 +404,8 @@ FString AShooterGameMode::InitNewPlayer(
                 for (const FGameLiftPlayerSession& Session : Sessions)
                 {
                     const FString PlayerId = Session.m_playerId;
-					BackendPlayerId = FCString::Atoi(*PlayerId);
-                        
-                    UE_LOG(LogTemp, Log, TEXT("Player ID from DescribePlayerSessions: %s"), *PlayerId);
+					BackendPlayerId = FCString::Atoi(*PlayerId);                
+					break; // we only expect 1 session for the given PlayerSessionId
                 }
             }
             else
@@ -495,14 +438,7 @@ FString AShooterGameMode::InitNewPlayer(
 
 void AShooterGameMode::RestartAllPlayers()
 {
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-
-    if (!GS) {
-        UE_LOG(LogTemp, Warning, TEXT("GameState is null in ResetPlayers"));
-        return;
-    }
-
-    auto Slots = GS->Slots;
+    const TArray<APlayerSlot*>& Slots = CachedGS->Slots;
     for (APlayerSlot* Slot : Slots)
     {
         APawn* Pawn = Slot->GetPawn();
@@ -511,7 +447,6 @@ void AShooterGameMode::RestartAllPlayers()
         if (IsValid(Pawn))
         {
             Pawn->Destroy();
-            Pawn = nullptr;
 			Slot->SetPawn(nullptr); 
         }
 
@@ -523,30 +458,21 @@ void AShooterGameMode::RestartAllPlayers()
             if (PS) {
                 PS->SetIsSpectator(false);
             }
-            UE_LOG(LogTemp, Warning, TEXT("Restarting player controller %s"), *Controller->GetName());
             RestartPlayer(Controller);
         }
     }
 }
 
-void AShooterGameMode::RestartPlayer(AController* NewPlayer)
-{
-    Super::RestartPlayer(NewPlayer);
-}
-
-
 ABotAIController* AShooterGameMode::SpawnBot(APlayerSlot* Slot)
 {
-    // get player state from game state
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-    if (!GS) return nullptr;
-
     FActorSpawnParameters Params;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
     // 1) Spawn AI controller
     ABotAIController* Bot = GetWorld()->SpawnActor<ABotAIController>(ABotAIController::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
-    if (!Bot) return nullptr;
+    if (!Bot) {
+        return nullptr;
+    }
 
     Bot->InitPlayerState();
     AMyPlayerState* BotPS = Bot->GetPlayerState<AMyPlayerState>();
@@ -565,13 +491,8 @@ ABotAIController* AShooterGameMode::SpawnBot(APlayerSlot* Slot)
 
 bool AShooterGameMode::CheckAllTeamDead(ETeamId TeamID) const
 {
-    if (!CachedGS) {
-        return false;
-    }
     for (APlayerSlot* Slot : CachedGS->Slots)
     {
-        if (!Slot) continue;
-
         if (Slot->GetTeamId() != TeamID) continue;
 
         APawn* Pawn = Slot->GetPawn();
@@ -587,27 +508,6 @@ bool AShooterGameMode::CheckAllTeamDead(ETeamId TeamID) const
 
     // No alive players
     return true;
-}
-
-void AShooterGameMode::AutoBuyForBots() {
-    /* for (ABotAIController* Bot : BotControllers)
-     {
-         if (!Bot) continue;
-         AMyPlayerState* PS = Bot->GetPlayerState<AMyPlayerState>();
-         if (!PS) continue;
-         PS->AutoBuy();
-     }*/
-}
-
-void AShooterGameMode::SavePlayersGunsForNextRound()
-{
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-
-}
-
-AShooterGameState* AShooterGameMode::GetShooterGS() const
-{
-    return GetGameState<AShooterGameState>();
 }
 
 void AShooterGameMode::RegisterCorpse(AActor* Corpse)
@@ -631,16 +531,10 @@ void AShooterGameMode::CleanupCorpses()
 
 void AShooterGameMode::StartRound() {
     UE_LOG(LogTemp, Warning, TEXT("Starting Round in AShooterGameMode"));
-
     AActorManager* AM = AActorManager::Get(GetWorld());
-    if (!AM) {
-        UE_LOG(LogTemp, Warning, TEXT("ActorManager is null in StartRound"));
-        return;
-    }
+	check(AM);
     AM->ResetPlayerStartsUsage();
-
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-    GS->SetCurrentRound(GS->GetCurrentRound() + 1);
+    CachedGS->SetCurrentRound(CachedGS->GetCurrentRound() + 1);
 }
 
 void AShooterGameMode::EndRound(ETeamId WinningTeam)
@@ -650,52 +544,30 @@ void AShooterGameMode::EndRound(ETeamId WinningTeam)
 
 void AShooterGameMode::EndGame(ETeamId WinningTeam)
 {
-    UE_LOG(LogTemp, Warning, TEXT(" "));
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-
-    if (!GS) {
-        UE_LOG(LogTemp, Warning, TEXT("GameState is null in EndGame"));
-        return;
-    }
-
-    if (GS->GetMatchState() == EMyMatchState::GAME_ENDED) {
+    if (CachedGS->GetMatchState() == EMyMatchState::GAME_ENDED) {
         return; // already ended
     }
 
-    GS->SetMatchState(EMyMatchState::GAME_ENDED);
-    GS->Multicast_GameResult(WinningTeam);
+    CachedGS->SetMatchState(EMyMatchState::GAME_ENDED);
+    CachedGS->Multicast_GameResult(WinningTeam);
 
     UGameManager* GM = UGameManager::Get(GetWorld());
     if (GM && GM->DsClient.IsValid()) {
         FString ResultJsonString = TEXT("{}");
         GM->DsClient->NotifyFinish(
             ResultJsonString,
-            [this](bool bOk, const FString& ResponseBody)
+            [](bool bOk, const FString& ResponseBody)
             {
                 // ...
             }
         );
     }
-
-    // Delay so clients see end screen
-   /* FTimerHandle Timer;
-    GetWorld()->GetTimerManager().SetTimer(
-        Timer,
-        this,
-        &AShooterGameMode::TravelToLobby,
-        1.5f,
-        false
-    );*/
 }
 
 bool AShooterGameMode::IsDamageAllowed(AController* Killer, AController* Victim) const
 {
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-    if (!GS)
-        return false;
-
-    if (GS->GetMatchState() == EMyMatchState::BUY_PHASE
-        || GS->GetMatchState() == EMyMatchState::PRE_MATCH)
+    if (CachedGS->GetMatchState() == EMyMatchState::BUY_PHASE
+        || CachedGS->GetMatchState() == EMyMatchState::PRE_MATCH)
     {
         return false;
     }
@@ -718,34 +590,28 @@ void AShooterGameMode::TravelToLobby()
     const FString Short = FPackageName::GetShortName(Url);               // "LEVEL_LOBBY"
 
     if (GetNetMode() == NM_ListenServer || GetNetMode() == NM_DedicatedServer)
+    {
         GetWorld()->ServerTravel(Url + TEXT("?listen"), true);
+    }
     else
+    {
         UGameplayStatics::OpenLevel(this, FName(*Short));
+    }
 }
 
 APawn* AShooterGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform)
 {
-    // try to get from player slot first
-    AShooterGameState* GS = GetGameState<AShooterGameState>();
-    if (!GS)
-    {
-        return nullptr;
-    }
-
     if (!NewPlayer)
     {
         return nullptr;
     }
 
     AMyPlayerState* PS = NewPlayer->GetPlayerState<AMyPlayerState>();
-
     if (!PS)
     {
         return nullptr;
     }
-
     APlayerSlot* Slot = PS->GetPlayerSlot();
-
     if (!Slot)
     {
         UE_LOG(LogTemp, Warning, TEXT("No player slot for id %d"), PS->GetBackendUserId());
@@ -757,7 +623,6 @@ APawn* AShooterGameMode::SpawnDefaultPawnAtTransform_Implementation(AController*
     ABaseCharacter* MyChar = Cast<ABaseCharacter>(ResultPawn);
     if (MyChar)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Setting character skin for spawned pawn %d"), Slot->GetCharacterSkin());
         MyChar->SetCharacterSkin(Slot->GetCharacterSkin());
     }
     return ResultPawn;
@@ -765,9 +630,6 @@ APawn* AShooterGameMode::SpawnDefaultPawnAtTransform_Implementation(AController*
 
 bool AShooterGameMode::AreAllPlayersConnected() const
 {
-    if (!CachedGS) {
-        return false;
-    }
     for (const APlayerSlot* S : CachedGS->Slots)
     {
         if (S->IsBot())

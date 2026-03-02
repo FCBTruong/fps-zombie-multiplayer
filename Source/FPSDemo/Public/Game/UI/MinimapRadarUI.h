@@ -10,6 +10,8 @@
 #include "MinimapRadarUI.generated.h"
 
 class AMyPlayerState;
+class AActorManager;
+
 /**
  * 
  */
@@ -19,7 +21,6 @@ class FPSDEMO_API UMinimapRadarUI : public UUserWidget
 	GENERATED_BODY()
 
 protected:
-
 	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* MinimapImgPn;
 
@@ -53,6 +54,8 @@ private:
 	FTimerHandle PeriodicUpdateTimerHandle;
 	UFUNCTION()
 	void PeriodicUpdate();
+
+	AActorManager* CachedActorMgr;
 public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeConstruct() override;
@@ -61,6 +64,7 @@ public:
 	void ClampWidgetToMap(const FVector2D& AbsPoint, UWidget* LabelWidget);
 	void UpdatePlayerDots();
 	void UpdateSpike();
+
 	FVector2D WorldToMinimapAbsolute(const FVector& WorldPos) const;
 	FVector2D WorldToMinimapLocal(const FVector& WorldPos) const;
 

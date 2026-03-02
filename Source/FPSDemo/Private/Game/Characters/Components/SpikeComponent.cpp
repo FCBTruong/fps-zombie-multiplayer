@@ -22,37 +22,40 @@ USpikeComponent::USpikeComponent()
 void USpikeComponent::BeginPlay()
 {
     Super::BeginPlay();
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (Character)
-    {
-        InventoryComp = Character->GetInventoryComponent();
-        ActionStateComp = Character->GetActionStateComponent();
-		EquipComp = Character->GetEquipComponent();
-    }
+    Character = Cast<ABaseCharacter>(GetOwner());
+	check(Character);
+   
+    InventoryComp = Character->GetInventoryComponent();
+    ActionStateComp = Character->GetActionStateComponent();
+	EquipComp = Character->GetEquipComponent();
+
+	check(InventoryComp);
+	check(ActionStateComp);
+	check(EquipComp);
 }
 
 void USpikeComponent::RequestPlantSpike()
 {
     if (!IsEnabled()) {
-        UE_LOG(LogTemp, Log, TEXT("USpikeComponent::RequestPlantSpike called - not enabled"));
         return;
     }
-	UE_LOG(LogTemp, Log, TEXT("USpikeComponent::RequestPlantSpike called"));
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character || !Character->IsAlive())
+    if (!Character->IsAlive())
+    {
         return;
+    }
 
-    if (!InventoryComp || !InventoryComp->HasSpike())
-		return;
+    if (!InventoryComp->HasSpike())
+    {
+        return;
+    }
 
-	if (!ActionStateComp || !ActionStateComp->CanPlantNow())
-		return;
+    if (!ActionStateComp->CanPlantNow())
+    {
+        return;
+    }
 
     if (Character->IsLocallyControlled()) {
-        if (CanPlantHere()) {
-            UE_LOG(LogTemp, Log, TEXT("USpikeComponent::RequestPlantSpike: Can plant here"));
-        }
-        else {
+        if (!CanPlantHere()) {
 			OnNotifyToastMessage.Broadcast(FText::FromString("Cannot plant spike here! Move to a bomb site."));
             UE_LOG(LogTemp, Log, TEXT("USpikeComponent::RequestPlantSpike: Cannot plant here"));
             return;
@@ -73,14 +76,9 @@ void USpikeComponent::RequestStopPlantSpike()
     if (!IsEnabled()) {
         return;
     }
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character)
-        return;
-
-    if (!ActionStateComp)
-		return;
 
     if (ActionStateComp->GetState() != EActionState::Planting) {
+		UE_LOG(LogTemp, Warning, TEXT("USpikeComponent::RequestStopPlantSpike: Not currently planting"));
         return;
     }
 
@@ -100,58 +98,42 @@ void USpikeComponent::ServerStartPlantSpike_Implementation()
 	StartPlant_Internal();
 }
 
-
 // this function should be called only on server
 void USpikeComponent::StartPlant_Internal()
 {
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character)
-        return;
-
     if (!IsEnabled()) {
         return;
     }
-
-    if (!InventoryComp || !ActionStateComp || !EquipComp)
-		return;
-
     if (EquipComp->GetActiveItemId() != EItemId::SPIKE) {
+		UE_LOG(LogTemp, Warning, TEXT("USpikeComponent::StartPlant_Internal: Spike is not active item"));
+        return;
+    }
+    if (!ActionStateComp->CanPlantNow())
+    {
+		UE_LOG(LogTemp, Warning, TEXT("USpikeComponent::StartPlant_Internal: Cannot plant now due to action state"));
+        return;
+    }
+    if (!CanPlantHere())
+    {
+        UE_LOG(LogTemp, Log, TEXT("USpikeComponent::StartPlant_Internal: Cannot plant here"));
         return;
     }
 
-    if (!ActionStateComp->CanPlantNow())
-		return;
-
-	bool Result = ActionStateComp->TrySetState(EActionState::Planting);
+    bool Result = ActionStateComp->TrySetState(EActionState::Planting);
     if (!Result)
-		return;
-
-	UE_LOG(LogTemp, Log, TEXT("USpikeComponent::StartPlant_Internal called"));
-
-    UInventoryComponent* Inventory = Character->GetInventoryComponent();
-    if (!Inventory || !Inventory->HasSpike())
+    {
+		UE_LOG(LogTemp, Warning, TEXT("USpikeComponent::StartPlant_Internal: Failed to set state to Planting"));
         return;
-
-    if (!CanPlantHere())
-        return;
-
-    ASpikeMode* SpikeGM =
-        Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
-
-    if (!SpikeGM)
-        return;
-
+    }
     LockMovement();
-
     MulticastStartPlantSpike();
 
-	UE_LOG(LogTemp, Log, TEXT("USpikeComponent::StartPlant_Internal: Starting to plant spike"));
     GetWorld()->GetTimerManager().ClearTimer(PlantTimerHandle);
     GetWorld()->GetTimerManager().SetTimer(
         PlantTimerHandle,
         this,
         &USpikeComponent::FinishPlantSpike,
-        3.0f,
+        PlantTime,
         false
     );
 }
@@ -161,27 +143,16 @@ void USpikeComponent::StopPlant_Internal()
     if (!IsEnabled()) {
         return;
     }
-    if (!ActionStateComp) {
-        return;
-    }
-
     if (!ActionStateComp->IsInState(EActionState::Planting)) {
+		UE_LOG(LogTemp, Warning, TEXT("USpikeComponent::StopPlant_Internal: Not currently planting"));
         return;
 	}
 
-    UE_LOG(LogTemp, Log, TEXT("USpikeComponent::StopPlant_Internal called"));
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character)
-		return;
-   
 	UnlockMovement();
-    
 	ActionStateComp->TrySetState(EActionState::Idle);
+
     MulticastStopPlantSpike();
-
 	GetWorld()->GetTimerManager().ClearTimer(PlantTimerHandle);
-
-
 	OnUpdatePlantSpikeState.Broadcast(false);
 }
 
@@ -198,25 +169,15 @@ void USpikeComponent::FinishPlantSpike()
     if (!IsEnabled()) {
         return;
     }
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character)
-    {
-        return;
-    }
-
-    if (!ActionStateComp || !InventoryComp) {
-        return;
-    }
-
     if (!ActionStateComp->IsInState(EActionState::Planting)) {
+		UE_LOG(LogTemp, Warning, TEXT("USpikeComponent::FinishPlantSpike: Not in planting state"));
         return;
     }
-
     if (!InventoryComp->HasSpike())
     {
+		UE_LOG(LogTemp, Warning, TEXT("USpikeComponent::FinishPlantSpike: No spike in inventory"));
         return;
     }
-
 	UnlockMovement();
 
     ASpikeMode* SpikeGM =
@@ -233,54 +194,46 @@ void USpikeComponent::FinishPlantSpike()
     PlantLocation.Z -= Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() - 30;
 
     SpikeGM->PlantSpike(PlantLocation, Character->GetController());
-
     InventoryComp->SetHasSpike(false);
 	ActionStateComp->TrySetState(EActionState::Idle);
 	// auto select next weapon
-
-    if (EquipComp) {
-        EquipComp->AutoSelectBestWeapon();
-    }
+    EquipComp->AutoSelectBestWeapon();
 }
 
 bool USpikeComponent::CanPlantHere() const
 {
-  /*  if (true) {
-        return true;
-    }*/
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character)
-        return false;
-
     if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
     {
         if (!MoveComp->IsMovingOnGround())
-			return false;
-        if (MoveComp->IsFalling()) {
-			return false;
+        {
+			UE_LOG(LogTemp, Log, TEXT("USpikeComponent::CanPlantHere: Character is not on the ground"));
+            return false;
         }
     }
     AActorManager* ActorManager = AActorManager::Get(GetWorld());
     if (!ActorManager)
+    {
         return false;
+    }
 
     TArray<ATriggerBox*> BombAreas = {
         ActorManager->GetAreaBombA(),
         ActorManager->GetAreaBombB()
     };
-
     const FVector CharLocation = Character->GetActorLocation();
-
     for (ATriggerBox* Area : BombAreas)
     {
         if (!Area)
+        {
             continue;
+        }
 
         UBoxComponent* Box =
             Cast<UBoxComponent>(Area->GetCollisionComponent());
-
         if (!Box)
+        {
             continue;
+        }
 
         if (UKismetMathLibrary::IsPointInBox(
             CharLocation,
@@ -290,58 +243,38 @@ bool USpikeComponent::CanPlantHere() const
             return true;
         }
     }
-
     return false;
 }
 
 void USpikeComponent::MulticastStartPlantSpike_Implementation()
 {
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (Character)
-    {
-        Character->OnPlantSpikeStarted();
-    }
-	CurrentActionState = ESpikeActionState::Planting;
+    Character->OnPlantSpikeStarted();
 	OnUpdatePlantSpikeState.Broadcast(true);
 }
 
 void USpikeComponent::MulticastStopPlantSpike_Implementation()
 {
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (Character)
-    {
-        Character->OnPlantSpikeStopped();
-    }
-    CurrentActionState = ESpikeActionState::None;
+    Character->OnPlantSpikeStopped();
     OnUpdatePlantSpikeState.Broadcast(false);
 }
 
 void USpikeComponent::LockMovement()
 {
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (Character)
+    if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
     {
-        if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
-        {
-            bCachedJumpAllowed = MoveComp->IsJumpAllowed();
-
-            MoveComp->DisableMovement();
-            MoveComp->StopMovementImmediately();
-            MoveComp->SetJumpAllowed(false);
-        }
+        bCachedJumpAllowed = MoveComp->IsJumpAllowed();
+        MoveComp->DisableMovement();
+        MoveComp->StopMovementImmediately();
+        MoveComp->SetJumpAllowed(false);
     }
 }
 
 void USpikeComponent::UnlockMovement()
 {
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (Character)
+    if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
     {
-        if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
-        {   
-            MoveComp->SetMovementMode(MOVE_Walking);
-			MoveComp->SetJumpAllowed(bCachedJumpAllowed);
-        }
+        MoveComp->SetMovementMode(MOVE_Walking);
+        MoveComp->SetJumpAllowed(bCachedJumpAllowed);
     }
 }
 
@@ -370,10 +303,7 @@ void USpikeComponent::StartDefuse_Internal() {
     }
     AShooterGameState* GameState = Cast<AShooterGameState>(GetWorld()->GetGameState());
     if (!GameState) {
-        return;
-    }
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character) {
+		UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: No GameState found"));
         return;
     }
     AMyPlayerState* MyPS = Cast<AMyPlayerState>(Character->GetPlayerState());
@@ -399,7 +329,6 @@ void USpikeComponent::StartDefuse_Internal() {
         return;
     }
 
-
     if (SpikeActor->IsDefused()) {
         UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Spike is already defused"));
         return;
@@ -409,15 +338,13 @@ void USpikeComponent::StartDefuse_Internal() {
 	FVector SpikeLocation = SpikeActor->GetActorLocation();
 	FVector CharacterLocation = Character->GetActorLocation();
 	float Distance = FVector::Dist(SpikeLocation, CharacterLocation);
-	if (Distance > 200.f) {
+	if (Distance > DefuseDistance) { 
 		UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Too far from spike to defuse"));
 		return;
 	}
 
-    if (!ActionStateComp) {
-        return;
-    }
     if (!ActionStateComp->CanDefuseNow()) {
+		UE_LOG(LogTemp, Warning, TEXT("ServerStartDefuseSpike: Cannot defuse now, current state: %d"), (int)ActionStateComp->GetState());
         return;
     }
     ActionStateComp->TrySetState(EActionState::Defusing);
@@ -431,30 +358,25 @@ void USpikeComponent::StopDefuse_Internal() {
     if (!IsEnabled()) {
         return;
     }
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character) {
-        return;
-    }
-	AShooterGameState* GS = Cast<AShooterGameState>(GetWorld()->GetGameState());
-    if (!ActionStateComp) {
+    if (!ActionStateComp->IsInState(EActionState::Defusing)) {
+		UE_LOG(LogTemp, Warning, TEXT("StopDefuse_Internal: Not currently defusing"));
         return;
     }
 
-    if (!ActionStateComp->IsInState(EActionState::Defusing)) {
-        return;
-    }
+    AShooterGameState* GS = Cast<AShooterGameState>(GetWorld()->GetGameState());
     ASpike* SpikeActor = GS->GetPlantedSpike();
     if (!SpikeActor) {
+		UE_LOG(LogTemp, Warning, TEXT("StopDefuse_Internal: No planted spike found"));
         return;
     }
     if (!SpikeActor->IsDefuseInProgress()) {
+		UE_LOG(LogTemp, Warning, TEXT("StopDefuse_Internal: No defuse in progress"));
         return;
     }
     
     SpikeActor->CancelDefuse();
     ActionStateComp->TrySetState(EActionState::Idle);
     UnlockMovement();
-    
     MulticastStopDefuseSpike();
 }
 
@@ -473,31 +395,18 @@ void USpikeComponent::ServerStopDefuseSpike_Implementation() {
 }
 
 void USpikeComponent::MulticastStartDefuseSpike_Implementation() {
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character) {
-        return;
-	}
     OnUpdateDefuseSpikeState.Broadcast(true);
     Character->OnDefuseSpikeStarted();
-
-	CurrentActionState = ESpikeActionState::Defusing;
 }
 
 void USpikeComponent::MulticastStopDefuseSpike_Implementation() {
-    ABaseCharacter* Character = Cast<ABaseCharacter>(GetOwner());
-    if (!Character) {
-        return;
-    }
     OnUpdateDefuseSpikeState.Broadcast(false);
     Character->OnDefuseSpikeStopped(); // Changed to OnDefuseSpikeStopped()
-    CurrentActionState = ESpikeActionState::None;
 }
 
 // callback from spike actor
 void USpikeComponent::OnDefuseSucceed() {
-    if (ActionStateComp) {
-        ActionStateComp->TrySetState(EActionState::Idle);
-    }
+    ActionStateComp->TrySetState(EActionState::Idle);
     UnlockMovement();
 }
 
@@ -505,10 +414,10 @@ void USpikeComponent::OnOwnerDead() {
     if (!IsEnabled()) {
         return;
     }
-    if (CurrentActionState == ESpikeActionState::Planting) {
+    if (ActionStateComp->IsInState(EActionState::Planting)) {
         StopPlant_Internal();
-    }
-    else if (CurrentActionState == ESpikeActionState::Defusing) {
-        StopDefuse_Internal();
 	}
+    else if (ActionStateComp->IsInState(EActionState::Defusing)) {
+        StopDefuse_Internal();
+    }
 }

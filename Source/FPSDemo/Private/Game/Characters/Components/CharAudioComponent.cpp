@@ -20,7 +20,14 @@ void UCharAudioComponent::BeginPlay()
 
     FootstepComp = CreateAudioComp(TEXT("FootstepAudioComp"));
     LoopingComp = CreateAudioComp(TEXT("LoopingAudioComp"));
+
     UGameManager* GameManager = UGameManager::Get(GetWorld());
+    if (!GameManager)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CharAudioComponent: GameManager is null"));
+        return;
+    }
+
     CachedCharacterAsset = GameManager->CharacterAsset.Get();
 }
 
@@ -29,7 +36,19 @@ UAudioComponent* UCharAudioComponent::CreateAudioComp(FName Name)
     AActor* Owner = GetOwner();
     if (!Owner) return nullptr;
 
+    USceneComponent* RootComp = Owner->GetRootComponent();
+    if (!RootComp)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CharAudioComponent: Owner root component is null"));
+        return nullptr;
+    }
+
     UAudioComponent* Comp = NewObject<UAudioComponent>(Owner, Name);
+    if (!Comp)
+    {
+        return nullptr;
+    }
+
     Comp->bAutoActivate = false;
     Comp->RegisterComponent();
     Comp->AttachToComponent(

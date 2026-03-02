@@ -24,23 +24,20 @@ private:
 
 	UFUNCTION()
 	void OnRep_Health();
+
+	void BroadcastHealthUpdated();
+
 public:	
-	// Sets default values for this component's properties
 	UHealthComponent();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:	
 	UFUNCTION(BlueprintCallable)
-	float GetHealthPercent() const { return Health / MaxHealth; }
+	float GetHealthPercent() const;
 	float GetHealth() const { return Health; }
 	float GetMaxHealth() const { return MaxHealth; }
 
 	void ApplyDamage(float DamageAmount);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	void HealthDeath();
+	void HandleDeath();
 	void ResetHealth();
 	void SetHealth(float NewHealth);
 	void SetMaxHealth(float NewMaxHealth);

@@ -26,6 +26,8 @@ void APlayerSlot::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(APlayerSlot, Deaths);
 	DOREPLIFETIME(APlayerSlot, Assists);
 	DOREPLIFETIME(APlayerSlot, Pawn);
+	DOREPLIFETIME(APlayerSlot, PlayerName);
+	DOREPLIFETIME(APlayerSlot, Avatar);
 }
 
 void APlayerSlot::OnRep_Pawn()
@@ -68,4 +70,9 @@ void APlayerSlot::SetTeamId(ETeamId InTeamId)
 		TeamId = InTeamId;
 		OnRep_TeamId();
 	}
+}
+
+AController* APlayerSlot::GetController() const
+{
+	return Controller.Get();
 }

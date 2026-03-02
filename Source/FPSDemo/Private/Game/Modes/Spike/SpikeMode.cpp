@@ -25,36 +25,28 @@ void ASpikeMode::StartPlay()
 	UE_LOG(LogTemp, Warning, TEXT("SpikeMode Game Started!"));
 	Super::StartPlay();
 
-	// get all controllers and assign teams
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (!GS) return;
-
-	if (AActorManager* ActorGMR = AActorManager::Get(GetWorld()))
-	{
-		ActorGMR->OnNewPickupItemSpawned.AddUObject(
-			this,
-			&ASpikeMode::HandleNewPickupItemSpawned
-		);
-	}
+	AActorManager* ActorGMR = AActorManager::Get(GetWorld());
+	check(ActorGMR);
+	ActorGMR->OnNewPickupItemSpawned.AddUObject(
+		this,
+		&ASpikeMode::HandleNewPickupItemSpawned
+	);
 }
 
 void ASpikeMode::PlantSpike(FVector Location, AController* Planter)
 {
 	if (!Planter) {
-		UE_LOG(LogTemp, Warning, TEXT("Planter controller is null in PlantSpike"));
 		return;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Spike planted at location: %s"), *Location.ToString());
 
 	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = Planter;
-	SpawnParams.Instigator = Planter ? Planter->GetPawn() : nullptr;
+	SpawnParams.Instigator = Planter->GetPawn();
 	auto PlantedSpike = GetWorld()->SpawnActor<ASpike>(SpikeClass, Location, FRotator::ZeroRotator, SpawnParams);
 
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	GS->SetPlantedSpike(PlantedSpike);
-	GS->SetMatchState(EMyMatchState::SPIKE_PLANTED);
+	CachedGS->SetPlantedSpike(PlantedSpike);
+	CachedGS->SetMatchState(EMyMatchState::SPIKE_PLANTED);
 
 	if (BotManager) {
 		BotManager->OnSpikePlanted(PlantedSpike);
@@ -64,15 +56,10 @@ void ASpikeMode::PlantSpike(FVector Location, AController* Planter)
 void ASpikeMode::OnSpikeDefused(AController* Defuser)
 {
 	if (!Defuser) {
-		UE_LOG(LogTemp, Warning, TEXT("Defuser controller is null in OnSpikeDefused"));
 		return;
 	}
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-
-	UE_LOG(LogTemp, Warning, TEXT("Spike defused by %s"), *Defuser->GetName());
 		
 	EndRound(ETeamId::Defender);
-
 	if (BotManager) {
 		BotManager->OnSpikeDefused();
 	}
@@ -80,25 +67,23 @@ void ASpikeMode::OnSpikeDefused(AController* Defuser)
 
 void ASpikeMode::EndRound(ETeamId WinningTeam)
 {
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (GS->GetMatchState() == EMyMatchState::ROUND_ENDED)
+	if (CachedGS->GetMatchState() == EMyMatchState::ROUND_ENDED)
 	{
 		return; // already ended
 	}
 	Super::EndRound(WinningTeam);
 
 	GetWorld()->GetTimerManager().ClearTimer(RoundTimerHandle);
-	GS->SetMatchState(EMyMatchState::ROUND_ENDED);
-	GS->Multicast_RoundResult(WinningTeam);
+	CachedGS->SetMatchState(EMyMatchState::ROUND_ENDED);
+	CachedGS->Multicast_RoundResult(WinningTeam);
 
-	GS->AddScoreTeam(WinningTeam, 1);
-
-	if (GS->GetScoreTeam(WinningTeam) >= ScoreToWin) {
+	CachedGS->AddScoreTeam(WinningTeam, 1);
+	if (CachedGS->GetScoreTeam(WinningTeam) >= ScoreToWin) {
 		EndGame(WinningTeam);
 		return;
 	}
 	float DelayBeforeNewRound = 4.0f;
-	bool bShouldSwapSides = (GS->GetCurrentRound() == RoundToSwapSides);
+	bool bShouldSwapSides = (CachedGS->GetCurrentRound() == RoundToSwapSides);
 
 	GetWorld()->GetTimerManager().ClearTimer(StartRoundTimerHandle);
 	if (bShouldSwapSides) {
@@ -106,17 +91,14 @@ void ASpikeMode::EndRound(ETeamId WinningTeam)
 		DelayBeforeNewRound += 2.0f; // extra delay for side swap
 		GetWorld()->GetTimerManager().SetTimer(
 			SwitchSideTimerHandle,
-			[this, GS]()
+			[this]()
 			{
-				GS->Multicast_SwitchSide();
+				CachedGS->Multicast_SwitchSide();
 			},
 			2.0f,
 			false
 		);
 	}
-
-	// save guns for next round if player is alive	
-	SavePlayersGunsForNextRound();
 	
 	GetWorld()->GetTimerManager().SetTimer(
 		StartRoundTimerHandle,
@@ -136,33 +118,22 @@ void ASpikeMode::StartRound()
 {
 	Super::StartRound();
 
-	AShooterGameState* GS = GetShooterGS();
-	if (!GS) {
-		UE_LOG(LogTemp, Warning, TEXT("GameState is null in StartRound"));
-		return;
-	}
-	GS->Multicast_RoundStart();
-	int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
-	GS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
-	GS->SetRoundEndTime(TimeEnd);
+	CachedGS->Multicast_RoundStart();
+	int32 TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
+	CachedGS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
+	CachedGS->SetRoundEndTime(TimeEnd);
 
 	RestartAllPlayers();
 	// remove spike if planted
-	if (GS->GetPlantedSpike()) {
-		GS->GetPlantedSpike()->Destroy();
-		GS->SetPlantedSpike(nullptr);
+	if (CachedGS->GetPlantedSpike()) {
+		CachedGS->GetPlantedSpike()->Destroy();
+		CachedGS->SetPlantedSpike(nullptr);
 	}
 
 	// Random spike for attacker team
-	FVector SpawnLocation = FVector::ZeroVector;
-	if (AActorManager::Get(GetWorld())) {
-		SpawnLocation = AActorManager::Get(GetWorld())->GetSpikeStartLocation();
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("ActorManager instance is null"));
-	}
-
 	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
+	check(ActorMgr);
+	const FVector SpawnLocation = ActorMgr->GetSpikeStartLocation();
 	ActorMgr->CleanPickupItemsOnMap();
 
 	FPickupData P;
@@ -210,20 +181,17 @@ void ASpikeMode::OnSpikeExploded()
 
 AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 {
-	AMyPlayerState* PS = Player->GetPlayerState<AMyPlayerState>();
-
-	if (!PS) {
-		UE_LOG(LogTemp, Warning, TEXT("PlayerState is null in ChoosePlayerStart_Implementation"));
+	if (!Player) {
 		return Super::ChoosePlayerStart_Implementation(Player); // fallback
 	}
+	AMyPlayerState* PS = Player->GetPlayerState<AMyPlayerState>();
+	if (!PS) {
+		return Super::ChoosePlayerStart_Implementation(Player); // fallback
+	}
+	AActorManager* AM = AActorManager::Get(GetWorld());
+	check(AM);
 
 	ETeamId TeamId = PS->GetTeamId();
-	AActorManager* AM = AActorManager::Get(GetWorld());
-	if (!AM) {
-		UE_LOG(LogTemp, Warning, TEXT("ActorManager instance is null in ChoosePlayerStart_Implementation"));
-		return Super::ChoosePlayerStart_Implementation(Player); // fallback
-	}
-
 	if (TeamId == ETeamId::Attacker)
 	{
 		APlayerStart* AttackerStart = AM->GetRandomAttackerStart();
@@ -251,7 +219,7 @@ void ASpikeMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakOb
 	RegisterCorpse(VictimPawn);
 	VictimPawn->ApplyRealDeath(/*bDropInventory=*/true);
 
-	AMyPlayerState* VictimPS = VictimPawn ? VictimPawn->GetPlayerState<AMyPlayerState>() : nullptr;
+	AMyPlayerState* VictimPS = VictimPawn->GetPlayerState<AMyPlayerState>();
 	if (!VictimPS) {
 		UE_LOG(LogTemp, Warning, TEXT("VictimPS is null in NotifyPlayerKilled"));
 		return;
@@ -262,13 +230,8 @@ void ASpikeMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakOb
 	// check if all team dead
 	bool IsAllTeamDead = CheckAllTeamDead(VictimTeam);
 
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (!GS) {
-		UE_LOG(LogTemp, Warning, TEXT("GameState is null in OnCharacterKilled"));
-		return;
-	}
-	if (GS->GetMatchState() != EMyMatchState::ROUND_IN_PROGRESS &&
-		GS->GetMatchState() != EMyMatchState::SPIKE_PLANTED)
+	if (CachedGS->GetMatchState() != EMyMatchState::ROUND_IN_PROGRESS &&
+		CachedGS->GetMatchState() != EMyMatchState::SPIKE_PLANTED)
 	{
 		return; // do nothing if round not in progress
 	}
@@ -296,8 +259,6 @@ void ASpikeMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakOb
 
 void ASpikeMode::OnRoundTimeExpired()
 {
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-
 	// If spike NOT planted -> defenders win
 	if (!IsSpikePlanted())
 	{
@@ -314,14 +275,7 @@ void ASpikeMode::NotifySpikePickedUp(ABaseCharacter* Player)
 
 void ASpikeMode::SwapTeams() // switch side
 {
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	if (!GS) {
-		UE_LOG(LogTemp, Warning, TEXT("GameState is null in SwapTeams"));
-		return;
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Swapping teams..."));
-	for (APlayerSlot* Slot : GS->Slots) {
+	for (APlayerSlot* Slot : CachedGS->Slots) {
 		ETeamId CurrentTeam = Slot->GetTeamId();
 		ETeamId NewTeam = (CurrentTeam == ETeamId::Attacker) ? ETeamId::Defender : ETeamId::Attacker;
 		Slot->SetTeamId(NewTeam);
@@ -337,18 +291,17 @@ void ASpikeMode::SwapTeams() // switch side
 	}
 
 	// swap scores too
-	int ScoreA = GS->GetTeamAScore();
-	int ScoreB = GS->GetTeamBScore();
-	GS->SetTeamAScore(ScoreB);
-	GS->SetTeamBScore(ScoreA);
+	int ScoreA = CachedGS->GetTeamAScore();
+	int ScoreB = CachedGS->GetTeamBScore();
+	CachedGS->SetTeamAScore(ScoreB);
+	CachedGS->SetTeamBScore(ScoreA);
 }
 
 void ASpikeMode::GenerateInitialWeapons()
 {
 	AActorManager* AM = AActorManager::Get(GetWorld());
-	if (!AM) return;
+	check(AM);
 	auto ItemsManager = UItemsManager::Get(GetWorld());
-	if (!ItemsManager) return;
 
 	// Weapon list
 	TArray<EItemId> Items = {
@@ -399,14 +352,13 @@ void ASpikeMode::GenerateInitialWeapons()
 
 bool ASpikeMode::IsSpikePlanted() const
 {
-	AShooterGameState* GS = GetGameState<AShooterGameState>();
-	return GS->GetMatchState() == EMyMatchState::SPIKE_PLANTED;
+	return CachedGS->GetMatchState() == EMyMatchState::SPIKE_PLANTED;
 }
 
 void ASpikeMode::AutoBuyForBots()
 {
 	if (!BotManager) return;
-	TArray<ABotAIController*> Bots = BotManager->GetManagedBots();
+	const TArray<ABotAIController*>& Bots = BotManager->GetManagedBots();
 
 	TArray<EItemId> InitialWeapons = {
 		EItemId::RIFLE_AK_47,

@@ -14,8 +14,6 @@
 
 ABotAIController::ABotAIController()
 {
-    PrimaryActorTick.bCanEverTick = true; 
-
     PerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>("Perception");
     SetPerceptionComponent(*PerceptionComp);
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>("SightConfig");
@@ -33,10 +31,6 @@ ABotAIController::ABotAIController()
 
     DamageConfig = CreateDefaultSubobject<UAISenseConfig_Damage>("DamageConfig");
     PerceptionComp->ConfigureSense(*DamageConfig);
-
-    PerceptionComp->OnPerceptionUpdated.AddDynamic(this, &ABotAIController::OnPerceptionUpdated);
-    PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(
-        this, &ABotAIController::OnTargetPerceptionUpdated);
 
 	bCanShoot = true;
 }
@@ -78,25 +72,6 @@ void ABotAIController::OnPossess(APawn* InPawn)
 void ABotAIController::OnUnPossess() {
     UnbindPawn();
     Super::OnUnPossess();
-}
-
-void ABotAIController::OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors)
-{
-    
-}
-
-void ABotAIController::OnTargetPerceptionUpdated(
-    AActor* Actor,
-    FAIStimulus Stimulus)
-{
-	
-}
-
-void ABotAIController::Tick(float DeltaSeconds)
-{
-    Super::Tick(DeltaSeconds);
-
-    if (!GetPawn()) return;
 }
 
 void ABotAIController::ResetAIState()
@@ -426,7 +401,6 @@ void ABotAIController::SetCanShootTrueDelayed()
 void ABotAIController::SetMatchState(EMyMatchState NewState)
 {
 	if (!HasAuthority()) return;
-	UE_LOG(LogTemp, Warning, TEXT("BotAIController: SetMatchState called with state=%d"), (uint8)NewState);
     CurrentMatchState = NewState;
     UBlackboardComponent* BB = GetBlackboardComponent();
     if (BB)
@@ -438,5 +412,21 @@ void ABotAIController::SetMatchState(EMyMatchState NewState)
     }
     else {
 		UE_LOG(LogTemp, Warning, TEXT("BotAIController: SetMatchState failed to get BlackboardComponent"));
+    }
+}
+
+void ABotAIController::StartLogic()
+{
+    if (BrainComponent && !BrainComponent->IsRunning())
+    {
+        BrainComponent->StartLogic();
+    }
+}
+
+void ABotAIController::StopLogic(const FString& Reason)
+{
+    if (BrainComponent && BrainComponent->IsRunning())
+    {
+        BrainComponent->StopLogic(Reason);
     }
 }

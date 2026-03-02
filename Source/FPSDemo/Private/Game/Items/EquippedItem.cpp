@@ -3,7 +3,6 @@
 #include "Components/SceneComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/SceneCaptureComponent2D.h"
 
 AEquippedItem::AEquippedItem()
 {
@@ -22,7 +21,6 @@ AEquippedItem::AEquippedItem()
 
     auto DisableCollision = [](UMeshComponent* M)
         {
-            if (!M) return;
             M->SetCollisionEnabled(ECollisionEnabled::NoCollision);
             M->SetCollisionResponseToAllChannels(ECR_Ignore);
             M->SetGenerateOverlapEvents(false);
@@ -33,11 +31,10 @@ AEquippedItem::AEquippedItem()
 
     WeaponMesh->SetHiddenInGame(true);
     WeaponStaticMesh->SetHiddenInGame(true);
-
     ActiveMesh = EActiveMesh::None;
 }
 
-void AEquippedItem::InitFromConfig(UItemConfig* InData)
+void AEquippedItem::InitFromConfig(const UItemConfig* InData)
 {
     if (!InData) return;
     if (Config == InData) return; // avoid re-applying if same config
@@ -58,8 +55,6 @@ UMeshComponent* AEquippedItem::GetMainMesh() const
 
 void AEquippedItem::SetActiveMeshSkeletal(USkeletalMesh* InMesh)
 {
-    if (!WeaponMesh || !WeaponStaticMesh) return;
-
     // Avoid redundant work
     if (ActiveMesh == EActiveMesh::Skeletal && WeaponMesh->GetSkeletalMeshAsset() == InMesh)
         return;
@@ -75,8 +70,6 @@ void AEquippedItem::SetActiveMeshSkeletal(USkeletalMesh* InMesh)
 
 void AEquippedItem::SetActiveMeshStatic(UStaticMesh* InMesh)
 {
-    if (!WeaponMesh || !WeaponStaticMesh) return;
-
     if (ActiveMesh == EActiveMesh::Static && WeaponStaticMesh->GetStaticMesh() == InMesh)
         return;
 
@@ -93,7 +86,6 @@ void AEquippedItem::ApplyConfig()
 {
     if (!Config)
     {
-        UE_LOG(LogTemp, Warning, TEXT("ApplyConfig: Config is null"));
         return;
     }
 
@@ -107,36 +99,29 @@ void AEquippedItem::ApplyConfig()
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("ApplyConfig: Config has no mesh"));
-        if (WeaponMesh) WeaponMesh->SetHiddenInGame(true, true);
-        if (WeaponStaticMesh) WeaponStaticMesh->SetHiddenInGame(true, true);
+        WeaponMesh->SetHiddenInGame(true, true);
+        WeaponStaticMesh->SetHiddenInGame(true, true);
         ActiveMesh = EActiveMesh::None;
-        return;
     }
 }
 
 void AEquippedItem::SetViewFps(bool bIsFps)
 {
-    // log display name of data
-    UE_LOG(LogTemp, Warning, TEXT("WeaponBase SetOwnerNoSee called with %s for weapon %s"), bIsFps ? TEXT("true") : TEXT("false"), *GetName());
+    bIsFpsView = bIsFps;
+    if (!Config)
+    {
+        return;
+    }
 
     // Apply scale to stable root (one place, consistent)
-    if (RootComponent)
-    {
-        if (bIsFps) {
-			WeaponMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
-            if (WeaponStaticMesh) {
-                WeaponStaticMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
-			}
-            RootComponent->SetWorldScale3D(FVector(Config->ScaleOnHand));
-        }
-        else {
-            WeaponMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
-            if (WeaponStaticMesh) {
-                WeaponStaticMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
-			}
-            RootComponent->SetWorldScale3D(FVector(Config->ScaleOnHandTps));
-        }
+    if (bIsFps) {
+        WeaponMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+        WeaponStaticMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+        Root->SetWorldScale3D(FVector(Config->ScaleOnHand));
     }
-    bIsFpsView = bIsFps;
+    else {
+        WeaponMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
+        WeaponStaticMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
+        Root->SetWorldScale3D(FVector(Config->ScaleOnHandTps));
+    }
 }

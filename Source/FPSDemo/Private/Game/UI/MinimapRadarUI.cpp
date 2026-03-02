@@ -17,10 +17,13 @@ void UMinimapRadarUI::NativeConstruct()
 	Super::NativeConstruct();
 	UE_LOG(LogTemp, Warning, TEXT("MinimapRadarUI: NativeConstruct called"));
 
-	AActorManager* AM = AActorManager::Get(GetWorld());
-	if (!AM || !AM->MainPlane) return;
+	CachedActorMgr = AActorManager::Get(GetWorld());
+	if (!CachedActorMgr || !CachedActorMgr->MainPlane) {
+		UE_LOG(LogTemp, Error, TEXT("MinimapRadarUI: Failed to get ActorManager"));
+		return;
+	}
 
-	AActor* MainPlane = AM->MainPlane;
+	AActor* MainPlane = CachedActorMgr->MainPlane;
 	MainPlane->GetActorBounds(true, WorldOrigin, WorldExtent);
 
 	PlaneSize = WorldExtent * 2.f;
@@ -29,7 +32,6 @@ void UMinimapRadarUI::NativeConstruct()
 	{
 		MinimapSize = CvSlot->GetSize();
 	}
-
 	
 	CachedPC = GetOwningPlayer();
 	if (!CachedPC) return;
@@ -62,14 +64,12 @@ void UMinimapRadarUI::NativeConstruct()
 void UMinimapRadarUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-	if (!MinimapImgPn) return;
-	
-	if (!CachedPC) return;
-	PivotCurrentPawn();
 
+	if (!MinimapImgPn || !CachedActorMgr || !CachedPC) return;
+
+	PivotCurrentPawn();
 	UpdateBombAreaLabels();
 	UpdatePlayerDots();
-
 	UpdateSpike();
 }
 
@@ -161,11 +161,7 @@ void UMinimapRadarUI::UpdateBombAreaLabels()
 
 void UMinimapRadarUI::UpdateSpike()
 {
-	// handled in NativeTick
-	// check if spike drop on map
-	AActorManager* AM = AActorManager::Get(GetWorld());
-	if (!AM) return;
-	auto Spike = AM->GetPickupSpike();
+	auto Spike = CachedActorMgr->GetPickupSpike();
 
 	if (!SpikeIcon) return;
 
@@ -219,9 +215,6 @@ void UMinimapRadarUI::ClampWidgetToMap(const FVector2D& AbsPoint, UWidget * Labe
 
 void UMinimapRadarUI::UpdatePlayerDots()
 {
-	if (!AActorManager::Get(GetWorld())) {
-		return;
-	}
 	if (!CachedPC) return;
 
 	AActor* ViewTarget = CachedPC->GetViewTarget();
@@ -327,9 +320,7 @@ void UMinimapRadarUI::PivotCurrentPawn()
 	FWidgetTransform T;
 	T.Angle = -90 - YawValue;
 
-	float PivotX = NormalizedX;
-	float PivotY = NormalizedY;
-	FVector2D NewPivot(PivotX, PivotY);
+	const FVector2D NewPivot(NormalizedX, NormalizedY);
 	FVector2D OldPivot = MinimapImgPn->GetRenderTransformPivot();
 	MinimapImgPn->SetRenderTransformPivot(NewPivot);
 	FVector2D OffsetPv = (OldPivot - NewPivot) * MinimapSize;

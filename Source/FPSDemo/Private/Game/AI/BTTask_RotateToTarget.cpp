@@ -60,10 +60,3 @@ void UBTTask_RotateToTarget::TickTask(
     }
 }
 
-void UBTTask_RotateToTarget::OnTaskFinished(
-    UBehaviorTreeComponent& OwnerComp,
-    uint8* NodeMemory,
-    EBTNodeResult::Type TaskResult)
-{
-    UE_LOG(LogTemp, Warning, TEXT("RotateTask FINISHED with result = %d"), (int)TaskResult);
-}

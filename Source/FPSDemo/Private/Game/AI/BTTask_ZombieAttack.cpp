@@ -1,12 +1,10 @@
 #include "Game/AI/BTTask_ZombieAttack.h"
 #include "Game/AI/BotAIController.h"
 #include "Game/Characters/BaseCharacter.h"
-#include "Game/Characters/Components/EquipComponent.h"
-#include "Game/Characters/Components/WeaponFireComponent.h"
 
 UBTTask_ZombieAttack::UBTTask_ZombieAttack()
 {
-    NodeName = "Zomibe Attack Target";
+    NodeName = "Zombie Attack Target";
 }
 
 EBTNodeResult::Type UBTTask_ZombieAttack::ExecuteTask(

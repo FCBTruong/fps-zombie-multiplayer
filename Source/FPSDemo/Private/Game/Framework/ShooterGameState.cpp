@@ -43,32 +43,18 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
 {
-    UE_LOG(LogTemp, Warning,
-        TEXT("MulticastKillNotify called | Killer=%s | Victim=%s | Weapon=%s | Headshot=%d"),
-        IsValid(Killer) ? *Killer->GetPathName() : TEXT("NULL"),
-        IsValid(Victim) ? *Victim->GetPathName() : TEXT("NULL"),
-        IsValid(DamageCauser) ? *DamageCauser->GetPathName() : TEXT("NULL"),
-        bWasHeadShot
-    );
-    if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC);
+    if (!MyPC || !MyPC->GetPlayerUI()) {
+        return;
+    }
+
+    MyPC->GetPlayerUI()->NotifyKill(Killer, Victim, DamageCauser, bWasHeadShot);
+    AActor* KillerPawn = Killer ? Killer->GetPawn() : nullptr;
+    AActor* ViewTargetPawn = MyPC->GetViewTarget();
+    if (KillerPawn && KillerPawn == ViewTargetPawn)
     {
-        AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC);
-        if (!MyPC) {
-            return;
-        }
-        if (!MyPC->GetPlayerUI()) {
-            return;
-		}   
-
-		MyPC->GetPlayerUI()->NotifyKill(Killer, Victim, DamageCauser, bWasHeadShot);
-
-		AActor* KillerPawn = Killer ? Killer->GetPawn() : nullptr;
-        AActor* ViewTargetPawn = MyPC->GetViewTarget();
-
-        if (KillerPawn && KillerPawn == ViewTargetPawn)
-        {
-			MyPC->GetPlayerUI()->ShowKillMark(bWasHeadShot);
-		}
+        MyPC->GetPlayerUI()->ShowKillMark(bWasHeadShot);
     }
 }
 
@@ -79,9 +65,6 @@ void AShooterGameState::Multicast_RoundResult_Implementation(ETeamId WinningTeam
         return;
     }
     UGameManager* GM = UGameManager::Get(GetWorld());
-    if (!GM || !GM->GlobalData) {
-        return;
-	}
     FText ResultText;
     if (WinningTeam == ETeamId::Soldier) {
         ResultText = FText::FromString("Soldiers Win");
@@ -92,29 +75,20 @@ void AShooterGameState::Multicast_RoundResult_Implementation(ETeamId WinningTeam
         UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->ZombieWinVoice.Get());
     }
     else {
-        bool IsWinner = false;
-        if (MyPC->GetTeamId() == WinningTeam) {
-            IsWinner = true;
-        }
-
+        const bool bIsWinner = MyPC->GetTeamId() == WinningTeam;
         UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->RoundEndSound.Get());
-          
-        ResultText = IsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
+        ResultText = bIsWinner ? FText::FromString("ROUND WIN") : FText::FromString("ROUND LOSE");
     }
 	MyPC->GetPlayerUI()->ShowMatchStateToast(ResultText, 0);
 }
 
 void AShooterGameState::AddScoreTeam(ETeamId TeamId, int ScoreToAdd)
 {
-    if (TeamId == ETeamId::Attacker || 
-		TeamId == ETeamId::Soldier
-        )
+    if (TeamId == ETeamId::Attacker || TeamId == ETeamId::Soldier)
     {
         TeamAScore += ScoreToAdd;
     }
-    else if (TeamId == ETeamId::Defender
-		|| TeamId == ETeamId::Zombie
-        )
+    else if (TeamId == ETeamId::Defender || TeamId == ETeamId::Zombie)
     {
         TeamBScore += ScoreToAdd;
     }
@@ -124,11 +98,11 @@ void AShooterGameState::AddScoreTeam(ETeamId TeamId, int ScoreToAdd)
 
 int AShooterGameState::GetScoreTeam(ETeamId TeamId) const
 {
-    if (TeamId == ETeamId::Attacker)
+	if (TeamId == ETeamId::Attacker || TeamId == ETeamId::Soldier)
     {
         return TeamAScore;
     }
-    else if (TeamId == ETeamId::Defender)
+    else if (TeamId == ETeamId::Defender || TeamId == ETeamId::Zombie)
     {
         return TeamBScore;
     }
@@ -137,7 +111,6 @@ int AShooterGameState::GetScoreTeam(ETeamId TeamId) const
 
 void AShooterGameState::OnRep_Score()
 {
-	UE_LOG(LogTemp, Log, TEXT("Scores updated: Team A: %d, Team B: %d"), TeamAScore, TeamBScore);
     OnUpdateScore.Broadcast(TeamAScore, TeamBScore);
 }
 
@@ -182,12 +155,6 @@ void AShooterGameState::AddPlayerState(APlayerState* PlayerState)
     Super::AddPlayerState(PlayerState);
 
     OnPlayerAdded.Broadcast(PlayerState);
-
-    UE_LOG(LogTemp, Warning,
-        TEXT("AddPlayerState | HasAuthority=%d | NetMode=%d"),
-        HasAuthority(),
-        GetNetMode()
-    );
 }
 
 void AShooterGameState::RemovePlayerState(APlayerState* PlayerState)
@@ -195,12 +162,6 @@ void AShooterGameState::RemovePlayerState(APlayerState* PlayerState)
     Super::RemovePlayerState(PlayerState);
 
     OnPlayerRemoved.Broadcast(PlayerState);
-
-    UE_LOG(LogTemp, Warning,
-        TEXT("RemovePlayerState | HasAuthority=%d | NetMode=%d"),
-        HasAuthority(),
-        GetNetMode()
-    );
 }
 
 float AShooterGameState::GetRemainingRoundTime() const
@@ -268,11 +229,6 @@ void AShooterGameState::OnRep_HeroPhase()
 
 bool AShooterGameState::CanQuitMidMatch() const
 {
-    // Prevent quitting mid-match during critical phases
-    if (MatchMode == EMatchMode::DeathMatch)
-    {
-        return true; // Allow quitting in DeathMatch mode
-	}
     return false;
 }
 
@@ -299,33 +255,34 @@ void AShooterGameState::OnSpawnedAirdropCrate(AAirdropCrate* NewCrate)
 
 void AShooterGameState::Multicast_SpawnAirdropCrate_Implementation(FVector Location)
 {
-	// dedicated then return
+    // dedicated then return
     if (GetNetMode() == NM_DedicatedServer) {
         return;
     }
     // Clients can play spawn effects here if needed
-	AMyPlayerController* MyPC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
-	MyPC->NotifyToastMessage(FText::FromString("Airdrop crate has arrived!"));
+    AMyPlayerController* MyPC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
+    if (!MyPC) {
+        return;
+    }
+    MyPC->NotifyToastMessage(FText::FromString("Airdrop crate has arrived!"));
 
-    if (UGameManager* GM = UGameManager::Get(GetWorld()))
+    UGameManager* GM = UGameManager::Get(GetWorld());
+    if (GM->GlobalData->AirdropCrateSpawnSound)
     {
-        if (GM->GlobalData && GM->GlobalData->AirdropCrateSpawnSound)
-        {
-            UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->AirdropCrateSpawnSound.Get());
-        }
+        UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->AirdropCrateSpawnSound.Get());
+    }
 
-        if (GM->GlobalData->HelicopterClass) {
-			AActor* Helicopter = GetWorld()->SpawnActor<AActor>(GM->GlobalData->HelicopterClass);
-            Location.Z += 2000.f; // raise it up
-            Helicopter->SetActorLocation(Location);
+    if (GM->GlobalData->HelicopterClass) {
+        AActor* Helicopter = GetWorld()->SpawnActor<AActor>(GM->GlobalData->HelicopterClass);
+        Location.Z += 2000.f; // raise it up
+        Helicopter->SetActorLocation(Location);
 
-            // random direction
-            FRotator NewRot = FRotator::ZeroRotator;
-            NewRot.Yaw = FMath::FRandRange(0.f, 360.f);
-            Helicopter->SetActorRotation(NewRot);
-			Helicopter->SetLifeSpan(25.f);
-            // move forward, and hide after 5 seconds
-        }
+        // random direction
+        FRotator NewRot = FRotator::ZeroRotator;
+        NewRot.Yaw = FMath::FRandRange(0.f, 360.f);
+        Helicopter->SetActorRotation(NewRot);
+        Helicopter->SetLifeSpan(25.f);
+        // move forward, and hide after 5 seconds
     }
 }
 
@@ -333,7 +290,6 @@ void AShooterGameState::OnClaimedAirdropCrate(AAirdropCrate* ClaimedCrate, ABase
 {
     if (!HasAuthority() || !ClaimedCrate) return;
     ActiveAirdropCrates.Remove(ClaimedCrate);
-
 	Multicast_ClaimAirdropCrate(ClaimingCharacter, GiftId);
 }
 
@@ -408,27 +364,22 @@ void AShooterGameState::TryBroadcastSlotsReady()
         return;
     }
 
-    int MaxSlotsRetry = 5;
+    constexpr int32 MaxSlotsRetry = 5;
     if (SlotsRetryCount++ >= MaxSlotsRetry)
     {
         GetWorldTimerManager().ClearTimer(SlotsRetryHandle);
-        // optional log once
-        return;
     }
 }
 
 bool AShooterGameState::AreSlotsReady() const
 {
-	UE_LOG(LogTemp, Log, TEXT("DEBUGMMM Checking if player slots are ready..."));
     for (APlayerSlot* S : Slots)
     {
         if (!IsValid(S)) return false;              // NetGUID not resolved yet
         if (!S->HasActorBegunPlay()) {
-			UE_LOG(LogTemp, Log, TEXT("DEBUGMMM Player slot %d has not begun play yet."), S->GetBackendUserId());
             return false;  // not initialized yet
         }
     }
-	UE_LOG(LogTemp, Log, TEXT("DEBUGMMM All player slots are ready."));
     return true;
 }
 
@@ -437,7 +388,7 @@ void AShooterGameState::SetRoundRemainingTime(int TimeRemaining) {
 	SetRoundEndTime(TimeEnd);
 }
 
-void AShooterGameState::SetRoundEndTime(int TimeEnd) {
+void AShooterGameState::SetRoundEndTime(int32 TimeEnd) {
     RoundEndTime = TimeEnd;
     OnRep_RoundEndTime(); // apply immediately on server too 
 }
@@ -529,11 +480,11 @@ EMatchMode AShooterGameState::GetMatchMode() const {
     return MatchMode; 
 }
 
-TArray<AAirdropCrate*> AShooterGameState::GetActiveAirdropCrates() const { 
+const TArray<AAirdropCrate*>&  AShooterGameState::GetActiveAirdropCrates() const {
     return ActiveAirdropCrates; 
 }
 
-TArray<AHealthPack*> AShooterGameState::GetActiveHealthPacks() const {
+const TArray<AHealthPack*>& AShooterGameState::GetActiveHealthPacks() const {
     return ActiveHealthPacks;
 }
 
@@ -543,11 +494,10 @@ EMyMatchState AShooterGameState::GetMatchState() const {
 
 void AShooterGameState::Multicast_RoundStart_Implementation() {
     UGameManager* GMR = UGameManager::Get(GetWorld());
-    AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
-    if (GS && GS->GetMatchMode() != EMatchMode::Spike) {
+    if (MatchMode != EMatchMode::Spike) {
         return;
     }
-    if (GMR && GMR->GlobalData && GMR->GlobalData->RoundStartSound) {
+    if (GMR->GlobalData->RoundStartSound) {
         UGameplayStatics::PlaySound2D(GetWorld(), GMR->GlobalData->RoundStartSound.Get());
     }
 }

@@ -2,10 +2,19 @@
 
 #include "Game/Characters/Components/ActionStateComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Game/Characters/BaseCharacter.h"
 
 UActionStateComponent::UActionStateComponent()
 {
     SetIsReplicatedByDefault(true);
+}
+
+void UActionStateComponent::BeginPlay()
+{
+    Super::BeginPlay();
+
+    OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
+    check(OwnerCharacter);
 }
 
 void UActionStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -21,7 +30,9 @@ bool UActionStateComponent::CanTransition(EActionState From, EActionState To) co
     }
     // If already doing an action, disallow starting another unless going back to Idle.
     if (From != EActionState::Idle && To != EActionState::Idle)
+    {
         return false;
+    }
 
     // Allow Idle -> anything
     // Allow anything -> Idle
@@ -30,14 +41,20 @@ bool UActionStateComponent::CanTransition(EActionState From, EActionState To) co
 
 bool UActionStateComponent::TrySetState(EActionState NewState)
 {
-    if (!GetOwner() || !GetOwner()->HasAuthority())
+    if (!OwnerCharacter->HasAuthority())
+    {
         return false;
+    }
 
     if (State == NewState)
+    {
         return true;
+    }
 
     if (!CanTransition(State, NewState))
+    {
         return false;
+    }
 
     const EActionState Old = State;
     State = NewState;
@@ -47,11 +64,15 @@ bool UActionStateComponent::TrySetState(EActionState NewState)
 
 void UActionStateComponent::ForceSetState(EActionState NewState)
 {
-    if (!GetOwner() || !GetOwner()->HasAuthority())
+    if (!OwnerCharacter->HasAuthority())
+    {
         return;
+    }
 
     if (State == NewState)
+    {
         return;
+    }
 
     const EActionState Old = State;
     State = NewState;
@@ -72,13 +93,17 @@ void UActionStateComponent::HandleStateChanged(EActionState OldState, EActionSta
 bool UActionStateComponent::CanReloadNow() const
 {
     if (State == EActionState::Reloading)
-		return false;
+    {
+        return false;
+    }
     return CanTransition(State, EActionState::Reloading);
 }
 
 bool UActionStateComponent::CanFireNow() const
 {
     if (State == EActionState::Firing)
+    {
         return true;
+    }
     return CanTransition(State, EActionState::Firing);
 }

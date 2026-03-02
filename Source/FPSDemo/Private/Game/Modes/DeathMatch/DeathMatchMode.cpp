@@ -15,10 +15,9 @@ void ADeathMatchMode::StartPlay()
 		false
 	);
 
-	AShooterGameState* GSInner = GetGameState<AShooterGameState>();
 	int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
-	GSInner->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
-	GSInner->SetRoundEndTime(TimeEnd);
+	CachedGS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
+	CachedGS->SetRoundEndTime(TimeEnd);
 
 	// reset players
 	RestartAllPlayers();
@@ -38,16 +37,18 @@ void ADeathMatchMode::HandleCharacterKilled(AController* Killer, const TArray<TW
 	// restart victim after 3 seconds
 	VictimPawn->ApplyRealDeath(/*bDropInventory=*/false);
 	FTimerHandle RespawnTimerHandle;
+	AController* VictimController = VictimPawn ? VictimPawn->GetController() : nullptr;
+	const float RespawnDelay = 3.0f;
 	GetWorld()->GetTimerManager().SetTimer(
 		RespawnTimerHandle,
-		[ this, VictimPawn]()
+		[this, VictimController]()
 		{
-			if (VictimPawn && VictimPawn->GetController())
+			if (VictimController)
 			{
-				RestartPlayer(VictimPawn->GetController());
+				RestartPlayer(VictimController);
 			}
 		},
-		3.0f,
+		RespawnDelay,
 		false
 	);
 }
@@ -62,16 +63,11 @@ void ADeathMatchMode::RestartPlayer(AController* Controller)
 	Controller->UnPossess();
 	Super::RestartPlayer(Controller);
 
-
 	APawn* Pawn = Controller->GetPawn();
 	if (!Pawn) return;
 	AActorManager* AM = AActorManager::Get(GetWorld());
-
 	const FVector RandomLoc = AM->RandomLocationOnMap();
 	const FRotator RandomRot = FRotator(0.f, FMath::FRandRange(0.f, 360.f), 0.f);
-
-	FTransform SpawnTM(RandomRot, RandomLoc);
-
 	Pawn->TeleportTo(RandomLoc, RandomRot, false, true);
 	Pawn->ForceNetUpdate();
 }

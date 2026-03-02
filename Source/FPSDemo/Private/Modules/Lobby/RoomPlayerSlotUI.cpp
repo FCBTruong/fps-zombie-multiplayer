@@ -10,16 +10,9 @@
 void URoomPlayerSlotUI::NativeConstruct()
 {
 	Super::NativeConstruct();
-	// Additional initialization if needed
 
-	if (SwitchBtn)
-	{
-		SwitchBtn->OnClicked.AddDynamic(this, &URoomPlayerSlotUI::OnSwitchClicked);
-	}
-	if (DeleteBtn)
-	{
-		DeleteBtn->OnClicked.AddDynamic(this, &URoomPlayerSlotUI::OnDeleteClicked);
-	}
+	SwitchBtn->OnClicked.AddDynamic(this, &URoomPlayerSlotUI::OnSwitchClicked);
+	DeleteBtn->OnClicked.AddDynamic(this, &URoomPlayerSlotUI::OnDeleteClicked);
 }
 
 void URoomPlayerSlotUI::SetPlayerInfo(FPlayerRoomInfo Info, int InSlotIdx, int OwnerId, bool IsGuestMode)
@@ -27,8 +20,6 @@ void URoomPlayerSlotUI::SetPlayerInfo(FPlayerRoomInfo Info, int InSlotIdx, int O
 	CachedPlayerInfo = Info;
 	SlotIdx = InSlotIdx;
 	// log UI
-	UE_LOG(LogTemp, Warning, TEXT("RoomPlayerSlotUI: Setting player info: ID=%d, Name=%s"), Info.PlayerId, *Info.PlayerName);
-	
 	OwnerIcon->SetVisibility(ESlateVisibility::Collapsed);
 	if (Info.PlayerId == FGameConstants::EMPTY_PLAYER_ID) // -1 indicates empty slot
 	{
@@ -93,7 +84,6 @@ bool URoomPlayerSlotUI::IsEmpty() const
 void URoomPlayerSlotUI::OnSwitchClicked()
 {
 	// Handle switch button click
-	UE_LOG(LogTemp, Warning, TEXT("Switch button clicked for player: %s"), *CachedPlayerInfo.PlayerName);
 	URoomManager* RoomMgr = GetWorld()->GetGameInstance()->GetSubsystem<URoomManager>();
 	if (RoomMgr)
 	{
@@ -104,7 +94,6 @@ void URoomPlayerSlotUI::OnSwitchClicked()
 void URoomPlayerSlotUI::OnDeleteClicked()
 {
 	// Handle delete button click
-	UE_LOG(LogTemp, Warning, TEXT("Delete button clicked for player: %s"), *CachedPlayerInfo.PlayerName);
 	URoomManager* RoomMgr = GetWorld()->GetGameInstance()->GetSubsystem<URoomManager>();
 	if (RoomMgr)
 	{

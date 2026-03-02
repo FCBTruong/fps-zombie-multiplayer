@@ -12,6 +12,7 @@ class UItemConfig;
 class UGameManager;
 struct FPickupData;
 class APickupItem;
+class ABaseCharacter;
 
 DECLARE_MULTICAST_DELEGATE(FOnInventoryChanged);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnAmmoDataChanged, EItemId, int /*InClip*/, int /*Reserve*/);
@@ -40,44 +41,30 @@ public:
     const FWeaponState& GetPistolState() const { return PistolState; }
     const FWeaponState& GetMeleeState() const { return MeleeState; }
     const FArmorState& GetArmorState() const { return ArmorState; }
-	void UpdateArmorPoints(int NewArmorPoints); // server only
 
     FWeaponState* GetWeaponStateByItemId(EItemId ItemId);
     const FWeaponState* GetWeaponStateByItemId(EItemId ItemId) const;
 	bool AddItemFromShop(const FPickupData& PickupData); // add item from shop (server only)
     bool AddItemFromPickup(const FPickupData& PickupData);
 
-    // ===== Mutations (Authority only) =====
-    // Add item to inventory from pickup data (server only)
-    
-
     void InitBasicWeapon();
-
     // Remove throwable after throw/drop (server only)
     bool RemoveThrowable(EItemId ItemId);
-
     // Spike possession (server only)
     void SetHasSpike(bool bNewHasSpike);
-
+    void UpdateArmorPoints(int NewArmorPoints); // server only
     // Armor (server only)
     void ApplyArmorItem(EItemId ArmorItemId);
-
-    // Ammo operations (server only)
-    bool ConsumeAmmo(EItemId WeaponId, int32 Amount);
-
-    // Drop rules (pure query)
-    bool CanDrop(EItemId ItemId);
     void ReloadWeapon(EItemId Id); // reload current weapon
-	void RemoveItem(EItemId ItemId); // remove item from inventory (server only)
 	void DropAllItems(); // drop all items (server only)
-    APickupItem* DropItem(EItemId ItemId);
 	void OnBecomeHero(); // this will change melee to hero sword
     void OnBecomeZombie();
-	int GetArmorPoints() const { return ArmorState.ArmorPoints; }
-	int GetArmorMaxPoints() const { return ArmorState.ArmorMaxPoints; }
 	void AddAmmoToMainGun(int32 Amount);
-
-    void ClearInventory();
+    int GetArmorPoints() const { return ArmorState.ArmorPoints; }
+    int GetArmorMaxPoints() const { return ArmorState.ArmorMaxPoints; }
+    bool ConsumeAmmo(EItemId WeaponId, int32 Amount);
+    bool RemoveItem(EItemId ItemId); // remove item from inventory (server only)
+    APickupItem* DropItem(EItemId ItemId);
 public:
     // ===== Events (fire on server + clients via OnRep) =====
     FOnInventoryChanged OnInventoryChanged;
@@ -90,10 +77,12 @@ public:
     FOnAmmoDataChanged OnAmmoDataChanged;
 
 protected:
-    virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void BeginPlay() override;
 
 private:
+    ABaseCharacter* Character;
+
     // ===== Replicated State =====
     UPROPERTY(ReplicatedUsing = OnRep_RifleState)
     FWeaponState RifleState;
@@ -114,12 +103,8 @@ private:
     bool bHasSpike = false;
 
 private:
-    // Optional cache
-    UPROPERTY() TObjectPtr<UGameManager> CachedGM = nullptr;
-
-private:
     // Helpers
-    const UItemConfig* GetItemConfig(EItemId ItemId);
+    const UItemConfig* GetItemConfig(EItemId ItemId) const;
     void SortThrowables();
     bool AddItemInternal(const FPickupData& PickupData);
 

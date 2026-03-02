@@ -12,7 +12,6 @@
 void USceneManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-    Collection.InitializeDependency<UNetworkManager>();
 
     auto NetworkManager =
         Collection.InitializeDependency<UNetworkManager>();
@@ -32,7 +31,6 @@ void USceneManager::OnPacketReceived(
     {
     case ECmdId::NOTI_MESSAGE:
     {
-		UE_LOG(LogTemp, Warning, TEXT("SceneManager: NOTI_MESSAGE packet received"));
         game::net::NotiMessageReply MessPkg;
         if (!MessPkg.ParseFromString(Payload))
         {
@@ -67,10 +65,6 @@ USceneManager* USceneManager::Get(UWorld* World)
 		return nullptr;
 	}
 	UGameInstance* GameInstance = World->GetGameInstance();
-	if (!GameInstance)
-	{
-		return nullptr;
-	}
 	return GameInstance->GetSubsystem<USceneManager>();
 }
 
@@ -80,9 +74,6 @@ void USceneManager::OpenPopupDialogOk(
 )
 {
     UGameManager* GameManager = UGameManager::Get(GetWorld());
-    if (!GameManager)
-        return;
-
     UGlobalDataAsset* GlobalData = GameManager->GlobalData;
     if (!GlobalData->PopupDialogUIClass)
     {
@@ -91,11 +82,6 @@ void USceneManager::OpenPopupDialogOk(
     }
 
     UWorld* World = GetWorld();
-    if (!World)
-    {
-        return;
-    }
-
     APlayerController* PC = World->GetFirstPlayerController();
     UPopupDialogUI* Popup = CreateWidget<UPopupDialogUI>(
         PC,
@@ -118,9 +104,6 @@ void USceneManager::OpenPopupDialogOkCancel(
 )
 {
     UGameManager* GameManager = UGameManager::Get(GetWorld());
-    if (!GameManager)
-        return;
-
     UGlobalDataAsset* GlobalData = GameManager->GlobalData;
     if (!GlobalData->PopupDialogUIClass)
     {
@@ -129,11 +112,6 @@ void USceneManager::OpenPopupDialogOkCancel(
     }
 
     UWorld* World = GetWorld();
-    if (!World)
-    {
-        return;
-    }
-
     APlayerController* PC = World->GetFirstPlayerController();
     UPopupDialogUI* Popup = CreateWidget<UPopupDialogUI>(
         PC,

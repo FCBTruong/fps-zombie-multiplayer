@@ -12,13 +12,11 @@
 void URoomManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-    Collection.InitializeDependency<UNetworkManager>();
 
     NetworkManager =
         Collection.InitializeDependency<UNetworkManager>();
 
     check(NetworkManager);
-
     NetworkManager->RegisterListener(this);
 }
 
@@ -358,7 +356,7 @@ void URoomManager::RequestStartGame()
         USceneManager* SceneMgr = USceneManager::Get(GetWorld());
         if (SceneMgr)
         {
-            USceneManager::Get(GetWorld())->OpenPopupDialogOk(
+            SceneMgr->OpenPopupDialogOk(
                 TEXT("At least 2 players are required to start the game"),
                 []() {
                 }
@@ -464,7 +462,6 @@ void URoomManager::CreateOfflineRoom()
     CurrentRoomData.OwnerId = PlayerInfoMgr->GetUserId();
     CurrentRoomData.Mode = EMatchMode::Spike;
     CurrentRoomData.bIsSelfHost = true;
-
     CurrentRoomData.Players.Reserve(10);
 
     for (int i = 0; i < 10; ++i)
@@ -491,19 +488,12 @@ void URoomManager::CreateOfflineRoom()
 void URoomManager::HandleGameStarted(const std::string& payload)
 {
     UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleGameStarted: Game is starting..."));
-    UGameInstance* GI = GetWorld()->GetGameInstance();
-    if (!GI) return;
-
     UGameplayStatics::OpenLevel(this, FGameConstants::LEVEL_LOADING);
 }
 
 void URoomManager::HandleSelfHostReady(const std::string& payload)
 {
     UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleSelfHostReady: Join Host now."));
-    if (IsMyRoom()) {
-        UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandleSelfHostReady: Is self-host, no need to join."));
-        return;
-    }
 }
 
 void URoomManager::HandlePlayerSession(const std::string& payload)
@@ -521,10 +511,6 @@ void URoomManager::HandlePlayerSession(const std::string& payload)
 	UE_LOG(LogTemp, Warning, TEXT("URoomManager::HandlePlayerSession: Player Session ID: %s"), *FString(SessionId));
 
     UGameInstance* GI = GetWorld()->GetGameInstance();
-    if (!GI) {
-        return;
-    }
- 
     FString SessionIdStr = UTF8_TO_TCHAR(SessionId);
     FString URL = FString::Printf(TEXT("%s:%d"), *IpAddress, Port);
 

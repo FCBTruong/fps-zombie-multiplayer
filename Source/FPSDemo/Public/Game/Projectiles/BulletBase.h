@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Game/Projectiles/BulletData.h"
-#include "Components/SceneCaptureComponent2D.h"
 #include "BulletBase.generated.h"
 
 UCLASS()
@@ -14,7 +13,8 @@ class FPSDEMO_API ABulletBase : public AActor
 	GENERATED_BODY()
 
 protected:
-	UBulletData* Data;
+	UPROPERTY()
+	TObjectPtr<UBulletData> Data = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	UParticleSystem* ExplosionFX;
@@ -24,9 +24,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "FX")
 	USoundBase* HitSurfaceSound;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Damage")
-	float Damage = 10.f;
 public:	
 	// Sets default values for this actor's properties
 	ABulletBase();
@@ -43,13 +40,13 @@ public:
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, FVector NormalImpulse,
 		const FHitResult& Hit);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	void TraceBehindPawnAndSpawnBloodDecal(const FHitResult& PawnHit);
+
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	void InitFromData(class UBulletData* InData, FVector FinalDestination);
 	void FireTowards(const FVector& Target);
 };

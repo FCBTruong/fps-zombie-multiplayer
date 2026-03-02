@@ -36,7 +36,6 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UCharacterAsset> CharacterAsset = nullptr;
 
-	
 	static UGameManager* Get(UObject* WorldContextObject);
 	TUniquePtr<DedicatedServerClient> DsClient;
 

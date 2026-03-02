@@ -69,8 +69,6 @@ void UBTService_UpdateTarget::TickNode(
         FVector AimLoc = BestTarget->GetActorLocation();
         
         AimLoc = BestTarget->GetAimPoint(EAimPointPolicy::HeadOrBody, 0.2f); // 50% head
-
-		const bool bHasLOS = MyBotCharacter->CanSeeThisActor(BestTarget);
         // Focus the point
         AICon->SetFocalPoint(AimLoc, EAIFocusPriority::Gameplay);
     }

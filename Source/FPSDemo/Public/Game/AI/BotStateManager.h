@@ -29,7 +29,7 @@ public:
 	void OnStartRound(AActor* SpikeActor);
 	void OnStartRoundZombieMode();
 	void NotifyCharacterRole(ABotAIController* Bot, ECharacterRole NewRole);
-	TArray<ABotAIController*> GetManagedBots() const {
+	const TArray<ABotAIController*>& GetManagedBots() const {
 		return ManagedBots;
 	}
 	void SetMatchMode(EMatchMode NewMode);

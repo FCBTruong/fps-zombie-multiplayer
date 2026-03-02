@@ -12,7 +12,6 @@ FPacketDispatcher::FPacketDispatcher(UNetworkManager* InOwner)
 void FPacketDispatcher::Dispatch(const game::net::Packet& Packet)
 {
 	ECmdId CmdId = static_cast<ECmdId>(Packet.cmd_id());
-
     UE_LOG(LogTemp, Log, TEXT("Received: CmdId = %d"), static_cast<int32>(CmdId));
 
 	const std::string& Payload = Packet.payload();
@@ -41,12 +40,6 @@ void FPacketDispatcher::HandleLoginReply(const std::string& Payload)
     }
 
     const FString Token = UTF8_TO_TCHAR(Reply.token().c_str());
-
-    UE_LOG(LogTemp, Log,
-        TEXT("Login successful. UserId=%d Token=%s"),
-        Reply.user_id(),
-		*Token);
-
     // Call back into NetworkManager
     Owner->HandleLoginSuccess(Reply);
 }   
@@ -55,13 +48,6 @@ void FPacketDispatcher::RegisterListener(IPacketListener* Listener)
 {
     if (!Listener)
         return;
-
-    UE_LOG(
-        LogTemp,
-        Log,
-        TEXT("FPacketDispatcher: Registering listener")
-    );
-
     Listeners.AddUnique(Listener);
 }
 

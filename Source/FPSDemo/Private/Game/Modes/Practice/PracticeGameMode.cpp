@@ -2,8 +2,6 @@
 
 
 #include "Game/Modes/Practice/PracticeGameMode.h"
-#include "Game/UI/PlayerUI.h"
-#include "Game/Framework/MyPlayerController.h"
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "Shared/System/ItemsManager.h"
@@ -13,11 +11,7 @@ void APracticeGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
-	if (!ActorMgr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("PracticeGameMode: ActorManager not found"));
-		return;
-	}
+	check(ActorMgr);
 	FVector CenterPos(1100.269357, 3047.719772, 50);
 	// gen weapons
 	// Weapon list
@@ -55,11 +49,8 @@ void APracticeGameMode::BeginPlay()
 			P.AmmoReserve = FirearmConfig->MaxAmmoInClip * 10;
 		}
 
-
 		// Offset along X axis
 		P.Location = CenterPos + FVector(StartOffset + i * Distance, 0.f, 0.f);
-
 		APickupItem* PickupActor = ActorMgr->CreatePickupActor(P);
-		UE_LOG(LogTemp, Warning, TEXT("Pickup %d address = %p"), i, PickupActor);
 	}
 }

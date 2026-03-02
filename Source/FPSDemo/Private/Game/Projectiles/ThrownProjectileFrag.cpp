@@ -11,11 +11,10 @@
 void AThrownProjectileFrag::BeginPlay()
 {
     Super::BeginPlay();
-    UE_LOG(LogTemp, Log, TEXT("AThrownProjectileFrag::BeginPlay"));
 
     // play sound fire in the hole
 	UGameManager* GMR = UGameManager::Get(GetWorld());
-    if (GMR && GMR->GlobalData && GMR->GlobalData->FireInTheHoleSound)
+    if (GMR->GlobalData->FireInTheHoleSound)
     {
         UGameplayStatics::PlaySoundAtLocation(this, GMR->GlobalData->FireInTheHoleSound, GetActorLocation());
 	}
@@ -23,19 +22,14 @@ void AThrownProjectileFrag::BeginPlay()
 
 void AThrownProjectileFrag::OnExplode ()
 {
-    UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::ExplodeNow"));
-
     FVector ImpactPoint = GetActorLocation();
-
     float BaseDamage = 300.f;
     TSubclassOf<UDamageType> DamageType = UDamageType::StaticClass();
     AController* InstigatorController = GetInstigatorController();
 
-    if (!InstigatorController) {
-        UE_LOG(LogTemp, Warning, TEXT("AThrownProjectile::ExplodeNow - No InstigatorController"));
-    }
     float InnerRadius = 200.f;
     float OuterRadius = 400.f;
+
     // visualize
    /* DrawDebugSphere(GetWorld(), ImpactPoint, InnerRadius, 16, FColor::Red, false, 2.0f);
     DrawDebugSphere(GetWorld(), ImpactPoint, OuterRadius, 16, FColor::Yellow, false, 2.0f);*/
@@ -55,8 +49,6 @@ void AThrownProjectileFrag::OnExplode ()
         ECC_Visibility
     );
 
-    UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::ExplodeNow - Applied radial damage"));
-
     MulticastExplode(ImpactPoint);
     SetLifeSpan(0.1f);
 }
@@ -69,12 +61,12 @@ void AThrownProjectileFrag::MulticastExplode_Implementation(const FVector& Impac
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(this);
     FRotator Rotation = FRotator::ZeroRotator;
+
     if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_WorldStatic, Params))
     {
         Rotation = Hit.ImpactNormal.Rotation();
     }
 
-    UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::MulticastExplode_Implementation"));
     if (Data && Data->ExplosionFX)
     {
         UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Data->ExplosionFX,
@@ -94,7 +86,7 @@ void AThrownProjectileFrag::MulticastExplode_Implementation(const FVector& Impac
 
         if (Decal)
         {
-            const float FadeDuration = 2.0f;   // last 3 seconds
+            const float FadeDuration = 2.0f;   // last 2 seconds
             const float FadeStartDelay = FMath::Max(0.f, Data->DecalLife - FadeDuration);
 
             Decal->SetFadeOut(FadeStartDelay, FadeDuration, true);

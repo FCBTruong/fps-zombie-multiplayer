@@ -5,7 +5,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "Game/GameManager.h"
 #include "Shared/Data/GlobalDataAsset.h"
-#include "Game/Modes/Zombie/ZombieMode.h"
 #include "Game/Framework/ShooterGameState.h"
 #include "Game/Characters/BaseCharacter.h"
 #include "Game/Characters/Components/InventoryComponent.h"
@@ -14,6 +13,7 @@
 AAirdropCrate::AAirdropCrate()
 {
 	bReplicates = true;
+	bIsClaimed = false;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AirdropCrateMesh"));
 	RootComponent = Mesh;
@@ -36,16 +36,9 @@ AAirdropCrate::AAirdropCrate()
 void AAirdropCrate::BeginPlay()
 {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Warning, TEXT("AirdropCrate::BeginPlay called"));
-
 	// load mesh asset
 	UGameManager* GM = UGameManager::Get(GetWorld());
 	UGlobalDataAsset* GlobalData = GM->GlobalData;
-	if (!GlobalData)
-	{
-		UE_LOG(LogTemp, Error, TEXT("AAirdropCrate::BeginPlay: GlobalData is null"));
-		return;
-	}
 
 	Mesh->SetStaticMesh(GlobalData->CrateMesh);
 	Mesh->SetRelativeScale3D(FVector(3, 3, 3));
@@ -55,7 +48,6 @@ void AAirdropCrate::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* 
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("AirdropCrate::OnOverlapBegin called"));
 	if (IsActorBeingDestroyed()) {
 		return;
 	}
@@ -72,12 +64,10 @@ void AAirdropCrate::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* 
 	if (Character && Character->IsAlive() && Character->IsCharacterRole(ECharacterRole::Human))
 	{
 		bIsClaimed = true;
-		UE_LOG(LogTemp, Warning, TEXT("AirdropCrate claimed by character"));
-		AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+		AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
 		if (!GS) return;
 
 		EItemId GiftId = EItemId::NONE;
-
 		int32 A = FMath::RandRange(1, 100);
 		/*if (A > 80)
 		{
@@ -94,11 +84,10 @@ void AAirdropCrate::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* 
 		UInventoryComponent* Inventory = Character->GetInventoryComponent();
 		if (!Inventory)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("AirdropCrate::OnOverlapBegin: Character's InventoryComponent is null"));
 			return;
 		}
 		Inventory->AddAmmoToMainGun(90); // add 90 bullets
-		this->Destroy();
+		Destroy();
 	}
 }
 

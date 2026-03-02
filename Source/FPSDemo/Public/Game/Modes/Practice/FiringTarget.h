@@ -42,8 +42,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float MoveSpeed = 2.f;
 
-	float RunningTime = 0.f;
-
 	bool bIsActive = true;
 
 	FRotator OriginalRotation;
@@ -51,6 +49,7 @@ private:
 
 	float RotationDuration = 1.0f;
 	float RotationElapsed = 0.0f;
+	float RunningTime = 0.f;
 
 	FTimerHandle RotationTimer;
 	FTimerHandle ReturnDelayTimer;

@@ -29,8 +29,6 @@ private:
 	TWeakObjectPtr<ABaseCharacter> LastOwner;
 	bool bIsActive = false;
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()
@@ -46,8 +44,6 @@ public:
 	FPickupData GetData() const { return Data; }
 	UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
 	FString GetItemName() const;
-
-	FPickupData GetPickupData() const { return Data; }
 	void RecordDropInfo(ABaseCharacter* Character);
 	bool IsJustDropped(ABaseCharacter* Character) const;
 	void SetIsActive(bool bNewIsActive) { bIsActive = bNewIsActive; }

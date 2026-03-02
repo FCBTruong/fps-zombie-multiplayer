@@ -18,9 +18,6 @@ void ULobbyUI::NativeConstruct()
 	UE_LOG(LogTemp, Warning, TEXT("LobbyUI: NativeConstruct called"));
 
 	UGameInstance* GI = GetWorld()->GetGameInstance();
-	if (!GI) {
-		return;
-	}
 	if (UNetworkManager* NetworkManager =
 		GI->GetSubsystem<UNetworkManager>())
 	{
@@ -46,46 +43,18 @@ void ULobbyUI::NativeConstruct()
 		);
 	}
 
-	if (ZombieModeBtn)
-	{
-		ZombieModeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnZombieModeClicked);
-	}
-	if (BombModeBtn)
-	{
-		BombModeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnBombModeClicked);
-	}
-	if (SelfHostBtn)
-	{
-		SelfHostBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnSelfHostClicked);
-	}
-	if (DeathMatchModeBtn)
-	{
-		DeathMatchModeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnDeathMatchModeClicked);
-	}
-	if (DedicatedServerBtn)
-	{
-		DedicatedServerBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnDedicatedServerClicked);
-	}
-	if (StartBtn) {
-		StartBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnStartGameClicked);
-	}
-	if (AddBotTeam1Btn)
-	{
-		AddBotTeam1Btn->OnClicked.AddDynamic(this, &ULobbyUI::OnAddBotTeam1);
-	}
-	if (AddBotTeam2Btn)
-	{
-		AddBotTeam2Btn->OnClicked.AddDynamic(this, &ULobbyUI::OnAddBotTeam2);
-	}
-	if (CreateRoomBtn) {
-		CreateRoomBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnCreateRoomClicked);
-	}
-	if (BackBtn) {
-		BackBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnBackClicked);
-	}
-	if (PracticeBtn) {
-		PracticeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnPracticeBtnClicked);
-	}
+	
+	ZombieModeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnZombieModeClicked);
+	BombModeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnBombModeClicked);
+	SelfHostBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnSelfHostClicked);
+	DeathMatchModeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnDeathMatchModeClicked);
+	DedicatedServerBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnDedicatedServerClicked);
+	StartBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnStartGameClicked);
+	AddBotTeam1Btn->OnClicked.AddDynamic(this, &ULobbyUI::OnAddBotTeam1);
+	AddBotTeam2Btn->OnClicked.AddDynamic(this, &ULobbyUI::OnAddBotTeam2);
+	CreateRoomBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnCreateRoomClicked);
+	BackBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnBackClicked);
+	PracticeBtn->OnClicked.AddDynamic(this, &ULobbyUI::OnPracticeBtnClicked);
 
 	// get all objects of type URoomPlayerSlotUI
 	PlayerSlotUIs.Empty();
@@ -142,22 +111,14 @@ void ULobbyUI::NativeDestruct()
 
 void ULobbyUI::ShowRoomListUI()
 {
-	if (ListPn) {
-		ListPn->SetVisibility(ESlateVisibility::Visible);
-	}
-	if (RoomPn) {
-		RoomPn->SetVisibility(ESlateVisibility::Collapsed);
-	}
+	ListPn->SetVisibility(ESlateVisibility::Visible);
+	RoomPn->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void ULobbyUI::ShowRoomUI()
 {
-	if (ListPn) {
-		ListPn->SetVisibility(ESlateVisibility::Collapsed);
-	}
-	if (RoomPn) {
-		RoomPn->SetVisibility(ESlateVisibility::Visible);
-	}
+	ListPn->SetVisibility(ESlateVisibility::Collapsed);
+	RoomPn->SetVisibility(ESlateVisibility::Visible);
 }
 
 void ULobbyUI::OnCreateRoomClicked() {
@@ -332,7 +293,6 @@ void ULobbyUI::OnStartGameClicked()
 
 void ULobbyUI::OnAddBotTeam1()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Add Bot Team 1 Clicked"));
 	CachedRoomMgr->RequestAddBot(URoomManager::TEAM_1);
 }
 
@@ -355,13 +315,7 @@ void ULobbyUI::RequestRoomList() {
 }
 
 void ULobbyUI::UpdateRoomList() {
-	if (!ListPn) {
-		return;
-	}
 	if (!ListPn->IsVisible()) {
-		return;
-	}
-	if (!RoomListBox) {
 		return;
 	}
 
@@ -398,8 +352,6 @@ void ULobbyUI::UpdateRoomList() {
 		BoxWidget->Init(Room);
 		RoomListBox->AddChild(BoxWidget);
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Ulobby:UpdateRoomList"));
 }
 
 void ULobbyUI::UpdateRoomOwner() {
@@ -424,7 +376,6 @@ void ULobbyUI::OnPracticeBtnClicked()
 
 void ULobbyUI::ToggleChat()
 {
-	UE_LOG(LogTemp, Warning, TEXT("LobbyUI: ToggleChat called"));
 	if (ChatWidget)
 	{
 		ChatWidget->OpenChat();

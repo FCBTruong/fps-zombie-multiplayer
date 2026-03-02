@@ -6,10 +6,10 @@
 #include "GameFramework/Actor.h"
 #include "Spike.generated.h"
 
-
 class USpringArmComponent;
 class USpikeComponent;
 class ABaseCharacter;
+
 UCLASS()
 class FPSDEMO_API ASpike : public AActor
 {
@@ -22,8 +22,16 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
+	virtual void Tick(float DeltaTime) override;
+
 	bool bIsDefused = false;
+	bool bIsExploding = false;
+	bool bIsDefuseInProgress = false;
+	float ExplodeTimer = 0.f;
+	float CamYaw = 0.f;
+	float CamPitch = -20.f;
+	FTimerHandle TimerHandle_Explode;
+	FTimerHandle DefuseTimerHandle;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Explode")
 	UStaticMeshComponent* ExplodeSphere;
@@ -46,31 +54,21 @@ protected:
 	UPROPERTY()
 	USpringArmComponent* SpringArmComp;
 
-	// explosion animation state
-	bool bIsExploding = false;
-	float ExplodeTimer = 0.f;
-	FTimerHandle TimerHandle_Explode;
 	UPROPERTY()
 	UAudioComponent* ActiveSoundComp;
-	bool bIsDefuseInProgress = false;
-
-	float CamYaw = 0.f;
-	float CamPitch = -20.f;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float LookSensitivity = 2.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	float MinPitch = -80.f;
+	float MinPitch = -70.f;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	float MaxPitch = 20.f;
+	float MaxPitch = 80.f;
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-	void Explode();
 	static constexpr float TimeExplode = 26.0f;
-	void Defused();
+	static constexpr float DefuseTime = 6.f;
+	static constexpr float ExplodeDamage = 500.f;
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_Defused();
@@ -78,21 +76,18 @@ public:
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_Explode();
 
-	void StartDefuse(USpikeComponent* DefuseComp);
-
-	FTimerHandle DefuseTimerHandle;
-
-	USpikeComponent* DefusingComponent;
-
 	bool IsDefuseInProgress() const;
-
+	bool IsDefused() const;
+	void Defused();
+	void StartDefuse(USpikeComponent* DefuseComp);
 	void CancelDefuse();
-
-	bool IsDefused() const { return bIsDefused; }
 	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void AddCameraYaw(float DeltaYaw);
 	void AddCameraPitch(float DeltaPitch);
 private:
+	TWeakObjectPtr<USpikeComponent> DefusingComponent;
+
 	void OnCompleteExplode();
+	void Explode();
 	void OnCharacterDead(ABaseCharacter* DeadCharacter);
 };

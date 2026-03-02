@@ -84,7 +84,6 @@ protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-    virtual void OnRep_PlayerState() override;
     virtual void Landed(const FHitResult& Hit) override;
     virtual void Tick(float DeltaTime) override;
     virtual float TakeDamage(
@@ -98,8 +97,6 @@ protected:
     virtual void Destroyed() override;
     virtual void BecomeViewTarget(APlayerController* PC) override;
     virtual void EndViewTarget(APlayerController* PC) override;
-    virtual void PossessedBy(AController* NewController) override;
-    virtual void OnRep_Controller() override;
     virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
     virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 protected:
@@ -228,6 +225,7 @@ protected:
     float SpeedMultiplier = 1.0f;
 
     float SpineKickAlpha = 0.f;
+    float FootstepInterval = 0.3f;
 protected:
     // ===== Timelines =====
 	FTimeline StunTimeline;
@@ -247,6 +245,7 @@ protected:
 	void ApplyDefaultsForRole(ECharacterRole NewRole);
     void ApplyVisualByRole(ECharacterRole NewRole);
 	void ApplyLoadoutByRole(ECharacterRole NewRole);
+    void BindMontageNotifies();
     void ApplyHitSlow(float Multiplier, float Duration);
     void ClearHitSlow();
     void BindDelegates();
@@ -259,7 +258,6 @@ protected:
     void PlayZombieSpawnEffects();
 	void UpdateNameTextRotation();
     void DisableDeadMeshTick();
-    void UpdateInteractComponentTick();
     bool CanPlayFootstep() const;
     bool IsBot() const;
     bool IsSpikeMode() const;
@@ -319,7 +317,6 @@ public:
     void OnPlantSpikeStopped();
     void OnDefuseSpikeStarted();
     void OnDefuseSpikeStopped();
-    void ApplyRotationMode();
     void RequestCrouch();
     void RequestUnCrouch();
     void RequestSlowMovement(bool bEnable);
@@ -337,13 +334,10 @@ public:
     void SetupSpineKickTimeline();
 	void ShowNameText(bool bShow);
 	bool Heal(float HealAmount);
-    float GetSpeedWalkRatio() const;
     float GetAimSensitivity() const;
     bool IsHero() const;
     bool IsZombie() const;
-    bool IsPermanentDead() const {
-        return bIsPermanentDead;
-    }
+    bool IsPermanentDead() const;
     bool CanAct();
     bool CanSeeThisActor(const APawn* Target) const;
     bool IsAlive() const;

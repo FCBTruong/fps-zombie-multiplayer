@@ -1,8 +1,6 @@
 #include "Game/AI/BTTask_Shoot.h"
 #include "Game/AI/BotAIController.h"
 #include "Game/Characters/BaseCharacter.h"
-#include "Game/Characters/Components/EquipComponent.h"
-#include "Game/Characters/Components/WeaponFireComponent.h"
 
 UBTTask_Shoot::UBTTask_Shoot()
 {
@@ -28,14 +26,8 @@ EBTNodeResult::Type UBTTask_Shoot::ExecuteTask(
         return EBTNodeResult::Failed;
     }
 
-    UEquipComponent* EC = Char->GetEquipComponent();
-    if (!EC)
-    {
-        return EBTNodeResult::Failed;
-    }
-
     // === Target ===
-	APawn* Target = AI->GetTargetActor();
+    ABaseCharacter* Target = AI->GetTargetActor();
     if (!Target)
     {
         return EBTNodeResult::Failed;
@@ -50,7 +42,6 @@ EBTNodeResult::Type UBTTask_Shoot::ExecuteTask(
 
     // === Fire ===
     AI->RequestFireOnce();
-
 
     return EBTNodeResult::Succeeded;
 }

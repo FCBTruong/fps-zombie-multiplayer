@@ -8,7 +8,6 @@ AFiringTarget::AFiringTarget()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
@@ -17,10 +16,7 @@ void AFiringTarget::BeginPlay()
 	Super::BeginPlay();
 
 	InitialLocation = GetActorLocation();
-	
 	TargetMesh = FindComponentByClass<UStaticMeshComponent>();
-
-	// make this object move right left of its initial location
 }
 
 float AFiringTarget::TakeDamage(
@@ -41,20 +37,16 @@ void AFiringTarget::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	RunningTime += DeltaTime;
-
 	float Offset = FMath::Sin(RunningTime * MoveSpeed) * MoveAmplitude;
 	FVector NewLocation = InitialLocation + FVector(Offset, 0.f, 0.f);
-
 	SetActorLocation(NewLocation);
 }
 
 void AFiringTarget::UpdateRotation()
 {
 	RotationElapsed += 0.016f;
-
 	float Alpha = FMath::Clamp(RotationElapsed / RotationDuration, 0.f, 1.f);
 	FRotator NewRotation = FMath::Lerp(HitRotation, OriginalRotation, Alpha);
-
 	TargetMesh->SetRelativeRotation(NewRotation);
 
 	if (Alpha >= 1.f)
@@ -78,7 +70,6 @@ void AFiringTarget::OnHit()
 
 	// Instantly rotate backward
 	TargetMesh->SetRelativeRotation(HitRotation);
-
 	RotationElapsed = 0.f;
 
 	// Start rotating back

@@ -22,7 +22,8 @@ protected:
 
 private:
 	UPROPERTY()
-	UStaticMeshComponent* Mesh;
+	TObjectPtr<UStaticMeshComponent> Mesh = nullptr;
+
 	bool bIsClaimed;
 
 	UFUNCTION()

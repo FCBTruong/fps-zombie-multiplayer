@@ -33,40 +33,35 @@
 #include "Game/Framework/PlayerSlot.h"
 #include "Game/Modes/Spike/Spike.h"
 
-AMyPlayerController::AMyPlayerController() { 
+AMyPlayerController::AMyPlayerController() 
+{ 
     CheatClass = UMyCheatManager::StaticClass(); 
 }
 
 void AMyPlayerController::BeginPlay()
 {
     Super::BeginPlay();
-	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: BeginPlay called"));
-	EnterGameMode();
 
+	EnterGameMode();
     AddDefaultInputMapping();
 
     APlayerCameraManager* PCM = this->PlayerCameraManager;
     if (PCM)
     {
-        PCM->ViewPitchMin = -70.f;
-        PCM->ViewPitchMax = 70.f;
+        PCM->ViewPitchMin = -80.f;
+        PCM->ViewPitchMax = 80.f;
     }
 
 	GMR = UGameManager::Get(GetWorld());
-    if (!GMR)
-    {
-		UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: GameManager subsystem not found"));
-        return;
-    }
+	check(GMR);
 
     if (!IsLocalController())
     {
         return;
     }
     
-    if (GMR->GlobalData && GMR->GlobalData->PlayerUIClass.Get())
+    if (GMR->GlobalData->PlayerUIClass.Get())
     {
-        UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: Creating PlayerUI widget"));
         PlayerUI = CreateWidget<UPlayerUI>(this, GMR->GlobalData->PlayerUIClass);
         if (PlayerUI) {
             PlayerUI->AddToViewport(5);
@@ -75,14 +70,10 @@ void AMyPlayerController::BeginPlay()
             RebindAll();
         }
 
-        AGameModeBase* GM = GetWorld()->GetAuthGameMode();
-        if (GM) {
-            APracticeGameMode* PracticeGM = Cast<APracticeGameMode>(GM);
-            if (PracticeGM)
-            {
-				PlayerUI->SetRadarVisible(false);
-				PlayerUI->SetMatchInfoPnVisible(false);
-            }
+        if (APracticeGameMode* PracticeGM = Cast<APracticeGameMode>(GetWorld()->GetAuthGameMode()))
+        {
+            PlayerUI->SetRadarVisible(false);
+            PlayerUI->SetMatchInfoPnVisible(false);
         }
     }
 }
@@ -94,49 +85,31 @@ void AMyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
     Super::EndPlay(EndPlayReason);
 }
 
-void AMyPlayerController::OnPossess(APawn* InPawn)
-{
-    Super::OnPossess(InPawn);
-	UE_LOG(LogTemp, Warning, TEXT("MyPlayerController: OnPossess called"));
-}
-
-
-void AMyPlayerController::OnUnPossess()
-{
-	Super::OnUnPossess();
-}
-
-
 void AMyPlayerController::OnRep_Pawn()
 {
     Super::OnRep_Pawn();
 
-    UE_LOG(LogTemp, Warning, TEXT("OnRep_Pawn: Pawn replicated and possessed"));
-
-    if (IsLocalController())
+    if (!IsLocalController())
     {
-		// unbind from previous character
-        if (ABaseCharacter* OldChar = CachedChar.Get())
-        {
-            UnbindCharacter(OldChar);
-            CachedChar.Reset();
-		}
+        return;
+    }
+    // unbind from previous character
+    if (ABaseCharacter* OldChar = CachedChar.Get())
+    {
+        UnbindCharacter(OldChar);
+        CachedChar.Reset();
+    }
 
-        if (APawn* P = GetPawn())
-        {
-            ABaseCharacter* Char = Cast<ABaseCharacter>(P);
-            if (Char)
-            {
-                CachedChar = Char;
-                BindCharacter(Char);
-            }
-		}
+    ABaseCharacter* Char = GetMyChar();
+    if (IsValid(Char))
+    {
+        CachedChar = Char;
+        BindCharacter(Char);
     }
 }
 
 void AMyPlayerController::ToggleShop()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Toggling shop UI"));
     if (!PlayerUI)
     {
         return;
@@ -146,14 +119,11 @@ void AMyPlayerController::ToggleShop()
     if (bIsShopOpen)
     {
         PlayerUI->OpenShop();
-
 		EnterUIMode();  
     }
     else
     {
-        PlayerUI->CloseShop();
-        this->bShowMouseCursor = false;
-        
+        PlayerUI->CloseShop();        
 		EnterGameMode();
 	}
 }
@@ -328,8 +298,9 @@ void AMyPlayerController::HideScope()
 void AMyPlayerController::Move(const FInputActionValue& Value)
 {
     ABaseCharacter* MyChar = GetMyChar();
-
-	if (!MyChar) return;
+    if (!IsValid(MyChar)) {
+        return;
+    }
    
     FVector2D MoveInput = Value.Get<FVector2D>();
 
@@ -345,8 +316,9 @@ void AMyPlayerController::Move(const FInputActionValue& Value)
 
 void AMyPlayerController::OnLeftClickStart()
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnLeftClickStart called"));
-    if (bIsShopOpen) return;
+    if (bIsShopOpen) {
+        return;
+    }
 
     if (IsSpectatingState())
     {
@@ -360,44 +332,41 @@ void AMyPlayerController::OnLeftClickStart()
     }
 
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
-        return;
+    if (IsValid(MyChar)) {
+        MyChar->RequestPrimaryActionPressed();
     }
-    MyChar->RequestPrimaryActionPressed();
 }
 
 void AMyPlayerController::OnLeftClickRelease()
 {
-    if (bIsShopOpen) return;
-    ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (bIsShopOpen) {
         return;
     }
-    MyChar->RequestPrimaryActionReleased();
+    ABaseCharacter* MyChar = GetMyChar();
+    if (IsValid(MyChar)) {
+        MyChar->RequestPrimaryActionReleased();
+    }
 }
 
 void AMyPlayerController::Jump() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
-        return;
+    if (IsValid(MyChar)) {
+        MyChar->RequestJump();
     }
-    MyChar->RequestJump();
 }
 
 void AMyPlayerController::ClickCrouch() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
-        return;
+    if (IsValid(MyChar)) {
+        MyChar->RequestCrouch();
     }
-    MyChar->RequestCrouch();
 }
 
 void AMyPlayerController::StopCrouch() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
-        return;
+    if (IsValid(MyChar)) {
+        MyChar->RequestUnCrouch();
     }
-    MyChar->RequestUnCrouch();
 }
 
 void AMyPlayerController::Look(const FInputActionValue& Value) {
@@ -414,36 +383,33 @@ void AMyPlayerController::Look(const FInputActionValue& Value) {
     }
 
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
-    if (!MyChar) return;
-	float AimSensitivity = MyChar->GetAimSensitivity() * MouseSensitivity;
 
+	float AimSensitivity = MyChar->GetAimSensitivity() * MouseSensitivity;
     AddYawInput(Axis.X * AimSensitivity);
     AddPitchInput(-Axis.Y * AimSensitivity);
 }
 
 void AMyPlayerController::OnMouse_RightStarted() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
-        return;
+    if (IsValid(MyChar)) {
+        MyChar->RequestSecondaryActionPressed();
     }
-    MyChar->RequestSecondaryActionPressed();
 }
 
 void AMyPlayerController::OnMouse_RightReleased() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
-        return;
+    if (IsValid(MyChar)) {
+        MyChar->RequestSecondaryActionReleased();
     }
-    MyChar->RequestSecondaryActionReleased();
 }
 
 
 void AMyPlayerController::ClickAim() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
     if (MyChar->IsAiming()) {
@@ -456,35 +422,32 @@ void AMyPlayerController::ClickAim() {
 
 void AMyPlayerController::StopAim() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
-        return;
+    if (IsValid(MyChar)) {
+        MyChar->RequestStopAiming();
     }
-    MyChar->RequestStopAiming();
 }
 
 void AMyPlayerController::StartReload() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
-        return;
+    if (IsValid(MyChar)) {
+        MyChar->RequestReloadPressed();
     }
-    MyChar->RequestReloadPressed();
 }
 
 void AMyPlayerController::Pickup() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
-    if (UInteractComponent* IC = MyChar->FindComponentByClass<UInteractComponent>())
+    if (UInteractComponent* IC = MyChar->GetInteractComponent())
     {
-		UE_LOG(LogTemp, Warning, TEXT("Pickup: TryPickup called"));
 		IC->TryPickup();
     }
 }
 
 void AMyPlayerController::EquipSlot(const int32 SlotIndex) {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
     if (UEquipComponent* EC = MyChar->GetEquipComponent())
@@ -495,7 +458,7 @@ void AMyPlayerController::EquipSlot(const int32 SlotIndex) {
 
 void AMyPlayerController::DropWeapon() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
     if (UEquipComponent* EC = MyChar->GetEquipComponent())
@@ -506,15 +469,14 @@ void AMyPlayerController::DropWeapon() {
 
 void AMyPlayerController::ChangeView() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
-        return;
+    if (IsValid(MyChar)) {
+        MyChar->ChangeView();
     }
-    MyChar->ChangeView();
 }
 
 void AMyPlayerController::StartDefuseSpike() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
     if (USpikeComponent* SC = MyChar->GetSpikeComponent())
@@ -524,9 +486,8 @@ void AMyPlayerController::StartDefuseSpike() {
 }
 
 void AMyPlayerController::StopDefuseSpike() {
-    UE_LOG(LogTemp, Warning, TEXT("StopDefuseSpike called"));
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
     if (USpikeComponent* SC = MyChar->GetSpikeComponent())
@@ -547,7 +508,7 @@ ETeamId AMyPlayerController::GetTeamId() const
 
 void AMyPlayerController::ClickSlow() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
     MyChar->RequestSlowMovement(true);
@@ -555,7 +516,7 @@ void AMyPlayerController::ClickSlow() {
 
 void AMyPlayerController::ReleaseSlow() {
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
     MyChar->RequestSlowMovement(false);
@@ -572,10 +533,9 @@ void AMyPlayerController::RequestSpectateNextPlayer()
     {
         SpectateNextPlayer_Internal();
         return;
-	}
-    else {
-        ServerSpectateNextPlayer();
-	}
+    }
+
+    ServerSpectateNextPlayer();
 }
 
 void AMyPlayerController::ServerSpectateNextPlayer_Implementation()
@@ -585,7 +545,6 @@ void AMyPlayerController::ServerSpectateNextPlayer_Implementation()
 
 void AMyPlayerController::SpectateNextPlayer_Internal()
 {
-    UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal called"));
     if (!IsSpectatingState()) {
         return;
     }
@@ -601,15 +560,11 @@ void AMyPlayerController::SpectateNextPlayer_Internal()
     }
 
     auto Target = FindNextLivingTeammate(CurrentSpectateTarget.Get());
-    UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug1"));
-
     if (Target)
     {
         CurrentSpectateTarget = Target;
-        UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug2"));
     }
     else {
-        UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: debug3"));
         // get game state
 		AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
 		
@@ -618,13 +573,14 @@ void AMyPlayerController::SpectateNextPlayer_Internal()
             ASpike* Spike = GS->GetPlantedSpike();
             if (Spike) {
                 CurrentSpectateTarget = Spike;
-                UE_LOG(LogTemp, Warning, TEXT("SpectateNextPlayer_Internal: Spectating Spike"));
 			}
         }
     }
     if (!CurrentSpectateTarget.IsValid()) {
 		AActorManager* AM = AActorManager::Get(GetWorld());
-		CurrentSpectateTarget = AM->GetGlobalCamera();
+        if (AM) {
+            CurrentSpectateTarget = AM->GetGlobalCamera();
+        }
 	}
 
 	ClientSpectateTarget(CurrentSpectateTarget.Get());
@@ -632,19 +588,17 @@ void AMyPlayerController::SpectateNextPlayer_Internal()
 
 AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
 {
-    UWorld* World = GetWorld();
-    if (!World) return nullptr;
-
-	AShooterGameState* GS = World->GetGameState<AShooterGameState>();
-	if (!GS) return nullptr;
+	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+    if (!GS) {
+        return nullptr;
+    }
 
 	AMyPlayerState* PS = Cast<AMyPlayerState>(PlayerState);
-	if (!PS) return nullptr;
-    // Replace with your team accessors
-    auto MyTeamId = PS->GetTeamId();
-
+    if (!PS) {
+        return nullptr;
+    }
+    const ETeamId MyTeamId = PS->GetTeamId();
     TArray<AActor*> Candidates;
-    
     for (APlayerSlot* Slot : GS->Slots)
     {
         if (Slot->GetTeamId() != MyTeamId) continue;
@@ -659,10 +613,9 @@ AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
         Candidates.Add(Char);
     }
 
-    // log size
-    UE_LOG(LogTemp, Warning, TEXT("FindNextLivingTeammate: Found %d candidates"), Candidates.Num());
-
-    if (Candidates.Num() == 0) return nullptr;
+    if (Candidates.Num() == 0) {
+        return nullptr;
+    }
 
     // Stable cycling: sort by something consistent (optional but recommended)
     Candidates.Sort([](const AActor& A, const AActor& B)
@@ -671,7 +624,9 @@ AActor* AMyPlayerController::FindNextLivingTeammate(AActor* CurrentTarget) const
         });
 
     // If no current target, return first
-    if (!CurrentTarget) return Candidates[0];
+    if (!CurrentTarget) {
+        return Candidates[0];
+    }
 
     int32 Index = Candidates.IndexOfByKey(CurrentTarget);
     int32 NextIndex = (Index >= 0) ? (Index + 1) % Candidates.Num() : 0;
@@ -696,16 +651,17 @@ void AMyPlayerController::HideScoreboard()
 
 void AMyPlayerController::HandleAimingChanged(bool bIsAiming)
 {
-    if (PlayerUI)
+    if (!PlayerUI)
     {
-        if (bIsAiming)
-        {
-            PlayerUI->ShowScope();
-        }
-        else
-        {
-            PlayerUI->HideScope();
-		}
+        return;
+    }
+    if (bIsAiming)
+    {
+        PlayerUI->ShowScope();
+    }
+    else
+    {
+        PlayerUI->HideScope();
     }
 }
 
@@ -745,10 +701,12 @@ void AMyPlayerController::OnButtonE_Started()
 {
     // Get game mode
     AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
-    if (!GS) return;
+    if (!GS) {
+        return;
+    }
 
     ABaseCharacter* MyChar = GetMyChar();
-    if (!MyChar) {
+    if (!IsValid(MyChar)) {
         return;
     }
 
@@ -763,7 +721,9 @@ void AMyPlayerController::OnButtonE_Started()
 void AMyPlayerController::OnButtonE_Completed()
 {
     AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
-    if (!GS) return;
+    if (!GS) {
+        return;
+    }
 
     if (GS->GetMatchMode() == EMatchMode::Spike) {
         StopDefuseSpike();
@@ -784,20 +744,14 @@ void AMyPlayerController::BuyItem_Internal(EItemId Itemid)
 {
     const UItemConfig* Item = UItemsManager::Get(GetWorld())->GetItemById(Itemid);
     if (!Item) {
-        UE_LOG(LogTemp, Warning, TEXT("BuyItem_Internal called with null Item"));
         return;
     }
-    UE_LOG(LogTemp, Warning, TEXT("BuyItem_Internal called for item: %s"), *GetNameSafe(Item));
+
     AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
     if (!PS) {
         return;
     }
-    // check inventory component whether the player can buy this item
-    ABaseCharacter* MyChar = Cast<ABaseCharacter>(GetPawn());
-    if (!MyChar) {
-        UE_LOG(LogTemp, Warning, TEXT("BuyItem_Internal: Pawn is not ABaseCharacter"));
-        return;
-    }
+
     PS->ProcessBuy(Item);
 }
 
@@ -810,7 +764,7 @@ void AMyPlayerController::RebindAll()
 
     UnbindAll();
 
-    ABaseCharacter* Char = Cast<ABaseCharacter>(GetPawn());
+    ABaseCharacter* Char = GetMyChar();
     AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
     AMyPlayerState* PS = GetPlayerState<AMyPlayerState>();
 
@@ -820,9 +774,15 @@ void AMyPlayerController::RebindAll()
 
     PlayerUI->OnEnter();
 
-    if (Char) BindCharacter(Char);
-    if (GS)   BindGameState(GS);
-    if (PS)   BindPlayerState(PS);
+    if (IsValid(Char)) {
+        BindCharacter(Char);
+    }
+    if (GS) {
+        BindGameState(GS);
+    }
+    if (PS) {
+        BindPlayerState(PS);
+    }
 }
 
 void AMyPlayerController::UnbindAll()
@@ -847,7 +807,9 @@ void AMyPlayerController::UnbindAll()
 
 void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
 {
-    if (!Char || !PlayerUI) return;
+    if (!IsValid(Char) || !PlayerUI) {
+        return;
+    }
     if (CachedChar.IsValid()) {
 		// unbind previous
 		UnbindCharacter(CachedChar.Get());
@@ -1084,7 +1046,8 @@ void AMyPlayerController::RemoveDefaultInputMapping()
     }
 }
 
-void AMyPlayerController::Test() {
+void AMyPlayerController::Test() 
+{
     ServerTest();
 }
 
@@ -1095,16 +1058,18 @@ void AMyPlayerController::ServerTest_Implementation()
 
 void AMyPlayerController::HandleEscapePressed()
 {
-	UE_LOG(LogTemp, Warning, TEXT("HandleEscapePressed called"));
     if (bIsShopOpen)
     {
         ToggleShop();
         return;
     }
 
+    if (!PlayerUI) {
+        return;
+	}
+
 	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
     if (GS && !GS->CanQuitMidMatch()) {
-		UE_LOG(LogTemp, Warning, TEXT("Cannot open settings during this match phase"));
         if (PlayerUI->IsSettingsOpen())
         {
             PlayerUI->ShowSettings(false);
@@ -1124,7 +1089,7 @@ void AMyPlayerController::HandleEscapePressed()
     {
         UWorld* World = GetWorld();
         EnterUIMode();
-        USceneManager::Get(GetWorld())->OpenPopupDialogOkCancel(
+        SceneMgr->OpenPopupDialogOkCancel(
             TEXT("Are you sure you want to quit?"),
             [World]()
             {
@@ -1133,13 +1098,10 @@ void AMyPlayerController::HandleEscapePressed()
                     World,
                     FGameConstants::LEVEL_LOBBY
                 );
-                UE_LOG(LogTemp, Log, TEXT("OK"));
             },
             [this]()
             {
 				EnterGameMode();
-                // Cancel pressed
-                UE_LOG(LogTemp, Log, TEXT("Cancel"));
             }
         );
 	}
@@ -1163,21 +1125,18 @@ void AMyPlayerController::EnterGameMode()
 {
     bShowMouseCursor = false;
     SetInputMode(FInputModeGameOnly());
-
     SetIgnoreLookInput(false);
     SetIgnoreMoveInput(false);
-
 	SetGameplayInputEnabled(true);
 }
 
 void AMyPlayerController::OnAmmoChanged(int32 Clip, int32 Reserve) // for current active weapon
 {
 	PlayerUI->UpdateAmmo(Clip, Reserve);
-    UE_LOG(LogTemp, Warning, TEXT("AMyPlayerController::OnAmmoChanged: Clip=%d, Reserve=%d"), Clip, Reserve);
+
+    GetWorldTimerManager().ClearTimer(ReloadDelayHandle);
     if (Clip <= 0 && Reserve > 0)
     {
-        GetWorldTimerManager().ClearTimer(ReloadDelayHandle);
-
         GetWorldTimerManager().SetTimer(
             ReloadDelayHandle,
             this,
@@ -1185,9 +1144,6 @@ void AMyPlayerController::OnAmmoChanged(int32 Clip, int32 Reserve) // for curren
             0.5f,
             false
         );
-    }
-    else {
-        GetWorldTimerManager().ClearTimer(ReloadDelayHandle);
     }
 }
 
@@ -1216,10 +1172,6 @@ void AMyPlayerController::SetTimeOfDeath(float Time)
     TimeOfDeath = Time;
 }
 
-void AMyPlayerController::PawnLeavingGame() {
-    // handle by game mode
-}
-
 void AMyPlayerController::HandleUpdateTeamScore(int32 TeamAScore, int32 TeamBScore)
 {
     // get my team id
@@ -1229,13 +1181,9 @@ void AMyPlayerController::HandleUpdateTeamScore(int32 TeamAScore, int32 TeamBSco
 
 	int FirstScore = TeamAScore;
 	int SecondScore = TeamBScore;
-    if (MyTeamId == ETeamId::Attacker) {
-		FirstScore = TeamAScore; // because score A is for attackers
-		SecondScore = TeamBScore;
-    }
-	else if (MyTeamId == ETeamId::Defender) {
-        FirstScore = TeamBScore; // because score B is for defenders
-		SecondScore = TeamAScore;
+
+    if (MyTeamId == ETeamId::Defender) {
+        Swap(FirstScore, SecondScore); // because score B is for defenders
 	}
 
     if (PlayerUI)
@@ -1254,11 +1202,15 @@ void AMyPlayerController::OnToggleChatPressed()
 
 void AMyPlayerController::SetGameplayInputEnabled(bool bEnabled)
 {
-    if (!IsLocalController()) return;
+    if (!IsLocalController()) {
+        return;
+    }
 
     UEnhancedInputLocalPlayerSubsystem* Subsystem =
         ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
-    if (!Subsystem) return;
+    if (!Subsystem) {
+        return;
+    }
 
     if (bEnabled)
     {

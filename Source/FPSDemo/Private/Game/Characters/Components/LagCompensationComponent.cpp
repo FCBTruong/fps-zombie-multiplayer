@@ -17,7 +17,9 @@ ULagCompensationComponent::ULagCompensationComponent()
 void ULagCompensationComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
 	OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
+	check(OwnerCharacter);
 }
 
 void ULagCompensationComponent::TickComponent(
@@ -28,27 +30,21 @@ void ULagCompensationComponent::TickComponent(
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// Only the server records history
-	if (!GetOwner() || !GetOwner()->HasAuthority())
+	if (!OwnerCharacter->HasAuthority())
 	{
 		return;
 	}
-
 	SaveFrame();
 }
 
 double ULagCompensationComponent::GetServerTimeSeconds() const
 {
-	const UWorld* World = GetWorld();
-	if (!World) return 0.0;
-
-	const AGameStateBase* GS = World->GetGameState<AGameStateBase>();
-	return GS ? GS->GetServerWorldTimeSeconds() : static_cast<double>(World->GetTimeSeconds());
+	const AGameStateBase* GS = GetWorld()->GetGameState<AGameStateBase>();
+	return GS ? GS->GetServerWorldTimeSeconds() : static_cast<double>(GetWorld()->GetTimeSeconds());
 }
 
 void ULagCompensationComponent::SaveFrame()
 {
-	if (!OwnerCharacter) return;
-
 	USkeletalMeshComponent* Mesh = OwnerCharacter->GetMesh();
 	if (!Mesh) return;
 
@@ -107,7 +103,6 @@ void ULagCompensationComponent::CacheCurrentBodies(FRewindFrame& OutFrame) const
 	OutFrame = FRewindFrame{};
 	OutFrame.Time = GetServerTimeSeconds();
 
-	if (!OwnerCharacter) return;
 	USkeletalMeshComponent* Mesh = OwnerCharacter->GetMesh();
 	if (!Mesh) return;
 
@@ -134,7 +129,6 @@ void ULagCompensationComponent::CacheCurrentBodies(FRewindFrame& OutFrame) const
 
 void ULagCompensationComponent::MoveBodiesToFrame(const FRewindFrame& Frame) const
 {
-	if (!OwnerCharacter) return;
 	USkeletalMeshComponent* Mesh = OwnerCharacter->GetMesh();
 	if (!Mesh) return;
 
@@ -235,14 +229,11 @@ bool ULagCompensationComponent::GetInterpolatedFrameAtTime(double ShotTime, FRew
 			return OutFrame.Bodies.Num() > 0;
 		}
 	}
-
 	return false;
 }
 
 void ULagCompensationComponent::EnableRewindCollision(FCollisionBackup& Backup) const
 {
-	if (!OwnerCharacter) return;
-
 	UCapsuleComponent* Capsule = OwnerCharacter->GetCapsuleComponent();
 	USkeletalMeshComponent* Mesh = OwnerCharacter->GetMesh();
 
@@ -270,8 +261,6 @@ void ULagCompensationComponent::EnableRewindCollision(FCollisionBackup& Backup) 
 
 void ULagCompensationComponent::RestoreCollisionFromBackup(const FCollisionBackup& Backup) const
 {
-	if (!OwnerCharacter) return;
-
 	UCapsuleComponent* Capsule = OwnerCharacter->GetCapsuleComponent();
 	USkeletalMeshComponent* Mesh = OwnerCharacter->GetMesh();
 
@@ -297,18 +286,14 @@ bool ULagCompensationComponent::ConfirmHitRewind(
 {
 	OutHit = FHitResult{};
 
-	if (!OwnerCharacter || !OwnerCharacter->HasAuthority())
+	if (!OwnerCharacter->HasAuthority())
 	{
 		return false;
 	}
-
 	if (FrameHistory.Num() == 0)
 	{
 		return false;
 	}
-
-	// log size of history and requested time for debugging
-	UE_LOG(LogTemp, Log, TEXT("LagCompensation: HistorySize=%d, ShotTime=%.3f"), FrameHistory.Num(), ShotTime);
 
 	// reject if shot is too old for available history
 	const double Newest = FrameHistory[0].Time;
@@ -341,7 +326,7 @@ bool ULagCompensationComponent::ConfirmHitRewind(
 	{
 		Params.AddIgnoredActor(Shooter);
 	}
-	Params.AddIgnoredActor(GetOwner()); // Usually this target itself should still be hittable; remove if needed.
+
 	Params.ClearIgnoredSourceObjects();
 	if (Shooter)
 	{
@@ -357,7 +342,7 @@ bool ULagCompensationComponent::ConfirmHitRewind(
 	);
 
 	// Keep only hits on this owner character
-	const bool bValidHit = bHit && (OutHit.GetActor() == GetOwner());
+	const bool bValidHit = bHit && (OutHit.GetActor() == OwnerCharacter);
 
 	// Restore current state immediately
 	/*RestoreCollisionFromBackup(CollisionBackup);*/

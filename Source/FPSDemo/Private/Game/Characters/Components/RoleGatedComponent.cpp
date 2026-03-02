@@ -10,11 +10,17 @@ URoleGatedComponent::URoleGatedComponent()
 
 void URoleGatedComponent::SetEnabled(bool bInEnabled)
 {
-    if (bEnabled == bInEnabled) return;
+    if (bEnabled == bInEnabled) {
+        return;
+    }
     bEnabled = bInEnabled;
 
-    if (bEnabled) Activate(true);
-    else          Deactivate();
+    if (bEnabled) {
+        Activate(true);
+    }
+    else {
+        Deactivate();
+    }
 
     OnEnabledChanged(bEnabled);
 }

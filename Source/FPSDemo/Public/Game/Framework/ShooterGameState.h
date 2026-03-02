@@ -59,7 +59,7 @@ public:
     void SetMatchState(EMyMatchState NewState);
     void SetBuyEndTime(int NewBuyEndTime);
     void AddScoreTeam(ETeamId TeamId, int ScoreToAdd);
-    void SetRoundEndTime(int NewRoundEndTime);
+    void SetRoundEndTime(int32 NewRoundEndTime);
     void SetRoundRemainingTime(int TimeRemaining);
     void SetMatchMode(EMatchMode NewMode);
     void SetTeamAScore(int NewScore);
@@ -90,8 +90,8 @@ public:
     EMyMatchState GetMatchState() const;
     EMatchMode GetMatchMode() const;
     APlayerSlot* GetPlayerSlot(int32 PlayerId) const;
-    TArray<AAirdropCrate*> GetActiveAirdropCrates() const;
-    TArray<AHealthPack*> GetActiveHealthPacks() const;
+    const TArray<AAirdropCrate*>& GetActiveAirdropCrates() const;
+    const TArray<AHealthPack*>& GetActiveHealthPacks() const;
 
     UPROPERTY(ReplicatedUsing = OnRep_PlayerSlots)
     TArray<APlayerSlot*> Slots;

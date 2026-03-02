@@ -24,9 +24,6 @@ class FPSDEMO_API AShooterGameMode : public AGameModeBase
 public:
 	AShooterGameMode();
 	virtual bool CheckAllTeamDead(ETeamId TeamId) const;
-	virtual void AutoBuyForBots();
-	virtual void SavePlayersGunsForNextRound();
-	AShooterGameState* GetShooterGS() const;
 	virtual void RegisterCorpse(AActor* Corpse);
 	virtual void CleanupCorpses();
 	virtual EMatchMode GetMatchMode() const {
@@ -45,19 +42,10 @@ protected:
 	virtual void InitGameState() override;
 	virtual void StartPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
-	virtual void RestartPlayer(AController* NewPlayer) override;
 	virtual void PreLogin(
 		const FString& Options,
 		const FString& Address,
-		const FUniqueNetIdRepl& UniqueId,
-		FString& ErrorMessage) override;
-	virtual APlayerController* Login(
-		UPlayer* NewPlayer,
-		ENetRole InRemoteRole,
-		const FString& Portal,
-		const FString& Options,
 		const FUniqueNetIdRepl& UniqueId,
 		FString& ErrorMessage) override;
 	virtual void Logout(AController* Exiting) override;
@@ -77,7 +65,6 @@ protected:
 	void StartRoundDelayed();
 	virtual FTransform GetSpawnTransformForSlot(const APlayerSlot& Slot);
 	bool AreAllPlayersConnected() const;
-
 
 	// Properties
 	bool bRoundInProgress = false;

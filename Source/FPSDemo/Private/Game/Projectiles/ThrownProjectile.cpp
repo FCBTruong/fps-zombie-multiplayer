@@ -19,6 +19,7 @@ AThrownProjectile::AThrownProjectile()
     Collision->SetCollisionProfileName(TEXT("Throw"));
     Collision->SetNotifyRigidBodyCollision(true);
     Collision->SetSimulatePhysics(false);
+	Collision->IgnoreActorWhenMoving(GetInstigator(), true);
 
     // visual mesh
     WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
@@ -26,7 +27,7 @@ AThrownProjectile::AThrownProjectile()
     WeaponMesh->SetupAttachment(Collision);
 
     // movement
-    Projectile = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Throw"));
+    Projectile = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
     Projectile->bAutoActivate = false;
     Projectile->bRotationFollowsVelocity = true;
     Projectile->bShouldBounce = true;
@@ -62,7 +63,6 @@ void AThrownProjectile::OnProjectileHit(
     UPrimitiveComponent* OtherComp, FVector NormalImpulse,
     const FHitResult& Hit)
 {
-	UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::OnProjectileHit"));
     if (bDidHit || bIsExploded)
     {
         return;
@@ -73,14 +73,8 @@ void AThrownProjectile::OnProjectileHit(
 void AThrownProjectile::InitFromData(const UThrowableConfig* InData)
 {
     Data = InData;
-    if (!HasAuthority()) {
-		UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::InitFromData - not Authority"));
-	}
-	UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::InitFromData - Data %s"), Data ? *Data->GetName() : TEXT("null"));
-   
     MulticastInitData(Data->Id);
 }
-
 
 void AThrownProjectile::MulticastInitData_Implementation(EItemId ItemId)
 {
@@ -91,9 +85,7 @@ void AThrownProjectile::MulticastInitData_Implementation(EItemId ItemId)
             Data = Cast<UThrowableConfig>(Item);
 		}
     }
-    UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::MulticastInitData_Implementation - ItemId %d"), static_cast<int32>(ItemId));
    
-    
     if (Data->StaticMesh) {
         WeaponMesh->SetStaticMesh(Data->StaticMesh);
     }
@@ -101,23 +93,20 @@ void AThrownProjectile::MulticastInitData_Implementation(EItemId ItemId)
 
 void AThrownProjectile::LaunchProjectile(FVector LaunchVelocity, AActor* InstigatorActor)
 {
-    if (Projectile)
-    {
-        Projectile->SetVelocityInLocalSpace(LaunchVelocity);
-        Projectile->Activate(true);
 
-        if (HasAuthority()) {
-            GetWorldTimerManager().SetTimer(
-                TimerHandle_Explode,
-                this,
-                &AThrownProjectile::ExplodeNow,
-                3.5f,
-                false
-            );
-        }
+    Projectile->SetVelocityInLocalSpace(LaunchVelocity);
+    Projectile->Activate(true);
+
+    if (HasAuthority()) {
+        GetWorldTimerManager().SetTimer(
+            TimerHandle_Explode,
+            this,
+            &AThrownProjectile::ExplodeNow,
+            3.5f,
+            false
+        );
     }
 }
-
 
 void AThrownProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

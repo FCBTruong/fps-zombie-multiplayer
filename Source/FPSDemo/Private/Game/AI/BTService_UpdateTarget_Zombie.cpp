@@ -26,9 +26,7 @@ void UBTService_UpdateTarget_Zombie::TickNode(
     UAIPerceptionComponent* Perception = AICon->GetAIPerceptionComponent();
     APawn* SelfPawn = AICon->GetPawn();
 	ABaseCharacter* SelfCharacter = Cast<ABaseCharacter>(SelfPawn);
-    if (!Perception || !SelfPawn) return;
-
-    const bool bSelfIsZombie = SelfCharacter->IsCharacterRole(ECharacterRole::Zombie);
+    if (!Perception || !SelfCharacter) return;
 
     ABaseCharacter* CurrentTargetChar = AICon->GetTargetActor();
     TArray<AActor*> PerceivedActors;
@@ -66,7 +64,7 @@ void UBTService_UpdateTarget_Zombie::TickNode(
     }
 }
 
-void UBTService_UpdateTarget_Zombie::FindBestTarget(TArray<AActor*> PerceivedActors, ABaseCharacter* SelfPawn, ABaseCharacter*& OutBestTarget) {
+void UBTService_UpdateTarget_Zombie::FindBestTarget(const TArray<AActor*>& PerceivedActors, ABaseCharacter* SelfPawn, ABaseCharacter*& OutBestTarget) {
     float BestDistSq = TNumericLimits<float>::Max();
 
     const FVector SelfLoc = SelfPawn->GetActorLocation();

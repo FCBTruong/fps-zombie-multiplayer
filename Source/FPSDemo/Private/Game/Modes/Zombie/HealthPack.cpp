@@ -32,11 +32,6 @@ void AHealthPack::BeginPlay()
 	Super::BeginPlay();
 	UGameManager* GM = UGameManager::Get(GetWorld());
 	UGlobalDataAsset* GlobalData = GM->GlobalData;
-	if (!GlobalData)
-	{
-		UE_LOG(LogTemp, Error, TEXT("AAirdropCrate::BeginPlay: GlobalData is null"));
-		return;
-	}
 
 	Mesh->SetStaticMesh(GlobalData->HealPackMesh);
 	Mesh->SetRelativeScale3D(FVector(0.4, 0.4, 0.4));
@@ -46,9 +41,11 @@ void AHealthPack::BeginPlay()
 void AHealthPack::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
+#if !UE_SERVER
 	// Rotate around Z axis (Yaw)
 	AddActorLocalRotation(FRotator(0.f, RotateSpeedDegPerSec * DeltaTime, 0.f));
+#endif
 }
 
 void AHealthPack::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -63,23 +60,18 @@ void AHealthPack::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 		return;
 	}
 	// Check if the overlapping actor is a player character
-	APawn* Pawn = Cast<APawn>(OtherActor);
-	if (Pawn)
+	ABaseCharacter* Character = Cast<ABaseCharacter>(OtherActor);
+	if (!Character)
 	{
-		ABaseCharacter* Character = Cast<ABaseCharacter>(Pawn);
+		return;
+	}
 
-		if (!Character)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("HealthPack::OnOverlapBegin: OtherActor is not ABaseCharacter"));
-			return;
-		}
-		float HealthAmount = 200.f; // can be configured in data asset if needed
-		if (Character->Heal(HealthAmount))
-		{
-			AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
-			if (!GS) return;
-			GS->OnClaimedHealthPack(this);
-			Destroy();
-		}
+	float HealthAmount = 200.f; // can be configured in data asset if needed
+	if (Character->Heal(HealthAmount))
+	{
+		AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+		if (!GS) return;
+		GS->OnClaimedHealthPack(this);
+		Destroy();
 	}
 }

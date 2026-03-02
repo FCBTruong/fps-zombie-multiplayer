@@ -16,6 +16,7 @@ class UItemVisualComponent;
 class UCharAudioComponent;
 class UFirearmConfig;
 class ULagCompensationComponent;
+class UAnimationComponent;
 
 enum EFireEnableReason
 {
@@ -50,36 +51,34 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnEnabledChanged(bool bNowEnabled) override;
 private:
 	// Server auth
 	void StartFire_ServerAuth();
 	void StopFire_ServerAuth();
 	void FireOnce_ServerAuth();
+	void HandleReload();
+	void HandleFinishedReload();
+	void ApplyRecoilLocal();
+	void GetAim(FVector& OutStart, FVector& OutDir) const;
+	void UpdateBurstSpreadOnShot(float NowServerTime);
+
 	float GetTotalSpreadDeg(float NowServerTime) const;
 	float GetAirSpreadDeg() const;
 	float GetMovementSpreadDeg() const;
 	float GetMoveAlphaForSpread() const;
-	bool CanReload() const;
-	void HandleReload();
-	void HandleFinishedReload();
-	void ApplyRecoilLocal();
+	float GetServerTimeSeconds() const;
 
 #if !UE_SERVER
 	// Owning client prediction (visuals only)
 	void FireOnce_PredictedLocal();
 #endif
 	bool IsOwningClient() const;
-
-	void GetAim(FVector& OutStart, FVector& OutDir) const;
 	bool TraceShot(const AActor* IgnoredActor, const FVector& Start, const FVector& Dir,
 		FHitResult& OutHit, FVector& OutEnd, double ShotTime) const;
-
-	float GetServerTimeSeconds() const;
+	bool CanReload() const;
 	int32 ComputeShotIndex(float NowServerTime) const;
 	FVector ComputeShotDirDeterministic(const FVector& AimDir, float NowServerTime, int32 Seed) const;
-	void UpdateBurstSpreadOnShot(float NowServerTime);
 
 	// RPC
 	UFUNCTION(Server, Reliable)
@@ -110,6 +109,9 @@ private:
 	TObjectPtr<UCharAudioComponent> AudioComp = nullptr;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UAnimationComponent> AnimComp = nullptr;
+
+	UPROPERTY(Transient)
 	TObjectPtr<ULagCompensationComponent> LagCompensationComp = nullptr;
 
 	UPROPERTY(Transient) 
@@ -122,10 +124,6 @@ private:
 #if !UE_SERVER
 	FTimerHandle FireTimer_Local;
 #endif
-
-	// Replicated determinism inputs
-	UPROPERTY(Replicated)
-	float FireStartTimeServer = 0.f;
 
 	int32 BurstSeed = 0;
 	double ClientShotTimeOffset = 0.0;

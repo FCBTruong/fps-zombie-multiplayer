@@ -17,47 +17,56 @@
 UInventoryComponent::UInventoryComponent()
 {
     SetIsReplicatedByDefault(true);
+    PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UInventoryComponent::BeginPlay()
 {
     Super::BeginPlay();
-	UE_LOG(LogTemp, Log, TEXT("UInventoryComponent::BeginPlay called"));
-    CachedGM = UGameManager::Get(GetWorld());
+
+    Character = Cast<ABaseCharacter>(GetOwner());
+	check(Character);
 }
 
+// Called on server when player finishes pre-match state, or when player respawns
 void UInventoryComponent::InitBasicWeapon()
 {
-    AShooterGameMode* GM = GetWorld()->GetAuthGameMode<AShooterGameMode>();
-	if (!GM) return;
-	AShooterGameState* GameState = GM->GetShooterGS();
-	if (!GameState) return;
+    if (!Character->HasAuthority())
+    {
+        return;
+    }
+	
+	AShooterGameState* GameState = GetWorld()->GetGameState<AShooterGameState>();
+    if (!GameState) {
+		UE_LOG(LogTemp, Warning, TEXT("UInventoryComponent::InitBasicWeapon: GameState is null"));
+        return;
+    }
     if (GameState->GetMatchState() == EMyMatchState::PRE_MATCH)
-		return; // do not init in pre-match state
-    auto MatchMode = GM->GetMatchMode();
-    // Test function to be removed later
+    {
+        return; // do not init in pre-match state
+    }
+
+    UItemsManager* ItemsManager = UItemsManager::Get(GetWorld());
+    auto MatchMode = GameState->GetMatchMode();
+
     MeleeState.ItemId = EItemId::MELEE_KNIFE_BASIC;
     PistolState.ItemId = EItemId::PISTOL_PL_14;
 
-	const UItemConfig* ItemPistol = UItemsManager::Get(GetWorld())->GetItemById(EItemId::PISTOL_PL_14);
+	const UItemConfig* ItemPistol = ItemsManager->GetItemById(EItemId::PISTOL_PL_14);
 	const UFirearmConfig* PistolData = Cast<UFirearmConfig>(ItemPistol);
     PistolState.AmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
     PistolState.AmmoReserve = PistolData ? PistolData->MaxAmmoInClip * 2 : 0;
 	PistolState.MaxAmmoInClip = PistolData ? PistolData->MaxAmmoInClip : 0;
 
-	const UItemConfig* ArmorItem = UItemsManager::Get(GetWorld())->GetItemById(EItemId::KEVLAR_VEST);
+	const UItemConfig* ArmorItem = ItemsManager->GetItemById(EItemId::KEVLAR_VEST);
     const UArmorConfig* ArmorData = Cast<UArmorConfig>(ArmorItem);
     ArmorState.ArmorMaxPoints = ArmorData ? ArmorData->ArmorMaxPoints : 0;
     ArmorState.ArmorPoints = ArmorState.ArmorMaxPoints;
     ArmorState.ArmorEfficiency = ArmorData ? ArmorData->ArmorEfficiency : 0.f;
 	ArmorState.ArmorRatio = ArmorData ? ArmorData->ArmorRatio : 0.f;
     Throwables.Add(EItemId::GRENADE_FRAG_BASIC);
-    // log size throwables
-	UE_LOG(LogTemp, Log, TEXT("InventoryComponent Test: Throwables count = %d"), Throwables.Num());
-
-    if (MatchMode == EMatchMode::DeathMatch
-        || MatchMode == EMatchMode::Zombie
-        )
+ 
+    if (MatchMode == EMatchMode::DeathMatch || MatchMode == EMatchMode::Zombie)
     {
         TArray<EItemId> RifleOptions = {
             EItemId::RIFLE_AK_47,
@@ -65,9 +74,9 @@ void UInventoryComponent::InitBasicWeapon()
             EItemId::RIFLE_QBZ,
             EItemId::RIFLE_RUSSIAN_AS_VAL,
 		};
-		RifleState.ItemId = RifleOptions[FMath::RandRange(0, RifleOptions.Num() - 1)];
 
-		const UItemConfig* ItemRifle = UItemsManager::Get(GetWorld())->GetItemById(RifleState.ItemId);
+		RifleState.ItemId = RifleOptions[FMath::RandRange(0, RifleOptions.Num() - 1)];
+		const UItemConfig* ItemRifle = ItemsManager->GetItemById(RifleState.ItemId);
         const UFirearmConfig* RifleData = Cast<UFirearmConfig>(ItemRifle);
         RifleState.AmmoInClip = RifleData ? RifleData->MaxAmmoInClip : 0;
 		RifleState.AmmoReserve = RifleData ? RifleData->MaxAmmoInClip * 3 : 0;
@@ -78,6 +87,7 @@ void UInventoryComponent::InitBasicWeapon()
     OnRep_PistolState();
     OnRep_MeleeState();
     OnRep_ArmorState();
+	OnRep_Throwables();
 }
 
 
@@ -93,11 +103,15 @@ void UInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
     DOREPLIFETIME(UInventoryComponent, bHasSpike);
 }
 
-const UItemConfig* UInventoryComponent::GetItemConfig(EItemId ItemId)
+const UItemConfig* UInventoryComponent::GetItemConfig(EItemId ItemId) const
 {
-    if (ItemId == EItemId::NONE) return nullptr;
+    if (ItemId == EItemId::NONE)
+    {
+        return nullptr;
+    }
 
-	return UItemsManager::Get(GetWorld())->GetItemById(ItemId);
+    UItemsManager* ItemsManager = UItemsManager::Get(GetWorld());
+    return ItemsManager->GetItemById(ItemId);
 }
 
 void UInventoryComponent::SortThrowables()
@@ -110,30 +124,39 @@ void UInventoryComponent::SortThrowables()
 
 FWeaponState* UInventoryComponent::GetWeaponStateByItemId(EItemId ItemId)
 {
-    if (RifleState.ItemId == ItemId) return &RifleState;
-    if (PistolState.ItemId == ItemId) return &PistolState;
-    if (MeleeState.ItemId == ItemId) return &MeleeState;
+    if (RifleState.ItemId == ItemId) {
+        return &RifleState;
+    }
+    if (PistolState.ItemId == ItemId) {
+        return &PistolState;
+    }
+    if (MeleeState.ItemId == ItemId) {
+        return &MeleeState;
+    }
     return nullptr;
 }
 
 const FWeaponState* UInventoryComponent::GetWeaponStateByItemId(EItemId ItemId) const
 {
-    if (RifleState.ItemId == ItemId) return &RifleState;
-    if (PistolState.ItemId == ItemId) return &PistolState;
-    if (MeleeState.ItemId == ItemId) return &MeleeState;
+    if (RifleState.ItemId == ItemId) {
+        return &RifleState;
+    }
+    if (PistolState.ItemId == ItemId) {
+        return &PistolState;
+    }
+    if (MeleeState.ItemId == ItemId) {
+        return &MeleeState;
+    }
     return nullptr;
 }
 
-bool UInventoryComponent::CanDrop(EItemId ItemId)
-{
-    const UItemConfig* Data = GetItemConfig(ItemId);
-    return Data ? Data->bIsDroppable : false;
-}
-
+// Called by Server
 bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
 {
-    if (!GetOwner() || !GetOwner()->HasAuthority())
+    if (!Character->HasAuthority())
+    {
         return false;
+    }
 
     const EItemId ItemId = PickupData.ItemId;
     const UItemConfig* Data = GetItemConfig(ItemId);
@@ -148,6 +171,10 @@ bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
         case EItemType::Firearm:
         {
 			const UFirearmConfig* FirearmData = Cast<UFirearmConfig>(Data);
+			if (!FirearmData) {
+				UE_LOG(LogTemp, Warning, TEXT("UInventoryComponent::AddItemInternal: ItemId %d is not a valid Firearm"), static_cast<int32>(ItemId));
+				return false;
+			}
             
             if (FirearmData->FirearmType == EFirearmType::Rifle)
             {
@@ -175,7 +202,9 @@ bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
         }
         case EItemType::Melee:
         {
-            if (MeleeState.ItemId != EItemId::NONE) return false;
+            if (MeleeState.ItemId != EItemId::NONE) {
+                return false;
+            }
             MeleeState.ItemId = ItemId;
             // Melee ammo typically unused
             OnRep_MeleeState();
@@ -185,7 +214,9 @@ bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
         {
 			// check if already have this throwable
             if (Throwables.Contains(ItemId))
-				return false;
+            {
+                return false;
+            }
 
             Throwables.Add(ItemId);
             SortThrowables();
@@ -207,10 +238,13 @@ bool UInventoryComponent::AddItemInternal(const FPickupData& PickupData)
     }
 }
 
+// Called by Server when player throws or drops throwable
 bool UInventoryComponent::RemoveThrowable(EItemId ItemId)
 {
-    if (!GetOwner() || !GetOwner()->HasAuthority())
+    if (!Character->HasAuthority())
+    {
         return false;
+    }
 
     const int32 Removed = Throwables.Remove(ItemId);
     if (Removed > 0)
@@ -221,21 +255,26 @@ bool UInventoryComponent::RemoveThrowable(EItemId ItemId)
     return false;
 }
 
+// Called by Server when player picks up or drops spike
 void UInventoryComponent::SetHasSpike(bool bNewHasSpike)
 {
-    if (!GetOwner() || !GetOwner()->HasAuthority())
+    if (!Character->HasAuthority())
+    {
         return;
-
+    }
     if (bHasSpike == bNewHasSpike)
+    {
         return;
+    }
 
     bHasSpike = bNewHasSpike;
     OnRep_HasSpike();
 }
 
+// Called by Server when player equips armor
 void UInventoryComponent::ApplyArmorItem(EItemId ArmorItemId)
 {
-    if (!GetOwner() || !GetOwner()->HasAuthority())
+    if (!Character->HasAuthority())
     {
         return;
     }
@@ -256,23 +295,34 @@ void UInventoryComponent::ApplyArmorItem(EItemId ArmorItemId)
     OnRep_ArmorState();
 }
 
+// Called by Server when player shoots weapon
 bool UInventoryComponent::ConsumeAmmo(EItemId WeaponId, int32 Amount)
 {
-    if (!GetOwner() || !GetOwner()->HasAuthority())
+    if (!Character->HasAuthority())
+    {
         return false;
+    }
 
-    if (Amount <= 0) return true;
+    if (Amount <= 0) {
+        return true;
+    }
 
     FWeaponState* WS = GetWeaponStateByItemId(WeaponId);
-    if (!WS) return false;
-
+    if (!WS) {
+		UE_LOG(LogTemp, Warning, TEXT("UInventoryComponent::ConsumeAmmo: WeaponId %d not found in inventory"), static_cast<int32>(WeaponId));
+        return false;
+    }
     WS->AmmoInClip = FMath::Max(0, WS->AmmoInClip - Amount);
     
     // On Rep manually
     if (WS == &RifleState)
+    {
         OnRep_RifleState();
+    }
     else if (WS == &PistolState)
-		OnRep_PistolState();
+    {
+        OnRep_PistolState();
+    }
 
     return true;
 }
@@ -318,95 +368,119 @@ void UInventoryComponent::OnRep_HasSpike()
     OnInventoryChanged.Broadcast();
 }
 
+// Called by Server
 void UInventoryComponent::ReloadWeapon(EItemId Id) {
-    FWeaponState* State = this->GetWeaponStateByItemId(Id);
-    if (!State) {
-        return;
-    }
-    if (!State) {
+    if (!Character->HasAuthority())
+    {
         return;
     }
 
-    int AmmoNeeded = State->MaxAmmoInClip - State->AmmoInClip;
+    FWeaponState* State = GetWeaponStateByItemId(Id);
+    if (!State) {
+        return;
+    }
+  
+    int32 AmmoNeeded = State->MaxAmmoInClip - State->AmmoInClip;
     if (AmmoNeeded <= 0) {
         return; // clip is full
     }
 
-    int AmmoToReload = FMath::Min(AmmoNeeded, State->AmmoReserve);
+    int32 AmmoToReload = FMath::Min(AmmoNeeded, State->AmmoReserve);
     State->AmmoReserve = FMath::Max(0, State->AmmoReserve - AmmoToReload);
     State->AmmoInClip += AmmoToReload;
 
-	if (State == &RifleState)
+    if (State == &RifleState)
+    {
         OnRep_RifleState();
+    }
     else if (State == &PistolState)
-		OnRep_PistolState();
+    {
+        OnRep_PistolState();
+    }
 }
 
-void UInventoryComponent::RemoveItem(EItemId ItemId) {
-    if (!GetOwner() || !GetOwner()->HasAuthority())
-        return;
+// Called by Server
+bool UInventoryComponent::RemoveItem(EItemId ItemId) {
+    if (!Character->HasAuthority())
+    {
+        return false;
+    }
     // Check and remove from weapon slots
     if (RifleState.ItemId == ItemId) {
         RifleState = FWeaponState(); // reset state
         OnRep_RifleState();
-        return;
+        return true;
     }
     if (PistolState.ItemId == ItemId) {
         PistolState = FWeaponState(); // reset state
         OnRep_PistolState();
-        return;
+        return true;
     }
     if (MeleeState.ItemId == ItemId) {
         MeleeState = FWeaponState(); // reset state
         OnRep_MeleeState();
-        return;
+        return true;
     }
     // Check and remove from throwables
     if (Throwables.RemoveSingle(ItemId) > 0)
     {
         OnRep_Throwables();
+        return true;
     }
     // Check spike
     if (ItemId == EItemId::SPIKE && bHasSpike) {
         SetHasSpike(false);
-        return;
+        return true;
     }
     // Check armor
     const UItemConfig* Data = GetItemConfig(ItemId);
     if (Data && Data->GetItemType() == EItemType::Armor) {
         ArmorState = FArmorState(); // reset armor state
         OnRep_ArmorState();
-        return;
+        return true;
     }
+    return false;
 }
 
+// Called by Server
 bool UInventoryComponent::AddItemFromPickup(const FPickupData& PickupData)
 {
     return AddItemInternal(PickupData);
 }
 
+// Called by Server
 bool UInventoryComponent::AddItemFromShop(const FPickupData& PickupData)
 {
     return AddItemInternal(PickupData);
 }
 
+// Called by Server
 void UInventoryComponent::DropAllItems() {
+    if (!Character->HasAuthority())
+    {
+        return;
+    }
+
     if (bHasSpike) {
         DropItem(EItemId::SPIKE);
-        bHasSpike = false;
     }
     if (RifleState.ItemId != EItemId::NONE) {
         DropItem(RifleState.ItemId);
     }
-    for (EItemId ThrowableId : Throwables) {
+    const TArray<EItemId> ThrowablesCopy = Throwables;
+    for (EItemId ThrowableId : ThrowablesCopy)
+    {
         DropItem(ThrowableId);
-	}
-    /*if (PistolState.ItemId != EItemId::NONE) {
-        DropItem(PistolState.ItemId);
-    }*/
+    }
 }
 
+// Called by Server
 APickupItem* UInventoryComponent::DropItem(EItemId Id) {
+    if (!Character->HasAuthority())
+    {
+        return nullptr;
+    }
+
     if (Id == EItemId::NONE) {
         return nullptr;
     }
@@ -417,12 +491,12 @@ APickupItem* UInventoryComponent::DropItem(EItemId Id) {
 	}
 
     FPickupData Data;
-    Data.Location = GetOwner()->GetActorLocation();
+    Data.Location = Character->GetActorLocation();
     Data.Amount = 1;
     Data.ItemId = Id;
     Data.Id = ActorMgr->GetNextItemOnMapId();
 
-	const UItemConfig* ItemConfig = UItemsManager::Get(GetWorld())->GetItemById(Id);
+	const UItemConfig* ItemConfig = GetItemConfig(Id);
 	if (ItemConfig && ItemConfig->GetItemType() == EItemType::Firearm) {
 		FWeaponState* WeaponState = GetWeaponStateByItemId(Id);
 		if (WeaponState) {
@@ -431,30 +505,25 @@ APickupItem* UInventoryComponent::DropItem(EItemId Id) {
 		}
 	}
 
-    RemoveItem(Id);
-
+	bool bDidRemove = RemoveItem(Id);
+    if (!bDidRemove) {
+		UE_LOG(LogTemp, Warning, TEXT("UInventoryComponent::DropItem: Failed to remove item %d from inventory"), static_cast<int32>(Id));
+        return nullptr;
+	}
     APickupItem* Pickup = ActorMgr->CreatePickupActor(Data);
-
-    ABaseCharacter* Character = Cast<ABaseCharacter>(this->GetOwner());
-    if (Pickup)
+    if (!Pickup)
     {
-        Pickup->RecordDropInfo(Character);
+        return nullptr;
     }
-	Pickup->SetIsActive(true);
 
+    Pickup->RecordDropInfo(Character);
+	Pickup->SetIsActive(true);
 	return Pickup;
 }
 
-void UInventoryComponent::ClearInventory() {
-    RifleState.ItemId = EItemId::NONE;
-    PistolState.ItemId = EItemId::NONE;
-    Throwables.Empty();
-}
-
+// Called by Server
 void UInventoryComponent::OnBecomeHero() {
     MeleeState.ItemId = EItemId::MELEE_SWORD_HERO;
-    OnRep_MeleeState();
-
 	RifleState = FWeaponState();
 	PistolState = FWeaponState();
 	Throwables.Empty();
@@ -462,14 +531,14 @@ void UInventoryComponent::OnBecomeHero() {
     OnRep_RifleState();
     OnRep_PistolState();
 	OnRep_Throwables();
+    OnRep_MeleeState();
 }
 
+// Called by Server
 void UInventoryComponent::OnBecomeZombie() {
     MeleeState.ItemId = EItemId::MELEE_UNARMED_ZOMBIE;
-
     RifleState = FWeaponState();
     PistolState = FWeaponState();
-  
     Throwables.Empty();
 
     OnRep_RifleState();
@@ -478,7 +547,14 @@ void UInventoryComponent::OnBecomeZombie() {
 	OnRep_Throwables();
 }
 
-void UInventoryComponent::AddAmmoToMainGun(int Ammo) {
+// Called by Server
+void UInventoryComponent::AddAmmoToMainGun(int32 Ammo) {
+    // Still need check since it updates replicated state
+    if (!Character->HasAuthority())
+    {
+        return;
+    }
+
     if (RifleState.ItemId != EItemId::NONE) {
 		RifleState.AmmoReserve += Ammo;
 		OnRep_RifleState();
@@ -489,8 +565,12 @@ void UInventoryComponent::AddAmmoToMainGun(int Ammo) {
     }
 }
 
+// Called by Server
 void UInventoryComponent::UpdateArmorPoints(int NewArmorPoints) {
-	UE_LOG(LogTemp, Log, TEXT("UInventoryComponent::UpdateArmorPoints called with NewArmorPoints = %d"), NewArmorPoints);
+    if (!Character->HasAuthority())
+    {
+        return;
+    }
     ArmorState.ArmorPoints = FMath::Clamp(NewArmorPoints, 0, ArmorState.ArmorMaxPoints);
     OnRep_ArmorState();
 }

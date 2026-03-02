@@ -9,7 +9,6 @@
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Shared/Data/Items/MeleeConfig.h"
 #include "GameConstants.h"
-#include "Game/Utils/Damage/MyPointDamageEvent.h"
 #include "Game/Utils/Damage/MyDamageType.h"
 #include "DrawDebugHelpers.h"
 #include "Game/GameManager.h"
@@ -27,33 +26,35 @@ UWeaponMeleeComponent::UWeaponMeleeComponent()
 void UWeaponMeleeComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Log, TEXT("UWeaponMeleeComponent::BeginPlay called"));
-	Character = Cast<ABaseCharacter>(GetOwner());
 
-	if (Character) {
-		ActionStateComp = Character->GetActionStateComponent();
-		VisualComp = Character->GetItemVisualComponent();
-	}
+	Character = Cast<ABaseCharacter>(GetOwner());
+	check(Character);
+
+	ActionStateComp = Character->GetActionStateComponent();
+	check(ActionStateComp);
+
+	VisualComp = Character->GetItemVisualComponent();
+	check(VisualComp);
 }
 
 void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 {
 	if (!IsEnabled())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RequestMeleeAttack called but component is disabled"));
+		return;
+	}
+	if (!Character->IsAlive())
+	{
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("RequestMeleeAttack called with AttackIndex: %d"), AttackIndex);
-	if (!Character || !Character->IsAlive())
-		return;
-
 #if !UE_SERVER
-	if (IsOwningClient() && VisualComp)
+	if (IsOwningClient())
 	{
 		if (!CanMeleeNow())
 			return;
 
+		GetWorld()->GetTimerManager().ClearTimer(MeleeTraceTimer);
 		GetWorld()->GetTimerManager().SetTimer(
 			MeleeClientFxTimer,
 			this,
@@ -61,7 +62,8 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 			MeleeTraceDelay,
 			false
 		);
-		if (!GetOwner()->HasAuthority())
+
+		if (!Character->HasAuthority())
 		{
 			LastAttackTime = GetWorld()->GetTimeSeconds();
 		}
@@ -94,73 +96,70 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 void UWeaponMeleeComponent::ServerStartMelee_Implementation(int32 AttackIndex)
 {
 	if (!IsEnabled())
+	{
 		return;
+	}
 	StartMelee_ServerAuth(AttackIndex);
 }
 
 void UWeaponMeleeComponent::StartMelee_ServerAuth(int32 AttackIndex)
 {
 	if (!CanMeleeNow())
+	{
 		return;
+	}
 
 	// Set server state once
-	ActionStateComp->TrySetState(EActionState::Melee);
+	if (!ActionStateComp->TrySetState(EActionState::Melee))
+	{
+		return;
+	}
 	LastAttackTime = GetWorld()->GetTimeSeconds();
-
 	// Play montage for everyone (you can skip owning client here if you want)
 	MulticastPlayMelee(AttackIndex);
 
-	// Delay the trace by 1 second (hit timing)
-	if (UWorld* World = GetWorld())
-	{
-		World->GetTimerManager().ClearTimer(MeleeTraceTimer);
-
-		//PerformMeleeTrace(AttackIndex);
-		FTimerDelegate Delegate;
-		Delegate.BindUObject(this, &UWeaponMeleeComponent::PerformMeleeTrace, AttackIndex);
-
-		World->GetTimerManager().SetTimer(
-			MeleeTraceTimer,
-			Delegate,
-			MeleeTraceDelay,
-			false
-		);
-	}
+	//PerformMeleeTrace(AttackIndex);
+	FTimerDelegate Delegate;
+	Delegate.BindUObject(this, &UWeaponMeleeComponent::PerformMeleeTrace, AttackIndex);
+	GetWorld()->GetTimerManager().ClearTimer(MeleeTraceTimer);
+	GetWorld()->GetTimerManager().SetTimer(
+		MeleeTraceTimer,
+		Delegate,
+		MeleeTraceDelay,
+		false
+	);
 }
 
 void UWeaponMeleeComponent::MulticastPlayMelee_Implementation(int32 AttackIndex)
 {
-	UE_LOG(LogTemp, Log, TEXT("MulticastPlayMelee called with AttackIndex: %d"), AttackIndex);
-	if (!Character)
-		return;
-
 	// Skip owning client if already played
 	if (IsOwningClient())
-		return;
-
-	if (VisualComp)
 	{
-		if (MeleeConfig) {
-			if (AttackIndex == FGameConstants::MELEE_ATTACK_INDEX_PRIMARY) {
-				if (MeleeConfig->Attack1Montage) {
-					VisualComp->PlayMeleeAttack(MeleeConfig->Attack1Montage);
-				}
+		return;
+	}
+
+	if (MeleeConfig) {
+		if (AttackIndex == FGameConstants::MELEE_ATTACK_INDEX_PRIMARY) {
+			if (MeleeConfig->Attack1Montage) {
+				VisualComp->PlayMeleeAttack(MeleeConfig->Attack1Montage);
 			}
-			else {
-				if (MeleeConfig->Attack2Montage) {
-					VisualComp->PlayMeleeAttack(MeleeConfig->Attack2Montage);
-				}
+		}
+		else {
+			if (MeleeConfig->Attack2Montage) {
+				VisualComp->PlayMeleeAttack(MeleeConfig->Attack2Montage);
 			}
 		}
 	}
 }
 
-
 void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 {
-	UE_LOG(LogTemp, Log, TEXT("PerformMeleeTrace called for AttackIndex: %d"), AttackIndex);
 	if (!MeleeConfig) {
-		UE_LOG(LogTemp, Warning, TEXT("PerformMeleeTrace: MeleeConfig is null"));
+		return;
+	}
+
+	if (!ActionStateComp->IsInState(EActionState::Melee))
+	{
 		return;
 	}
 
@@ -178,7 +177,6 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 		});
 
 	TSet<TWeakObjectPtr<AActor>> DamagedActors;
-
 	for (const FHitResult& Hit : Hits)
 	{
 		AActor* Target = Hit.GetActor();
@@ -191,20 +189,12 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 
 		DamagedActors.Add(Target);
 
-		FMyPointDamageEvent DamageEvent;
-		DamageEvent.DamageTypeClass = UMyDamageType::StaticClass();
-		DamageEvent.WeaponID = MeleeConfig->Id;
-
 		FDamageApplyParams Params;
 		Params.BaseDamage = MeleeConfig->Damage;
 		Params.WeaponId = MeleeConfig->Id;
 		Params.DamageTypeClass = UMyDamageType::StaticClass();
 		Params.bEnableHeadshot = true;
 		Params.Hit = Hit;
-
-		// log damage
-		UE_LOG(LogTemp, Log, TEXT("Applying melee damage to Actor: %s, Damage: %f"),
-			*Target->GetName(), Params.BaseDamage);
 
 		DamageHelpers::ApplyMyPointDamage(
 			Target,
@@ -216,18 +206,15 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 		// limit max number of actors hit per swing (cleave limit)
 		if (DamagedActors.Num() >= 2) break;
 	}
-
 	ActionStateComp->TrySetState(EActionState::Idle);
 }
 
 bool UWeaponMeleeComponent::CanMeleeNow() const
 {
 	if (!IsEnabled())
+	{
 		return false;
-
-	if (!ActionStateComp)
-		return false;
-
+	}
 	if (!MeleeConfig) {
 		return false;
 	}
@@ -236,72 +223,66 @@ bool UWeaponMeleeComponent::CanMeleeNow() const
 	{
 		return false;
 	}
-	if (GetWorld())
+	
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	if (CurrentTime - LastAttackTime < MeleeConfig->Interval)
 	{
-		float CurrentTime = GetWorld()->GetTimeSeconds();
-		if (CurrentTime - LastAttackTime < MeleeConfig->Interval)
-		{
-			return false;
-		}
+		return false;
 	}
 	return true;
 }
 
 bool UWeaponMeleeComponent::IsOwningClient() const
 {
-	return Character && Character->IsLocallyControlled();
+	return Character->IsLocallyControlled();
 }
 
 void UWeaponMeleeComponent::HandleActiveItemChanged(EItemId MeleeId)
 {
-	if (!IsEnabled())
-		return;
-
 	if (MeleeId == EItemId::NONE)
 	{
 		MeleeConfig = nullptr;
 		return;
 	}
-	MeleeConfig = Cast<UMeleeConfig>(
-		UItemsManager::Get(GetWorld())->GetItemById(MeleeId)
-	);
+
+	UItemsManager* ItemsManager = UItemsManager::Get(GetWorld());
+	MeleeConfig = Cast<UMeleeConfig>(ItemsManager->GetItemById(MeleeId));
 }
 
 void UWeaponMeleeComponent::PredictMeleeHitFX()
 {
 	if (!IsOwningClient())
+	{
 		return;
+	}
 
 	TArray<FHitResult> Hits;
+	TSet<TWeakObjectPtr<AActor>> HitActors; // prevent multiple FX on same actor from multiple hit results
+
 	if (DoMeleeSweepMulti(Hits, MeleeRange, MeleeRadius))
 	{
 		for (const FHitResult& H : Hits)
 		{
 			AActor* A = H.GetActor();
 			if (!A) continue;
-		
-			if (!A->IsA<APawn>()) // only pawns
+
+			if (HitActors.Contains(A))
 			{
-				//if (MeleeConfig && MeleeConfig->HitDecalMat)
-				//{
-				//	const FVector Location = H.ImpactPoint;
-				//	const FRotator Rotation = H.ImpactNormal.Rotation();
-
-				//	const float DecalSize = 16.f; // adjust as needed
-				//	const float LifeTime = 10.f;  // 0 = infinite
-
-				//	UGameplayStatics::SpawnDecalAtLocation(
-				//		GetWorld(),
-				//		MeleeConfig->HitDecalMat,
-				//		FVector(DecalSize),
-				//		Location,
-				//		Rotation,
-				//		LifeTime
-				//	);
-				//}
+				continue;
+			}
+		
+			APawn* Pawn = Cast<APawn>(A);
+			if (!IsValid(Pawn))
+			{
 				continue;
 			}
 
+			ABaseCharacter* HitChar = Cast<ABaseCharacter>(Pawn);
+			if (HitChar && !HitChar->IsAlive())
+			{
+				continue;
+			}
+			HitActors.Add(A);
 			PlayHitFX_Local(H.ImpactPoint, H.ImpactNormal);
 		}
 	}
@@ -313,12 +294,8 @@ void UWeaponMeleeComponent::PlayHitFX_Local(
 )
 {
 	UGameManager* GameManager = UGameManager::Get(GetWorld());
-	if (!GameManager)
-		return;
-
 	UGlobalDataAsset* GlobalData = GameManager->GlobalData;
-	UE_LOG(LogTemp, Log, TEXT("PlayHitFX_Local called at Point: %s, Normal: %s"),
-		*ImpactPoint.ToString(), *ImpactNormal.ToString());
+
 	if (GlobalData->MeleeHitFx) {
 		UParticleSystemComponent* PSC = UGameplayStatics::SpawnEmitterAtLocation(
 			GetWorld(),
@@ -331,7 +308,6 @@ void UWeaponMeleeComponent::PlayHitFX_Local(
 
 		if (PSC)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Muzzle Flash Spawned"));
 			PSC->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 		}
 	}
@@ -353,16 +329,10 @@ bool UWeaponMeleeComponent::DoMeleeSweepMulti(
 ) const
 {
 	OutHits.Reset();
-
-	if (!Character || !GetWorld())
-		return false;
-
 	FVector Start;
 	FRotator ViewRot;
 	Character->GetActorEyesViewPoint(Start, ViewRot);
-
 	const FVector End = Start + ViewRot.Vector() * Range;
-
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(MeleeSweep), false, Character);
 	Params.AddIgnoredActor(Character);
 

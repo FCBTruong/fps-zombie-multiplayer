@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "ActionStateComponent.generated.h"
 
+class ABaseCharacter;
+
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnActionStateChanged, EActionState /*Old*/, EActionState /*New*/);
 
 UENUM(BlueprintType)
@@ -39,15 +41,13 @@ public:
 	UActionStateComponent();
 
     EActionState GetState() const { return State; }
-    bool IsIdle() const { return State == EActionState::Idle; }
-
-    // Queries
-    bool CanTransition(EActionState From, EActionState To) const;
-
-    // Server-only mutations
-    bool TrySetState(EActionState NewState);
     void ForceSetState(EActionState NewState); // use sparingly (reset on death)
 
+    bool IsIdle() const { return State == EActionState::Idle; }
+    bool CanTransition(EActionState From, EActionState To) const;
+    // Server-only mutations
+    bool TrySetState(EActionState NewState);
+ 
     // Useful gates
     bool CanEquipNow() const { return IsIdle(); }
     bool CanReloadNow() const;
@@ -57,13 +57,16 @@ public:
 	bool CanPlantNow() const { return CanTransition(State, EActionState::Planting); }
 	bool CanDefuseNow() const { return CanTransition(State, EActionState::Defusing); }
 	bool IsInState(EActionState QueryState) const { return State == QueryState; }
+
+    // delegates
+    FOnActionStateChanged OnStateChanged;
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-public:	
-    FOnActionStateChanged OnStateChanged;
+	virtual void BeginPlay() override;
 
 private:
+	ABaseCharacter* OwnerCharacter = nullptr;
+
     UPROPERTY(ReplicatedUsing = OnRep_State)
     EActionState State = EActionState::Idle;
 

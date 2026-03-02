@@ -9,7 +9,6 @@
 
 void AThrownProjectileIncendiary::OnExplode()
 {
-    UE_LOG(LogTemp, Log, TEXT("AThrownProjectileIncendiary::ExplodeNow"));
     FVector ImpactPoint = GetActorLocation();
     MulticastExplode(ImpactPoint);
     SetLifeSpan(LifeTime);
@@ -23,7 +22,7 @@ void AThrownProjectileIncendiary::OnExplode()
         true
     );
 
-    DrawDebugSphere(
+  /*  DrawDebugSphere(
         GetWorld(),
         GetActorLocation(),
         Data->ExplosionRadius,
@@ -31,7 +30,7 @@ void AThrownProjectileIncendiary::OnExplode()
         FColor::Red,
         false,              // bPersistentLines
         LifeTime                // life time
-    );
+    ); */
 }
 
 void AThrownProjectileIncendiary::MulticastExplode_Implementation(const FVector& ImpactPoint)
@@ -46,8 +45,6 @@ void AThrownProjectileIncendiary::MulticastExplode_Implementation(const FVector&
     {
         Rotation = Hit.ImpactNormal.Rotation();
     }
-
-    UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::MulticastExplode_Implementation"));
 
     if (Data && Data->ExplosionSFX)
     {
@@ -71,14 +68,10 @@ void AThrownProjectileIncendiary::MulticastExplode_Implementation(const FVector&
 
         if (Decal)
         {
-			UE_LOG(LogTemp, Log, TEXT("Spawned explosion decal at location: %s"), *ImpactPoint.ToString());
             const float FadeDuration = 1.0f;   // last 3 seconds
             const float FadeStartDelay = FMath::Max(0.f, LifeTime - FadeDuration);
 
             Decal->SetFadeOut(FadeStartDelay, FadeDuration, true);
-
-            UE_LOG(LogTemp, Log, TEXT("Decal LifeTime=%.2f FadeStart=%.2f FadeDur=%.2f"),
-                LifeTime, FadeStartDelay, FadeDuration);
         }
     }
 
@@ -94,7 +87,6 @@ void AThrownProjectileIncendiary::MulticastExplode_Implementation(const FVector&
 
 void AThrownProjectileIncendiary::DoDamage()
 {
-	UE_LOG(LogTemp, Log, TEXT("AThrownProjectileIncendiary::DoDamage - Applying radial damage"));   
     UGameplayStatics::ApplyRadialDamage(
         GetWorld(),
         Data->Damage,          

@@ -40,10 +40,10 @@ void UPlayerUI::NativeConstruct()
             WeaponTextNumbers.Add(Widget);
         }
     }
-	ZombieVsHeroPn->SetVisibility(ESlateVisibility::Hidden);
 
+	ZombieVsHeroPn->SetVisibility(ESlateVisibility::Hidden);
     // update UI by game mode
-	AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
 	if (GS)
     {
 		GS->OnUpdatePlayerSlots.AddUObject(this, &UPlayerUI::UpdatePlayerSlots);
@@ -51,51 +51,27 @@ void UPlayerUI::NativeConstruct()
 		EMatchMode CurrentMatchMode = GS->GetMatchMode();
         if (CurrentMatchMode == EMatchMode::Zombie)
         {
-			RoundLb->SetVisibility(ESlateVisibility::Visible);
-         
-            if (FirstTeamLb)
-            {
-                FirstTeamLb->SetText(FText::FromString(TEXT("Soldier")));
-            }
-            if (SecondTeamLb)
-            {
-                SecondTeamLb->SetText(FText::FromString(TEXT("Zombie")));
-            }
+            RoundLb->SetVisibility(ESlateVisibility::Visible);
+            FirstTeamLb->SetText(FText::FromString(TEXT("Soldier")));
+            SecondTeamLb->SetText(FText::FromString(TEXT("Zombie")));
         }
         else if (CurrentMatchMode == EMatchMode::Spike)
         {
 			RoundLb->SetVisibility(ESlateVisibility::Hidden);
-            if (FirstTeamLb)
-            {
-                FirstTeamLb->SetText(FText::FromString(TEXT("")));
-            }
-            if (SecondTeamLb)
-            {
-                SecondTeamLb->SetText(FText::FromString(TEXT("")));
-            }
+            FirstTeamLb->SetText(FText::FromString(TEXT("")));
+            SecondTeamLb->SetText(FText::FromString(TEXT("")));
         }
         else // TeamDeathMatch
         {
             RoundLb->SetVisibility(ESlateVisibility::Hidden);
-            if (FirstTeamLb)
-            {
-                FirstTeamLb->SetText(FText::FromString(TEXT("")));
-            }
-            if (SecondTeamLb)
-            {
-                SecondTeamLb->SetText(FText::FromString(TEXT("")));
-            }
+            FirstTeamLb->SetText(FText::FromString(TEXT("")));
+            SecondTeamLb->SetText(FText::FromString(TEXT("")));
         }
 	}
 }
 
 void UPlayerUI::ShowInteractMessage(const FText& Message)
 {
-    if (!PickupLabel)
-    {
-        return;
-    }
-
     if (Message.IsEmpty())
     {
         PickupLabel->SetVisibility(ESlateVisibility::Hidden);
@@ -108,7 +84,7 @@ void UPlayerUI::ShowInteractMessage(const FText& Message)
 
 void UPlayerUI::HideInteractMessage()
 {
-    if (PickupLabel && PickupLabel->IsVisible())
+    if (PickupLabel->IsVisible())
     {
         PickupLabel->SetVisibility(ESlateVisibility::Hidden);
     }
@@ -116,7 +92,7 @@ void UPlayerUI::HideInteractMessage()
 
 void UPlayerUI::UpdateHealth(float CurrentHealth, float MaxHealth)
 {
-    if (HpBar && MaxHealth > 0.0f)
+    if (MaxHealth > 0.0f)
     {
         HpBar->SetPercent(CurrentHealth / MaxHealth);
     }
@@ -130,26 +106,14 @@ void UPlayerUI::UpdateAmmo(int CurrentAmmoValue, int RemainAmmoValue)
 {
     FNumberFormattingOptions Opt;
     Opt.SetUseGrouping(false);
-    if (CurrentAmmo)
-    {
-        CurrentAmmo->SetText(FText::AsNumber(CurrentAmmoValue, &Opt));
-    }
-    if (RemainingAmmo)
-    {
-        RemainingAmmo->SetText(FText::AsNumber(RemainAmmoValue, &Opt));
-    }
+    CurrentAmmo->SetText(FText::AsNumber(CurrentAmmoValue, &Opt));
+    RemainingAmmo->SetText(FText::AsNumber(RemainAmmoValue, &Opt));
 }
 
 void UPlayerUI::UpdateTeamScores(int FirstScore, int SecondScore)
 {
-    if (FirstTeamScore) // first team score is our score
-    {
-        FirstTeamScore->SetText(FText::AsNumber(FirstScore));
-    }
-    if (SecondTeamScore)
-    {
-        SecondTeamScore->SetText(FText::AsNumber(SecondScore));
-    }
+    FirstTeamScore->SetText(FText::AsNumber(FirstScore));
+    SecondTeamScore->SetText(FText::AsNumber(SecondScore));
 }
 
 void UPlayerUI::OnHit()
@@ -175,9 +139,7 @@ void UPlayerUI::OnEnter()
 	PnSpike->SetVisibility(ESlateVisibility::Hidden);
 	NotiToastPn->SetVisibility(ESlateVisibility::Hidden);
 	SwitchSideEffPn->SetVisibility(ESlateVisibility::Hidden);   
-    if (MatchToastPn) {
-        MatchToastPn->SetVisibility(ESlateVisibility::Hidden);
-    }
+    MatchToastPn->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UPlayerUI::NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victim, const UItemConfig* WeaponConf, bool bIsHeadShot)
@@ -350,20 +312,14 @@ void UPlayerUI::UpdateCurrentWeapon(EItemId CurrentWeaponId) {
 			const UFirearmConfig* FirearmConf = Cast<UFirearmConfig>(ItemConf);
             if (FirearmConf->FirearmType == EFirearmType::Rifle) {
                 //Rifle
-                if (RifleIcon) {
-                    // set texture
-                    if (FirearmConf->ItemIcon) {
-                        RifleIcon->SetBrushFromTexture(FirearmConf->ItemIcon.Get());
-                    }
-				}
+                if (FirearmConf->ItemIcon) {
+                    RifleIcon->SetBrushFromTexture(FirearmConf->ItemIcon.Get());
+                }
             }
             else {
                 //Pistol
-                if (PistolIcon) {
-                    // set texture
-                    if (FirearmConf->ItemIcon) {
-                        PistolIcon->SetBrushFromTexture(FirearmConf->ItemIcon.Get());
-                    }
+                if (FirearmConf->ItemIcon) {
+                    PistolIcon->SetBrushFromTexture(FirearmConf->ItemIcon.Get());
                 }
             }
            
@@ -372,11 +328,9 @@ void UPlayerUI::UpdateCurrentWeapon(EItemId CurrentWeaponId) {
             }
         }
 
-        if (CurrentItemIcon) {
-            // set texture
-            if (ItemConf->ItemIcon) {
-                CurrentItemIcon->SetBrushFromTexture(ItemConf->ItemIcon.Get());
-            }
+        // set texture
+        if (ItemConf->ItemIcon) {
+            CurrentItemIcon->SetBrushFromTexture(ItemConf->ItemIcon.Get());
         }
     }
 	ShowWeaponGuide();
@@ -388,15 +342,12 @@ void UPlayerUI::ShowWeaponGuide()
 	PlayAnimation(ShowWeaponIcons);
 }
 
-
 void UPlayerUI::ShowScope()
 {
-    if (UGameManager* GM = UGameManager::Get(GetWorld()))
+    UGameManager* GM = UGameManager::Get(GetWorld());
+    if (GM->GlobalData->ZoomScopeSound)
     {
-        if (GM->GlobalData && GM->GlobalData->ZoomScopeSound)
-        {
-            UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->ZoomScopeSound.Get());
-        }
+        UGameplayStatics::PlaySound2D(GetWorld(), GM->GlobalData->ZoomScopeSound.Get());
     }
     ScopeUI->ShowScope();
 }
@@ -417,7 +368,6 @@ void UPlayerUI::OnUpdatePlantSpikeState(bool IsPlanting) {
 }
 
 void UPlayerUI::OnUpdateDefuseSpikeState(bool IsDefusing) {
-	UE_LOG(LogTemp, Warning, TEXT("OnUpdateDefuseSpikeState: IsDefusing = %s"), IsDefusing ? TEXT("true") : TEXT("false"));
     if (IsDefusing) {
         PnSpike->SetVisibility(ESlateVisibility::Visible);
         PlayAnimation(StartDefuseSpikeAnim);
@@ -439,7 +389,6 @@ void UPlayerUI::ShowMatchStateToast(FText Txt, float Delay)
 
     // Capture text for delayed execution
     FText LocalText = Txt;
-
     FTimerHandle TimerHandle;
     GetWorld()->GetTimerManager().SetTimer(
         TimerHandle,
@@ -451,25 +400,20 @@ void UPlayerUI::ShowMatchStateToast(FText Txt, float Delay)
         false
     );
 }
+
 void UPlayerUI::DoShowMatchStateToast(FText Txt)
 {
-    if (MatchToastLb)
-    {
-        MatchToastLb->SetText(Txt);
-        MatchToastPn->SetVisibility(ESlateVisibility::Visible);
-        StopAnimation(ShowMatchStateAnim);
-        PlayAnimation(ShowMatchStateAnim);
-    }
+    MatchToastLb->SetText(Txt);
+    MatchToastPn->SetVisibility(ESlateVisibility::Visible);
+    StopAnimation(ShowMatchStateAnim);
+    PlayAnimation(ShowMatchStateAnim);
 }
 
 void UPlayerUI::ShowNotiToast(FText Txt)
 {
-    if (NotiToastLb && NotiToastPn)
-    {
-        NotiToastLb->SetText(Txt);
-        NotiToastPn->SetVisibility(ESlateVisibility::Visible);
-        PlayAnimation(ShowNotiToastAnim);
-    }
+    NotiToastLb->SetText(Txt);
+    NotiToastPn->SetVisibility(ESlateVisibility::Visible);
+    PlayAnimation(ShowNotiToastAnim);
 }
 
 void UPlayerUI::OnUpdateRoundTime(int TimeEnd) {
@@ -526,62 +470,44 @@ void UPlayerUI::ShowScoreboard(bool bShow) {
 
 void UPlayerUI::UpdateArmor(int ArmorPoints, int MaxArmorPoints) {
 	float ArmorPercent = MaxArmorPoints > 0 ? static_cast<float>(ArmorPoints) / static_cast<float>(MaxArmorPoints) : 0.0f;
-    if (ArmorBar) {
-        ArmorBar->SetPercent(ArmorPercent);
-	}
-    if (AmmorPointLb) {
-        AmmorPointLb->SetText(FText::AsNumber(ArmorPoints));
-    }
-    if (ArmorPoints <= 0) {
-       
-    }
-    else {
- 
-    }
+   
+    ArmorBar->SetPercent(ArmorPercent);
+    AmmorPointLb->SetText(FText::AsNumber(ArmorPoints));
 }
 
 void UPlayerUI::ShowKillMark(bool bHeadShot) {
-    if (KillMarkIcon) {
-        KillMarkIcon->SetVisibility(ESlateVisibility::Visible);
-        PlayAnimation(KillMarkAnim);
+    KillMarkIcon->SetVisibility(ESlateVisibility::Visible);
+    PlayAnimation(KillMarkAnim);
 
-        // update icons
-		UGameManager* GM = UGameManager::Get(GetWorld());
-		UGlobalDataAsset* GlobalData = GM->GlobalData;
+    // update icons
+	UGameManager* GM = UGameManager::Get(GetWorld());
+	UGlobalDataAsset* GlobalData = GM->GlobalData;
         
-        if (bHeadShot) {
-            if (GlobalData->KillMarkHeadshotIcon) {
-                KillMarkIcon->SetBrushFromTexture(GlobalData->KillMarkHeadshotIcon.Get());
-            }
-
-            if (GlobalData->KillHeadshotSound) {
-                UGameplayStatics::PlaySound2D(GetWorld(), GlobalData->KillHeadshotSound.Get());
-            }
+    if (bHeadShot) {
+        if (GlobalData->KillMarkHeadshotIcon) {
+            KillMarkIcon->SetBrushFromTexture(GlobalData->KillMarkHeadshotIcon.Get());
         }
-        else {
-            if (GlobalData->KillMarkNormalIcon) {
-                KillMarkIcon->SetBrushFromTexture(GlobalData->KillMarkNormalIcon.Get());
-            }
 
-            if (GlobalData->KillMarkSound) {
-				UGameplayStatics::PlaySound2D(GetWorld(), GlobalData->KillMarkSound.Get());
-            }
-		}
+        if (GlobalData->KillHeadshotSound) {
+            UGameplayStatics::PlaySound2D(GetWorld(), GlobalData->KillHeadshotSound.Get());
+        }
     }
+    else {
+        if (GlobalData->KillMarkNormalIcon) {
+            KillMarkIcon->SetBrushFromTexture(GlobalData->KillMarkNormalIcon.Get());
+        }
+
+        if (GlobalData->KillMarkSound) {
+			UGameplayStatics::PlaySound2D(GetWorld(), GlobalData->KillMarkSound.Get());
+        }
+	}
 }
 
 void UPlayerUI::StartRoundClock()
 {
     UWorld* World = GetWorld();
-    if (!World)
-    {
-        return;
-    }
-	UE_LOG(LogTemp, Log, TEXT("UPlayerUI::StartRoundClock: Starting round clock with end time %d"), RoundTimeEnd);
-
     // Run immediately and then every 1s
     UpdateRoundClockOnce();
-
     World->GetTimerManager().ClearTimer(RoundClockTimerHandle);
     World->GetTimerManager().SetTimer(
         RoundClockTimerHandle,
@@ -599,24 +525,17 @@ void UPlayerUI::StopRoundClock()
         World->GetTimerManager().ClearTimer(RoundClockTimerHandle);
     }
 
-    if (MatchTimeLb) {
-        MatchTimeLb->SetText(FText::FromString(TEXT("")));
-	}
+    MatchTimeLb->SetText(FText::FromString(TEXT("")));
 }
 
 void UPlayerUI::UpdateRoundClockOnce()
 {
-    if (RoundTimeEnd <= 0 || !MatchTimeLb)
+    if (RoundTimeEnd <= 0)
     {
         return;
     }
 
     UWorld* World = GetWorld();
-    if (!World)
-    {
-        return;
-    }
-
     AShooterGameState* GS = World->GetGameState<AShooterGameState>();
     if (!GS)
     {
@@ -645,12 +564,10 @@ void UPlayerUI::UpdateRoundClockOnce()
 
     const int32 Minutes = Remaining / 60;
     const int32 Seconds = Remaining % 60;
-
     MatchTimeLb->SetText(FText::FromString(FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds)));
 
     const FLinearColor NormalColor = FLinearColor::FromSRGBColor(FColor::FromHex(TEXT("FFFACDFF")));
     MatchTimeLb->SetColorAndOpacity((Remaining <= 10) ? FLinearColor::Red : NormalColor);
-
     if (Remaining == 0)
     {
         StopRoundClock();
@@ -658,9 +575,7 @@ void UPlayerUI::UpdateRoundClockOnce()
 }
 
 void UPlayerUI::UpdatePlayerName(const FString& PlayerName) {
-    if (PlayerNameLb) {
-        PlayerNameLb->SetText(FText::FromString(PlayerName));
-    }
+    PlayerNameLb->SetText(FText::FromString(PlayerName));
 }
 
 void UPlayerUI::SetRadarVisible(bool bVisible)
@@ -674,12 +589,9 @@ void UPlayerUI::SetRadarVisible(bool bVisible)
 
 void UPlayerUI::SetMatchInfoPnVisible(bool bVisible)
 {
-    if (MatchInfoPn)
-    {
-        MatchInfoPn->SetVisibility(
-            bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
-        );
-    }
+    MatchInfoPn->SetVisibility(
+        bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
+    );
 }
 
 void UPlayerUI::ShowGameResult(ETeamId WinTeam) {
@@ -701,7 +613,6 @@ void UPlayerUI::ShowGameResult(ETeamId WinTeam) {
     );
 	MatchResultPn->SetVisibility(ESlateVisibility::Visible);
 	MatchResultLb->SetText(Txt);
-	UE_LOG(LogTemp, Log, TEXT("UPlayerUI::ShowGameResult: WinTeam = %d"), static_cast<int32>(WinTeam));
 }
 
 void UPlayerUI::OnSwitchSide() {
@@ -803,7 +714,6 @@ void UPlayerUI::UpdateHeroZombieNum() {
 }
 
 void UPlayerUI::UpdatePlayerSlots() {
-	UE_LOG(LogTemp, Warning, TEXT("DEBUGMMM UpdatePlayerSlots: Updating player slots"));
     PlayerSlotsLeft->ClearChildren();
 	PlayerSlotsRight->ClearChildren();
     UScaleBox* ScaleBox = NewObject<UScaleBox>(this);
@@ -815,7 +725,7 @@ void UPlayerUI::UpdatePlayerSlots() {
         SBSlot->SetSize(ESlateSizeRule::Fill);   
         SBSlot->SetHorizontalAlignment(HAlign_Right);
     }
-    AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
     if (!GS) {
         return;
     }
@@ -878,7 +788,6 @@ void UPlayerUI::ShowSettings(bool bShow)
     {
         return;
     }
-
     GameSettingsWidget->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 

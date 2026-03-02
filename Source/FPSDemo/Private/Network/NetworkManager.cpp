@@ -11,8 +11,6 @@ void UNetworkManager::Initialize(FSubsystemCollectionBase& Collection)
     Super::Initialize(Collection);
 	bIsConnecting = false;
     Dispatcher = MakeUnique<FPacketDispatcher>(this);
-    // log token
-	UE_LOG(LogTemp, Log, TEXT("Player Token: %s"), *Token);
     Connect();
 }
 
@@ -45,17 +43,12 @@ void UNetworkManager::Connect()
     Url = GetDefault<UMyNetworkSettings>()->DevWebSocketUrl;
 #endif
 
-	UE_LOG(LogTemp, Log, TEXT("WebSocket URL: %s"), *Url);
-
     Socket = FWebSocketsModule::Get().CreateWebSocket(Url);
-
     Socket->OnConnected().AddUObject(this, &UNetworkManager::HandleConnected);
     Socket->OnConnectionError().AddUObject(this, &UNetworkManager::HandleConnectionError);
     Socket->OnClosed().AddUObject(this, &UNetworkManager::HandleClosed);
-
     // UE 5.6 expects 3 params here
     Socket->OnRawMessage().AddUObject(this, &UNetworkManager::OnRawMessage);
-
     Socket->Connect();
 
 	UE_LOG(LogTemp, Log, TEXT("WebSocket connection initiated"));
@@ -145,7 +138,6 @@ void UNetworkManager::HandleLoginSuccess(const game::net::LoginReply& Reply)
 	Token = Reply.token().c_str();
 
 	UPlayerInfoManager::Get(GetWorld())->SetUserId(Reply.user_id());
-
     UE_LOG(LogTemp, Log, TEXT("Login successful, token saved"));
     OnLoginSuccess.Broadcast();
 }

@@ -14,6 +14,7 @@ class UInventoryComponent;
 class UActionStateComponent;
 class UItemConfig;
 class UGameManager;
+class ABaseCharacter;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnActiveItemChanged, EItemId);
 DECLARE_MULTICAST_DELEGATE_TwoParams(
@@ -46,16 +47,9 @@ public:
 	FOnAmmoChanged OnAmmoChanged;
 protected:
     virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnEnabledChanged(bool bNowEnabled) override;
-
-private:
-    UFUNCTION()
-    void OnRep_ActiveItemId();
-
-    // RPC
-    UFUNCTION(Server, Reliable)
-    void ServerRequestSelectActiveItem(EItemId ItemId);
 
 private:
     // Replicated active item id (in hands)
@@ -66,19 +60,14 @@ private:
     EEquippedAnimState CachedAnimState = EEquippedAnimState::Unarmed;
 
     // Dependencies (same owner actor)
-    UPROPERTY() 
-    TObjectPtr<UInventoryComponent> InventoryComp = nullptr;
-
-    UPROPERTY() 
-    TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
-
-    UPROPERTY() 
-    TObjectPtr<UGameManager> CachedGM = nullptr;
+    UInventoryComponent* InventoryComp = nullptr;
+    UActionStateComponent* ActionStateComp = nullptr;
+	ABaseCharacter* OwnerCharacter = nullptr;
 
 private:
     // Helpers
     bool CanSelectNow() const;
-    bool CanSelectItem(EItemId ItemId);
+    bool CanSelectItem(EItemId ItemId) const;
     bool CanDropItem() const;
     void RefreshCachedState();
     void Select_Internal(EItemId ItemId);
@@ -91,4 +80,11 @@ private:
 
 	UFUNCTION(Server, Reliable)
     void ServerDropItem();
+
+    UFUNCTION()
+    void OnRep_ActiveItemId();
+
+    // RPC
+    UFUNCTION(Server, Reliable)
+    void ServerRequestSelectActiveItem(EItemId ItemId);
 };

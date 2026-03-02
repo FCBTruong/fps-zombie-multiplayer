@@ -31,7 +31,6 @@ void UChatUI::NativeConstruct()
 
 void UChatUI::OnChatTextCommitted(const FText& Text, ETextCommit::Type CommitMethod)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ChatUI: OnChatTextCommitted called with text: %s"), *Text.ToString());
 	if (CommitMethod == ETextCommit::OnEnter)
 	{
 		if (ChatSubsystem)

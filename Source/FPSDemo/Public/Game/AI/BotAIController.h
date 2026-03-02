@@ -16,7 +16,6 @@ class ABaseCharacter;
 namespace BotBBKeys
 {
     inline const FName TargetActor(TEXT("Obj_TargetActor"));
-    inline const FName HasLOS(TEXT("B_HasLineSight"));
     inline const FName TargetLocation(TEXT("Vec_TargetLocation"));
     inline const FName MatchMode(TEXT("E_MatchMode"));
     inline const FName MatchState(TEXT("E_MatchState"));
@@ -43,7 +42,6 @@ public:
     void StartPlantingSpike();
     void StartDefusingSpike();
     void RequestFireOnce();
-
     void SetTargetActor(ABaseCharacter* NewTarget);
 	void SetMatchMode(EMatchMode NewMode);
 	void SetSpikeRole(EBotRole NewRole);
@@ -56,25 +54,21 @@ public:
 	void SetHoldLocation(const FVector& NewLocation);
 	void SetCanShoot(bool bCanShoot);
 	void SetMatchState(EMyMatchState NewState);
+    void StartLogic();
+	void StopLogic(const FString& Reason);
 
-	EBotRole GetSpikeRole() const { return SpikeRole; }
-	ABaseCharacter* GetTargetActor() const;
 	bool GetIsAttacker() const { return bIsAttacker; }
 	bool HasLineOfSight() const { return bHasLineSight; }
-    ABaseCharacter* GetBotChar() const { return CachedChar.Get(); }
     float GetLastTimeSeenTarget() const { return LastTimeSeenTarget; }
+
+    EBotRole GetSpikeRole() const { return SpikeRole; }
+    ABaseCharacter* GetTargetActor() const;
+    ABaseCharacter* GetBotChar() const { return CachedChar.Get(); }
 
 protected:
     virtual void OnPossess(APawn* InPawn) override;
     virtual void BeginPlay() override;
-    virtual void Tick(float DeltaSeconds) override;
     virtual void OnUnPossess() override;
-    UFUNCTION()
-    void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
-    UFUNCTION()
-    void OnTargetPerceptionUpdated(
-        AActor* Actor,
-        FAIStimulus Stimulus);
     void OnAmmoChanged(int32 Clip, int32 Reserve);
 	virtual void UpdateControlRotation(float DeltaTime, bool bUpdatePawn = true) override;
     void StartReload();
@@ -94,21 +88,22 @@ private:
     UPROPERTY()
     UAISenseConfig_Damage* DamageConfig;
 
+    float LastTimeSeenTarget;
+    FVector PlantLocation;
+    FVector ScoutLocation;
+    FVector HoldLocation;
     ABaseCharacter* TargetActor;
     EMatchMode CurrentMatchMode;
     EBotRole SpikeRole;
     AActor* SpikeActor;
-    bool bIsAttacker;
-    FVector PlantLocation;
     ECharacterRole CharacterRole;
-	FVector ScoutLocation;
-	FVector HoldLocation;
-	bool bHasLineSight;
-    float LastTimeSeenTarget;
     FTimerHandle ReloadDelayHandle;
     TWeakObjectPtr<ABaseCharacter> CachedChar;
+    EMyMatchState CurrentMatchState;
+
 	bool bCanShoot;
-	EMyMatchState CurrentMatchState;
+    bool bIsAttacker;
+    bool bHasLineSight;
 
     void BindPawn(APawn* InPawn);
     void UnbindPawn();

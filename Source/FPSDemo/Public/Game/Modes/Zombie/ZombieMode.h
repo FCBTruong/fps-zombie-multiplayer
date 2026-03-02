@@ -15,12 +15,12 @@ class FPSDEMO_API AZombieMode : public AShooterGameMode
 	GENERATED_BODY()
 
 public:
-	virtual void StartPlay() override;
 	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
-	EMatchMode GetMatchMode() const final { return EMatchMode::Zombie; }
 	void BecomeHero(ABaseCharacter* Character);
+	EMatchMode GetMatchMode() const final { return EMatchMode::Zombie; }
 
 protected:
+	virtual void StartPlay() override;
 	virtual void StartRound() override;
 	virtual void EndRound(ETeamId WinningTeam) override;
 	virtual void EndGame(ETeamId WinningTeam) override;

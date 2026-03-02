@@ -43,13 +43,13 @@ public:
 	void SetIsConnected(bool bInIsConnected);
 	int GetCharacterSkin() const { return CharacterSkin; }
 	void SetCharacterSkin(int InCharacterSkin) { CharacterSkin = InCharacterSkin; }
-	const FString& GetPlayerName() { return PlayerName; }
-	const FString& GetAvatar() { return Avatar; }
+	const FString& GetPlayerName() const{ return PlayerName; }
+	const FString& GetAvatar() const { return Avatar; }
 	void SetAvatar(const FString& InAvatar) { Avatar = InAvatar; }
 	void SetCrosshairCode(const FString& InCrosshairCode) { CrosshairCode = InCrosshairCode; }
 	const FString& GetCrosshairCode() const { return CrosshairCode; }
 	void SetController(AController* InController) { Controller = InController; }
-	AController* GetController() { return Controller; }
+	AController* GetController() const;
 
 	UFUNCTION()
 	void OnRep_Pawn();
@@ -97,5 +97,5 @@ private:
 	TObjectPtr<APawn> Pawn = nullptr;
 
 	int32 CharacterSkin;
-	AController* Controller;
+	TWeakObjectPtr<AController> Controller;
 };

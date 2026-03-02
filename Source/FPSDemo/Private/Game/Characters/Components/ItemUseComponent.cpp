@@ -19,66 +19,51 @@ void UItemUseComponent::BeginPlay() {
     Super::BeginPlay();
 
     OwnerChar = Cast<ABaseCharacter>(GetOwner());
-    if (OwnerChar)
-    {
-        EquipComp = OwnerChar->GetEquipComponent();
-        ActionStateComp = OwnerChar->GetActionStateComponent();
-        WeaponFireComp = OwnerChar->GetWeaponFireComponent();
-        WeaponMeleeComp = OwnerChar->GetWeaponMeleeComponent();
-        ThrowableComp = OwnerChar->GetThrowableComponent();
-		SpikeComp = OwnerChar->GetSpikeComponent();
-    }
+	check(OwnerChar);
+   
+    EquipComp = OwnerChar->GetEquipComponent();
+    ActionStateComp = OwnerChar->GetActionStateComponent();
+    WeaponFireComp = OwnerChar->GetWeaponFireComponent();
+    WeaponMeleeComp = OwnerChar->GetWeaponMeleeComponent();
+    ThrowableComp = OwnerChar->GetThrowableComponent();
+	SpikeComp = OwnerChar->GetSpikeComponent();
+
+	check(EquipComp);
+	check(ActionStateComp);
+	check(WeaponFireComp);
+	check(WeaponMeleeComp);
+	check(ThrowableComp);
+	check(SpikeComp);
 }
 
 void UItemUseComponent::PrimaryPressed()
 {
-	UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::PrimaryPressed called"));
     if (!IsEnabled()) {
-		UE_LOG(LogTemp, Log, TEXT("UItemUseComponent: Not Enabled"));
         return;
     }
-    if (!OwnerChar || !EquipComp) {
-		UE_LOG(LogTemp, Log, TEXT("UItemUseComponent: No OwnerChar or EquipComp"));
-        return;
-    }
+    
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();
     if (!Item) {
-		UE_LOG(LogTemp, Log, TEXT("UItemUseComponent: No Active Item"));
         return;
     }
 
-	UE_LOG(LogTemp, Log, TEXT("UItemUseComponent:Active Item ID: %d"), static_cast<int32>(Item->Id)); 
-
-    // print type
-	UE_LOG(LogTemp, Log, TEXT("UItemUseComponent:Active Item Type: %d"), static_cast<int32>(Item->GetItemType()));
     switch (Item->GetItemType())
     {
     case EItemType::Firearm:
-        UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::debug00 called"));
-        if (WeaponFireComp) {
-            WeaponFireComp->RequestStartFire();
-        }
+        WeaponFireComp->RequestStartFire();
         break;
 
     case EItemType::Melee:
-        UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::debug01 called"));
-        if (WeaponMeleeComp) {
-            UE_LOG(LogTemp, Log, TEXT("UItemUseComponent::debug02 called"));
-            WeaponMeleeComp->RequestMeleeAttack(FGameConstants::MELEE_ATTACK_INDEX_PRIMARY);
-        }
+        WeaponMeleeComp->RequestMeleeAttack(FGameConstants::MELEE_ATTACK_INDEX_PRIMARY);
         break;
 
     case EItemType::Throwable:
-        if (ThrowableComp) {
-            ThrowableComp->RequestStartThrow();
-        }
+        ThrowableComp->RequestStartThrow();
         break;
 
     default:
-        if (Item->Id == EItemId::SPIKE) {
-            if (SpikeComp) {
-                SpikeComp->RequestPlantSpike();
-            }
+        if (Item->Id == EItemId::SPIKE) {       
+            SpikeComp->RequestPlantSpike();
         }
         break;
     }
@@ -89,26 +74,21 @@ void UItemUseComponent::PrimaryReleased()
     if (!IsEnabled()) {
         return;
     }
-    if (!OwnerChar || !EquipComp) return;
 
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();
-    if (!Item) return;
+    if (!Item) {
+        return;
+    }
 
     switch (Item->GetItemType())
     {
     case EItemType::Firearm:
-        if (WeaponFireComp)
-        {
-            WeaponFireComp->RequestStopFire();
-        }
+        WeaponFireComp->RequestStopFire();
         break;
     default:
-        // Spike is currently keyed by ItemId in your project
         if (Item->Id == EItemId::SPIKE)
         {
-            if (SpikeComp) {
-                SpikeComp->RequestStopPlantSpike();
-            }
+            SpikeComp->RequestStopPlantSpike();
         }
         break;
     }
@@ -126,8 +106,7 @@ void UItemUseComponent::SecondaryPressed()
     if (!IsEnabled()) {
         return;
 	}
-    if (!OwnerChar || !EquipComp) return;
-
+  
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();
     if (!Item) {
         return;
@@ -145,10 +124,7 @@ void UItemUseComponent::SecondaryPressed()
         break;
 
     case EItemType::Melee:
-        if (WeaponMeleeComp)
-        {
-            WeaponMeleeComp->RequestMeleeAttack(FGameConstants::MELEE_ATTACK_INDEX_SECONDARY);
-        }
+        WeaponMeleeComp->RequestMeleeAttack(FGameConstants::MELEE_ATTACK_INDEX_SECONDARY);
         break;
 
     default:
@@ -160,18 +136,11 @@ void UItemUseComponent::ReloadPressed() {
     if (!IsEnabled()) {
         return;
     }
-    if (!OwnerChar || !EquipComp) return;
-
     const UItemConfig* Item = EquipComp->GetActiveItemConfig();
-    if (!Item) {
+    if (!Item || Item->GetItemType() != EItemType::Firearm)
+    {
         return;
     }
 
-    if (Item->GetItemType() != EItemType::Firearm) {
-        return;
-    }
-
-    if (WeaponFireComp) {
-        WeaponFireComp->RequestReload();
-    }
+    WeaponFireComp->RequestReload();
 }

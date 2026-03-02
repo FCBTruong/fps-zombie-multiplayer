@@ -7,35 +7,40 @@
 #include "Components/ActorComponent.h"
 #include "InteractComponent.generated.h"
 
+class ABaseCharacter;
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FShowInteractMessage, const FText&);
-DECLARE_MULTICAST_DELEGATE(FHideInteractMessage)
+DECLARE_MULTICAST_DELEGATE(FHideInteractMessage);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FPSDEMO_API UInteractComponent : public UActorComponent
 {
 	GENERATED_BODY()
-private:
-	UPROPERTY()
-	TWeakObjectPtr<AActor> FocusedActor;
-public:	
-	// Sets default values for this component's properties
-	UInteractComponent();
 
 protected:
-	// Called when the game starts
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void BeginPlay() override;
+
+private:
+	ABaseCharacter* OwnerCharacter = nullptr;
+
+	UPROPERTY()
+	TWeakObjectPtr<AActor> FocusedActor;
 
 	UFUNCTION(Server, Reliable)
 	void ServerTryPickup(APickupItem* Item);
+
 	void HandlePickup_Internal(APickupItem* Item);
 	void SetFocus(AActor* NewActor);
 	void TraceFocus();
 	void EndFocus(AActor* Actor);
 	void StartFocus(AActor* Actor);
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	UInteractComponent();
+	
 	void TryPickup();	
+
+	// delegates
 	FShowInteractMessage ShowInteractMessage;
 	FHideInteractMessage HideInteractMessage;
 

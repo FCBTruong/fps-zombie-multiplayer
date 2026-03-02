@@ -9,7 +9,6 @@
 class USkeletalMeshComponent;
 class UStaticMeshComponent;
 class UItemConfig;
-class USceneCaptureComponent2D;
 
 enum class EActiveMesh : uint8 { None, Skeletal, Static };
 UCLASS()
@@ -21,16 +20,17 @@ public:
 	// Sets default values for this actor's properties
 	AEquippedItem();
 
-	virtual void InitFromConfig(UItemConfig* InConfig);
+	virtual void InitFromConfig(const UItemConfig* InConfig);
+	virtual void SetViewFps(bool bIsFps);
+
 	const UItemConfig* GetItemConfig() const { return Config; }
 	UMeshComponent* GetMainMesh() const;
-	virtual void SetViewFps(bool bIsFps);
 
 protected:
 	bool bIsFpsView;
 
 	UPROPERTY()
-	TObjectPtr<UItemConfig> Config;
+	TObjectPtr<const UItemConfig> Config;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USceneComponent> Root;

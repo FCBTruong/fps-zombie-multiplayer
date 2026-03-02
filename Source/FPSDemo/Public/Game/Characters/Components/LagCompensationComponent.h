@@ -99,8 +99,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Lag Compensation", meta = (ClampMin = "0.05", ClampMax = "1.0"))
 	float MaxRecordTime = 0.25f;
 
-	UPROPERTY()
-	TObjectPtr<ABaseCharacter> OwnerCharacter = nullptr;
+	ABaseCharacter* OwnerCharacter = nullptr;
 
 	// Newest frame at index 0
 	UPROPERTY()

@@ -15,37 +15,22 @@
 // Sets default values for this component's properties
 UPickupComponent::UPickupComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
-
-// Called when the game starts
-void UPickupComponent::BeginPlay()
-{
-	Super::BeginPlay();
-	UE_LOG(LogTemp, Warning, TEXT("PickupComponent::BeginPlay called"));
-	GMR = UGameManager::Get(GetWorld());
-}
-
-
-// Called every frame
-void UPickupComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-}
-
+// Server called
 void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 {
+	if (!GetOwner()->HasAuthority())
+	{
+		return;
+	}
+
 	if (!IsEnabled()) {
 		return;
 	}
 	ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
-	if (!OwnerCharacter)
+	if (!IsValid(OwnerCharacter))
 	{
 		return;
 	}
@@ -55,20 +40,24 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 		return;
 	}
 
-	if (!PickupItem) {
-		UE_LOG(LogTemp, Warning, TEXT("PickupItem called with null Item"));
+	if (!IsValid(PickupItem)) {
+		UE_LOG(LogTemp, Warning, TEXT("UPickupComponent: PickupItem is not valid"));
 		return;
 	}
+
 	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
+	if (!ActorMgr) {
+		UE_LOG(LogTemp, Warning, TEXT("UPickupComponent: ActorManager not found in PickupItem"));
+		return;
+	}
 
 	UInventoryComponent* InventoryComp = OwnerCharacter->GetInventoryComponent();
-
 	if (!InventoryComp) {
-		UE_LOG(LogTemp, Warning, TEXT("InventoryComponent not found on character"));
+		UE_LOG(LogTemp, Warning, TEXT("UPickupComponent: InventoryComponent not found on character"));
 		return;
 	}
 	
-	auto PickupData = PickupItem->GetPickupData();
+	auto PickupData = PickupItem->GetData();
 	// special case, for spike, need to check team
 	if (PickupData.ItemId == EItemId::SPIKE) {
 		// check team
@@ -80,7 +69,6 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 
 	// Check if overlap
     bool Added = InventoryComp->AddItemFromPickup(PickupData);
-	UE_LOG(LogTemp, Warning, TEXT("PickupItem: Added = %s"), Added ? TEXT("true") : TEXT("false"));
 	if (Added) {
 		ActorMgr->FindAndDestroyItemNode(PickupData.Id);
 
@@ -95,11 +83,10 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 
 		if (AutoEquip)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("AutoEquip is true, equipping item"));
 			UEquipComponent* EquipComp = OwnerCharacter->GetEquipComponent();
 			if (EquipComp)
 			{
-				EquipComp->RequestSelectActiveItem(PickupItem->GetPickupData().ItemId);
+				EquipComp->RequestSelectActiveItem(PickupData.ItemId);
 			}
 		}
 
@@ -108,7 +95,7 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 		if (PC)
 		{
 			// only for player, not for AI
-			ClientNotifyItemPickup(PickupItem->GetPickupData().ItemId);
+			ClientNotifyItemPickup(PickupItem->GetData().ItemId);
 		}
 	}
 }
@@ -116,20 +103,19 @@ void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 void UPickupComponent::ClientNotifyItemPickup_Implementation(
 	EItemId ItemId)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ClientNotifyItemPickup called for item id: %d"), static_cast<uint8>(ItemId));
-	ABaseCharacter* OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
-	if (!OwnerCharacter)
-	{
-		return;
-	}
-
 	// play sound
 	UGameManager* GM = UGameManager::Get(GetWorld());
+	if (!GM || !GM->GlobalData) {
+		UE_LOG(LogTemp, Warning, TEXT("GameManager or GlobalData not found in ClientNotifyItemPickup"));
+		return;
+	}
 	UGlobalDataAsset* GlobalData = GM->GlobalData;
-	UGameplayStatics::PlaySound2D(
-		GetWorld(),
-		GM->GlobalData->PickupSound
-	);
+	if (GlobalData->PickupSound) {
+		UGameplayStatics::PlaySound2D(
+			GetWorld(),
+			GM->GlobalData->PickupSound
+		);
+	}
 
 	// broadcast to UI
 	OnNewItemPickup.Broadcast(ItemId);

@@ -27,7 +27,7 @@ void UBTService_UpdateTarget_DM::TickNode(
     UAIPerceptionComponent* Perception = AICon->GetAIPerceptionComponent();
     APawn* SelfPawn = AICon->GetPawn();
     ABaseCharacter* SelfCharacter = Cast<ABaseCharacter>(SelfPawn);
-    if (!Perception || !SelfPawn) return;
+    if (!Perception || !SelfCharacter) return;
 
     TArray<AActor*> PerceivedActors;
     Perception->GetCurrentlyPerceivedActors(UAISense_Sight::StaticClass(), PerceivedActors);
@@ -49,11 +49,10 @@ void UBTService_UpdateTarget_DM::TickNode(
 	}
 }
 
-void UBTService_UpdateTarget_DM::FindBestTarget(TArray<AActor*> PerceivedActors, ABaseCharacter* SelfPawn, ABaseCharacter*& OutBestTarget) {
+void UBTService_UpdateTarget_DM::FindBestTarget(const TArray<AActor*>& PerceivedActors, ABaseCharacter* SelfPawn, ABaseCharacter*& OutBestTarget) {
     float BestDistSq = TNumericLimits<float>::Max();
 
     const FVector SelfLoc = SelfPawn->GetActorLocation();
-    ETeamId MyTeamId = SelfPawn->GetTeamId();
 
     for (AActor* Actor : PerceivedActors)
     {

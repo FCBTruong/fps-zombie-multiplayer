@@ -8,28 +8,24 @@
 // Sets default values for this component's properties
 UAnimationComponent::UAnimationComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-
-    // load animations
-
+	PrimaryComponentTick.bCanEverTick = false;
 }
-
 
 // Called when the game starts
 void UAnimationComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
+	check(OwnerCharacter);
+
     UGameManager* GameManager = UGameManager::Get(GetWorld());
-	CachedCharacterAsset = GameManager->CharacterAsset.Get();
+    CachedCharacterAsset = GameManager->CharacterAsset.Get();
+	check(CachedCharacterAsset);
 }
 
 void UAnimationComponent::PlayEquipMontage()
 {
-    if (!CachedCharacterAsset) {
-        UE_LOG(LogTemp, Error, TEXT("PlayEquip: CachedCharacterAsset is null"));
-        return;
-	}
 	if (CachedCharacterAsset->AnimMontage_Equip) {
 
 		PlayMontage(CachedCharacterAsset->AnimMontage_Equip);
@@ -38,16 +34,8 @@ void UAnimationComponent::PlayEquipMontage()
 
 void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
 {
-    ABaseCharacter* OwnerChar = Cast<ABaseCharacter>(GetOwner());
-    if (!OwnerChar)
-    {
-        UE_LOG(LogTemp, Error, TEXT("PlayMontage: Owner is not ABaseCharacter"));
-        return;
-    }
-
     if (!MontageToPlay)
     {
-        UE_LOG(LogTemp, Error, TEXT("PlayMontage: MontageToPlay is null"));
         return;
     }
 
@@ -55,26 +43,13 @@ void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
         {
             if (!MeshComp)
             {
-                UE_LOG(LogTemp, Error, TEXT("PlayMontage: %s mesh is null"), MeshLabel);
                 return;
             }
 
             UAnimInstance* AnimInst = MeshComp->GetAnimInstance();
             if (!AnimInst)
             {
-                const FString MontageName = MontageToPlay ? MontageToPlay->GetName() : TEXT("null");
-                const FString MontagePath = MontageToPlay ? MontageToPlay->GetPathName() : TEXT("null");
-
-                UE_LOG(
-                    LogTemp,
-                    Error,
-                    TEXT("PlayMontage: AnimInstance is null on %s mesh (AnimClass=%s, Mode=%d, Montage=%s, MontagePath=%s)"),
-                    MeshLabel,
-                    *GetNameSafe(MeshComp->GetAnimClass()),
-                    static_cast<int32>(MeshComp->GetAnimationMode()),
-                    *MontageName,
-                    *MontagePath
-                );
+				UE_LOG(LogTemp, Warning, TEXT("AnimationComponent: No AnimInstance on %s mesh"), MeshLabel);    
                 return;
             }
 
@@ -82,21 +57,17 @@ void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
         };
 
     // Always play on TPS mesh (bots/others will use this).
-    PlayOnMesh(OwnerChar->GetMesh(), TEXT("TPS"));
+    PlayOnMesh(OwnerCharacter->GetMesh(), TEXT("TPS"));
 
     // Only play on FPS mesh for locally controlled FPS view (avoid bot / remote issues).
-    if (OwnerChar->IsFpsViewMode())
+    if (OwnerCharacter->IsFpsViewMode())
     {
-        PlayOnMesh(OwnerChar->GetMeshFps(), TEXT("FPS"));
+        PlayOnMesh(OwnerCharacter->GetMeshFps(), TEXT("FPS"));
     }
 }
 
-void UAnimationComponent::PlayFireRifleMontage(FVector TargetPoint, UAnimMontage* FireMontage) {
-    if (!CachedCharacterAsset) {
-		return;
-	}
+void UAnimationComponent::PlayFireRifleMontage(UAnimMontage* FireMontage) {
     if (FireMontage) {
-		UE_LOG(LogTemp, Warning, TEXT("Playing custom FireMontage"));
         PlayMontage(FireMontage);
 	}
     else {
@@ -104,39 +75,22 @@ void UAnimationComponent::PlayFireRifleMontage(FVector TargetPoint, UAnimMontage
     }
 }
 
-void UAnimationComponent::PlayFirePistolMontage(FVector TargetPoint) {
-    if (!CachedCharacterAsset) {
-        return;
-    }
+void UAnimationComponent::PlayFirePistolMontage() {
     PlayMontage(CachedCharacterAsset->AnimMontage_FirePistol);
 }
 
 void UAnimationComponent::PlayReloadRifleMontage() {
-    if (!CachedCharacterAsset) {
-        return;
-    }
-	UE_LOG(LogTemp, Warning, TEXT("xxxxPlaying Reload Rifle Montage"));
     PlayMontage(CachedCharacterAsset->AnimMontage_ReloadRifle);
 }
 
 void UAnimationComponent::PlayReloadPistolMontage() {
-    if (!CachedCharacterAsset) {
-        return;
-    }
     PlayMontage(CachedCharacterAsset->AnimMontage_ReloadPistol);
 }
 
 void UAnimationComponent::PlayThrowNadeMontage() {
-    if (!CachedCharacterAsset) {
-        return;
-    }
     PlayMontage(CachedCharacterAsset->AnimMontage_ThrowNade);
 }
 
 void UAnimationComponent::PlayZombieAttackMontage() {
-    if (!CachedCharacterAsset) {
-        return;
-    }
-	UE_LOG(LogTemp, Warning, TEXT("Playing Zombie Attack Montage"));
     PlayMontage(CachedCharacterAsset->AnimMontage_ZombieAttack);
 }

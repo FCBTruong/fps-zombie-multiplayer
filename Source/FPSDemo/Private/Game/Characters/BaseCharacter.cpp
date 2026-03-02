@@ -1,36 +1,22 @@
 #include "Game/Characters/BaseCharacter.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
-#include "InputActionValue.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Game/Framework/ShooterGameMode.h"
 #include "Game/Projectiles/ThrownProjectile.h"
-#include "Materials/MaterialParameterCollectionInstance.h"
 #include "Game/Framework/MyPlayerController.h"
-#include "Engine/TextureRenderTarget2D.h"
-#include "Game/Utils/Damage/MyDamageType.h"
 #include "Engine/DamageEvents.h"
 #include "Game/Utils/Damage/MyPointDamageEvent.h"
 #include "Game/Framework/MyPlayerState.h"
 #include "Game/Framework/ShooterGameState.h"
-#include "Perception/AISense_Damage.h"
 #include "Game/AI/BotAIController.h"
-#include "Game/Items/Weapons/WeaponState.h"
-#include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
 #include "Camera/CameraComponent.h"
-#include "Components/TimelineComponent.h"
 #include "Game/Characters/Components/InteractComponent.h"
 #include "Game/Characters/Components/HealthComponent.h"     
 #include "NiagaraFunctionLibrary.h"
-#include "NiagaraSystem.h"
-#include "Components/PostProcessComponent.h"
-#include "Components/SceneCaptureComponent2D.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "Materials/Material.h"
 #include "Perception/AISense_Sight.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Components/AudioComponent.h"
@@ -51,16 +37,14 @@
 #include "Game/Characters/Components/LagCompensationComponent.h"
 #include "Shared/System/ItemsManager.h"
 #include "Game/Data/CharacterAsset.h"
-#include "Materials/MaterialInterface.h"
 #include "Shared/Data/GlobalDataAsset.h"
-#include "BehaviorTree/BehaviorTree.h"
-#include "Shared/Data/Items/ThrowableConfig.h"
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "Game/Characters/Components/ItemUseComponent.h"
 #include "Game/Modes/Zombie/ZombieMode.h"
 #include "Game/Modes/Spike/Spike.h"
 #include "Components/TextRenderComponent.h"
 #include "Game/Subsystems/ActorManager.h"
+#include "Shared/Data/Items/ThrowableConfig.h"
 
 const FVector ABaseCharacter::TPSMeshRelLoc(0.f, 0.f, -88.f);
 const FRotator ABaseCharacter::TPSMeshRelRot(0.f, -90.f, 0.f);
@@ -90,10 +74,7 @@ ABaseCharacter::ABaseCharacter()
     CameraFps->bUsePawnControlRotation = false;
     CameraFps->SetupAttachment(FpsPivot);
 
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter constructor called"));
-
     StimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSource"));
-
     InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
     InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
     HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
@@ -121,27 +102,19 @@ ABaseCharacter::ABaseCharacter()
     );
 
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
-    if (MoveComp) 
-    {
-        MoveComp->NavAgentProps.bCanCrouch = true;
-        MoveComp->MaxWalkSpeedCrouched = CROUCH_WALK_SPEED;
-	}
+    MoveComp->NavAgentProps.bCanCrouch = true;
+    MoveComp->MaxWalkSpeedCrouched = CROUCH_WALK_SPEED;
 
-    if (GetMesh()) {
-        GetMesh()->SetRelativeLocation(TPSMeshRelLoc);
-        GetMesh()->SetRelativeRotation(TPSMeshRelRot);
-    }
-    if (FpsPivot) {
-        // set same eye position
-        BaseEyeHeight = 70;
-        CrouchedEyeHeight = 70;
-		FpsPivot->SetRelativeLocation(FVector(0.f, 0.f, -TPSMeshRelLoc.Z + BaseEyeHeight));
-    }
-    if (MeshFps)
-    {
-        MeshFps->SetRelativeLocation(FVector(0.f, 0.f, -170.f));
-        MeshFps->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
-    }
+    GetMesh()->SetRelativeLocation(TPSMeshRelLoc);
+    GetMesh()->SetRelativeRotation(TPSMeshRelRot);
+
+    // set same eye position
+    BaseEyeHeight = 70;
+    CrouchedEyeHeight = 70;
+	FpsPivot->SetRelativeLocation(FVector(0.f, 0.f, -TPSMeshRelLoc.Z + BaseEyeHeight));
+
+    MeshFps->SetRelativeLocation(FVector(0.f, 0.f, -170.f));
+    MeshFps->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
 
     NameText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("NameText"));
 	NameText->SetVisibility(false); // hide by default, can be enabled for debugging or in specific game modes
@@ -154,7 +127,6 @@ ABaseCharacter::ABaseCharacter()
 
     // Place above head (tweak values for your skeleton)
     NameText->SetRelativeLocation(FVector(0.f, 0.f, 210.f));
-   
     NameText->SetText(FText::FromString(TEXT("Player")));
 
     // Note: This allows physics assets to update on the server even when the mesh is not rendered,
@@ -168,21 +140,20 @@ ABaseCharacter::ABaseCharacter()
 void ABaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
     UGameManager* GameManager = UGameManager::Get(GetWorld());
-    if (!GameManager) {
-        UE_LOG(LogTemp, Warning, TEXT("GameManager is null in ABaseCharacter::BeginPlay"));
-        return;
-    }
-	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
-    if (!ActorMgr) {
-        UE_LOG(LogTemp, Warning, TEXT("ActorManager instance is null in ABaseCharacter::BeginPlay"));
-        return;
-    }
     CachedCharacterAsset = GameManager->CharacterAsset.Get();
-    ActorMgr->RegisterPlayer(this);
+	check(CachedCharacterAsset);
+
+	AActorManager* ActorMgr = AActorManager::Get(GetWorld());
+    if (ActorMgr) {
+        ActorMgr->RegisterPlayer(this);
+    }
 
 	// setup, delegate bindings, etc.
 	BindDelegates();
+    BindMontageNotifies();
+
     SetupCrouchTimeline();
     SetupStunTimeline();
     SetupSpineKickTimeline();
@@ -191,20 +162,6 @@ void ABaseCharacter::BeginPlay()
     SetupInitialInventory();
 
     BasePivotFpsZ = FpsPivot->GetRelativeLocation().Z;
-
-    if (MeshFps) {
-        if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
-        {
-            UE_LOG(LogTemp, Warning, TEXT("FPSAnim is valid in ABaseCharacter"));
-            FPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
-        }
-    }
-    if (GetMesh()) {
-        if (UAnimInstance* TPSAnim = GetMesh()->GetAnimInstance())
-        {
-            TPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
-        }
-    }
 
     USkeletalMeshComponent* MeshMain = GetMesh();
     MeshMain->SetCollisionProfileName(TEXT("MyMesh"));
@@ -223,57 +180,35 @@ void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
 
-    if (AActorManager* GM = AActorManager::Get(GetWorld()))
+    if (AActorManager* AM = AActorManager::Get(GetWorld()))
     {
-        GM->UnregisterPlayer(this);
+        AM->UnregisterPlayer(this);
     }
-
-    // clear timers
     GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
-void ABaseCharacter::BindDelegates() { 
-    if (EquipComp) {
-        EquipComp->OnActiveItemChanged.AddUObject(
-            this,
-            &ABaseCharacter::UpdateCurrentWeapon
-        );
-        EquipComp->OnActiveItemChanged.AddUObject(
-            WeaponMeleeComp,
-            &UWeaponMeleeComponent::HandleActiveItemChanged
-        );
-        if (WeaponFireComp) {
-            EquipComp->OnActiveItemChanged.AddUObject(
-                WeaponFireComp,
-                &UWeaponFireComponent::OnActiveItemChanged
-            );
-        }
-        EquipComp->OnActiveItemChanged.Broadcast(EquipComp->GetActiveItemId());
-        //this->UpdateCurrentWeapon(EquipComp->GetActiveItemId());
-    }
-
-    if (HealthComp)
-    {
-        HealthComp->OnDeath.AddUObject(this, &ABaseCharacter::OnHealthDepleted);
-    }
-    if (RoleComp)
-    {
-       RoleComp->OnRoleChanged.AddUObject(this, &ABaseCharacter::HandleRoleChanged);
-       this->HandleRoleChanged(RoleComp->GetRole(), RoleComp->GetRole());
-    }
+void ABaseCharacter::BindDelegates() {
+    EquipComp->OnActiveItemChanged.AddUObject(
+        this,
+        &ABaseCharacter::UpdateCurrentWeapon
+    );
+    EquipComp->OnActiveItemChanged.AddUObject(
+        WeaponMeleeComp,
+        &UWeaponMeleeComponent::HandleActiveItemChanged
+    );  
+    EquipComp->OnActiveItemChanged.AddUObject(
+        WeaponFireComp,
+        &UWeaponFireComponent::OnActiveItemChanged
+    );
+    EquipComp->OnActiveItemChanged.Broadcast(EquipComp->GetActiveItemId());
+    HealthComp->OnDeath.AddUObject(this, &ABaseCharacter::OnHealthDepleted);
+    RoleComp->OnRoleChanged.AddUObject(this, &ABaseCharacter::HandleRoleChanged);
+    this->HandleRoleChanged(RoleComp->GetRole(), RoleComp->GetRole());
 }
 
 void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
 {
-    UE_LOG(
-        LogTemp,
-        Warning,
-        TEXT("[%s] Updating current weapon to ItemId: %d"),
-        HasAuthority() ? TEXT("Server") : TEXT("Client"),
-        static_cast<uint8>(NewWeaponId)
-    );
 	auto ItemsMgr = UItemsManager::Get(GetWorld());
-	
 	const UItemConfig* ItemConfig = ItemsMgr->GetItemById(NewWeaponId);
     if (!ItemConfig) {
         UE_LOG(LogTemp, Warning, TEXT("ItemConfig is null in UpdateCurrentWeapon"));
@@ -297,10 +232,6 @@ void ABaseCharacter::UpdateCurrentWeapon(EItemId NewWeaponId)
     UpdateMaxWalkSpeed();
 }
 
-void ABaseCharacter::OnRep_PlayerState() {
-    Super::OnRep_PlayerState();
-}
-
 // Called every frame
 void ABaseCharacter::Tick(float DeltaTime)
 {
@@ -317,7 +248,7 @@ void ABaseCharacter::Tick(float DeltaTime)
         SpineKickTimeline.TickTimeline(DeltaTime);
     }
 
-    if (FpsPivot)
+    if (CameraComp->IsFPS()) // only for fps to save performance
     {
         FRotator AimRot;
 
@@ -333,28 +264,26 @@ void ABaseCharacter::Tick(float DeltaTime)
         }
 
         const FRotator TargetPivotRot(AimRot.Pitch, 90.f, 0.f);
-
         const FRotator Smoothed =
             FMath::RInterpTo(FpsPivot->GetRelativeRotation(), TargetPivotRot, DeltaTime, 20.f);
-
         FpsPivot->SetRelativeRotation(Smoothed);
     }
+
+#if !UE_SERVER // to save performance for dedicated server
     // logic sound
     UpdateFootstepSound(DeltaTime);
-
-    if (!IsNetMode(NM_DedicatedServer))
-    {
+    if (NameText->IsVisible()) {
         UpdateNameTextRotation();
     }
+#endif
 }
 
 void ABaseCharacter::UpdateNameTextRotation()
 {
-    if (!NameText) return;
-	if (!NameText->IsVisible()) return;
-
-    APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
-    if (!PC || !PC->PlayerCameraManager) return;
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC || !PC->PlayerCameraManager) {
+        return;
+    }
 
     const FVector CamLoc = PC->PlayerCameraManager->GetCameraLocation();
     const FVector TextLoc = NameText->GetComponentLocation();
@@ -364,23 +293,24 @@ void ABaseCharacter::UpdateNameTextRotation()
 }
 
 void ABaseCharacter::UpdateFootstepSound(float DeltaTime) {
-    const float Speed = GetVelocity().Size2D();
-   
-    if (!CanPlayFootstep()) {
-        return;
-    }
-
-    const float CurrentTime = GetWorld()->GetTimeSeconds();
-
-    float FootstepInterval = 0.35f;
-    if (Speed > 500.f) {
-        FootstepInterval = 0.25f;
-    }
-    else if (Speed > 410.f) {
-        FootstepInterval = 0.3f;
-	}
+	UWorld* World = GetWorld();
+    const float CurrentTime = World->GetTimeSeconds();
     if (CurrentTime - LastFootstepTime >= FootstepInterval)
     {
+        if (!CanPlayFootstep()) {
+            return;
+        }
+        const float Speed = GetVelocity().Size2D();
+
+        if (Speed > 500.f) {
+            FootstepInterval = 0.25f;
+        }
+        else if (Speed > 410.f) {
+            FootstepInterval = 0.3f;
+        }
+        else {
+            FootstepInterval = 0.35f;
+		}
         LastFootstepTime = CurrentTime;
 		PlayFootstepSound();
     }
@@ -411,7 +341,6 @@ void ABaseCharacter::RequestCrouch()
     if (GetCharacterMovement()->IsFalling()) {
         return;
     }
-	UE_LOG(LogTemp, Warning, TEXT("RequestCrouch called"));
     Crouch();
 }
 
@@ -446,24 +375,17 @@ void ABaseCharacter::HandleCrouchProgress(float Alpha)
                                                                                                                          
 void ABaseCharacter::ChangeView()
 {
-	if (CameraComp) {
-        CameraComp->ToggleView();
-	}
+    CameraComp->ToggleView();
 }
 
 USkeletalMeshComponent* ABaseCharacter::GetCurrentMesh() const
 {
-    if (!CameraComp) {
-		return GetMesh();
-    }
     if (CameraComp->IsFPS())
     {
         return MeshFps;
     }
-    else
-    {
-        return GetMesh();
-    }
+   
+    return GetMesh();
 }
 
 USkeletalMeshComponent* ABaseCharacter::GetMeshFps() const
@@ -487,12 +409,7 @@ void ABaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void ABaseCharacter::RequestStartAiming()
 {
-	UE_LOG(LogTemp, Warning, TEXT("RequestStartAiming called"));
-    if (!WeaponFireComp) {
-        return;
-	}
     if (!WeaponFireComp->CanWeaponAim()) {
-		UE_LOG(LogTemp, Warning, TEXT("Cannot aim with current weapon"));
         return;
     }
     if (bIsAiming) {
@@ -503,10 +420,9 @@ void ABaseCharacter::RequestStartAiming()
     if (IsLocallyControlled()) {
 		// Predictive update
 		bIsAiming = true;
-        if (CameraComp) CameraComp->SetAiming(true);
+        CameraComp->SetAiming(true);
         UpdateMaxWalkSpeed();
 	}
-
     ServerSetAiming(true);
 }
 
@@ -519,7 +435,7 @@ void ABaseCharacter::RequestStopAiming()
     // if is locally controlled, update immediately
     if (IsLocallyControlled()) {
         bIsAiming = false;
-        if (CameraComp) CameraComp->SetAiming(false);
+        CameraComp->SetAiming(false);
         UpdateMaxWalkSpeed();
     }
     ServerSetAiming(false);
@@ -528,9 +444,7 @@ void ABaseCharacter::RequestStopAiming()
 
 void ABaseCharacter::OnRep_IsAiming()
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnRep_IsAiming: %s"), bIsAiming ? TEXT("true") : TEXT("false"));
-    if (CameraComp)
-        CameraComp->SetAiming(bIsAiming);
+    CameraComp->SetAiming(bIsAiming);
 }
 
 void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
@@ -539,9 +453,6 @@ void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
         return;
     }
 
-    if (!WeaponFireComp) {
-        return;
-    }
     if (bNewAiming && !WeaponFireComp->CanWeaponAim()) {
         return;
 	}
@@ -551,36 +462,10 @@ void ABaseCharacter::ServerSetAiming_Implementation(bool bNewAiming)
     }
 	bIsAiming = bNewAiming;
 	OnRep_IsAiming();
-
     UpdateMaxWalkSpeed();
 }
 
-
-float ABaseCharacter::GetSpeedWalkRatio() const
-{
-    float Ratio = 1.0f;
-
-    if (!EquipComp) {
-		return Ratio;
-    }
-    // get active weapon data
-	const UItemConfig* Config = EquipComp->GetActiveItemConfig();
-    if (!Config) {
-        return Ratio;
-    }
-
-    // Aiming penalty
-    if (bIsAiming)
-    {
-        Ratio *= 0.2f;
-    }
-
-    return Ratio;
-}
-
-
 void ABaseCharacter::UpdateMaxWalkSpeed() {
-	UE_LOG(LogTemp, Warning, TEXT("UpdateMaxWalkSpeed called"));
     float Speed = 0;
     if (IsCrouched()) {
         Speed = CROUCH_WALK_SPEED;
@@ -590,20 +475,18 @@ void ABaseCharacter::UpdateMaxWalkSpeed() {
     }
     else {
         Speed = NORMAL_WALK_SPEED;
-		// sub weight penalty
+        // sub weight penalty
         const UItemConfig* Config = EquipComp ? EquipComp->GetActiveItemConfig() : nullptr;
         if (Config) {
             Speed -= Config->Weight;
         }
 
         if (bIsAiming) {
-         //   Speed *= 0.2f; // aiming penalty
+            // Speed *= 0.2f; // aiming penalty
         }
 
-        if (RoleComp) {
-            if (RoleComp->GetRole() == ECharacterRole::Zombie) {
-                Speed += 10.f; // zombie role moves faster
-			}
+        if (RoleComp->GetRole() == ECharacterRole::Zombie) {
+            Speed += 10.f; // zombie role moves faster
         }
     }
 	Speed *= SpeedMultiplier;
@@ -626,13 +509,12 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
     if (!GM->IsDamageAllowed(EventInstigator, this->Controller)) {
         return 0.f;
 	}
-
-    if (HealthComp && HealthComp->IsDead())
+    if (HealthComp->IsDead())
     {
         return 0.f; // already dead
 	}
+
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-  
     const FArmorState& Armor = InventoryComp->GetArmorState();
     if (Armor.ArmorPoints > 0)
     {
@@ -657,10 +539,9 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         }
 
         ActualDamage = DamageToHealth;
-
         InventoryComp->UpdateArmorPoints(NewArmorPoints); // update armor state
 	}
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::TakeDamage after armor: %f"), ActualDamage);
+
     LastHitByController = EventInstigator;
 	bLastHitWasHeadshot = false;
     if (EventInstigator)
@@ -668,17 +549,14 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         DamageInstigators.AddUnique(EventInstigator);
     }
 
+	UItemsManager* ItemsMgr = UItemsManager::Get(GetWorld());
     if (DamageEvent.IsOfType(FMyPointDamageEvent::ClassID))
     {
         const FMyPointDamageEvent* MyEvent =
             static_cast<const FMyPointDamageEvent*>(&DamageEvent);
 
         EItemId WeaponId = static_cast<EItemId>(MyEvent->WeaponID);
-
-        UE_LOG(LogTemp, Warning, TEXT("Damage came from WeaponId: %d"), (int32)WeaponId);
-
-   
-		LastDamageCauser = UItemsManager::Get(GetWorld())->GetItemById(WeaponId);
+		LastDamageCauser = ItemsMgr->GetItemById(WeaponId);
 		bLastHitWasHeadshot = MyEvent->bIsHeadshot;
     }
     else if (DamageCauser) {
@@ -688,18 +566,11 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         }
         else if (DamageCauser->IsA(ASpike::StaticClass()))
         {
-            LastDamageCauser =
-                UItemsManager::Get(GetWorld())->GetItemById(EItemId::SPIKE);
+            LastDamageCauser = ItemsMgr->GetItemById(EItemId::SPIKE);
         }
     }
-    if (!HealthComp) {
-        UE_LOG(LogTemp, Warning, TEXT("HealthComp is null in TakeDamage"));
-		return ActualDamage;
-	}
-
     HealthComp->ApplyDamage(ActualDamage);
     ClientPlayHitEffect();
-
 	// if bot, notify AI perception
     if (IsBot()) {
         if (ABotAIController* AICon = Cast<ABotAIController>(GetController()))
@@ -727,31 +598,21 @@ void ABaseCharacter::OnMeleeNotify()
 
 void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPointPayload)
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnNotifyBegin called with NotifyName: %s"), *NotifyName.ToString());
     if (NotifyName == "MeleeAttack")
     {
         OnMeleeNotify();
     }
     else if (NotifyName == "Notify_GrabMag")
     {
-        if (ItemVisualComp)
-        {
-            ItemVisualComp->OnNotifyGrabMag();
-        }
+        ItemVisualComp->OnNotifyGrabMag();
 	}
     else if (NotifyName == "Notify_InsertMag")
     {
-        if (ItemVisualComp)
-        {
-            ItemVisualComp->OnNotifyInsertMag();
-        }
+        ItemVisualComp->OnNotifyInsertMag();
 	}
     else if (NotifyName == "Throw_NadeRelease")
     {
-        if (ThrowableComp)
-        {
-            ThrowableComp->OnNadeRelease();
-        }
+        ThrowableComp->OnNadeRelease();
 	}
 }
 
@@ -759,7 +620,6 @@ void ABaseCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNotify
 void ABaseCharacter::OnHealthDepleted()
 {
     // Play animation, ragdoll, notify game mode, etc.
-	UE_LOG(LogTemp, Warning, TEXT("Character has died."));
     if (HasAuthority())
     {
         AShooterGameMode* GM = Cast<AShooterGameMode>(UGameplayStatics::GetGameMode(this));
@@ -773,7 +633,7 @@ void ABaseCharacter::OnHealthDepleted()
 
         if (bIsAiming) {
             bIsAiming = false;
-            if (CameraComp) CameraComp->SetAiming(false);
+            CameraComp->SetAiming(false);
 		}
     }
 }
@@ -781,36 +641,23 @@ void ABaseCharacter::OnHealthDepleted()
 // server function to apply death effects
 void ABaseCharacter::ApplyRealDeath(bool bDropInventory, bool bInPermanentDead)
 {
-    GetCharacterMovement()->StopMovementImmediately();
-    GetCharacterMovement()->DisableMovement();
-
-    if (SpikeComp && SpikeComp->IsEnabled()) {
+    if (SpikeComp->IsEnabled()) {
 		SpikeComp->OnOwnerDead();
     }
 
-    // disable action state
-    if (ActionStateComp)
-    {
-		ActionStateComp->ForceSetState(EActionState::Disabled);
-	}
+    GetCharacterMovement()->StopMovementImmediately();
+    GetCharacterMovement()->DisableMovement();
+    ActionStateComp->ForceSetState(EActionState::Disabled);
 
-    if (AAIController* AI = Cast<AAIController>(GetController()))
+    if (ABotAIController* AI = Cast<ABotAIController>(GetController()))
     {
-        if (UBrainComponent* Brain = AI->GetBrainComponent())
-        {
-            Brain->StopLogic(TEXT("Bot died"));
-        }
+		AI->StopLogic("OwnerDead");
     }
-
-    if (bDropInventory && InventoryComp)
+    if (bDropInventory)
     {
         InventoryComp->DropAllItems();
     }
-    if (EquipComp)
-    {
-        EquipComp->UnequipCurrentItem();
-	}
-
+    EquipComp->UnequipCurrentItem();
     MulticastCharacterDeath(); 
     DisableDeadMeshTick();
     if (bIsPermanentDead != bInPermanentDead) {
@@ -821,44 +668,33 @@ void ABaseCharacter::ApplyRealDeath(bool bDropInventory, bool bInPermanentDead)
 
 void ABaseCharacter::MulticastCharacterDeath_Implementation()
 {
-	// log server or client
-	UE_LOG(LogTemp, Warning, TEXT("MulticastPlayerDeath called on %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"));
-   
+    NameText->SetVisibility(false);
+
     UCapsuleComponent* Capsule = GetCapsuleComponent();
     USkeletalMeshComponent* SkelMesh = GetMesh();
-    if (!Capsule || !SkelMesh)
-        return;
-
     Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     SkelMesh->SetCollisionProfileName(TEXT("Ragdoll"));
     SkelMesh->SetSimulatePhysics(true);
 
     // if is hero, play sound hero dead
     if (GetCharacterRole() == ECharacterRole::Hero) {
-        if (AudioComp) {
-            AudioComp->PlayHeroDeath();
-        }
+        AudioComp->PlayHeroDeath();
     }
-    else if (GetCharacterRole() == ECharacterRole::Zombie) {
-        if (AudioComp) {
-            AudioComp->PlayZombieDeath();
-        }
+    else if (GetCharacterRole() == ECharacterRole::Zombie) { 
+        AudioComp->PlayZombieDeath();
 	}
     else {
-        if (AudioComp) {
-            AudioComp->PlaySoldierDeath();
-        }
+        AudioComp->PlaySoldierDeath();
     }
     AMyPlayerController* MyPC = Cast<AMyPlayerController>(GetWorld()->GetFirstPlayerController());
     if (!MyPC) {
         return;
 	}
-	bool bIsLocalPlayer = MyPC->GetViewTarget() == this;
 
+	bool bIsLocalPlayer = MyPC->GetViewTarget() == this;
 	auto LocalPC = Cast<AMyPlayerController>(GetController());
     if (LocalPC) {
-		auto CurTime = GetWorld()->GetTimeSeconds();
-        LocalPC->SetTimeOfDeath(CurTime);
+        LocalPC->SetTimeOfDeath(GetWorld()->GetTimeSeconds());
     }
     if (bIsLocalPlayer) {
         MyPC->SetIgnoreLookInput(true);
@@ -867,14 +703,9 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
         if (CameraComp->IsFPS()) {
             ChangeView(); // switch to tps view
         }
-       
-        // Use current camera position as start
-        const FVector CamLoc = CameraTps->GetComponentLocation();
-        const FRotator CamRot = CameraTps->GetComponentRotation();
 
         // request view
         TWeakObjectPtr<AMyPlayerController> WeakPC(MyPC);
-
 		GetWorld()->GetTimerManager().ClearTimer(SpectatorViewTimer);
         GetWorld()->GetTimerManager().SetTimer(
             SpectatorViewTimer,
@@ -896,13 +727,10 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
             false
         );
     }
-
-	NameText->SetVisibility(false);
 }
 
 void ABaseCharacter::ClientPlayHitEffect_Implementation()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ClientPlayHitEffect called"));
 	OnHit.Broadcast();
 }
 
@@ -912,9 +740,7 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation, const FVector& HitN
     if (IsFpsViewMode()) {
 		return; // no blood fx in fps mode
     }
-    if (!CachedCharacterAsset) {
-        return;
-    }
+
     const FRotator HitRotation = HitNormal.Rotation();
 
 	auto CharRole = GetCharacterRole();
@@ -945,17 +771,10 @@ void ABaseCharacter::PlayBloodFx(const FVector& HitLocation, const FVector& HitN
             );
         }
     }
-    if (AudioComp) {
-        //   AudioComp->PlayBloodHit();
-	}
 }
 
 void ABaseCharacter::PlayStunEffect(const float& Strength) 
 {
-	UE_LOG(LogTemp, Warning, TEXT("PlayStunEffect called with Strength: %f"), Strength);
-    if (!CachedCharacterAsset) {
-        return;
-	}
     if (!FlashMID) {
         return;
     }
@@ -993,48 +812,29 @@ void ABaseCharacter::OnStunTimelineFinished()
 }
 
 float ABaseCharacter::GetAimSensitivity() const {
-    if (CameraComp) {
-        return CameraComp->GetAimSensitivity();
-    }
-	return 1.0f;
+    return CameraComp->GetAimSensitivity();
 }
 
 void ABaseCharacter::OnPlantSpikeStarted() {
-    // play sound
-    if (AudioComp) {
-        AudioComp->PlayPlantSpike();
-    }
+    AudioComp->PlayPlantSpike();
 }
 
 void ABaseCharacter::OnPlantSpikeStopped() {
-    if (AudioComp) {
-        AudioComp->StopPlantSpike();
-	}
+    AudioComp->StopPlantSpike();
 }
 
 void ABaseCharacter::OnDefuseSpikeStarted() {
-    if (AudioComp) {
-        AudioComp->PlayDefuseSpike();
-	}
+    AudioComp->PlayDefuseSpike();
 }
 
 void ABaseCharacter::OnDefuseSpikeStopped() {
-    if (AudioComp) {
-        AudioComp->StopDefuseSpike();
-    }
+    AudioComp->StopDefuseSpike();
 }
 
 void ABaseCharacter::Destroyed()
 {
     Super::Destroyed();
-
-    // log client or server
-	UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::Destroyed called on %s"), HasAuthority() ? TEXT("Server") : TEXT("Client"));
-    
-    if (ItemVisualComp)
-    {
-        ItemVisualComp->OnOwnerDead();
-    }
+    ItemVisualComp->OnOwnerDead();
 }
 
 void ABaseCharacter::ServerSetIsSlow_Implementation(bool bNewIsSlow)
@@ -1043,7 +843,6 @@ void ABaseCharacter::ServerSetIsSlow_Implementation(bool bNewIsSlow)
     {
         return;
     }
-	UE_LOG(LogTemp, Warning, TEXT("ServerSetIsSlow called with bNewIsSlow: %s"), bNewIsSlow ? TEXT("true") : TEXT("false"));
 	CurrentMovementState = bNewIsSlow ? EMovementState::Slow : EMovementState::Normal;
     UpdateMaxWalkSpeed();
 }
@@ -1058,11 +857,6 @@ void ABaseCharacter::OnRep_CurrentMovementState()
 
 void ABaseCharacter::PlayFootstepSound()
 {
-    if (!AudioComp) {
-        UE_LOG(LogTemp, Warning, TEXT("AudioComp is null in PlayFootstepSound"));
-        return;
-    }
-
     const float Speed = GetVelocity().Size2D();
     const bool bGrounded = !GetCharacterMovement()->IsFalling();
 
@@ -1083,20 +877,12 @@ void ABaseCharacter::PlayFootstepSound()
 
 bool ABaseCharacter::IsAlive() const
 {
-    if (HealthComp)
-    {
-        return !HealthComp->IsDead();
-    }
-    return true; // if no health component, assume alive
+    return !HealthComp->IsDead();
 }
 
 bool ABaseCharacter::IsDead() const
 {
-    if (HealthComp)
-    {
-        return HealthComp->IsDead();
-    }
-    return false; // if no health component, assume alive
+    return HealthComp->IsDead();
 }
 
 void ABaseCharacter::Landed(const FHitResult& Hit)
@@ -1107,31 +893,23 @@ void ABaseCharacter::Landed(const FHitResult& Hit)
 
 void ABaseCharacter::PlayLandingSound()
 {
-    if (AudioComp) {
-        AudioComp->PlayLanding();
-        return;
-    }
+    AudioComp->PlayLanding();
 }
 
 void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
 {
     Super::BecomeViewTarget(PC);
     if (!PC->IsLocalController()) {
-        UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter::BecomeViewTarget called - NO LOCAL"));
         return;
     }
 
     AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC);
     if (!MyPC)
     {
-        UE_LOG(LogTemp, Error, TEXT("PC is not AMyPlayerController in BecomeViewTarget"));
         return;
     }
     MyPC->BindCharacter(this);
-  
-    if (IsValid(CameraComp)) {
-        CameraComp->OnBecomeViewTarget(MyPC);
-    }
+    CameraComp->OnBecomeViewTarget(MyPC);
 }
 
 void ABaseCharacter::EndViewTarget(APlayerController* PC)
@@ -1142,37 +920,7 @@ void ABaseCharacter::EndViewTarget(APlayerController* PC)
     {
 		//SetFpsView(false);
     }
-    if (CameraComp) {
-        CameraComp->OnEndViewTarget(PC);
-	}
-}
-
-void ABaseCharacter::ApplyRotationMode()
-{
-    auto* Move = GetCharacterMovement();
-    if (!Move) return;
-   
-    if (IsBot())
-    {
-		/*Move->bOrientRotationToMovement = true;
-        bUseControllerRotationYaw = true;*/
-    }
-}
-
-void ABaseCharacter::PossessedBy(AController* NewController)
-{
-    Super::PossessedBy(NewController);
-
-    ApplyRotationMode();
-    UpdateInteractComponentTick();
-}
-
-void ABaseCharacter::OnRep_Controller()
-{
-    Super::OnRep_Controller();
-
-    ApplyRotationMode();
-    UpdateInteractComponentTick();
+    CameraComp->OnEndViewTarget(PC);
 }
 
 FVector ABaseCharacter::GetThrowableLocation() const
@@ -1182,8 +930,8 @@ FVector ABaseCharacter::GetThrowableLocation() const
     GetActorEyesViewPoint(EyeLoc, EyeRot);
 
     return EyeLoc
-        + GetActorRightVector() * 10.f
-        + FVector(0.f, 0.f, 30.f);
+        + GetActorForwardVector() * 20.f
+        + FVector(0.f, 0.f, 20.f);
 }
 
 EMovementState ABaseCharacter::GetCurrentMovementState() const {
@@ -1191,10 +939,7 @@ EMovementState ABaseCharacter::GetCurrentMovementState() const {
 }
 
 bool ABaseCharacter::IsFpsViewMode() const {
-    if (CameraComp) {
-        return CameraComp->IsFPS();
-	}
-	return false;
+    return CameraComp->IsFPS();
 }
 
 bool ABaseCharacter::IsAiming() const {
@@ -1287,11 +1032,7 @@ bool ABaseCharacter::IsBot() const
 
 EEquippedAnimState ABaseCharacter::GetEquippedAnimState() const
 {
-    if (EquipComp) {
-		return EquipComp->GetEquippedAnimState();
-	}
-
-    return EEquippedAnimState::Unarmed;
+    return EquipComp->GetEquippedAnimState();
 }
 
 UThrowableComponent* ABaseCharacter::GetThrowableComponent() const {
@@ -1302,49 +1043,31 @@ USpikeComponent* ABaseCharacter::GetSpikeComponent() const {
     return SpikeComp.Get();
 }
 
+// this should happens on server only
 void ABaseCharacter::ApplyDefaultsForRole(ECharacterRole NewRole) {
-    // this should happens on server only
+    ActionStateComp->ForceSetState(EActionState::Idle);
+
     if (NewRole == ECharacterRole::Zombie)
     {
-        if (HealthComp) {
-            HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_ZOMBIE);
-            HealthComp->ResetHealth();
-        }
+        HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_ZOMBIE);
+        HealthComp->ResetHealth();
+
+        InventoryComp->OnBecomeZombie();
+        EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
     }
     else if (NewRole == ECharacterRole::Hero)
     {
-        if (HealthComp) {
-            HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_HERO);
-            HealthComp->ResetHealth();
-        }
+
+        HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_HERO);
+        HealthComp->ResetHealth();
+
+        InventoryComp->OnBecomeHero();
+        EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
     }
     else // human
     {
-        if (HealthComp) {
-            HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_SOLIDER);
-            HealthComp->ResetHealth();
-        }
-    }
-
-    if (ActionStateComp) {
-        ActionStateComp->ForceSetState(EActionState::Idle);
-    }
-
-    if (NewRole == ECharacterRole::Hero) {
-        if (InventoryComp) {
-            InventoryComp->OnBecomeHero();
-        }
-        if (EquipComp) {
-            EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
-        }
-    }
-    else if (NewRole == ECharacterRole::Zombie) {
-        if (InventoryComp) {
-            InventoryComp->OnBecomeZombie();
-        }
-        if (EquipComp) {
-            EquipComp->SelectSlot(FGameConstants::SLOT_MELEE);
-        }
+        HealthComp->SetMaxHealth(FGameConstants::INIT_HEALTH_SOLIDER);
+        HealthComp->ResetHealth();
     }
 }
 
@@ -1357,7 +1080,6 @@ void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole Ne
     ApplyVisualByRole(NewRole);
     if (this->HasAuthority())
     {
-		UE_LOG(LogTemp, Warning, TEXT("Applying defaults for new role: %d"), (int32)NewRole);
         ApplyDefaultsForRole(NewRole);
     }
 
@@ -1366,38 +1088,46 @@ void ABaseCharacter::HandleRoleChanged(ECharacterRole OldRole, ECharacterRole Ne
     {
         PlayZombieSpawnEffects();
     }
-    else if (NewRole == ECharacterRole::Hero) { 
-        if (AudioComp) {
-            AudioComp->PlayHeroSpawn();
-        }
+    else if (NewRole == ECharacterRole::Hero) {
+        AudioComp->PlayHeroSpawn();
     }
 
 	// role changed mean update walk speed
 	UpdateMaxWalkSpeed();
 }
 
+void ABaseCharacter::BindMontageNotifies() {
+    if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
+    {
+        FPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+    }
+  
+    if (UAnimInstance* TPSAnim = GetMesh()->GetAnimInstance())
+    {
+        TPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
+    }
+}
+
 void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Applying visuals for role: %d"), (int32)NewRole);
-    if (!CachedCharacterAsset)
-    {
+    if (!CachedCharacterAsset) {
         return;
-    }
-    UCharacterVisualSet* VisualSet = nullptr;
+	}
 
+    UCharacterVisualSet* VisualSet = nullptr;
     if (NewRole == ECharacterRole::Zombie)
     {
-		VisualSet = CachedCharacterAsset->ZombieVisualSet;
+        VisualSet = CachedCharacterAsset->ZombieVisualSet;
     }
     else if (NewRole == ECharacterRole::Hero)
     {
-		VisualSet = CachedCharacterAsset->HeroVisualSet;
+        VisualSet = CachedCharacterAsset->HeroVisualSet;
         if (CachedCharacterAsset->HeroFx)
         {
             FVector EffectScale(0.4f); // scale
             FName SocketName = NAME_None; // or socket name if needed
-			FVector Loc = GetActorLocation();
-			Loc.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+            FVector Loc = GetActorLocation();
+            Loc.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 
             UGameplayStatics::SpawnEmitterAttached(
                 CachedCharacterAsset->HeroFx,
@@ -1422,6 +1152,10 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
         }
     }
 
+    if (!VisualSet) {
+        return;
+    }
+
     // Apply TPS
     if (USkeletalMeshComponent* TpsMesh = GetMesh())
     {
@@ -1434,9 +1168,6 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
         {
             TpsMesh->SetAnimInstanceClass(VisualSet->TpsAnimClass);
         }
-    }
-    if (!VisualSet) {
-        return;
     }
 
     // Apply FPS
@@ -1453,34 +1184,12 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
     }
 
     // Re-bind montage notify if needed (because anim class may change)
-    if (MeshFps)
-    {
-        if (UAnimInstance* FPSAnim = MeshFps->GetAnimInstance())
-        {
-            FPSAnim->OnPlayMontageNotifyBegin.RemoveDynamic(this, &ABaseCharacter::OnNotifyBegin);
-            FPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
-        }
-    }
-    if (GetMesh())
-    {
-        if (UAnimInstance* TPSAnim = GetMesh()->GetAnimInstance())
-        {
-            TPSAnim->OnPlayMontageNotifyBegin.RemoveDynamic(this, &ABaseCharacter::OnNotifyBegin);
-            TPSAnim->OnPlayMontageNotifyBegin.AddDynamic(this, &ABaseCharacter::OnNotifyBegin);
-        }
-    }
+    BindMontageNotifies();
 
     // -------- Visual reset --------
-    if (ItemVisualComp)
+    if (NewRole == ECharacterRole::Zombie)
     {
-        if (NewRole == ECharacterRole::Zombie)
-        {
-            ItemVisualComp->OnOwnerDead();
-        }
-        else
-        {
-
-        }
+        ItemVisualComp->OnOwnerDead();
     }
 }
 
@@ -1488,48 +1197,26 @@ void ABaseCharacter::ApplyLoadoutByRole(ECharacterRole NewRole)
 {
     if (NewRole == ECharacterRole::Zombie)
     {
-        if (WeaponFireComp)
-        {
-            WeaponFireComp->SetEnabled(false);
-		}
-
-        if (ThrowableComp) {
-			ThrowableComp->SetEnabled(false);
-        }
-
-        if (PickupComponent) {
-            PickupComponent->SetEnabled(false);
-        }
+        WeaponFireComp->SetEnabled(false);
+        ThrowableComp->SetEnabled(false);
+        PickupComponent->SetEnabled(false);
     }
     else if (NewRole == ECharacterRole::Hero)
     {
-        if (WeaponFireComp)
-        {
-            WeaponFireComp->SetEnabled(false);
-		}
-
-        if (PickupComponent) {
-            PickupComponent->SetEnabled(false);
-		}
-
-        if (ThrowableComp) {
-            ThrowableComp->SetEnabled(true);
-		}
+        WeaponFireComp->SetEnabled(false);
+        PickupComponent->SetEnabled(false);
+        ThrowableComp->SetEnabled(true);
     }
     else
     {
         // human
-	}
+    }
 }
 
 
 bool ABaseCharacter::IsCharacterRole(ECharacterRole InRole) const
 {
-    if (RoleComp)
-    {
-        return RoleComp->GetRole() == InRole;
-    }
-    return false;
+    return RoleComp->GetRole() == InRole;
 }
 
 void ABaseCharacter::ApplyHitSlow(float Multiplier, float Duration)
@@ -1573,56 +1260,49 @@ void ABaseCharacter::RequestPrimaryActionPressed() {
     if (!CanAct()) {
         return;
     }
-    if (ItemUseComp) {
-        ItemUseComp->PrimaryPressed();
-    }
+    ItemUseComp->PrimaryPressed();
 }
 
 void ABaseCharacter::RequestPrimaryActionReleased() {
     if (!CanAct()) {
         return;
     }
-    if (ItemUseComp) {
-        ItemUseComp->PrimaryReleased();
-    }
+    ItemUseComp->PrimaryReleased();
 }
 
 void ABaseCharacter::RequestSecondaryActionPressed() {
     if (!CanAct()) {
         return;
     }
-    if (ItemUseComp) {
-        ItemUseComp->SecondaryPressed();
-    }
+    ItemUseComp->SecondaryPressed();
 }
 
 void ABaseCharacter::RequestSecondaryActionReleased() {
     if (!CanAct()) {
         return;
     }
-    if (ItemUseComp) {
-        ItemUseComp->SecondaryReleased();
-    }
+    ItemUseComp->SecondaryReleased();
 }
 
 void ABaseCharacter::RequestReloadPressed() {
     if (!CanAct()) {
         return;
     }
-    if (ItemUseComp) {
-        ItemUseComp->ReloadPressed();
-    }
+    ItemUseComp->ReloadPressed();
 }
 
 bool ABaseCharacter::CanAct() {
-    if (!IsAlive()) return false;
+    if (!IsAlive()) {
+        return false;
+    }
     return true;
 }
 
 void ABaseCharacter::SetupCrouchTimeline()
 {
-	if (!CachedCharacterAsset) return;
-    if (!CachedCharacterAsset->CrouchCurve) return;
+    if (!CachedCharacterAsset || !CachedCharacterAsset->CrouchCurve) {
+        return;
+    }
 
     FOnTimelineFloat Update;
     Update.BindUFunction(this, FName("HandleCrouchProgress"));
@@ -1632,7 +1312,9 @@ void ABaseCharacter::SetupCrouchTimeline()
 
 void ABaseCharacter::SetupStunTimeline()
 {
-    if (!CachedCharacterAsset || !CachedCharacterAsset->StunCurve) return;
+    if (!CachedCharacterAsset || !CachedCharacterAsset->StunCurve) {
+        return;
+    }
 
     FOnTimelineFloat UpdateFunction;
     UpdateFunction.BindUFunction(this, FName("OnStunTimelineUpdate"));
@@ -1648,43 +1330,31 @@ void ABaseCharacter::SetupStunTimeline()
 
 void ABaseCharacter::SetupPerception()
 {
-    if (!StimuliSource) return;
-
     StimuliSource->RegisterForSense(UAISense_Sight::StaticClass());
     StimuliSource->RegisterWithPerceptionSystem();
 }
 
 void ABaseCharacter::SetupFlashPostProcess()
 {
-    if (!CachedCharacterAsset || !CachedCharacterAsset->FlashPPMat) return;
+    if (!CachedCharacterAsset || !CachedCharacterAsset->FlashPPMat) {
+        return;
+    }
 
     FlashMID = UMaterialInstanceDynamic::Create(CachedCharacterAsset->FlashPPMat, this);
-
-    // Apply to the active view camera (FPS here; if you can switch, apply to both)
-    if (CameraFps)
-    {
-        CameraFps->PostProcessSettings.AddBlendable(FlashMID, 1.0f);
-    }
-    if (CameraTps)
-    {
-        CameraTps->PostProcessSettings.AddBlendable(FlashMID, 1.0f);
-    }
-
+    CameraFps->PostProcessSettings.AddBlendable(FlashMID, 1.0f); 
+    CameraTps->PostProcessSettings.AddBlendable(FlashMID, 1.0f);
     FlashMID->SetScalarParameterValue(TEXT("Intensity"), 0.f);
 }
 
 bool ABaseCharacter::IsSpikeMode() const
 {
-    const AShooterGameState* GS = GetWorld() ? GetWorld()->GetGameState<AShooterGameState>() : nullptr;
+    const AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
     return GS && (GS->GetMatchMode() == EMatchMode::Spike);
 }
 
 
 ECharacterRole ABaseCharacter::GetCharacterRole() const {
-    if (RoleComp) {
-        return RoleComp->GetRole();
-    }
-    return ECharacterRole::Human;
+    return RoleComp->GetRole();
 }
 
 void ABaseCharacter::RequestBecomeHero() {
@@ -1700,9 +1370,6 @@ void ABaseCharacter::ServerBecomeHero_Implementation() {
 }
 
 void ABaseCharacter::BecomeHero_Internal() {
-    if (!RoleComp) {
-        return;
-    }
     if (RoleComp->GetRole() == ECharacterRole::Hero) {
         return;
     }
@@ -1718,16 +1385,8 @@ void ABaseCharacter::SetupInitialInventory()
 {
     if (!HasAuthority()) return;
 
-    if (InventoryComp)
-    {
-        InventoryComp->InitBasicWeapon();
-    }
-    if (EquipComp)
-    {
-        EquipComp->AutoSelectBestWeapon();
-    }
-
-    UE_LOG(LogTemp, Warning, TEXT("BeginPlay: Added test items to inventory"));
+    InventoryComp->InitBasicWeapon();
+    EquipComp->AutoSelectBestWeapon();
 }
 
 void ABaseCharacter::MulticastRevive_Implementation()
@@ -1758,60 +1417,42 @@ void ABaseCharacter::MulticastRevive_Implementation()
 	}
 
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
-    if (MoveComp)
-    {
-        MoveComp->SetMovementMode(MOVE_Walking);
-		UpdateMaxWalkSpeed();
-    }
+    MoveComp->SetMovementMode(MOVE_Walking);
+	UpdateMaxWalkSpeed();
 }
 
 void ABaseCharacter::Revive()
 {
     if (!HasAuthority()) return;
+
     MulticastRevive();
-
-    if (UHealthComponent* HC = FindComponentByClass<UHealthComponent>())
-        HC->SetHealth(HC->GetMaxHealth());
-
-    AAIController* AI = Cast<AAIController>(GetController());
-    if (AI)
-    {
-        UBrainComponent* Brain = AI->GetBrainComponent();
-        if (Brain)
-        {
-            Brain->StartLogic();
-        }
+    HealthComp->SetHealth(HealthComp->GetMaxHealth());
+	if (ABotAIController* AI = Cast<ABotAIController>(GetController())) {
+        AI->StartLogic();
     }
 
-    if (ActionStateComp)
-    {
-        ActionStateComp->ForceSetState(EActionState::Idle);
-    }
-
-    if (EquipComp)
-    {
-        EquipComp->AutoSelectBestWeapon();
-	}
+    ActionStateComp->ForceSetState(EActionState::Idle);
+    EquipComp->AutoSelectBestWeapon();
 }
 
 void ABaseCharacter::PlayZombieSpawnEffects() {
-    if (AudioComp) {
-        AudioComp->PlayZombieSpawn();
+    AudioComp->PlayZombieSpawn();
+    if (!CachedCharacterAsset || !CachedCharacterAsset->TurnToZombieFx)
+    {
+        return;
     }
+
     FVector SpawnLocation = FVector::ZeroVector;
     SpawnLocation.Z -= GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
-    if (CachedCharacterAsset && CachedCharacterAsset->TurnToZombieFx)
-    {
-        UNiagaraFunctionLibrary::SpawnSystemAttached(
-            CachedCharacterAsset->TurnToZombieFx,
-            GetRootComponent(),
-            NAME_None,
-            SpawnLocation,
-            FRotator::ZeroRotator,
-            EAttachLocation::SnapToTarget,
-            true
-        );
-    }
+    UNiagaraFunctionLibrary::SpawnSystemAttached(
+        CachedCharacterAsset->TurnToZombieFx,
+        GetRootComponent(),
+        NAME_None,
+        SpawnLocation,
+        FRotator::ZeroRotator,
+        EAttachLocation::SnapToTarget,
+        true
+    );
 }
 
 bool ABaseCharacter::IsHero() const {
@@ -1820,6 +1461,10 @@ bool ABaseCharacter::IsHero() const {
 
 bool ABaseCharacter::IsZombie() const {
     return GetCharacterRole() == ECharacterRole::Zombie;
+}
+
+bool ABaseCharacter::IsPermanentDead() const {
+    return bIsPermanentDead;
 }
 
 FString ABaseCharacter::GetPlayerName() const {
@@ -1832,21 +1477,15 @@ FString ABaseCharacter::GetPlayerName() const {
 }
 
 bool ABaseCharacter::IsWorkingWithSpike() const {
-    if (ActionStateComp) {
-        return ActionStateComp->GetState() == EActionState::Planting
-			|| ActionStateComp->GetState() == EActionState::Defusing;
-    }
-    return false;
-}   
+    return ActionStateComp->GetState() == EActionState::Planting
+        || ActionStateComp->GetState() == EActionState::Defusing;
+}
 
 bool ABaseCharacter::CanSeeThisActor(const APawn* Target) const
 {
     float FOVDegrees = 80.f;
     float MaxDistance = 0.f;
     if (!IsValid(Target)) return false;
-
-    const UWorld* World = GetWorld();
-    if (!World) return false;
 
     // ----- View origin + direction -----
     FVector ViewLoc;
@@ -1899,10 +1538,11 @@ bool ABaseCharacter::CanSeeThisActor(const APawn* Target) const
     }
 
     FHitResult Hit;
-    const bool bHit = World->LineTraceSingleByChannel(Hit, ViewLoc, TargetLoc, ECC_Visibility, Params);
-
+    const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, ViewLoc, TargetLoc, ECC_Visibility, Params);
     if (!bHit)
+    {
         return true; // Nothing blocked the trace.
+    }
 
     AActor* HitActor = Hit.GetActor();
     return (HitActor == Target) || (HitActor && HitActor->IsOwnedBy(Target));
@@ -1910,8 +1550,12 @@ bool ABaseCharacter::CanSeeThisActor(const APawn* Target) const
 
 static FVector GetBoneOrSocketLoc(const USkeletalMeshComponent* Mesh, const FName& Name)
 {
-    if (!Mesh) return FVector::ZeroVector;
-    if (Mesh->DoesSocketExist(Name)) return Mesh->GetSocketLocation(Name);
+    if (!Mesh) {
+        return FVector::ZeroVector;
+    }
+    if (Mesh->DoesSocketExist(Name)) {
+        return Mesh->GetSocketLocation(Name);
+    }
     return Mesh->GetBoneLocation(Name);
 }
 
@@ -1924,8 +1568,6 @@ FVector ABaseCharacter::GetAimPointInternal(EAimPointPolicy Policy, float HeadCh
 {
     const USkeletalMeshComponent* SkelMeshComp = GetMesh();
     const FVector Fallback = GetActorLocation();
-
-    if (!SkelMeshComp) return Fallback;
 
     static const FName Head(TEXT("head"));
     static const FName Chest(TEXT("spine_03"));
@@ -1967,44 +1609,28 @@ float ABaseCharacter::GetSpineKickAlpha() const
 }
 
 void ABaseCharacter::PlayEffectHitReact() {
-    UE_LOG(LogTemp, Warning, TEXT("PlayEffectHitReact"));
     if (SpineKickTimeline.IsPlaying())
     {
         return;
     }
 
     // if is firing then return
-    if (ActionStateComp) {
-        if (ActionStateComp->IsInState(EActionState::Firing)) {
-            return;
-        }
+    if (ActionStateComp->IsInState(EActionState::Firing)) {
+        return;
     }
-
     SpineKickTimeline.PlayFromStart();
 }
 
 void ABaseCharacter::OnSpineKickUpdate(float Value)
 {
     SpineKickAlpha = Value;
-
-    float CamKickRawDeg = 1.0f;
-    float CamKickRollDeg = 0.5f;
-
-    FRotator CamFpsBaseRelRot = FRotator::ZeroRotator;
-    if (CameraFps)
-    {
-       /* const float Raw = CamKickRawDeg * Value;
-        const float Roll = CamKickRollDeg * Value;
-
-        CameraFps->SetRelativeRotation(
-            CamFpsBaseRelRot + FRotator(0, Raw, Roll)
-        );*/
-    }
 }
 
 void ABaseCharacter::SetupSpineKickTimeline()
 {
-    if (!CachedCharacterAsset || !CachedCharacterAsset->SpineKickCurve) return;
+    if (!CachedCharacterAsset || !CachedCharacterAsset->SpineKickCurve) {
+        return;
+    }
 
     FOnTimelineFloat Update;
     Update.BindUFunction(this, FName("OnSpineKickUpdate"));
@@ -2014,9 +1640,6 @@ void ABaseCharacter::SetupSpineKickTimeline()
 
 void ABaseCharacter::OnRep_CharacterSkin() {
 	ApplyVisualByRole(GetCharacterRole());
-
-    UE_LOG(LogTemp, Warning, TEXT("fbuggSetting onrepcharacter skin for spawned pawn %d"), CharacterSkin);
-
 }
 
 void ABaseCharacter::SetCharacterSkin(int32 NewSkin) {
@@ -2032,8 +1655,6 @@ void ABaseCharacter::OnRep_IsPermanentDead() {
         return;
     UCapsuleComponent* Capsule = GetCapsuleComponent();
     USkeletalMeshComponent* SkelMesh = GetMesh();
-    if (!Capsule || !SkelMesh)
-        return;
 
     Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     SkelMesh->SetCollisionProfileName(TEXT("Ragdoll"));
@@ -2054,34 +1675,18 @@ void ABaseCharacter::DisableDeadMeshTick()
     //    EVisibilityBasedAnimTickOption::OnlyTickPoseWhenRendered;
 }
 
-void ABaseCharacter::UpdateInteractComponentTick()
-{
-	UE_LOG(LogTemp, Warning, TEXT("UpdateInteractComponentTick called. IsLocallyControlled: %s"), IsLocallyControlled() ? TEXT("true") : TEXT("false"));
-    if (InteractComp)
-    {
-        InteractComp->SetComponentTickEnabled(IsLocallyControlled());
-    }
-}
-
 void ABaseCharacter::ShowNameText(bool bShow)
 {
-    if (NameText)
-    {
-        NameText->SetVisibility(bShow, true);
+    NameText->SetVisibility(bShow, true);
 
-        if (bShow)
-        {
-            NameText->SetText(FText::FromString(GetPlayerName()));
-		}
-    }
+    if (bShow)
+    {
+        NameText->SetText(FText::FromString(GetPlayerName()));
+	}
 }
 
 bool ABaseCharacter::Heal(float HealAmount)
 {
-    UE_LOG(LogTemp, Warning, TEXT("ABaseCharacter: Heal called with HealAmount: %f"), HealAmount);
-
-    if (!HealthComp) return false;
-
     const bool bHealed = HealthComp->ApplyHeal(HealAmount);
     if (!bHealed) return false;
 
@@ -2098,9 +1703,6 @@ bool ABaseCharacter::Heal(float HealAmount)
             true
         );
     }
-    if (AudioComp) {
-        AudioComp->PlayHeal();
-	}
-
+    AudioComp->PlayHeal();
     return true;
 }

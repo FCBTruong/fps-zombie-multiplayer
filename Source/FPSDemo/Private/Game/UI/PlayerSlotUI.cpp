@@ -87,8 +87,6 @@ void UPlayerSlotUI::HandlePawnChanged()
 
 void UPlayerSlotUI::StartRetryBindPawn()
 {
-	if (!GetWorld()) return;
-
 	// Clear old timer if any
 	GetWorld()->GetTimerManager().ClearTimer(BindPawnTimer);
 
@@ -110,11 +108,6 @@ void UPlayerSlotUI::StartRetryBindPawn()
 
 void UPlayerSlotUI::RetryBindPawnTick()
 {
-	if (!GetWorld())
-	{
-		return;
-	}
-
 	++TriedNum;
 
 	if (TryToBindPawn() || TriedNum >= MaxTries)
@@ -128,10 +121,7 @@ bool UPlayerSlotUI::TryToBindPawn()
 {
 	if (!CachedSlot) return false;
 
-	APawn* Pawn = CachedSlot->GetPawn();
-	if (!IsValid(Pawn)) return false;
-
-	ABaseCharacter* Char = Cast<ABaseCharacter>(Pawn);
+	ABaseCharacter* Char = Cast<ABaseCharacter>(CachedSlot->GetPawn());
 	if (!IsValid(Char)) {
 		return false;
 	}

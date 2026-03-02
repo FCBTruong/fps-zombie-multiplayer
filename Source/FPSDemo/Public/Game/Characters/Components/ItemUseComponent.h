@@ -30,19 +30,11 @@ public:
 	void SecondaryReleased();
 	void ReloadPressed();
 private:
-
-	UPROPERTY()
-	TObjectPtr<ABaseCharacter> OwnerChar = nullptr;
-	UPROPERTY()
-	TObjectPtr<UEquipComponent> EquipComp = nullptr;
-	UPROPERTY()
-	TObjectPtr<UActionStateComponent> ActionStateComp = nullptr;
-	UPROPERTY()
-	TObjectPtr<UWeaponFireComponent> WeaponFireComp = nullptr;
-	UPROPERTY()
-	TObjectPtr<UWeaponMeleeComponent> WeaponMeleeComp = nullptr;
-	UPROPERTY()
-	TObjectPtr<UThrowableComponent> ThrowableComp = nullptr;
-	UPROPERTY()
-	TObjectPtr<USpikeComponent> SpikeComp = nullptr;
+	ABaseCharacter* OwnerChar = nullptr;
+	UEquipComponent* EquipComp = nullptr;
+	UActionStateComponent* ActionStateComp = nullptr;
+	UWeaponFireComponent* WeaponFireComp = nullptr;
+	UWeaponMeleeComponent* WeaponMeleeComp = nullptr;
+	UThrowableComponent* ThrowableComp = nullptr;
+	USpikeComponent* SpikeComp = nullptr;
 };

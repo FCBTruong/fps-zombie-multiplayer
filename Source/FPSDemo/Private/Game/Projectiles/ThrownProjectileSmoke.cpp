@@ -8,7 +8,6 @@
 
 void AThrownProjectileSmoke::OnExplode ()
 {
-	UE_LOG(LogTemp, Log, TEXT("AThrownProjectileSmoke::ExplodeNow"));
 	FVector ImpactPoint = GetActorLocation();
 	MulticastExplode(ImpactPoint);
 	SetLifeSpan(0.1f);
@@ -16,6 +15,12 @@ void AThrownProjectileSmoke::OnExplode ()
 
 void AThrownProjectileSmoke::MulticastExplode_Implementation(const FVector& ImpactPoint)
 {
+	// ignore for dedicated server
+    if (GetNetMode() == NM_DedicatedServer)
+    {
+        return;
+    }
+
     FHitResult Hit;
     FVector Start = GetActorLocation();
     FVector End = Start - FVector(0, 0, 300);
@@ -27,7 +32,6 @@ void AThrownProjectileSmoke::MulticastExplode_Implementation(const FVector& Impa
         Rotation = Hit.ImpactNormal.Rotation();
     }
 
-    UE_LOG(LogTemp, Log, TEXT("AThrownProjectile::MulticastExplode_Implementation"));
     if (Data && Data->SmokeFX)
     {
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(

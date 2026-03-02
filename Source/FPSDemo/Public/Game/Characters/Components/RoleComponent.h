@@ -19,17 +19,8 @@ class FPSDEMO_API URoleComponent : public UActorComponent
 public:
 	URoleComponent();
 
-	virtual void BeginPlay() override;
-
-	// Client-side request (will call ServerSetRole).
-	// In many games you only allow server/game mode to call this.
-	void RequestSetRole(ECharacterRole NewRole);
-
-	// Server-side immediate set (no RPC). Use from GameMode/GameState/server authority code.
-	bool SetRoleAuthoritative(ECharacterRole NewRole);
-
 	ECharacterRole GetRole() const { return CurrentRole; }
-
+	bool SetRoleAuthoritative(ECharacterRole NewRole);
 	bool IsHuman() const { return CurrentRole == ECharacterRole::Human; }
 	bool IsZombie() const { return CurrentRole == ECharacterRole::Zombie; }
 
@@ -37,6 +28,7 @@ public:
 	FOnRoleChanged OnRoleChanged;
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
@@ -44,16 +36,10 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentRole)
 	ECharacterRole CurrentRole = ECharacterRole::Human;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Role")
-	ECharacterRole InitialRole = ECharacterRole::Human;
-
-	// Optional: prevent redundant changes
 	bool SetRole_Internal(ECharacterRole NewRole);
 
 	UFUNCTION()
 	void OnRep_CurrentRole(ECharacterRole OldRole);
 
-	// RPC: clients request, server decides
-	UFUNCTION(Server, Reliable)
-	void ServerSetRole(ECharacterRole NewRole);
+	void HandleRoleChanged(ECharacterRole OldRole, ECharacterRole NewRole);
 };

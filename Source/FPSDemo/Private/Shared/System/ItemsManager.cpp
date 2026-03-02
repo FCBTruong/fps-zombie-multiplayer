@@ -29,8 +29,6 @@ void UItemsManager::Initialize(FSubsystemCollectionBase& Collection)
             ItemConfigMap.Add(Data->Id, Data);
         }
     }
-
-    UE_LOG(LogTemp, Log, TEXT("UItemsManager loaded %d weapon assets"), ItemList.Num());
 }
 
 UItemsManager* UItemsManager::Get(UWorld* WorldContextObject)

@@ -30,18 +30,9 @@ APickupItem::APickupItem()
 	PickupSphere->SetHiddenInGame(true);
 
 	PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &APickupItem::OnOverlapBegin);
-	UE_LOG(LogTemp, Warning, TEXT("PickupItem Constructor called"));
     // Replace direct access to bReplicateMovement with the public setter function
     bReplicates = true;
     SetReplicateMovement(true);
-}
-
-
-// Called when the game starts or when spawned
-void APickupItem::BeginPlay()
-{
-	Super::BeginPlay();
-	
 }
 
 void APickupItem::SetData(const FPickupData& NewData)
@@ -52,17 +43,14 @@ void APickupItem::SetData(const FPickupData& NewData)
 
 void APickupItem::OnLoadData(){
 	auto ItemsMgr = UItemsManager::Get(GetWorld());
-    // local variable
-    const UItemConfig* WeaponData = ItemsMgr->GetItemById(Data.ItemId);
-	if (!WeaponData)
+    const UItemConfig* ItemConf = ItemsMgr->GetItemById(Data.ItemId);
+	if (!ItemConf)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("OnLoadData: No WeaponData found for ItemId %d"), static_cast<int32>(Data.ItemId));
 		return;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("OnLoadData: Retrieved WeaponData for ItemId %d"), static_cast<int32>(Data.ItemId));
-    if (WeaponData->StaticMesh && ItemMesh)
+    if (ItemConf->StaticMesh && ItemMesh)
     {
-        ItemMesh->SetStaticMesh(WeaponData->StaticMesh);
+        ItemMesh->SetStaticMesh(ItemConf->StaticMesh);
     }
 
 	// refactor later, set spike reference
@@ -90,14 +78,8 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Overlap with weapon pickup"));
 	if (ABaseCharacter* Player = Cast<ABaseCharacter>(OtherActor))
 	{
-		if (!Player)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("OverlapBegin: OtherActor is not ABaseCharacter"));
-			return;
-		}
 		if (IsJustDropped(Player))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("OverlapBegin: Item was just dropped by this player, ignoring pickup"));
@@ -105,9 +87,8 @@ void APickupItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Ot
 		}
 		UPickupComponent* PC = Player->GetPickupComponent();
 		if (PC && PC->IsEnabled()) {
-			const UItemConfig* ItemConfig = UItemsManager::Get(GetWorld())->GetItemById(this->Data.ItemId);
+			const UItemConfig* ItemConfig = UItemsManager::Get(GetWorld())->GetItemById(Data.ItemId);
 			if (ItemConfig->GetItemType() != EItemType::Firearm) {
-				UE_LOG(LogTemp, Warning, TEXT("Player overlapping with item pickup"));
 				PC->PickupItem(this);
 			}
 		}
@@ -126,13 +107,11 @@ bool APickupItem::IsJustDropped(ABaseCharacter* Character) const
 FString APickupItem::GetItemName() const
 {
 	FString Name = TEXT("Unknown Item");
-
-	const UItemConfig* WeaponData = UItemsManager::Get(GetWorld())->GetItemById(Data.ItemId);
-	if (WeaponData)
+	const UItemConfig* ItemConf = UItemsManager::Get(GetWorld())->GetItemById(Data.ItemId);
+	if (ItemConf)
 	{
-		Name = WeaponData->DisplayName.ToString();
+		Name = ItemConf->DisplayName.ToString();
 	}
-	
 	return Name;
 }
 

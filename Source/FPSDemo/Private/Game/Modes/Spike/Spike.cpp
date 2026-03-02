@@ -2,7 +2,7 @@
 
 
 #include "Game/Modes/Spike/Spike.h"
-#include <Kismet/GameplayStatics.h>
+#include "Kismet/GameplayStatics.h"
 #include "Components/AudioComponent.h"
 #include "Game/Modes/Spike/SpikeMode.h"
 #include "Game/Characters/Components/SpikeComponent.h"
@@ -65,11 +65,6 @@ void ASpike::BeginPlay()
     if (SpringArmComp) {
         CamPitch = SpringArmComp->GetRelativeRotation().Pitch;
     }
-
-	/*ASpikeMode* SpikeMode = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(this));
-    if (SpikeMode) {
-		SpikeMode->OnCharacterDead.AddUObject(this, &ASpike::OnCharacterDead);
-    }*/
 }
 
 void ASpike::Tick(float DeltaTime)
@@ -77,21 +72,19 @@ void ASpike::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 
     if (HasAuthority()) {
-        if (!HasAuthority()) {
-            if (bIsDefuseInProgress) {
-                if (DefusingComponent) {
-                    // check if player is dead or alive
-                    ABaseCharacter* Character = Cast<ABaseCharacter>(DefusingComponent->GetOwner());
-                    if (Character && !Character->IsAlive()) {
-                        CancelDefuse();
-                        return;
-                    }
+        if (bIsDefuseInProgress) {
+            if (DefusingComponent.IsValid()) {
+                // check if player is dead or alive
+                ABaseCharacter* Character = Cast<ABaseCharacter>(DefusingComponent->GetOwner());
+                if (Character && !Character->IsAlive()) {
+                    CancelDefuse();
+                    return;
                 }
             }
-            return;
         }
 	}
 
+#if !UE_SERVER
     // effect client
     if (bIsExploding && ExplodeSphere)
     {
@@ -110,6 +103,7 @@ void ASpike::Tick(float DeltaTime)
 			OnCompleteExplode();
         }
     }
+#endif
 }
 
 void ASpike::Explode()
@@ -118,6 +112,9 @@ void ASpike::Explode()
     {
 		return;
 	}
+    if (bIsDefuseInProgress) {
+        bIsDefuseInProgress = false;
+    }
 
 	// clear defuse timer if any
 	GetWorld()->GetTimerManager().ClearTimer(DefuseTimerHandle);
@@ -136,7 +133,6 @@ void ASpike::Multicast_Explode_Implementation()
 {
     if (!ExplodeSphere)
     {
-        UE_LOG(LogTemp, Warning, TEXT("ExplodeSphere is null in ASpike::Explode"));
         return;
     }
     ExplodeSphere->SetVisibility(true);
@@ -170,27 +166,23 @@ void ASpike::Defused()
 
     ASpikeMode* SpikeGM = Cast<ASpikeMode>(UGameplayStatics::GetGameMode(GetWorld()));
     if (!SpikeGM) {
-        UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike: No SpikeGM found"));
         return;
     }
     if (!SpikeGM->IsSpikePlanted()) {
-        UE_LOG(LogTemp, Warning, TEXT("FinishDefuseSpike: No spike planted"));
         return;
     }
 
-    if (!DefusingComponent) {
+    if (!DefusingComponent.IsValid()) {
         return;
     }
     DefusingComponent->OnDefuseSucceed();
 
     APawn* Pawn = Cast<APawn>(DefusingComponent->GetOwner());
-
     AController* PC = Cast<AController>(Pawn->GetController());
     if (!PC)
     {
         return;
     }
-
     SpikeGM->OnSpikeDefused(PC);
 
     Multicast_Defused();
@@ -218,22 +210,22 @@ void ASpike::Multicast_Defused_Implementation()
     }
 }
 
-void ASpike::StartDefuse(USpikeComponent* WeaponComp)
+void ASpike::StartDefuse(USpikeComponent* DefuseComp)
 {
-    if (bIsDefuseInProgress || IsDefused())
+    if (!DefuseComp || bIsDefuseInProgress || IsDefused())
     {
         return;
     }
-    bIsDefuseInProgress = true;
 
-    DefusingComponent = WeaponComp;
+    bIsDefuseInProgress = true;
+    DefusingComponent = DefuseComp;
 
 	UE_LOG(LogTemp, Warning, TEXT("Spike defuse started"));
     GetWorld()->GetTimerManager().SetTimer(
         DefuseTimerHandle,
         this,
         &ASpike::Defused,
-        6.0f, // time to defuse in seconds
+        DefuseTime, // time to defuse in seconds
         false // no loop
     );
 }
@@ -242,11 +234,15 @@ bool ASpike::IsDefuseInProgress() const {
     return bIsDefuseInProgress;
 }
 
+bool ASpike::IsDefused() const {
+    return bIsDefused;
+}
+
 void ASpike::CancelDefuse()
 {
     bIsDefuseInProgress = false;
 	GetWorld()->GetTimerManager().ClearTimer(DefuseTimerHandle);
-    DefusingComponent = nullptr;
+	DefusingComponent.Reset();
 }
 
 void ASpike::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -289,7 +285,6 @@ void ASpike::OnCompleteExplode() {
     );
 
     AController* InstigatorController = GetInstigatorController();
-	float ExplodeDamage = 500.f;
     for (AActor* A : Overlapped)
     {
         if (!IsValid(A)) continue;
@@ -314,8 +309,7 @@ void ASpike::AddCameraYaw(float Value)
 void ASpike::AddCameraPitch(float Value)
 {
     if (!SpringArmComp || FMath::IsNearlyZero(Value)) return;
-    CamPitch = FMath::Clamp(CamPitch + Value * LookSensitivity, -70.f, 70.f);
-    SpringArmComp->SetRelativeRotation(FRotator(CamPitch, CamYaw, 0.f));
+    CamPitch = FMath::Clamp(CamPitch + Value * LookSensitivity, MinPitch, MaxPitch);
     SpringArmComp->SetRelativeRotation(FRotator(CamPitch, CamYaw, 0.f));
 }
 
@@ -333,7 +327,7 @@ void ASpike::OnCharacterDead(ABaseCharacter* DeadCharacter)
     }
     
     // if defuser is dead, cancel defuse
-    if (bIsDefuseInProgress && DefusingComponent) {
+    if (bIsDefuseInProgress && DefusingComponent.IsValid()) {
         APawn* DefusePawn = Cast<APawn>(DefusingComponent->GetOwner());
         if (DefusePawn && DefusePawn == Pawn) {
             CancelDefuse();

@@ -35,11 +35,3 @@ EBTNodeResult::Type UBTTask_Guard::ExecuteTask(
 
     return EBTNodeResult::Succeeded;
 }
-
-
-void UBTTask_Guard::TickTask(
-    UBehaviorTreeComponent& OwnerComp,
-    uint8* NodeMemory,
-    float DeltaSeconds)
-{
-}

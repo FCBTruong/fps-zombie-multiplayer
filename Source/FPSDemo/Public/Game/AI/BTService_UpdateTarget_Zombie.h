@@ -21,5 +21,5 @@ public:
 protected:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 
-	void FindBestTarget(TArray<AActor*> PerceivedActors, ABaseCharacter* SelfPawn, ABaseCharacter*& OutBestTarget);
+	void FindBestTarget(const TArray<AActor*>& PerceivedActors, ABaseCharacter* SelfPawn, ABaseCharacter*& OutBestTarget);
 };
