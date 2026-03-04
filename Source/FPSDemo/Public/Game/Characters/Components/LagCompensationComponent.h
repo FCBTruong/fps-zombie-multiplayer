@@ -64,17 +64,16 @@ class FPSDEMO_API ULagCompensationComponent : public UActorComponent
 
 public:
 	ULagCompensationComponent();
+	void Init();
 
 protected:
-	virtual void BeginPlay() override;
-
-public:
 	virtual void TickComponent(
 		float DeltaTime,
 		ELevelTick TickType,
 		FActorComponentTickFunction* ThisTickFunction
 	) override;
 
+public:
 	void SaveFrame();
 
 	// Server-only: rewind this character's physics asset bodies, trace, then restore.

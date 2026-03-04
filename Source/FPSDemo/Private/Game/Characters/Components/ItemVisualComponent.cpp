@@ -19,20 +19,18 @@ UItemVisualComponent::UItemVisualComponent()
 	SetIsReplicatedByDefault(false);
 }
 
-void UItemVisualComponent::BeginPlay()
+void UItemVisualComponent::Init()
 {
-    Super::BeginPlay();
+    Character = Cast<ABaseCharacter>(GetOwner());
+    check(Character);
 
-	Character = Cast<ABaseCharacter>(GetOwner());
-	check(Character);
-
-	AnimComp = Character->GetAnimationComponent();
+    AnimComp = Character->GetAnimationComponent();
     EquipComp = Character->GetEquipComponent();
     CameraComp = Character->GetCharCameraComponent();
 
-	check(EquipComp);
-	check(CameraComp);
-	check(AnimComp);
+    check(EquipComp);
+    check(CameraComp);
+    check(AnimComp);
 
     CameraComp->OnViewModeChanged.AddUObject(
         this,
@@ -42,6 +40,11 @@ void UItemVisualComponent::BeginPlay()
         this,
         &UItemVisualComponent::HandleActiveItemChanged
     );
+}
+
+void UItemVisualComponent::BeginPlay()
+{
+    Super::BeginPlay();
     RefreshVisual(EquipComp->GetActiveItemId());
 }
 

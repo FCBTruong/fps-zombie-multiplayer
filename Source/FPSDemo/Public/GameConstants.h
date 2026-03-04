@@ -22,7 +22,7 @@ public:
 
 	static constexpr int32 EMPTY_PLAYER_ID = -1;
 	static constexpr int32 BOT_PLAYER_ID_START = 100000;
-	static constexpr int32 MAX_ROUND_ZOMBIE_MODE = 7;
+	static constexpr int32 MAX_ROUND_ZOMBIE_MODE = 5;
 
 	static constexpr int32 AVATAR_IDS[] = { 14, 15, 16, 17, 18, 20, 21 };
 

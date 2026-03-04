@@ -39,6 +39,7 @@ void USceneManager::OnPacketReceived(
         }
 		FString Message = UTF8_TO_TCHAR(MessPkg.mess().c_str());
 
+		UE_LOG(LogTemp, Log, TEXT("Received NOTI_MESSAGE: %s"), *Message);
         // play notification sound  
 		UGameManager* GMR = UGameManager::Get(GetWorld());
         if (GMR && GMR->GlobalData && GMR->GlobalData->NotificationSound)
@@ -73,7 +74,9 @@ void USceneManager::OpenPopupDialogOk(
 	TFunction<void()> OnOk
 )
 {
-    UGameManager* GameManager = UGameManager::Get(GetWorld());
+    UWorld* World = GetWorld();
+	if (!World) return;
+    UGameManager* GameManager = UGameManager::Get(World);
     UGlobalDataAsset* GlobalData = GameManager->GlobalData;
     if (!GlobalData->PopupDialogUIClass)
     {
@@ -81,8 +84,8 @@ void USceneManager::OpenPopupDialogOk(
         return;
     }
 
-    UWorld* World = GetWorld();
     APlayerController* PC = World->GetFirstPlayerController();
+	if (!PC) return;
     UPopupDialogUI* Popup = CreateWidget<UPopupDialogUI>(
         PC,
         GlobalData->PopupDialogUIClass.Get()

@@ -29,8 +29,8 @@ class FPSDEMO_API USpikeComponent : public URoleGatedComponent
 public:	
 	// Sets default values for this component's properties
 	USpikeComponent();
+	void Init();
 
-	virtual void BeginPlay() override;
 public:
 	void RequestPlantSpike();
 	void RequestStopPlantSpike();

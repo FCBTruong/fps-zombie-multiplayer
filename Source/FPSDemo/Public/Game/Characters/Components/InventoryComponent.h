@@ -28,6 +28,7 @@ class FPSDEMO_API UInventoryComponent : public UActorComponent
 
 public:
     UInventoryComponent();
+    void Init();
 
     // ===== Queries =====
     const TArray<EItemId>& GetThrowables() const { return Throwables; }
@@ -78,7 +79,6 @@ public:
 
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void BeginPlay() override;
 
 private:
     ABaseCharacter* Character;

@@ -19,11 +19,12 @@ class FPSDEMO_API UThrowableComponent : public URoleGatedComponent
 
 public:	
 	UThrowableComponent();
+	void Init();
+
 	void RequestStartThrow();
 	void OnNadeRelease();
 
 protected:
-	virtual void BeginPlay() override;
 	virtual void OnEnabledChanged(bool bNowEnabled) override;
 
 private:

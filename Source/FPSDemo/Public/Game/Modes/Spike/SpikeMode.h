@@ -24,7 +24,7 @@ public:
 	void OnSpikeExploded();
 	EMatchMode GetMatchMode() const final { return EMatchMode::Spike; }
 
-	static constexpr int32 ScoreToWin = 3; // good is 7
+	static constexpr int32 ScoreToWin = 5; // good is 7
 	static constexpr int32 RoundToSwapSides = ScoreToWin - 1;
 	static constexpr int32 TimePerRound = 90; // seconds
 

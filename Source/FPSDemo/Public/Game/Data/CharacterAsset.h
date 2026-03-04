@@ -98,12 +98,18 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Characters")
 	TObjectPtr<UCharacterVisualSet> HeroVisualSet;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Characters")
 	TObjectPtr<UCharacterVisualSet> SoldierVisualSet;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Characters")
 	TObjectPtr<UCharacterVisualSet> SoldierVisualSet2;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Characters")
 	TObjectPtr<UCharacterVisualSet> ZombieVisualSet;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Characters")
+	TObjectPtr<UCharacterVisualSet> YinVisualSet;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UMaterialInterface* FlashPPMat;

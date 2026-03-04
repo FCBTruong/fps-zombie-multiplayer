@@ -88,24 +88,6 @@ void AMyPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AMyPlayerController::OnRep_Pawn()
 {
     Super::OnRep_Pawn();
-
-    if (!IsLocalController())
-    {
-        return;
-    }
-    // unbind from previous character
-    if (ABaseCharacter* OldChar = CachedChar.Get())
-    {
-        UnbindCharacter(OldChar);
-        CachedChar.Reset();
-    }
-
-    ABaseCharacter* Char = GetMyChar();
-    if (IsValid(Char))
-    {
-        CachedChar = Char;
-        BindCharacter(Char);
-    }
 }
 
 void AMyPlayerController::ToggleShop()
@@ -810,11 +792,6 @@ void AMyPlayerController::BindCharacter(ABaseCharacter* Char)
     if (!IsValid(Char) || !PlayerUI) {
         return;
     }
-    if (CachedChar.IsValid()) {
-		// unbind previous
-		UnbindCharacter(CachedChar.Get());
-        CachedChar.Reset();
-    }
 
     if (UHealthComponent* HC = Char->GetHealthComponent())
     {
@@ -1232,4 +1209,44 @@ void AMyPlayerController::SetMouseSensitivity(float Sensitivity)
 float AMyPlayerController::GetMouseSensitivity() const
 {
     return MouseSensitivity;
+}
+
+void AMyPlayerController::OnBecomeViewTarget(ABaseCharacter* Target) 
+{
+    if(ABaseCharacter * OldChar = CachedChar.Get())
+    {
+        UnbindCharacter(OldChar);
+        CachedChar.Reset();
+    }
+
+    if (IsValid(Target))
+    {
+        CachedChar = Target;
+        BindCharacter(Target);
+
+        if (PlayerUI) {
+            if (Target == GetPawn()) {
+                PlayerUI->UpdateSpectating(false);
+            }
+            else {
+                PlayerUI->UpdateSpectating(true);
+			}
+        }
+    }
+}
+
+void AMyPlayerController::PawnLeavingGame()
+{
+	AShooterGameMode* GM = GetWorld()->GetAuthGameMode<AShooterGameMode>();
+    if (GM) {
+        // Pawn must to stay
+        APawn* P = GetPawn();
+        if (P)
+        {
+            UnPossess();
+            return;
+        }
+    }
+
+    Super::PawnLeavingGame();
 }

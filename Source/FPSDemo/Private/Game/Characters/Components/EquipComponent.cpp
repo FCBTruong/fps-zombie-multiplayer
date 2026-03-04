@@ -19,16 +19,13 @@ UEquipComponent::UEquipComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UEquipComponent::BeginPlay()
-{
-    Super::BeginPlay();
-
+void UEquipComponent::Init() {
     OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
     check(OwnerCharacter);
 
     InventoryComp = OwnerCharacter->GetInventoryComponent();
     ActionStateComp = OwnerCharacter->GetActionStateComponent();
-
+  
     check(InventoryComp);
     check(ActionStateComp);
 

@@ -34,6 +34,8 @@ class FPSDEMO_API UWeaponFireComponent : public URoleGatedComponent
 
 public:
 	UWeaponFireComponent();
+	void Init();
+
 	// Input-facing
 	void RequestStartFire();
 	void RequestStopFire();
@@ -48,7 +50,6 @@ public:
 	// Delegates
 	FOnFinishedReload OnFinishedReload;
 protected:
-	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void OnEnabledChanged(bool bNowEnabled) override;

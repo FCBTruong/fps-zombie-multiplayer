@@ -16,6 +16,7 @@ class FPSDEMO_API UAnimationComponent : public UActorComponent
 
 public:	
 	UAnimationComponent();
+	void Init();
 
 protected:
 	virtual void BeginPlay() override;

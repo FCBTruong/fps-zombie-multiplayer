@@ -25,6 +25,7 @@ class FPSDEMO_API UItemVisualComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UItemVisualComponent();
+    void Init();
 
     void OnNotifyGrabMag();
     void OnNotifyInsertMag();

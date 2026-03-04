@@ -22,7 +22,7 @@ class FPSDEMO_API UItemUseComponent : public URoleGatedComponent
 public:	
 	// Sets default values for this component's properties
 	UItemUseComponent();
-	virtual void BeginPlay() override;
+	void Init();
 
 	void PrimaryPressed();
 	void PrimaryReleased();

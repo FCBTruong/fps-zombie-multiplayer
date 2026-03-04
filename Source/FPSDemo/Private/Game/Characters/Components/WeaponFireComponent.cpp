@@ -26,9 +26,8 @@ UWeaponFireComponent::UWeaponFireComponent()
 	SetIsReplicatedByDefault(true);
 }
 
-void UWeaponFireComponent::BeginPlay()
-{
-	Super::BeginPlay();
+void UWeaponFireComponent::Init()
+{;
 	Character = Cast<ABaseCharacter>(GetOwner());
 	check(Character);
 
@@ -442,7 +441,7 @@ bool UWeaponFireComponent::TraceShot(
 
 	if (bFoundRewindCharHit)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Rewind hit confirmed on %s at time %.2f"), *BestRewindHit.GetActor()->GetName(), ShotTime);
+		//UE_LOG(LogTemp, Log, TEXT("Rewind hit confirmed on %s at time %.2f"), *BestRewindHit.GetActor()->GetName(), ShotTime);
 		OutHit = BestRewindHit;
 		OutEnd = BestRewindHit.ImpactPoint;
 		return true;
@@ -511,6 +510,7 @@ float UWeaponFireComponent::GetTotalSpreadDeg(float NowServerTime) const
 
 float UWeaponFireComponent::GetMovementSpreadDeg() const
 {
+	float x = CurrentFirearmConfig->MoveAddDeg * GetMoveAlphaForSpread();
 	return CurrentFirearmConfig->MoveAddDeg * GetMoveAlphaForSpread();
 }
 
@@ -523,10 +523,10 @@ float UWeaponFireComponent::GetAirSpreadDeg() const
 float UWeaponFireComponent::GetMoveAlphaForSpread() const
 {
 	const float Speed2D = Character->GetVelocity().Size2D();
-	const float Alpha = FMath::Clamp(Speed2D / 600, 0.0f, 1.0f); // 600 is max walk speed
+	const float Alpha = FMath::Clamp(Speed2D / 500, 0.0f, 1.0f); // 500 is max walk speed
 
 	// Apply curve
-	const float Exp = FMath::Max(0.1f, CurrentFirearmConfig->MoveCurveExp);
+	const float Exp = FMath::Max(0.01f, CurrentFirearmConfig->MoveCurveExp);
 	return FMath::Pow(Alpha, Exp);
 }
 
@@ -675,11 +675,6 @@ void UWeaponFireComponent::ApplyRecoilLocal()
 {
 #if !UE_SERVER
 	if (!IsOwningClient()) {
-		return;
-	}
-
-	if (ShotCount == 1) {
-		// no recoil on first shot
 		return;
 	}
 

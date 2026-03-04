@@ -17,6 +17,7 @@ class FPSDEMO_API UPickupComponent : public URoleGatedComponent
 public:	
 	// Sets default values for this component's properties
 	UPickupComponent();
+	void Init();
 
 protected:
 	UFUNCTION(Client, Unreliable)

@@ -44,6 +44,9 @@ protected:
 	UTextBlock* MatchResultLb;
 
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* SpectateLb;
+
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* RoundLb;
 
 	UPROPERTY(meta = (BindWidget))
@@ -283,4 +286,5 @@ public:
 	bool IsSettingsOpen() const;
 	void ShowSettings(bool bShow);
 	void ResetAll();
+	void UpdateSpectating(bool bIsSpectating);
 };

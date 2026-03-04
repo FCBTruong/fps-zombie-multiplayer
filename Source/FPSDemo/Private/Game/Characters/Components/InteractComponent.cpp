@@ -12,10 +12,8 @@ UInteractComponent::UInteractComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void UInteractComponent::BeginPlay()
+void UInteractComponent::Init()
 {
-	Super::BeginPlay();
-
 	OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
 	check(OwnerCharacter);
 }
@@ -81,11 +79,6 @@ void UInteractComponent::StartFocus(AActor* Actor)
 
 void UInteractComponent::EndFocus(AActor* Actor)
 {
-	if (!Actor)
-	{
-		return;
-	}
-
 	if (ABaseCharacter* Char = Cast<ABaseCharacter>(Actor))
 	{
 		Char->ShowNameText(false);

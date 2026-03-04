@@ -44,7 +44,7 @@ public:
     FOnAimingVisualsChanged OnAimingVisualsChanged;
 protected:
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-    virtual void BeginPlay() override;
+
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "Init|Camera")
     TSubclassOf<AActor> DeathCameraProxyClass;

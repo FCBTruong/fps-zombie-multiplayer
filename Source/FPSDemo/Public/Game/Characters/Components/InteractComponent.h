@@ -19,7 +19,6 @@ class FPSDEMO_API UInteractComponent : public UActorComponent
 
 protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	virtual void BeginPlay() override;
 
 private:
 	ABaseCharacter* OwnerCharacter = nullptr;
@@ -37,7 +36,8 @@ private:
 	void StartFocus(AActor* Actor);
 public:	
 	UInteractComponent();
-	
+	void Init();
+
 	void TryPickup();	
 
 	// delegates

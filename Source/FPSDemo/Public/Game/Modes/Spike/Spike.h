@@ -10,6 +10,13 @@ class USpringArmComponent;
 class USpikeComponent;
 class ABaseCharacter;
 
+enum class ESpikeExplosionState : uint8 {
+	Inactive,
+	Exploding,
+	WaitingToShrink,
+	Shrinking
+};
+
 UCLASS()
 class FPSDEMO_API ASpike : public AActor
 {
@@ -24,8 +31,18 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION()
+	void OnExplodeSphereBeginOverlap(
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
+
+	ESpikeExplosionState ExplosionState = ESpikeExplosionState::Inactive;
 	bool bIsDefused = false;
-	bool bIsExploding = false;
 	bool bIsDefuseInProgress = false;
 	float ExplodeTimer = 0.f;
 	float CamYaw = 0.f;
@@ -68,7 +85,8 @@ protected:
 public:	
 	static constexpr float TimeExplode = 26.0f;
 	static constexpr float DefuseTime = 6.f;
-	static constexpr float ExplodeDamage = 500.f;
+	static constexpr float ExplodeDamage = 999.f;
+	static constexpr float ScaleRadius = 20.f;
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_Defused();

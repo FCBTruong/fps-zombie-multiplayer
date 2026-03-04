@@ -25,10 +25,11 @@ void UGameManager::Init()
 	Super::Init();
 	DsClient = MakeUnique<DedicatedServerClient>();
 
-    UE_LOG(LogTemp, Log, TEXT("GameLift InitSDK success"));
 #if WITH_GAMELIFT
     InitGameLift();
 #endif
+
+    UE_LOG(LogTemp, Log, TEXT("GameLift InitSDK success"));
 }
 
 void UGameManager::OnStart()
@@ -372,8 +373,16 @@ void UGameManager::StartMatch(FMatchInfo MatchInfo)
         return;
     }
 
+    // self host
+    int OwnerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();;
+    PendingOptions += FString::Printf(TEXT("?PlayerSessionId=%d"), OwnerId);
+
+#if UE_BUILD_SHIPPING // offline mode, selfhost session currently not supported, directly open level without creating session
+	UGameplayStatics::OpenLevel(this, PendingMapName, true, PendingOptions);
+#else
     // Create session then travel in OnCreateSessionComplete
     CreateHostSession();
+#endif
 }
 
 
@@ -434,10 +443,6 @@ void UGameManager::OnCreateSessionComplete(FName SessionName, bool bWasSuccessfu
         UE_LOG(LogTemp, Error, TEXT("CreateSession failed"));
         return;
     }
-
-    // self host
-    int OwnerId = UPlayerInfoManager::Get(GetWorld())->GetUserId();;
-    PendingOptions += FString::Printf(TEXT("?PlayerSessionId=%d"), OwnerId);
 
     UGameplayStatics::OpenLevel(this, PendingMapName, true, PendingOptions);
 }

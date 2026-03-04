@@ -302,7 +302,8 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
         ABaseCharacter* Character = Cast<ABaseCharacter>(Pawn);
         if (IsValid(Character) && !Character->IsPermanentDead())
         {
-            MyPC->Possess(Slot->GetPawn());
+            MyPC->Possess(Character);
+			MyPC->ClientSetRotation(Character->GetActorRotation());
         }
         else {
             // change to spectator        
@@ -314,8 +315,6 @@ void AShooterGameMode::PostLogin(APlayerController* NewPlayer)
 
 void AShooterGameMode::Logout(AController* Exiting)
 {
-    APawn* LeavingPawn = Exiting ? Exiting->GetPawn() : nullptr;
-
     AMyPlayerController* MyPC = Cast<AMyPlayerController>(Exiting);
     if (MyPC)
     {
@@ -323,13 +322,6 @@ void AShooterGameMode::Logout(AController* Exiting)
         if (Slot) {
             Slot->SetIsConnected(false);
         }
-    }
-
-    // Unpossess before calling Super (controller cleanup happens there)
-    if (LeavingPawn)
-    {
-        Exiting->UnPossess();
-        LeavingPawn->SetOwner(nullptr);
     }
     Super::Logout(Exiting);
 }
@@ -580,23 +572,6 @@ bool AShooterGameMode::IsDamageAllowed(AController* Killer, AController* Victim)
         }
     }
     return true;
-}
-
-void AShooterGameMode::TravelToLobby()
-{
-    UE_LOG(LogTemp, Warning, TEXT("Traveling to Lobby"));
-
-    const FString Url = FGameConstants::LEVEL_LOBBY.ToString();          // e.g. "/Game/Main/Levels/LEVEL_LOBBY"
-    const FString Short = FPackageName::GetShortName(Url);               // "LEVEL_LOBBY"
-
-    if (GetNetMode() == NM_ListenServer || GetNetMode() == NM_DedicatedServer)
-    {
-        GetWorld()->ServerTravel(Url + TEXT("?listen"), true);
-    }
-    else
-    {
-        UGameplayStatics::OpenLevel(this, FName(*Short));
-    }
 }
 
 APawn* AShooterGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform)

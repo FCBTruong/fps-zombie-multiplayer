@@ -26,7 +26,9 @@ void FPacketDispatcher::Dispatch(const game::net::Packet& Packet)
 
     for (IPacketListener* Listener : Listeners)
     {
-        Listener->OnPacketReceived(CmdId, Payload);
+        if (Listener) {
+            Listener->OnPacketReceived(CmdId, Payload);
+        }
     }
 }
 

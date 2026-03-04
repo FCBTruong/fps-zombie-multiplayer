@@ -19,9 +19,8 @@ USpikeComponent::USpikeComponent()
     SetIsReplicatedByDefault(true);
 }
 
-void USpikeComponent::BeginPlay()
+void USpikeComponent::Init()
 {
-    Super::BeginPlay();
     Character = Cast<ABaseCharacter>(GetOwner());
 	check(Character);
    

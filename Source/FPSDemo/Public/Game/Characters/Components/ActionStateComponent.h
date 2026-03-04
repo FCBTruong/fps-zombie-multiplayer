@@ -39,6 +39,7 @@ class FPSDEMO_API UActionStateComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UActionStateComponent();
+    void Init();
 
     EActionState GetState() const { return State; }
     void ForceSetState(EActionState NewState); // use sparingly (reset on death)
@@ -62,8 +63,7 @@ public:
     FOnActionStateChanged OnStateChanged;
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	virtual void BeginPlay() override;
-
+	
 private:
 	ABaseCharacter* OwnerCharacter = nullptr;
 

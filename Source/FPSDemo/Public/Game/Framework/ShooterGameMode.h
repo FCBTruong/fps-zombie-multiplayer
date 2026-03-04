@@ -60,7 +60,6 @@ protected:
 	virtual void StartRound();
 	virtual void EndRound(ETeamId WinningTeam);
 	virtual void EndGame(ETeamId WinningTeam);
-	void TravelToLobby();
 	UFUNCTION()
 	void StartRoundDelayed();
 	virtual FTransform GetSpawnTransformForSlot(const APlayerSlot& Slot);

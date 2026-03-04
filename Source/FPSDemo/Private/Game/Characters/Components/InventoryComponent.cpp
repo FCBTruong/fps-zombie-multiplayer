@@ -20,10 +20,8 @@ UInventoryComponent::UInventoryComponent()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UInventoryComponent::BeginPlay()
+void UInventoryComponent::Init()
 {
-    Super::BeginPlay();
-
     Character = Cast<ABaseCharacter>(GetOwner());
 	check(Character);
 }

@@ -14,10 +14,8 @@ ULagCompensationComponent::ULagCompensationComponent()
 	SetIsReplicatedByDefault(false); // Server-side system
 }
 
-void ULagCompensationComponent::BeginPlay()
+void ULagCompensationComponent::Init()
 {
-	Super::BeginPlay();
-
 	OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
 	check(OwnerCharacter);
 }

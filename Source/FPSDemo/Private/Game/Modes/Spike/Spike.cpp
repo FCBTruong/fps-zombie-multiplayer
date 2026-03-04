@@ -30,6 +30,7 @@ void ASpike::BeginPlay()
 	{
 		ExplodeSphere->SetVisibility(false);
 		ExplodeSphere->SetWorldScale3D(FVector::ZeroVector);
+        ExplodeSphere->OnComponentBeginOverlap.AddDynamic(this, &ASpike::OnExplodeSphereBeginOverlap);
 	}
 
     if (HasAuthority())
@@ -67,6 +68,32 @@ void ASpike::BeginPlay()
     }
 }
 
+void ASpike::OnExplodeSphereBeginOverlap(
+    UPrimitiveComponent* OverlappedComp,
+    AActor* OtherActor,
+    UPrimitiveComponent* OtherComp,
+    int32 OtherBodyIndex,
+    bool bFromSweep,
+    const FHitResult& SweepResult
+)
+{
+    if (!HasAuthority()) return;
+    if (!IsValid(OtherActor) || OtherActor == this) return;
+
+    ABaseCharacter* Character = Cast<ABaseCharacter>(OtherActor);
+    if (!Character) return;
+    if (!Character->IsAlive()) return;
+
+    
+    UGameplayStatics::ApplyDamage(
+        Character,
+        ExplodeDamage,          
+        GetInstigatorController(),
+        this,
+        UDamageType::StaticClass()
+    );
+}
+
 void ASpike::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
@@ -84,26 +111,53 @@ void ASpike::Tick(float DeltaTime)
         }
 	}
 
-#if !UE_SERVER
-    // effect client
-    if (bIsExploding && ExplodeSphere)
+    if (!ExplodeSphere) {
+        return;
+	}
+
+    if (ExplosionState == ESpikeExplosionState::WaitingToShrink)
+    {
+		ExplodeTimer += DeltaTime;
+        const float WaitDuration = 1.5f; // time to wait before shrinking
+        if (ExplodeTimer >= WaitDuration)
+        {
+            ExplosionState = ESpikeExplosionState::Shrinking;
+            ExplodeTimer = 0.f; // reset timer for shrinking
+        }
+	}
+
+    if (ExplosionState == ESpikeExplosionState::Exploding)
     {
         ExplodeTimer += DeltaTime;
-        float Alpha = FMath::Clamp(ExplodeTimer / 1.0f, 0.f, 1.f);
+		const float Duration = 1.0f; // explosion anim duration in seconds
+        float Alpha = FMath::Clamp(ExplodeTimer / Duration, 0.f, 1.f);
 
         // scale animation: 0 - 3
-        float Scale = FMath::Lerp(0.f, 20.f, Alpha);
+        float Scale = FMath::Lerp(0.f, ScaleRadius, Alpha);
         ExplodeSphere->SetWorldScale3D(FVector(Scale));
 
         if (Alpha >= 1.f)
         {
-            bIsExploding = false; // stop anim
-
-			// calculate damage to actors in radius here
+			ExplosionState = ESpikeExplosionState::WaitingToShrink;
+			ExplodeTimer = 0.f; // reset timer for waiting
 			OnCompleteExplode();
         }
     }
-#endif
+
+    if (ExplosionState == ESpikeExplosionState::Shrinking)
+    {
+        ExplodeTimer += DeltaTime;
+        const float Duration = 0.5f; // shrinking anim duration in seconds
+        float Alpha = FMath::Clamp(ExplodeTimer / Duration, 0.f, 1.f);
+        // scale animation: 3 - 0
+        float Scale = FMath::Lerp(ScaleRadius, 0.f, Alpha);
+        ExplodeSphere->SetWorldScale3D(FVector(Scale));
+        if (Alpha >= 1.f)
+        {
+            ExplosionState = ESpikeExplosionState::Inactive;
+            ExplodeSphere->SetVisibility(false);
+        }
+    }
 }
 
 void ASpike::Explode()
@@ -138,7 +192,7 @@ void ASpike::Multicast_Explode_Implementation()
     ExplodeSphere->SetVisibility(true);
     ExplodeSphere->SetWorldScale3D(FVector::ZeroVector);
 
-    bIsExploding = true;
+	ExplosionState = ESpikeExplosionState::Exploding;
     ExplodeTimer = 0.f;
 
     if (ExplodeSound)
@@ -156,10 +210,8 @@ void ASpike::Multicast_Explode_Implementation()
 
 void ASpike::Defused()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Spike defused"));
     // stop explode timer
     GetWorld()->GetTimerManager().ClearTimer(TimerHandle_Explode);
-    // off sound
 
     bIsDefused = true;
 	bIsDefuseInProgress = false;
@@ -220,7 +272,6 @@ void ASpike::StartDefuse(USpikeComponent* DefuseComp)
     bIsDefuseInProgress = true;
     DefusingComponent = DefuseComp;
 
-	UE_LOG(LogTemp, Warning, TEXT("Spike defuse started"));
     GetWorld()->GetTimerManager().SetTimer(
         DefuseTimerHandle,
         this,
@@ -258,45 +309,6 @@ void ASpike::OnCompleteExplode() {
     if (!HasAuthority()) {
         return;
 	}
-	// Apply damage to actors in radius here
-    TArray<TEnumAsByte<EObjectTypeQuery>> ObjTypes;
-    ObjTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-
-    TArray<AActor*> IgnoreActors;
-    IgnoreActors.Add(this);
-
-    TArray<AActor*> Overlapped;
-    float ExplodeRadius = 300.f;
-
-    if (ExplodeSphere && ExplodeSphere->GetStaticMesh())
-    {
-        const float BaseRadius = ExplodeSphere->GetStaticMesh()->GetBounds().SphereRadius; // unscaled
-        const float Scale = ExplodeSphere->GetComponentScale().GetAbsMax();                // current scale (your 0..15)
-        ExplodeRadius = BaseRadius * Scale;
-    }
-    UKismetSystemLibrary::SphereOverlapActors(
-        GetWorld(),
-        GetActorLocation(),
-        ExplodeRadius,
-        ObjTypes,
-        APawn::StaticClass(),
-        IgnoreActors,
-        Overlapped
-    );
-
-    AController* InstigatorController = GetInstigatorController();
-    for (AActor* A : Overlapped)
-    {
-        if (!IsValid(A)) continue;
-
-        UGameplayStatics::ApplyDamage(
-            A,
-            ExplodeDamage,
-            InstigatorController,
-            this,
-            UDamageType::StaticClass()
-        );
-    }
 }
 
 void ASpike::AddCameraYaw(float Value)

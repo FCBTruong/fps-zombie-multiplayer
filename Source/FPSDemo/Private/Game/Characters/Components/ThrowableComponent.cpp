@@ -20,9 +20,8 @@ UThrowableComponent::UThrowableComponent()
 	SetIsReplicatedByDefault(true);
 }
 
-void UThrowableComponent::BeginPlay()
+void UThrowableComponent::Init()
 {
-	Super::BeginPlay();
 	CharacterOwner = Cast<ABaseCharacter>(GetOwner());
 	check(CharacterOwner);
 

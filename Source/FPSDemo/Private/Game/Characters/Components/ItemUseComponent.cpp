@@ -15,9 +15,7 @@ UItemUseComponent::UItemUseComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UItemUseComponent::BeginPlay() {
-    Super::BeginPlay();
-
+void UItemUseComponent::Init() {
     OwnerChar = Cast<ABaseCharacter>(GetOwner());
 	check(OwnerChar);
    

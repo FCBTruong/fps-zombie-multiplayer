@@ -18,6 +18,10 @@ UPickupComponent::UPickupComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UPickupComponent::Init()
+{
+}
+
 // Server called
 void UPickupComponent::PickupItem(APickupItem* PickupItem, bool AutoEquip)
 {
@@ -105,10 +109,6 @@ void UPickupComponent::ClientNotifyItemPickup_Implementation(
 {
 	// play sound
 	UGameManager* GM = UGameManager::Get(GetWorld());
-	if (!GM || !GM->GlobalData) {
-		UE_LOG(LogTemp, Warning, TEXT("GameManager or GlobalData not found in ClientNotifyItemPickup"));
-		return;
-	}
 	UGlobalDataAsset* GlobalData = GM->GlobalData;
 	if (GlobalData->PickupSound) {
 		UGameplayStatics::PlaySound2D(

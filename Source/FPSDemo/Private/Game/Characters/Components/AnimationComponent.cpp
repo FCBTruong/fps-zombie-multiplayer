@@ -11,13 +11,16 @@ UAnimationComponent::UAnimationComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UAnimationComponent::Init()
+{
+    OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
+    check(OwnerCharacter);
+}
+
 // Called when the game starts
 void UAnimationComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
-	check(OwnerCharacter);
 
     UGameManager* GameManager = UGameManager::Get(GetWorld());
     CachedCharacterAsset = GameManager->CharacterAsset.Get();
@@ -26,7 +29,7 @@ void UAnimationComponent::BeginPlay()
 
 void UAnimationComponent::PlayEquipMontage()
 {
-	if (CachedCharacterAsset->AnimMontage_Equip) {
+	if (CachedCharacterAsset && CachedCharacterAsset->AnimMontage_Equip) {
 
 		PlayMontage(CachedCharacterAsset->AnimMontage_Equip);
 	}
@@ -67,6 +70,10 @@ void UAnimationComponent::PlayMontage(UAnimMontage* MontageToPlay)
 }
 
 void UAnimationComponent::PlayFireRifleMontage(UAnimMontage* FireMontage) {
+    if (!CachedCharacterAsset) {
+        return;
+	}
+
     if (FireMontage) {
         PlayMontage(FireMontage);
 	}
@@ -76,21 +83,41 @@ void UAnimationComponent::PlayFireRifleMontage(UAnimMontage* FireMontage) {
 }
 
 void UAnimationComponent::PlayFirePistolMontage() {
+    if (!CachedCharacterAsset) {
+        return;
+    }
+
     PlayMontage(CachedCharacterAsset->AnimMontage_FirePistol);
 }
 
 void UAnimationComponent::PlayReloadRifleMontage() {
+    if (!CachedCharacterAsset) {
+        return;
+    }
+
     PlayMontage(CachedCharacterAsset->AnimMontage_ReloadRifle);
 }
 
 void UAnimationComponent::PlayReloadPistolMontage() {
+    if (!CachedCharacterAsset) {
+        return;
+    }
+
     PlayMontage(CachedCharacterAsset->AnimMontage_ReloadPistol);
 }
 
 void UAnimationComponent::PlayThrowNadeMontage() {
+    if (!CachedCharacterAsset) {
+        return;
+    }
+
     PlayMontage(CachedCharacterAsset->AnimMontage_ThrowNade);
 }
 
 void UAnimationComponent::PlayZombieAttackMontage() {
+    if (!CachedCharacterAsset) {
+        return;
+    }
+
     PlayMontage(CachedCharacterAsset->AnimMontage_ZombieAttack);
 }

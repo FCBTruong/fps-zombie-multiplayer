@@ -42,6 +42,7 @@ void UPlayerUI::NativeConstruct()
     }
 
 	ZombieVsHeroPn->SetVisibility(ESlateVisibility::Hidden);
+	SpectateLb->SetVisibility(ESlateVisibility::Hidden);
     // update UI by game mode
 	AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
 	if (GS)
@@ -793,4 +794,8 @@ void UPlayerUI::ShowSettings(bool bShow)
 
 void UPlayerUI::ResetAll() {
 	WBP_Crosshair->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void UPlayerUI::UpdateSpectating(bool bIsSpectating) {
+    SpectateLb->SetVisibility(bIsSpectating ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 }

@@ -22,5 +22,6 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UButton* LoginBtn;
 private:
+	UFUNCTION()
 	void TryLogin();
 };

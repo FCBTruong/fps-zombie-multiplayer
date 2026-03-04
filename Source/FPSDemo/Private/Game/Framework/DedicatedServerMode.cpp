@@ -12,7 +12,12 @@ void ADedicatedServerMode::BeginPlay()
     {
         if (UNetDriver* NetDriver = World->GetNetDriver())
         {
-            UE_LOG(LogTemp, Log, TEXT("NetServerMaxTickRate = %d"), NetDriver->NetServerMaxTickRate);
+            UE_LOG(
+                LogTemp,
+                Log,
+                TEXT("NetServerMaxTickRate = %d"),
+                NetDriver->GetNetServerMaxTickRate()
+            );
         }
         else
         {

@@ -23,10 +23,8 @@ UWeaponMeleeComponent::UWeaponMeleeComponent()
 	SetIsReplicatedByDefault(true);
 }
 
-void UWeaponMeleeComponent::BeginPlay()
+void UWeaponMeleeComponent::Init()
 {
-	Super::BeginPlay();
-
 	Character = Cast<ABaseCharacter>(GetOwner());
 	check(Character);
 

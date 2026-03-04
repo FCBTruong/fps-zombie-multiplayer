@@ -70,12 +70,6 @@ void UCharCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	CameraFps->SetFirstPersonFieldOfView(NewFOV);
 }
 
-void UCharCameraComponent::BeginPlay()
-{
-    Super::BeginPlay();
-	UE_LOG(LogTemp, Warning, TEXT("UCharCameraComponent::BeginPlay called"));
-}
-
 bool UCharCameraComponent::IsFPS() const
 {
     return bIsFPS;

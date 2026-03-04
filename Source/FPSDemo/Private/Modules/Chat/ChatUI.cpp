@@ -22,7 +22,7 @@ void UChatUI::NativeConstruct()
 	}
 	bIsChatOpen = false;
 	ChatPn->SetVisibility(ESlateVisibility::Collapsed);
-	ChatPreviewPn->SetVisibility(ESlateVisibility::Visible);
+	ChatPreviewPn->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
 	// clear children
 	ChatScrollBox->ClearChildren();
@@ -86,8 +86,8 @@ void UChatUI::SetChatOpen(bool bOpen)
 {
 	bIsChatOpen = bOpen;
 
-	ChatPn->SetVisibility(bOpen ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-	ChatPreviewPn->SetVisibility(bOpen ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	ChatPn->SetVisibility(bOpen ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
+	ChatPreviewPn->SetVisibility(bOpen ? ESlateVisibility::Collapsed : ESlateVisibility::SelfHitTestInvisible);
 
 	if (bOpen)
 	{
@@ -126,6 +126,8 @@ void UChatUI::CloseChat()
 
 	if (APlayerController* PC = GetOwningPlayer())
 	{
-		SetUserFocus(PC);
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode(InputMode);
+		PC->SetShowMouseCursor(false);
 	}
 }

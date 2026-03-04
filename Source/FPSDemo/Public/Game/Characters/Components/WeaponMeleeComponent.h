@@ -19,15 +19,14 @@ class FPSDEMO_API UWeaponMeleeComponent : public URoleGatedComponent
 
 public:	
 	UWeaponMeleeComponent();
+	void Init();
+
 	void RequestMeleeAttack(int32 AttackIndex);
 	void HandleActiveItemChanged(EItemId MeleeId);
 	void PlayHitFX_Local(
 		const FVector& ImpactPoint,
 		const FVector& ImpactNormal
 	);
-
-protected:
-	virtual void BeginPlay() override;
 
 private:
 	UFUNCTION(Server, Reliable)

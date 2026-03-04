@@ -25,12 +25,18 @@ private:
 public:
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* PlayerNameLb;
+
 	UPROPERTY(meta = (BindWidget))
 	UImage* AvatarImg;
+
 	UPROPERTY(meta = (BindWidget))
 	UImage* DeadIcon;
+
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* HpBar;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* DisconnectIcon;
 
 	void SetInfo(APlayerSlot* SlotInfo, bool bIsMyTeam);
 	void HandlePawnChanged();

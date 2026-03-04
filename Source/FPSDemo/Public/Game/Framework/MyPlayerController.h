@@ -29,6 +29,7 @@ protected:
     virtual void OnRep_Pawn() override;
     virtual void OnRep_PlayerState() override;
     virtual void SetupInputComponent() override;
+	virtual void PawnLeavingGame() override;
 public:
     AMyPlayerController();
 
@@ -112,6 +113,7 @@ public:
     void NotifyToastMessage(const FText& Message);
     void SetBackendUserId(int InBackendUserId) { BackendUserId = InBackendUserId; }
     void SetMouseSensitivity(float InMouseSensitivity);
+	void OnBecomeViewTarget(ABaseCharacter* Target);
     float GetMouseSensitivity() const;
     int32 GetBackendUserId() const { return BackendUserId; }
     ETeamId GetTeamId() const;

@@ -9,10 +9,8 @@ UActionStateComponent::UActionStateComponent()
     SetIsReplicatedByDefault(true);
 }
 
-void UActionStateComponent::BeginPlay()
+void UActionStateComponent::Init()
 {
-    Super::BeginPlay();
-
     OwnerCharacter = Cast<ABaseCharacter>(GetOwner());
     check(OwnerCharacter);
 }

@@ -3,12 +3,14 @@
 > **Note**
 > This project is a prototype and includes free and AI-generated assets. If you believe any asset infringes copyright, please let me know and I will remove it immediately.
 
+## Demo
 <p align="center">
   <a href="https://youtu.be/zKZ15l_08L4" target="_blank">
     <img src="https://img.shields.io/badge/Watch%20Full%20Video-YouTube-red?style=for-the-badge&logo=youtube" />
   </a>
 </p>
 
+## About the project
 An online multiplayer FPS prototype inspired by **CrossFire**, **VALORANT**, and **Counter-Strike**.
 
 The project focuses on the **technical side** of **shooter development**, including:
@@ -28,7 +30,8 @@ The goal is to build a **reliable**, **scalable foundation** for a **competitive
 - **Zombie Mode**: A CrossFire-style infection mode where zombies hunt and infect human players.
 - **Deathmatch Mode**: Fast-paced free-for-all combat focused on eliminations.
 
-## Dedicated backend service for matchmaking/session/game services
+## Dedicated backend service 
+This is for matchmaking/session/game services
 
 [FCBTruong/fps-zombie-multiplayer-backend](https://github.com/FCBTruong/fps-zombie-multiplayer-backend)
 
@@ -92,7 +95,7 @@ NetEmulation.PktIncomingLagMax 100
 ```
 
 * Server keeps ~200ms of hitbox history.
-* Hit checks are server-side (client doesn�t decide hits).
+* Hit checks are server-side (client doesn't decide hits).
 * On shot, server checks against a rewound target state based on shot time / latency.
 * Helps shots register more consistently under ping.
 
@@ -171,6 +174,27 @@ https://github.com/amazon-gamelift/amazon-gamelift-plugin-unreal/releases/downlo
 
 ---
 
-## Build Dedicated Server
+## Production Deployment
+
+### Build
+Linux/Windows, Development/Shipping
+
 See the detailed guide here:
 * [Build Dedicated Server](./Docs/Build.md)
+
+
+### Deploy AWS
+
+1. Upload build to AWS
+
+```text
+aws gamelift upload-build `
+  --name "FPSDemo-LinuxServer" `
+  --build-version "1.0.0" `
+  --build-root "C:\Workspace\GameStudio\FPSDemo\ArchivedBuilds\LinuxServer" `
+  --operating-system AMAZON_LINUX_2023 `
+  --server-sdk-version "5.4.0" `
+  --region ap-southeast-1
+```
+
+2.

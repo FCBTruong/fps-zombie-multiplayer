@@ -7,18 +7,15 @@
 #include "Game/Characters/BaseCharacter.h"
 #include "Game/Characters/Components/HealthComponent.h"
 #include "Shared/Utils/GameUtils.h"
+#include "Game/Framework/ShooterGameState.h"
 
 void UPlayerSlotUI::NativeConstruct()
 {
 	Super::NativeConstruct();
-	if (HpBar)
-	{
-		HpBar->SetPercent(.0f);
-	}
-	if (DeadIcon)
-	{
-		DeadIcon->SetVisibility(ESlateVisibility::Collapsed);
-	}	
+
+	HpBar->SetPercent(.0f);
+	DeadIcon->SetVisibility(ESlateVisibility::Collapsed);
+	DisconnectIcon->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UPlayerSlotUI::SetInfo(APlayerSlot* SlotInfo, bool bInIsMyTeam)
@@ -156,9 +153,15 @@ void UPlayerSlotUI::HandleUpdateConnectedStatus(bool bIsConnected)
 		}
 
 		this->SetRenderOpacity(1.0f);
+		DisconnectIcon->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	else
 	{
 		this->SetRenderOpacity(0.4f);
+
+		AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+		if (GS && GS->GetMatchState() != EMyMatchState::PRE_MATCH) {
+			DisconnectIcon->SetVisibility(ESlateVisibility::Visible);
+		}
 	}
 }

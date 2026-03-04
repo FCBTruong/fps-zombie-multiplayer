@@ -73,8 +73,9 @@ ABaseCharacter::ABaseCharacter()
     CameraFps = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraFps"));
     CameraFps->bUsePawnControlRotation = false;
     CameraFps->SetupAttachment(FpsPivot);
-
     StimuliSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("StimuliSource"));
+
+    // Components
     InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
     InteractComp = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
     HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
@@ -100,6 +101,21 @@ ABaseCharacter::ABaseCharacter()
         MeshFps,
         GetMesh()
     );
+
+    // Initialize dependencies for components
+    EquipComp->Init();
+	ActionStateComp->Init();
+	AnimationComp->Init();
+	InteractComp->Init();
+	InventoryComp->Init();
+	ItemUseComp->Init();
+	ItemVisualComp->Init();
+	LagCompensationComp->Init();    
+	PickupComponent->Init();
+	SpikeComp->Init();
+	ThrowableComp->Init();
+	WeaponFireComp->Init();
+	WeaponMeleeComp->Init();
 
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
     MoveComp->NavAgentProps.bCanCrouch = true;
@@ -908,7 +924,7 @@ void ABaseCharacter::BecomeViewTarget(APlayerController* PC)
     {
         return;
     }
-    MyPC->BindCharacter(this);
+    MyPC->OnBecomeViewTarget(this);
     CameraComp->OnBecomeViewTarget(MyPC);
 }
 
@@ -1150,6 +1166,9 @@ void ABaseCharacter::ApplyVisualByRole(ECharacterRole NewRole)
         else if (CharacterSkin == FGameConstants::SKIN_CHARACTER_DEFENDER) {
             VisualSet = CachedCharacterAsset->SoldierVisualSet2;
         }
+        else if (CharacterSkin == FGameConstants::SKIN_CHARACTER_YIN) {
+            VisualSet = CachedCharacterAsset->YinVisualSet;
+		}
     }
 
     if (!VisualSet) {

@@ -32,6 +32,7 @@ class FPSDEMO_API UEquipComponent : public URoleGatedComponent
 public:
     UEquipComponent();
 
+    void Init();
     void RequestSelectActiveItem(EItemId ItemId);
     void SelectSlot(int32 SlotIndex);
     void AutoSelectBestWeapon();
@@ -46,7 +47,6 @@ public:
     FOnActiveItemChanged OnActiveItemChanged;
 	FOnAmmoChanged OnAmmoChanged;
 protected:
-    virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnEnabledChanged(bool bNowEnabled) override;
