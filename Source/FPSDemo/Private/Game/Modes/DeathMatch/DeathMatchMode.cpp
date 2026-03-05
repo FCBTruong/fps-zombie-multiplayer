@@ -15,7 +15,15 @@ void ADeathMatchMode::StartPlay()
 		false
 	);
 
-	int TimeEnd = GetWorld()->GetTimeSeconds() + TimePerRound;
+	float Now = 0;
+	if (const UWorld* World = GetWorld())
+	{
+		if (const AGameStateBase* GS = World->GetGameState())
+		{
+			Now = GS->GetServerWorldTimeSeconds();
+		}
+	}
+	int TimeEnd = Now + TimePerRound;
 	CachedGS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
 	CachedGS->SetRoundEndTime(TimeEnd);
 

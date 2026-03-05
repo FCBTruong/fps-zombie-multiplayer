@@ -244,7 +244,7 @@ void UGameManager::InitGameLift()
     //At the end of a game session, Amazon GameLift Servers uploads everything in the specified 
     //location and stores it in the cloud for access later.
     TArray<FString> Logfiles;
-    Logfiles.Add(TEXT("GameLiftUnrealApp/Saved/Logs/server.log"));
+    Logfiles.Add(TEXT("FPSDemo/Saved/Logs/FPSDemoServer.log"));
     ProcessParameters->logParameters = Logfiles;
 
     //The game server calls ProcessReady() to tell Amazon GameLift Servers it's ready to host game sessions.

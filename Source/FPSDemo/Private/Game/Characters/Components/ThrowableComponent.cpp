@@ -131,8 +131,8 @@ void UThrowableComponent::FinishThrow()
 	InvComp->RemoveItem(ThrowableConfig->Id);
 
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = GetOwner();
-	SpawnParams.Instigator = Cast<APawn>(GetOwner());
+	SpawnParams.Owner = CharacterOwner;
+	SpawnParams.Instigator = CharacterOwner;
 	SpawnParams.SpawnCollisionHandlingOverride =
 		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
@@ -167,7 +167,7 @@ void UThrowableComponent::FinishThrow()
 		return;
 	}
 	ThrownProj->InitFromData(ThrowableConfig);
-	ThrownProj->LaunchProjectile(LaunchVelocity, CharacterOwner);
+	ThrownProj->LaunchProjectile(LaunchVelocity);
 
 	EquipComp->AutoSelectBestWeapon();
 }

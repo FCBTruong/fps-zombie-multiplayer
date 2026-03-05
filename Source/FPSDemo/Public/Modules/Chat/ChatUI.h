@@ -49,6 +49,7 @@ protected:
 
 private:
 	bool bIsChatOpen = false;
+	bool bIsLastMouseCursor = false;
 
 	UFUNCTION()
 	void OnChatTextCommitted(const FText& Text, ETextCommit::Type CommitMethod);

@@ -456,16 +456,11 @@ void UPlayerUI::UpdateGameState(EMyMatchState State) {
 }
 
 void UPlayerUI::ShowScoreboard(bool bShow) {
-    if (UWidget* ScoreboardPn = GetWidgetFromName(TEXT("ScoreboardPn"))) {
-        ScoreboardPn->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+    ScoreboardWidget->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 
-		UScoreboardUI* ScoreboardWidget = Cast<UScoreboardUI>(ScoreboardPn);
-        if (ScoreboardWidget) {
-            if (bShow) {
-                AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
-                ScoreboardWidget->UpdateScoreboard(GS);
-            }
-        }
+    if (bShow) {
+        AShooterGameState* GS = GetWorld()->GetGameState<AShooterGameState>();
+        ScoreboardWidget->UpdateScoreboard(GS);
     }
 }
 
@@ -543,7 +538,7 @@ void UPlayerUI::UpdateRoundClockOnce()
         return;
     }
 
-    const int32 Now = FMath::Floor(World->GetTimeSeconds());
+    const int32 Now = FMath::FloorToInt(GS->GetServerWorldTimeSeconds());
     const int32 Remaining = FMath::Max(RoundTimeEnd - Now, 0);
 
     // 10-second warning (same logic as before)

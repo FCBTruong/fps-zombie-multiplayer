@@ -310,6 +310,7 @@ void ABaseCharacter::UpdateNameTextRotation()
 
 void ABaseCharacter::UpdateFootstepSound(float DeltaTime) {
 	UWorld* World = GetWorld();
+
     const float CurrentTime = World->GetTimeSeconds();
     if (CurrentTime - LastFootstepTime >= FootstepInterval)
     {
@@ -431,6 +432,10 @@ void ABaseCharacter::RequestStartAiming()
     if (bIsAiming) {
         return;
     }
+
+    if (ActionStateComp->IsInState(EActionState::Reloading)) {
+        return; // can't aim while reloading
+	}
     
 	// if is locally controlled, update immediately
     if (IsLocallyControlled()) {
@@ -710,7 +715,15 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
 	bool bIsLocalPlayer = MyPC->GetViewTarget() == this;
 	auto LocalPC = Cast<AMyPlayerController>(GetController());
     if (LocalPC) {
-        LocalPC->SetTimeOfDeath(GetWorld()->GetTimeSeconds());
+        float Now = 0;
+        if (const UWorld* World = GetWorld())
+        {
+            if (const AGameStateBase* GS = World->GetGameState())
+            {
+                Now = GS->GetServerWorldTimeSeconds();
+            }
+        }
+        LocalPC->SetTimeOfDeath(Now);
     }
     if (bIsLocalPlayer) {
         MyPC->SetIgnoreLookInput(true);

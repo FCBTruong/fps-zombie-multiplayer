@@ -49,7 +49,16 @@ void AZombieMode::StartRound()
 	CachedGS->SetHeroPhase(false);
 
 	int BuyTime = 10; // seconds
-	int TimeBuyEnd = GetWorld()->GetTimeSeconds() + BuyTime;
+
+	float Now = 0;
+	if (const UWorld* World = GetWorld())
+	{
+		if (const AGameStateBase* GS = World->GetGameState())
+		{
+			Now = GS->GetServerWorldTimeSeconds();
+		}
+	}
+	int TimeBuyEnd = Now + BuyTime;
 	CachedGS->SetRoundEndTime(TimeBuyEnd);
 
 	RestartAllPlayers();
@@ -73,7 +82,16 @@ void AZombieMode::StartRound()
 void AZombieMode::EnterFightState()
 {
 	CachedGS->SetMatchState(EMyMatchState::ROUND_IN_PROGRESS);
-	int32 RoundProgressTimeEnd = GetWorld()->GetTimeSeconds() + RoundProgressTime;
+
+	float Now = 0;
+	if (const UWorld* World = GetWorld())
+	{
+		if (const AGameStateBase* GS = World->GetGameState())
+		{
+			Now = GS->GetServerWorldTimeSeconds();
+		}
+	}
+	int32 RoundProgressTimeEnd = Now + RoundProgressTime;
 	CachedGS->SetRoundEndTime(RoundProgressTimeEnd);
 
 	RandomZombie();
@@ -315,7 +333,15 @@ void AZombieMode::HandleHumanKilled(ABaseCharacter* VictimPawn)
 
 				// add time
 				const int HeroProgressTime = 60; // add 1 minute
-				int TimeEnd = GetWorld()->GetTimeSeconds() + HeroProgressTime;
+				float Now = 0;
+				if (const UWorld* World = GetWorld())
+				{
+					if (const AGameStateBase* GS = World->GetGameState())
+					{
+						Now = GS->GetServerWorldTimeSeconds();
+					}
+				}
+				int TimeEnd = Now + HeroProgressTime;
 				CachedGS->SetRoundEndTime(TimeEnd);
 
 				// reset timer

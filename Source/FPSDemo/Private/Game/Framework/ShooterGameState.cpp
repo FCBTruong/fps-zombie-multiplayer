@@ -169,8 +169,15 @@ float AShooterGameState::GetRemainingRoundTime() const
     if (RoundEndTime < 0) {
         return 0.f;
     }
-    int32 CurrentTime = GetWorld()->GetTimeSeconds();
-    int32 RemainingTime = RoundEndTime - CurrentTime;
+    float Now = 0;
+    if (const UWorld* World = GetWorld())
+    {
+        if (const AGameStateBase* GS = World->GetGameState())
+        {
+            Now = GS->GetServerWorldTimeSeconds();
+        }
+    }
+    int32 RemainingTime = RoundEndTime - Now;
     return FMath::Max(0, RemainingTime);
 }
 
@@ -384,7 +391,15 @@ bool AShooterGameState::AreSlotsReady() const
 }
 
 void AShooterGameState::SetRoundRemainingTime(int TimeRemaining) {
-    int TimeEnd = FMath::CeilToInt(GetWorld()->GetTimeSeconds() + TimeRemaining);
+    float Now = 0;
+    if (const UWorld* World = GetWorld())
+    {
+        if (const AGameStateBase* GS = World->GetGameState())
+        {
+            Now = GS->GetServerWorldTimeSeconds();
+        }
+    }
+    int TimeEnd = FMath::CeilToInt(Now + TimeRemaining);
 	SetRoundEndTime(TimeEnd);
 }
 

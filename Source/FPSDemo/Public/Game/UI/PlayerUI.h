@@ -24,6 +24,7 @@ class UMinimapRadarUI;
 class UPlayerSlotUI;
 class UChatUI;
 class UGameSettingsUI;
+class UScoreboardUI;
 
 /**
  * 
@@ -67,9 +68,12 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 
 	UTextBlock* FirstTeamScore;
-	UPROPERTY(meta = (BindWidget))
 
+	UPROPERTY(meta = (BindWidget))
 	UTextBlock* SecondTeamScore;
+
+	UPROPERTY(meta = (BindWidget))
+	UScoreboardUI* ScoreboardWidget;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* FirstTeamLb;

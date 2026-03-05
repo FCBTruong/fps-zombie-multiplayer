@@ -305,8 +305,16 @@ void AMyPlayerController::OnLeftClickStart()
     if (IsSpectatingState())
     {
 		// prevent accidental click if just died
-		auto CurTime = GetWorld()->GetTimeSeconds();
-        if (CurTime - TimeOfDeath < 1) {
+        float Now = 0;
+        if (const UWorld* World = GetWorld())
+        {
+            if (const AGameStateBase* GS = World->GetGameState())
+            {
+                Now = GS->GetServerWorldTimeSeconds();
+            }
+        }
+		
+        if (Now - TimeOfDeath < 1) {
             return;
 		}
 		RequestSpectateNextPlayer();

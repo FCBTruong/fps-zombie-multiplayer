@@ -196,5 +196,3 @@ aws gamelift upload-build `
   --server-sdk-version "5.4.0" `
   --region ap-southeast-1
 ```
-
-2.

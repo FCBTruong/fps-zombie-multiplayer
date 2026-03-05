@@ -102,6 +102,7 @@ void UChatUI::OpenChat()
 		return;
 	}
 	SetChatOpen(true);
+	bIsLastMouseCursor = GetOwningPlayer()->bShowMouseCursor;
 }
 
 void UChatUI::ToggleChat()
@@ -128,6 +129,6 @@ void UChatUI::CloseChat()
 	{
 		FInputModeGameOnly InputMode;
 		PC->SetInputMode(InputMode);
-		PC->SetShowMouseCursor(false);
+		PC->SetShowMouseCursor(bIsLastMouseCursor);
 	}
 }

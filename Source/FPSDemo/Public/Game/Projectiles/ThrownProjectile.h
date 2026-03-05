@@ -4,6 +4,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GameFramework/Actor.h"
 #include "Components/SphereComponent.h"
+#include "Shared/Types/ItemId.h"
 #include "ThrownProjectile.generated.h"
 
 class UThrowableConfig;
@@ -15,12 +16,11 @@ class FPSDEMO_API AThrownProjectile : public AActor
 public:	
 	AThrownProjectile();
 	void InitFromData(const UThrowableConfig* InData);
-	void LaunchProjectile(FVector LaunchVelocity, AActor* InstigatorActor);
+	void LaunchProjectile(FVector LaunchVelocity);
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	virtual void MulticastExplode(const FVector& Location);
 
-	UFUNCTION(NetMulticast, Unreliable) void MulticastInitData(EItemId ItemId);
 	const UThrowableConfig* GetWeaponData() const { return Data; }
 protected:
 	virtual void BeginPlay() override;
@@ -40,6 +40,18 @@ protected:
 
 	UPROPERTY(Replicated)
 	bool bDidHit = false;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ItemId)
+	EItemId ReplicatedItemId;
+
+	UPROPERTY(ReplicatedUsing = OnRep_LaunchVelocity)
+	FVector ReplicatedLaunchVelocity = FVector::ZeroVector;
+
+	UFUNCTION()
+	void OnRep_ItemId();
+
+	UFUNCTION()
+	void OnRep_LaunchVelocity();
 
 	UPROPERTY() 
 	USphereComponent* Collision;

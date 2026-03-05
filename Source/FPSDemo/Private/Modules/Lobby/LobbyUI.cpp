@@ -157,6 +157,7 @@ void ULobbyUI::UpdateRoomState() {
 		UpdateRoomSlot(i);
 	}
 
+	bool bIsStarted = CachedRoomMgr->GetCurrentRoomData().bHasStarted;
 	if (CachedRoomMgr->IsMyRoom()) {
 		StartBtn->SetVisibility(ESlateVisibility::Visible);
 		AddBotTeam1Btn->SetVisibility(ESlateVisibility::Visible);
@@ -180,6 +181,15 @@ void ULobbyUI::UpdateRoomState() {
 		DedicatedServerBtn->SetIsEnabled(false);
 		DeathMatchModeBtn->SetIsEnabled(false);
 		WaitingOwnerStartTxt->SetVisibility(ESlateVisibility::Visible);
+	}
+
+	if (bIsStarted) {
+		MatchStartedLb->SetVisibility(ESlateVisibility::Visible);
+		StartBtn->SetIsEnabled(false);
+		WaitingOwnerStartTxt->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	else {
+		MatchStartedLb->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	ShowRoomUI();

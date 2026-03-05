@@ -16,7 +16,17 @@ void AFiringTarget::BeginPlay()
 	Super::BeginPlay();
 
 	InitialLocation = GetActorLocation();
-	TargetMesh = FindComponentByClass<UStaticMeshComponent>();
+	TArray<UStaticMeshComponent*> MeshComponents;
+	GetComponents<UStaticMeshComponent>(MeshComponents);
+
+	for (UStaticMeshComponent* MeshComp : MeshComponents)
+	{
+		if (MeshComp && MeshComp->GetName() == TEXT("Target"))
+		{
+			TargetMesh = MeshComp;
+			break;
+		}
+	}
 }
 
 float AFiringTarget::TakeDamage(

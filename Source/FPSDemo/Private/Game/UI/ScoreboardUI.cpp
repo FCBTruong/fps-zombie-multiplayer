@@ -18,6 +18,8 @@ void UScoreboardUI::UpdateScoreboard(class AShooterGameState* GameState)
 	ScoreboardBoxA->ClearChildren();
 	ScoreboardBoxB->ClearChildren();
 
+	if (!GameState) return;
+
 	const APlayerController* PC = GetOwningPlayer();
 	const AMyPlayerState* LocalPS =
 		PC ? Cast<AMyPlayerState>(PC->PlayerState) : nullptr;

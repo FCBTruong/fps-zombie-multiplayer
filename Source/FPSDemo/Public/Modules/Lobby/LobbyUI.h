@@ -60,6 +60,9 @@ protected:
 	UTextBlock* RoomTitleLb;
 
 	UPROPERTY(meta = (BindWidget))
+	UTextBlock* MatchStartedLb;
+
+	UPROPERTY(meta = (BindWidget))
 	UWidget* EmptyRoomTxt;
 
 	UPROPERTY(meta = (BindWidget))

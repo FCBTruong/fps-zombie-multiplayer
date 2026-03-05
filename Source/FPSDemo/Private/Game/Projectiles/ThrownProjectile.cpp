@@ -40,7 +40,7 @@ AThrownProjectile::AThrownProjectile()
 
     PrimaryActorTick.bCanEverTick = true;
     bReplicates = true;
-    SetReplicateMovement(true);
+    SetReplicateMovement(false);
 }
 
 void AThrownProjectile::Tick(float DeltaSeconds)
@@ -56,6 +56,12 @@ void AThrownProjectile::BeginPlay()
 {
     Super::BeginPlay();
     Collision->OnComponentHit.AddDynamic(this, &AThrownProjectile::OnProjectileHit);
+
+    if (ReplicatedLaunchVelocity != FVector::ZeroVector)
+    {
+        Projectile->Velocity = ReplicatedLaunchVelocity;
+        Projectile->Activate(true);
+	}
 }
 
 void AThrownProjectile::OnProjectileHit(
@@ -72,40 +78,63 @@ void AThrownProjectile::OnProjectileHit(
 
 void AThrownProjectile::InitFromData(const UThrowableConfig* InData)
 {
-    Data = InData;
-    MulticastInitData(Data->Id);
-}
-
-void AThrownProjectile::MulticastInitData_Implementation(EItemId ItemId)
-{
-    if (!Data)   
+    if (!HasAuthority() || !InData)
     {
-		auto Item = UItemsManager::Get(GetWorld())->GetItemById(ItemId);
-        if (Item) {
-            Data = Cast<UThrowableConfig>(Item);
-		}
+        return;
     }
-   
-    if (Data->StaticMesh) {
+
+    Data = InData;
+    ReplicatedItemId = Data->Id;
+
+    if (Data->StaticMesh)
+    {
         WeaponMesh->SetStaticMesh(Data->StaticMesh);
     }
 }
 
-void AThrownProjectile::LaunchProjectile(FVector LaunchVelocity, AActor* InstigatorActor)
+void AThrownProjectile::OnRep_ItemId()
 {
+    if (Data)
+    {
+        return;
+    }
 
+    if (UItemsManager* ItemsManager = UItemsManager::Get(GetWorld()))
+    {
+        if (const UItemConfig* ItemConf = ItemsManager->GetItemById(ReplicatedItemId))
+        {
+            Data = Cast<UThrowableConfig>(ItemConf);
+            if (Data && Data->StaticMesh)
+            {
+                WeaponMesh->SetStaticMesh(Data->StaticMesh);
+            }
+        }
+    }
+}
+
+void AThrownProjectile::OnRep_LaunchVelocity()
+{
+    Projectile->Velocity = ReplicatedLaunchVelocity;
+    Projectile->Activate(true);
+}
+
+void AThrownProjectile::LaunchProjectile(FVector LaunchVelocity)
+{
+    if (!HasAuthority()) {
+        return;
+	}
+    ReplicatedLaunchVelocity = LaunchVelocity;
+	UE_LOG(LogTemp, Warning, TEXT("Launching projectile with velocity: %s"), *LaunchVelocity.ToString());
     Projectile->SetVelocityInLocalSpace(LaunchVelocity);
     Projectile->Activate(true);
 
-    if (HasAuthority()) {
-        GetWorldTimerManager().SetTimer(
-            TimerHandle_Explode,
-            this,
-            &AThrownProjectile::ExplodeNow,
-            3.5f,
-            false
-        );
-    }
+    GetWorldTimerManager().SetTimer(
+        TimerHandle_Explode,
+        this,
+        &AThrownProjectile::ExplodeNow,
+        3.5f,
+        false
+    );
 }
 
 void AThrownProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -114,6 +143,8 @@ void AThrownProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
     DOREPLIFETIME(AThrownProjectile, bIsExploded);
     DOREPLIFETIME(AThrownProjectile, bDidHit);
+	DOREPLIFETIME(AThrownProjectile, ReplicatedItemId);
+	DOREPLIFETIME(AThrownProjectile, ReplicatedLaunchVelocity);
 }
 
 // Server function to handle explosion

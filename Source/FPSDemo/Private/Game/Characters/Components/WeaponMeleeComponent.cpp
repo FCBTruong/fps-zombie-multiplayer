@@ -16,6 +16,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraComponent.h"
 #include "Game/Utils/Damage/DamageHelpers.h"
+#include "GameFramework/GameStateBase.h"
 
 UWeaponMeleeComponent::UWeaponMeleeComponent()
 {
@@ -63,7 +64,15 @@ void UWeaponMeleeComponent::RequestMeleeAttack(int32 AttackIndex)
 
 		if (!Character->HasAuthority())
 		{
-			LastAttackTime = GetWorld()->GetTimeSeconds();
+			float Now = 0;
+			if (const UWorld* World = GetWorld())
+			{
+				if (const AGameStateBase* GS = World->GetGameState())
+				{
+					Now = GS->GetServerWorldTimeSeconds();
+				}
+			}
+			LastAttackTime = Now;
 		}
 
 		if (MeleeConfig) {
@@ -112,7 +121,15 @@ void UWeaponMeleeComponent::StartMelee_ServerAuth(int32 AttackIndex)
 	{
 		return;
 	}
-	LastAttackTime = GetWorld()->GetTimeSeconds();
+	float Now = 0;
+	if (const UWorld* World = GetWorld())
+	{
+		if (const AGameStateBase* GS = World->GetGameState())
+		{
+			Now = GS->GetServerWorldTimeSeconds();
+		}
+	}
+	LastAttackTime = Now;
 	// Play montage for everyone (you can skip owning client here if you want)
 	MulticastPlayMelee(AttackIndex);
 
@@ -221,9 +238,17 @@ bool UWeaponMeleeComponent::CanMeleeNow() const
 	{
 		return false;
 	}
-	
-	float CurrentTime = GetWorld()->GetTimeSeconds();
-	if (CurrentTime - LastAttackTime < MeleeConfig->Interval)
+
+	float Now = 0;
+	if (const UWorld* World = GetWorld())
+	{
+		if (const AGameStateBase* GS = World->GetGameState())
+		{
+			Now = GS->GetServerWorldTimeSeconds();
+		}
+	}
+
+	if (Now - LastAttackTime < MeleeConfig->Interval)
 	{
 		return false;
 	}
