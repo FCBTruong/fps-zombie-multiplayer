@@ -8,10 +8,12 @@
 https://github.com/user-attachments/assets/07b79cbf-c5cf-44ad-b8af-0cb58e6d97df
 
 <p align="center">
-  <a href="https://youtu.be/zKZ15l_08L4" target="_blank">
+  <a href="https://youtu.be/O9IfP6dzKvo" target="_blank">
     <img src="https://img.shields.io/badge/Watch%20Full%20Video-YouTube-red?style=for-the-badge&logo=youtube" />
   </a>
 </p>
+
+**Download the game here:** [FpsGame.zip](https://github.com/FCBTruong/fps-zombie-multiplayer/releases/download/Play/FpsGame.zip)
 
 ## About the project
 An online multiplayer FPS prototype inspired by **CrossFire**, **VALORANT**, and **Counter-Strike**.
