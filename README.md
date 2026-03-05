@@ -4,6 +4,9 @@
 > This project is a prototype and includes free and AI-generated assets. If you believe any asset infringes copyright, please let me know and I will remove it immediately.
 
 ## Demo
+
+https://github.com/user-attachments/assets/07b79cbf-c5cf-44ad-b8af-0cb58e6d97df
+
 <p align="center">
   <a href="https://youtu.be/zKZ15l_08L4" target="_blank">
     <img src="https://img.shields.io/badge/Watch%20Full%20Video-YouTube-red?style=for-the-badge&logo=youtube" />
