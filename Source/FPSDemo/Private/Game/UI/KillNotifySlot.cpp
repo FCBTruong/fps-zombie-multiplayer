@@ -5,7 +5,8 @@
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Shared/Data/Items/FirearmConfig.h"
 
-void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState* Victim, const UItemConfig* WeaponConf, bool bIsHeadShot)
+void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState* Victim, 
+    const UItemConfig* WeaponConf, bool bIsHeadShot, bool bIsPenetrationHit)
 {
     const FString KillerName = Killer ? Killer->GetPlayerName() : TEXT("");
     const FString VictimName = Victim ? Victim->GetPlayerName() : TEXT("Unknown");
@@ -60,4 +61,7 @@ void UKillNotifySlot::SetInfo(const AMyPlayerState* Killer, const AMyPlayerState
     HeadShotIcon->SetVisibility(
         bIsHeadShot ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
     );
+    PenetrationIcon->SetVisibility(
+        bIsPenetrationHit ? ESlateVisibility::Visible : ESlateVisibility::Collapsed
+	);
 }

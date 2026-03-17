@@ -15,6 +15,7 @@ class AEquippedItem;
 class UCharCameraComponent;
 class UAnimationComponent;
 class ABaseCharacter;
+struct FBulletImpactData;
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -37,7 +38,7 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
-    void PlayFireFX(FVector TargetPoint);
+    void PlayFireFX(const TArray<FBulletImpactData>& Impacts, FVector ShotEnd);
     void PlayMeleeAttack(UAnimMontage* Anim);
 
 private: 

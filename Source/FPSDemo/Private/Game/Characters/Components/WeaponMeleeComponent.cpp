@@ -212,7 +212,6 @@ void UWeaponMeleeComponent::PerformMeleeTrace(int32 AttackIndex)
 		Params.Hit = Hit;
 
 		DamageHelpers::ApplyMyPointDamage(
-			Target,
 			Params,
 			Character->GetController(),
 			Character

@@ -118,6 +118,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Recoil")
 	float RecoilYawPerShot = 0.15f;   // camera kick side amount per shot
 
+	// Penetration
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Penetration")
+	float MaxPenetrationDepth = 100.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Penetration")
+	float DamageLossPerPenetration = 0.5f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Firearm|Casing")
 	TSubclassOf<AActor> CasingClass = nullptr;
 

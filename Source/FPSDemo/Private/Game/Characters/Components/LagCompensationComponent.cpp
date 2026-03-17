@@ -296,7 +296,7 @@ bool ULagCompensationComponent::ConfirmHitRewind(
 	// reject if shot is too old for available history
 	const double Newest = FrameHistory[0].Time;
 	const double Oldest = FrameHistory.Last().Time;
-	if (ShotTime < Oldest - 0.005 || ShotTime > Newest + 0.05)
+	if (ShotTime < Oldest - 0.005 || ShotTime > Newest + 0.05) // small grace period for clock sync issues
 	{
 		return false;
 	}
@@ -314,11 +314,6 @@ bool ULagCompensationComponent::ConfirmHitRewind(
 
 	// Rewind physics bodies
 	MoveBodiesToFrame(RewindFrame);
-
-	// Temporarily switch collision for rewind trace
-	/*FCollisionBackup CollisionBackup;
-	EnableRewindCollision(CollisionBackup);*/
-
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(RewindPhysTrace), false);
 	if (Shooter)
 	{
@@ -343,8 +338,6 @@ bool ULagCompensationComponent::ConfirmHitRewind(
 	const bool bValidHit = bHit && (OutHit.GetActor() == OwnerCharacter);
 
 	// Restore current state immediately
-	/*RestoreCollisionFromBackup(CollisionBackup);*/
 	RestoreBodies(CachedCurrent);
-
 	return bValidHit;
 }

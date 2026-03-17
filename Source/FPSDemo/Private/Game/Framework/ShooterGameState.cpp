@@ -41,7 +41,8 @@ void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(AShooterGameState, Slots);
 }
 
-void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Killer, AMyPlayerState* Victim, 
+    const UItemConfig* DamageCauser, bool bIsHeadShot, bool bIsPenetrationHit)
 {
     APlayerController* PC = GetWorld()->GetFirstPlayerController();
     AMyPlayerController* MyPC = Cast<AMyPlayerController>(PC);
@@ -49,12 +50,12 @@ void AShooterGameState::MulticastKillNotify_Implementation(AMyPlayerState* Kille
         return;
     }
 
-    MyPC->GetPlayerUI()->NotifyKill(Killer, Victim, DamageCauser, bWasHeadShot);
+    MyPC->GetPlayerUI()->NotifyKill(Killer, Victim, DamageCauser, bIsHeadShot, bIsPenetrationHit);
     AActor* KillerPawn = Killer ? Killer->GetPawn() : nullptr;
     AActor* ViewTargetPawn = MyPC->GetViewTarget();
     if (KillerPawn && KillerPawn == ViewTargetPawn)
     {
-        MyPC->GetPlayerUI()->ShowKillMark(bWasHeadShot);
+        MyPC->GetPlayerUI()->ShowKillMark(bIsHeadShot);
     }
 }
 

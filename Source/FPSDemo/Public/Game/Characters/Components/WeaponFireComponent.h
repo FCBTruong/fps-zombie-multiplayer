@@ -18,6 +18,41 @@ class UFirearmConfig;
 class ULagCompensationComponent;
 class UAnimationComponent;
 
+USTRUCT()
+struct FPenetrationHitResult
+{
+	GENERATED_BODY()
+
+	FHitResult Hit;
+	float Damage = 0.f;
+	bool bIsPenetrationHit = false;
+};
+
+UENUM()
+enum class EBulletImpactKind : uint8
+{
+	Entry,
+	Exit
+};
+
+USTRUCT()
+struct FBulletImpactData
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FVector_NetQuantize ImpactPoint = FVector::ZeroVector;
+
+	UPROPERTY()
+	FVector_NetQuantizeNormal ImpactNormal = FVector::UpVector;
+
+	UPROPERTY()
+	EBulletImpactKind Kind = EBulletImpactKind::Entry;
+
+	UPROPERTY()
+	TObjectPtr<AActor> ImpactActor = nullptr;
+};
+
 enum EFireEnableReason
 {
 	OK,
@@ -75,8 +110,9 @@ private:
 	void FireOnce_PredictedLocal();
 #endif
 	bool IsOwningClient() const;
-	bool TraceShot(const AActor* IgnoredActor, const FVector& Start, const FVector& Dir,
-		FHitResult& OutHit, FVector& OutEnd, double ShotTime) const;
+	void TraceShot(const AActor* IgnoredActor, FVector Start, const FVector& Dir,
+		TArray<FPenetrationHitResult>& OutHits, TArray<FBulletImpactData>& OutImpacts, 
+		FVector& OutEnd, double ShotTime, bool bIsRewind = true) const;
 	bool CanReload() const;
 	int32 ComputeShotIndex(float NowServerTime) const;
 	FVector ComputeShotDirDeterministic(const FVector& AimDir, float NowServerTime, int32 Seed) const;
@@ -89,7 +125,7 @@ private:
 	void ServerStopFire();
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastFireFX(FVector_NetQuantize TargetPoint);
+	void MulticastFireFX(const TArray<FBulletImpactData>& Impacts, FVector_NetQuantize ShotEnd);
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastReload();

@@ -262,14 +262,14 @@ void AZombieMode::EndRound(ETeamId WinningTeam)
 	GetWorldTimerManager().SetTimer(StartRoundTimerHandle, this, &AZombieMode::StartRound, DelayBeforeNewRound, false);
 }
 
-void AZombieMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void AZombieMode::HandleCharacterKilled(const FCharacterKilledEvent& Event)
 {
-	Super::HandleCharacterKilled(Killer, Assists, VictimPawn, DamageCauser, bWasHeadShot);
-	if (!VictimPawn)
+	Super::HandleCharacterKilled(Event);
+	if (!Event.Victim)
 	{
 		return;
 	}
-
+	ABaseCharacter* VictimPawn = Event.Victim;
 	const ECharacterRole VictimRole = VictimPawn->GetCharacterRole();
 
 	switch (VictimRole)
@@ -279,7 +279,7 @@ void AZombieMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakO
 		break;
 
 	case ECharacterRole::Zombie:
-		HandleZombieKilled(VictimPawn, DamageCauser);
+		HandleZombieKilled(VictimPawn, Event.DamageCauser);
 		break;
 
 	case ECharacterRole::Hero:

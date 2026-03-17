@@ -45,7 +45,8 @@ public:
 
 	// Multicast RPCs
     UFUNCTION(NetMulticast, Reliable)
-    void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot);
+    void MulticastKillNotify(AMyPlayerState* Killer, AMyPlayerState* Victim, const UItemConfig* DamageCauser,
+        bool bWasHeadShot, bool bIsPenetrationHit);
     UFUNCTION(NetMulticast, Reliable)
     void Multicast_GameResult(ETeamId WinningTeam);
     UFUNCTION(NetMulticast, Reliable)

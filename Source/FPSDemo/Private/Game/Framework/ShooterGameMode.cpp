@@ -326,18 +326,20 @@ void AShooterGameMode::Logout(AController* Exiting)
     Super::Logout(Exiting);
 }
 
-void AShooterGameMode::HandleCharacterKilled(class AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* Victim, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void AShooterGameMode::HandleCharacterKilled(const FCharacterKilledEvent& Event)
 {
-    if (!DamageCauser) {
+    if (!Event.DamageCauser) {
         UE_LOG(LogTemp, Warning, TEXT("DamageCauser is null in NotifyPlayerKilled"));
         return;
 	}
-    if (DamageCauser->Id == EItemId::SPIKE) {
+
+	AController* Killer = Event.Killer;
+    if (Event.DamageCauser->Id == EItemId::SPIKE) {
         Killer = nullptr; // spike planting is not counted as kill
     }
 
-    AMyPlayerState* KillerPS = Killer ? Killer->GetPlayerState<AMyPlayerState>() : nullptr;
-    AMyPlayerState* VictimPS = Victim ? Victim->GetPlayerState<AMyPlayerState>() : nullptr;
+    AMyPlayerState* KillerPS = Killer ? Event.Killer->GetPlayerState<AMyPlayerState>() : nullptr;
+    AMyPlayerState* VictimPS = Event.Victim ? Event.Victim->GetPlayerState<AMyPlayerState>() : nullptr;
     if (!VictimPS) {
         UE_LOG(LogTemp, Warning, TEXT("VictimPS is null in NotifyPlayerKilled"));
         return;
@@ -353,7 +355,7 @@ void AShooterGameMode::HandleCharacterKilled(class AController* Killer, const TA
     }
 
     // Add assists score
-    for (TWeakObjectPtr<AController> AssistController : Assists)
+    for (TWeakObjectPtr<AController> AssistController : Event.Assists)
     {
         AMyPlayerState* AssistPS = AssistController.IsValid() ? AssistController->GetPlayerState<AMyPlayerState>() : nullptr;
         if (AssistPS && AssistPS != KillerPS && AssistPS != VictimPS)
@@ -362,7 +364,7 @@ void AShooterGameMode::HandleCharacterKilled(class AController* Killer, const TA
         }
     }
 
-    CachedGS->MulticastKillNotify(KillerPS, VictimPS, DamageCauser, bWasHeadShot);
+    CachedGS->MulticastKillNotify(KillerPS, VictimPS, Event.DamageCauser, Event.bIsHeadShot, Event.bIsPenetrationHit);
 }
 
 FString AShooterGameMode::InitNewPlayer(

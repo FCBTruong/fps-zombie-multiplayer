@@ -13,6 +13,19 @@ class ABaseCharacter;
 class APlayerSlot;
 class ABotAIController;
 
+USTRUCT()
+struct FCharacterKilledEvent
+{
+	GENERATED_BODY()
+
+	TObjectPtr<AController> Killer = nullptr;
+	TArray<TWeakObjectPtr<AController>> Assists;
+	TObjectPtr<ABaseCharacter> Victim = nullptr;
+	TObjectPtr<const UItemConfig> DamageCauser = nullptr;
+	bool bIsHeadShot = false;
+	bool bIsPenetrationHit = false;
+};
+
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnCharacterDead, ABaseCharacter*);
 /**
  * 
@@ -30,7 +43,7 @@ public:
 		return EMatchMode::None;
 	}
 	virtual bool IsDamageAllowed(AController* Killer, AController* Victim) const;
-	virtual void HandleCharacterKilled(class AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* Victim, const UItemConfig* DamageCauser = nullptr, bool bWasHeadShot = false);
+	virtual void HandleCharacterKilled(const FCharacterKilledEvent& Event);
 
 	// Delegates
 	FOnCharacterDead OnCharacterDead;

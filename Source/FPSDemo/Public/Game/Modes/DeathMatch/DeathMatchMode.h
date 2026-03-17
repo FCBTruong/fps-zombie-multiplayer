@@ -20,8 +20,7 @@ public:
 
 protected:
 	virtual void RestartPlayer(AController* Controller) override;
-	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists,
-		ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void HandleCharacterKilled(const FCharacterKilledEvent& Event) override;
 private:
 	void OnRoundTimeExpired();
 	FTimerHandle RoundTimerHandle;

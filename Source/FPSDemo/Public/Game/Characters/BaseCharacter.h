@@ -177,6 +177,7 @@ protected:
 protected:
     // ===== Runtime State =====
     bool bLastHitWasHeadshot;
+	bool bLastHitWasPenetration;
     float LastFootstepTime;
     float BaseStunDuration;
     float BasePivotFpsZ = 0.f;
@@ -293,10 +294,6 @@ protected:
     UFUNCTION()
 	void OnRep_IsPermanentDead();
 
-	// ===== Client RPC =====
-    UFUNCTION(Client, Reliable)
-    void ClientPlayHitEffect();
-
 	// ===== Other UFUNCTIONS =====
     UFUNCTION()
     void OnStunTimelineFinished();
@@ -386,7 +383,7 @@ public:
     UFUNCTION()
     void OnSpineKickUpdate(float Value);
 
-	// ===== Delegates =====
+    // ===== Delegates =====
     FOnHit OnHit;
 
 	// ===== Constants =====

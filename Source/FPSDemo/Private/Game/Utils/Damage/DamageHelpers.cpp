@@ -36,16 +36,12 @@ bool DamageHelpers::IsBodyBone(const FName& BoneName)
 }
 
 float DamageHelpers::ApplyMyPointDamage(
-    AActor* Target,
     const FDamageApplyParams& Params,
     AController* Instigator,
     AActor* DamageCauser
 )
 {
-    if (!Target)
-    {
-        return 0.f;
-    }
+	auto Target = Params.Hit.GetActor();
 
     const FName Bone = Params.Hit.BoneName;
     const bool bIsHeadshot =
@@ -73,6 +69,7 @@ float DamageHelpers::ApplyMyPointDamage(
     DamageEvent.WeaponID = Params.WeaponId;
     DamageEvent.bIsHeadshot = bIsHeadshot;
     DamageEvent.HitInfo = Params.Hit;
+	DamageEvent.bIsPenetrationHit = Params.bIsPenetrationHit;
 
     return Target->TakeDamage(Damage, DamageEvent, Instigator, DamageCauser);
 }

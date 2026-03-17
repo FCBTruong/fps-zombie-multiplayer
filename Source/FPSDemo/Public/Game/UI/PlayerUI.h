@@ -254,7 +254,8 @@ public:
 	void UpdateTeamScores(int FirstScore, int SecondScore);
 	void OnHit();
 	void OnEnter();
-	void NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victem, const UItemConfig* WeaponTex, bool bIsHeadShot);
+	void NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victem, 
+		const UItemConfig* WeaponTex, bool bIsHeadShot, bool bIsPenetrationHit);
 	void OpenShop();
 	void CloseShop();
 	void ShowIconGrenade(EItemId ItemId, bool bShow);

@@ -16,6 +16,9 @@ struct FMyPointDamageEvent : public FPointDamageEvent
     UPROPERTY()
 	bool bIsHeadshot = false;
 
+    UPROPERTY()
+	bool bIsPenetrationHit = false;
+
     FMyPointDamageEvent() {}
 
     FMyPointDamageEvent(

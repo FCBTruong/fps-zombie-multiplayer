@@ -28,6 +28,9 @@ public:
 	UImage* WeaponIcon;
 	UPROPERTY(meta = (BindWidget))
 	UImage* HeadShotIcon;
+	UPROPERTY(meta = (BindWidget))
+	UImage* PenetrationIcon;
 
-	void SetInfo(const AMyPlayerState* Killer, const AMyPlayerState* Victem, const UItemConfig* WeaponTex, bool bIsHeadShot);
+	void SetInfo(const AMyPlayerState* Killer, const AMyPlayerState* Victem, 
+		const UItemConfig* WeaponTex, bool bIsHeadShot, bool bIsPenetrationHit);
 };

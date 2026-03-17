@@ -38,10 +38,11 @@ void ADeathMatchMode::OnRoundTimeExpired()
 	EndGame(ETeamId::None);
 }
 
-void ADeathMatchMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void ADeathMatchMode::HandleCharacterKilled(const FCharacterKilledEvent& Event)
 {
-	Super::HandleCharacterKilled(Killer, Assists, VictimPawn, DamageCauser, bWasHeadShot);
+	Super::HandleCharacterKilled(Event);
 
+	ABaseCharacter* VictimPawn = Event.Victim;
 	// restart victim after 3 seconds
 	VictimPawn->ApplyRealDeath(/*bDropInventory=*/false);
 	FTimerHandle RespawnTimerHandle;

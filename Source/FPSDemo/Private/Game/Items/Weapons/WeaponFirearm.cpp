@@ -2,7 +2,6 @@
 
 
 #include "Game/Items/Weapons/WeaponFirearm.h"
-#include "Game/Projectiles/BulletBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "NiagaraFunctionLibrary.h"
@@ -10,6 +9,12 @@
 #include "Shared/Data/Items/ItemConfig.h"
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
+#include "Game/Characters/Components/WeaponFireComponent.h"
+#include "Game/Projectiles/BulletData.h"
+#include "Components/DecalComponent.h"
+#include "Game/Characters/BaseCharacter.h"
+#include "Game/GameManager.h"
+#include "Shared/Data/GlobalDataAsset.h"
 
 AWeaponFirearm::AWeaponFirearm()
 {
@@ -23,8 +28,11 @@ void AWeaponFirearm::BeginPlay()
 	AttachMagToDefault();
 }
 
-void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint)
+void AWeaponFirearm::OnFire(const TArray<FBulletImpactData>& Impacts, FVector TargetPoint)
 {
+	UE_LOG(LogTemp, Log, TEXT("WeaponFirearm::OnFire called with %d impacts"), Impacts.Num());
+	FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
+
 	// Implement firing logic here
 	const UFirearmConfig* FC = Cast<UFirearmConfig>(Config);
 	if (!FC) {
@@ -50,7 +58,48 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 		}
 	}
 
-	FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
+	// Handle bullet impacts vfx (e.g., spawn decals, effects)
+	if (!FC->BulletData) {
+		return;
+	}
+
+	FVector ShotDirection = (TargetPoint - MuzzleLocation).GetSafeNormal();
+	for (const FBulletImpactData& Impact : Impacts)
+	{
+		if (IsValid(Impact.ImpactActor) && Impact.ImpactActor->IsA<APawn>()) {
+			if (FC->BulletData->HitBodySound) {
+				UGameplayStatics::PlaySoundAtLocation(this, FC->BulletData->HitBodySound, Impact.ImpactPoint);
+			}
+
+			ABaseCharacter* HitCharacter = Cast<ABaseCharacter>(Impact.ImpactActor);
+			if (HitCharacter) {
+				HitCharacter->PlayBloodFx(Impact.ImpactPoint, Impact.ImpactNormal);
+			}
+
+			TraceBehindPawnAndSpawnBloodDecal(Impact.ImpactPoint, ShotDirection);
+			continue;
+		}
+
+		// effect for non-pawn surfaces
+		if (FC->BulletData->HitSurfaceSound) {
+			UGameplayStatics::PlaySoundAtLocation(this, FC->BulletData->HitSurfaceSound, Impact.ImpactPoint);
+		}
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FC->BulletData->ExplosionFX, Impact.ImpactPoint);
+		const float LifeTime = 10.0f;
+		UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), 
+			FC->BulletData->HitDecal,
+			FVector(5.f), Impact.ImpactPoint,
+			Impact.ImpactNormal.Rotation(), LifeTime);
+		Decal->SetFadeScreenSize(0.001f);
+
+		if (Decal)
+		{
+			const float FadeDuration = 3.0f;   // last 3 seconds
+			const float FadeStartDelay = FMath::Max(0.f, LifeTime - FadeDuration);
+
+			Decal->SetFadeOut(FadeStartDelay, FadeDuration, true);
+		}
+	}
 
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
@@ -60,19 +109,6 @@ void AWeaponFirearm::OnFire(const FVector& TargetPoint, bool bCustomStart, const
 	}
 	SpawnParams.Instigator = Shooter;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-	FVector StartPointBullet = MuzzleLocation;
-	if (bCustomStart) {
-		StartPointBullet = StartPoint;
-	}
-
-	ABulletBase* Bullet = GetWorld()->SpawnActor<ABulletBase>(
-		ABulletBase::StaticClass(),
-		StartPointBullet,
-		FRotator::ZeroRotator,
-		SpawnParams
-	);
-	Bullet->InitFromData(FC->BulletData, TargetPoint);
 
 	if (FC->BulletTrailNS) {
 		FVector TrailStart = MuzzleLocation + (TargetPoint - MuzzleLocation).GetSafeNormal() * 20.f;
@@ -212,6 +248,77 @@ void AWeaponFirearm::SetViewFps(bool bFps)
 		}
 		else {
 			MagMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::None);
+		}
+	}
+}
+
+void AWeaponFirearm::TraceBehindPawnAndSpawnBloodDecal(FVector ImpactPoint, FVector Dir)
+{
+	if (Dir.IsNearlyZero())
+		Dir = GetActorForwardVector();
+
+	const float TraceDistance = 300.f;
+	const float StartOffset = 5.f; // start just past the pawn hit so we don't re-hit the pawn
+
+	const FVector TraceStart = ImpactPoint + Dir * StartOffset;
+	const FVector TraceEnd = TraceStart + Dir * TraceDistance;
+
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(BloodBehindPawnTrace), /*bTraceComplex*/ true);
+	Params.AddIgnoredActor(this);
+	
+	FHitResult BehindHit;
+	const bool bHit = GetWorld()->LineTraceSingleByObjectType(
+		BehindHit,
+		TraceStart,
+		TraceEnd,
+		FCollisionObjectQueryParams(ECC_WorldStatic),
+		Params
+	);
+
+	if (!bHit || !BehindHit.bBlockingHit)
+		return;
+
+	// Spawn blood decal only on non-pawn surfaces behind the pawn
+	if (BehindHit.GetActor())
+	{
+		UGameManager* GM = UGameManager::Get(this);
+		UGlobalDataAsset* DataAsset = GM ? GM->GlobalData : nullptr;
+		UMaterialInterface* BloodDecal = DataAsset ? DataAsset->BloodDecal : nullptr;
+
+		if (!BloodDecal)
+			return;
+		// Random size 30-40 and add a small random roll (rotation) to avoid identical decals
+
+		const float RandomSize = FMath::RandRange(40.f, 50.f);
+
+		// Base rotation from surface normal
+		FRotator DecalRot = BehindHit.ImpactNormal.Rotation();
+
+		// Add random roll around the normal (this is what changes "spin" on the surface)
+		DecalRot.Roll = FMath::RandRange(0.f, 360.f);
+
+		const float LifeTime = 25.0f;
+		UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(
+			GetWorld(),
+			BloodDecal,
+			FVector(RandomSize),
+			BehindHit.ImpactPoint,
+			DecalRot,
+			LifeTime
+		);
+
+		if (Decal)
+		{
+			const float FadeDuration = 5.0f;   // last 3 seconds
+			const float FadeStartDelay = FMath::Max(0.f, LifeTime - FadeDuration);
+
+			Decal->SetFadeOut(FadeStartDelay, FadeDuration, true);
+		}
+
+
+		if (Decal)
+		{
+			Decal->SetFadeScreenSize(0.001f);
 		}
 	}
 }

@@ -35,10 +35,13 @@ The goal is to build a **reliable**, **scalable foundation** for a **competitive
 - **Zombie Mode**: A CrossFire-style infection mode where zombies hunt and infect human players.
 - **Deathmatch Mode**: Fast-paced free-for-all combat focused on eliminations.
 
-## Dedicated backend service 
-This is for matchmaking/session/game services
+## Dedicated Backend Service
 
-[FCBTruong/fps-zombie-multiplayer-backend](https://github.com/FCBTruong/fps-zombie-multiplayer-backend)
+![Backend](https://img.shields.io/badge/Backend-Matchmaking%20%7C%20Sessions%20%7C%20Services-blue?style=for-the-badge)
+
+This project also includes a separate backend service for matchmaking, session management, and game services.
+
+Click here: [FCBTruong/fps-zombie-multiplayer-backend](https://github.com/FCBTruong/fps-zombie-multiplayer-backend)
 
 ---
 ## Table of Contents
@@ -79,7 +82,6 @@ This is for matchmaking/session/game services
 ### Project Structure
 ![Folders diagram](./Docs/Asset/Folders.drawio.svg)
 
----
 ## Technical Challenges Solved
 ### 1. Recoil Prediction (Client-Side)
 ![Recoil Prediction](./Docs/Asset/RecoilPrediction.png)
@@ -113,12 +115,28 @@ Reference https://www.youtube.com/watch?v=6EwaW2iz4iA&t=6s
 * Movement is blended between two snapshots to reduce jitter from packet delay/jitter.
 * This makes remote movement look smoother and more stable.
 
-  #### Result
+### 3. Penetration
+![Penetration](./Docs/Asset/Penetration.drawio.svg)
 
-* Remote movement looks smoother.
-* Fewer jitter spikes when packets arrive unevenly.
-* Hit registration stays consistent with server-side validation.
-### 3. Disconnect / Reconnect Handling
+To simulate wall penetration with hitscan weapons:
+
+- The server performs a hitscan to detect the first blocking surface.
+- If the surface is penetrable, the system estimates its thickness and material cost.
+- Damage and penetration power are reduced based on the crossed surface.
+- A new trace continues beyond the surface until the shot stops or hits a valid target.
+- Final damage is validated and applied server-side.
+
+### 4. Data-Driven Item Configuration
+Item configuration was separated from gameplay logic by moving editable weapon/item data into `UDataAsset`-based assets.
+
+![Config Item](./Docs/Asset/ItemConfig.png)
+
+- Core gameplay code reads item definitions from data assets instead of hardcoded values.
+- Designers can modify weapon stats, references, and tuning values without changing code.
+- This makes items easier to maintain, extend, and rebalance.
+- The separation also reduces coupling and keeps runtime logic cleaner.
+
+### 5. Disconnect / Reconnect Handling
 
 * When a player disconnects, their pawn is not destroyed and remains in the player slot.
 * When the player reconnects, the server should find the corresponding pawn:
@@ -126,12 +144,12 @@ Reference https://www.youtube.com/watch?v=6EwaW2iz4iA&t=6s
   * If the pawn is still alive, allow the controller to possess it again.
   * Otherwise, switch the player to Spectator Mode.
 
-### 4. Late Join Synchronization
+### 6. Late Join Synchronization
 
 * The game provides a **15-second pre-match phase** for players to join before the match starts.
 * If all players are ready before the timer ends, the match can start early.
 
-### 5. Edge Case Handling
+### 7. Edge Case Handling
 
 * Joining an in-progress match
 * Race conditions (e.g., reload + shoot, plant spike + shoot, etc.)
@@ -146,6 +164,7 @@ Reference https://www.youtube.com/watch?v=6EwaW2iz4iA&t=6s
 - The project has only been tested in small-scale sessions and has not been stress-tested for larger player counts.
 - UI/UX polish is still in progress (feedback, transitions, effects, settings).
 - Some systems still need better modularization and clearer interfaces for easier maintenance and feature expansion.
+---
 ## Quick Start
 
 1. Install **Unreal Engine 5.6.1** or later from the **Epic Games Launcher**.

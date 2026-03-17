@@ -305,13 +305,14 @@ void UWeaponFireComponent::FireOnce_PredictedLocal()
 	const FVector ShotDir = ComputeShotDirDeterministic(AimDir, Now, BurstSeed);
 	UpdateBurstSpreadOnShot(Now);
 
-	FHitResult Hit;
+	TArray<FPenetrationHitResult> Hits;
+	TArray<FBulletImpactData> Impacts;
 	FVector ShotEnd;
-	TraceShot(Character, Start, ShotDir, Hit, ShotEnd, Now);
+	TraceShot(Character, Start, ShotDir, Hits, Impacts, ShotEnd, Now, false);
 
 	if (VisualComp)
 	{
-		VisualComp->PlayFireFX(ShotEnd);
+		VisualComp->PlayFireFX(Impacts, ShotEnd);
 	}
 
 	LastShotTime = Now;
@@ -337,50 +338,51 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 	const FVector ShotDir = ComputeShotDirDeterministic(AimDir, Now, BurstSeed);
 	UpdateBurstSpreadOnShot(Now);
 
-	FHitResult Hit;
+	TArray<FPenetrationHitResult> PenHits;
+	TArray<FBulletImpactData> Impacts;
 	FVector ShotEnd;
 	double ShotTimestamp = Now - ClientShotTimeOffset;
-	const bool bHit = TraceShot(Character, Start, ShotDir, Hit, ShotEnd, ShotTimestamp);
+	TraceShot(Character, Start, ShotDir, PenHits, Impacts, ShotEnd, ShotTimestamp);
 	// Consume ammo on server
 	InventoryComp->ConsumeAmmo(CurrentFirearmConfig->Id, 1);
 
-	if (bHit && Hit.GetActor())
+	for (const FPenetrationHitResult& PenHit : PenHits)
 	{
 		FDamageApplyParams Params;
-		Params.BaseDamage = CurrentFirearmConfig->Damage;
+		Params.BaseDamage = PenHit.Damage;
 		Params.WeaponId = CurrentFirearmConfig->Id;
 		Params.DamageTypeClass = UMyDamageType::StaticClass();
 		Params.bEnableHeadshot = true;
-		Params.Hit = Hit;
+		Params.bIsPenetrationHit = PenHit.bIsPenetrationHit;
+		Params.Hit = PenHit.Hit;
 
 		DamageHelpers::ApplyMyPointDamage(
-			Hit.GetActor(),
 			Params,
 			Character->GetController(),
 			nullptr
 		);
 	}
 
-	MulticastFireFX(ShotEnd);
+	MulticastFireFX(Impacts, ShotEnd);
 	LastShotTime = Now;
 
 #if !UE_SERVER
 	if (IsOwningClient()) // listen server host
 	{
-		VisualComp->PlayFireFX(ShotEnd);
-		ApplyRecoilLocal();
+		VisualComp->PlayFireFX(Impacts, ShotEnd);
+		// ApplyRecoilLocal();
 	}
 #endif
 }
 
-void UWeaponFireComponent::MulticastFireFX_Implementation(FVector_NetQuantize TargetPoint)
+void UWeaponFireComponent::MulticastFireFX_Implementation(const TArray<FBulletImpactData>& Impacts, FVector_NetQuantize ShotEnd)
 {
 	if (IsOwningClient())
 	{
 		return;
 	}
 
-	VisualComp->PlayFireFX(TargetPoint);
+	VisualComp->PlayFireFX(Impacts, ShotEnd);
 }
 
 void UWeaponFireComponent::GetAim(FVector& OutStart, FVector& OutDir) const
@@ -390,84 +392,178 @@ void UWeaponFireComponent::GetAim(FVector& OutStart, FVector& OutDir) const
 	OutDir = ViewRot.Vector();
 }
 
-bool UWeaponFireComponent::TraceShot(
+void UWeaponFireComponent::TraceShot(
 	const AActor* IgnoredActor,
-	const FVector& Start,
+	FVector Start,
 	const FVector& Dir,
-	FHitResult& OutHit,
+	TArray<FPenetrationHitResult>& OutHits,
+	TArray<FBulletImpactData>& OutImpacts,
 	FVector& OutEnd,
-	double ShotTime
+	double ShotTime,
+	bool bIsRewindTrace
 ) const
 {
-	OutHit = FHitResult{};
+	constexpr float MaxDistance = 10000.f;
+	constexpr float SurfaceExitStep = 4.f;
+	constexpr float StartOffset = 1.f;
+	float Damage = CurrentFirearmConfig->Damage;
+	float DamageLossPerPenetration = CurrentFirearmConfig->DamageLossPerPenetration;
+	float MaxPenetrationDepth = CurrentFirearmConfig->MaxPenetrationDepth;
+	float PenetrationPerCent = 0.5f;
+	
+	OutHits.Empty();
+	OutImpacts.Empty();
 	const FVector FullTraceEnd = Start + Dir * 10000.f;
 	OutEnd = FullTraceEnd;
 
-	// 1) Rewind-check ALL characters and keep the closest valid hit
-	bool bFoundRewindCharHit = false;
-	FHitResult BestRewindHit;
-	float BestRewindDistSq = TNumericLimits<float>::Max();
+	const FVector ShotDir = Dir.GetSafeNormal();
+	const FVector FinalEnd = Start + ShotDir * MaxDistance;
+	OutEnd = FinalEnd;
 
-	for (TActorIterator<ABaseCharacter> It(GetWorld()); It; ++It)
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(ECC_WorldStatic);
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponTrace), false);
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+
+	bool bDidPenetrate = false;
+	while (Damage > 0)
 	{
-		ABaseCharacter* TargetChar = *It;
-		if (!TargetChar) continue;
-		if (TargetChar == Character) continue;
-		if (IgnoredActor && TargetChar == IgnoredActor) continue;
-		if (!TargetChar->IsAlive()) continue;
+		// 1. Find world hit
+		FHitResult WorldHit;
 
-		ULagCompensationComponent* LagComp = TargetChar->GetLagCompensationComponent();
-		if (!LagComp) continue;
-
-		FHitResult RewindHit;
-		const bool bConfirmed = LagComp->ConfirmHitRewind(
-			Character,
+		// only care about world objects for penetration, characters will be handled separately with lag compensation
+		const bool bHitWorld = World->LineTraceSingleByObjectType(
+			WorldHit,
 			Start,
-			FullTraceEnd,
-			ShotTime,
-			RewindHit
+			FinalEnd,
+			ObjectParams,
+			Params
 		);
 
-		if (!bConfirmed) continue;
-
-		const float DistSq = FVector::DistSquared(Start, RewindHit.ImpactPoint);
-		if (!bFoundRewindCharHit || DistSq < BestRewindDistSq)
+		if (bHitWorld)
 		{
-			bFoundRewindCharHit = true;
-			BestRewindDistSq = DistSq;
-			BestRewindHit = RewindHit;
+			FBulletImpactData EntryImpact;
+			EntryImpact.ImpactPoint = WorldHit.ImpactPoint;
+			EntryImpact.ImpactNormal = WorldHit.ImpactNormal;
+			EntryImpact.Kind = EBulletImpactKind::Entry;
+			OutImpacts.Add(EntryImpact);
+
+			FPenetrationHitResult PenHit;
+			PenHit.Hit = WorldHit;
+			PenHit.Damage = Damage;
+
+			OutHits.Add(PenHit);
+			OutEnd = WorldHit.ImpactPoint;
+		}
+		else {
+			OutEnd = FinalEnd;
+		}
+
+		// check characters before this wall with lag compensation
+		for (TActorIterator<ABaseCharacter> It(GetWorld()); It; ++It)
+		{
+			ABaseCharacter* TargetChar = *It;
+			if (!TargetChar) continue;
+			if (TargetChar == Character) continue;
+			if (IgnoredActor && TargetChar == IgnoredActor) continue;
+			if (!TargetChar->IsAlive()) continue;
+
+			FHitResult CharacterHit;
+			bool bConfirmed = false;
+			if (bIsRewindTrace)
+			{
+				ULagCompensationComponent* LagComp = TargetChar->GetLagCompensationComponent();
+				if (!LagComp) continue;
+
+				bConfirmed = LagComp->ConfirmHitRewind(
+					Character,
+					Start,
+					OutEnd,
+					ShotTime,
+					CharacterHit
+				);
+			}
+			else
+			{
+				if (USkeletalMeshComponent* MeshComp = TargetChar->GetMesh())
+				{
+					bConfirmed = MeshComp->LineTraceComponent(
+						CharacterHit,
+						Start,
+						OutEnd,
+						Params
+					);
+				}
+			}
+
+			if (!bConfirmed) continue;
+
+			FPenetrationHitResult PenHit;
+			PenHit.Hit = CharacterHit;
+			PenHit.Damage = Damage;
+			PenHit.bIsPenetrationHit = bDidPenetrate;
+			OutHits.Add(PenHit);
+
+			FBulletImpactData EntryImpact;
+			EntryImpact.ImpactPoint = CharacterHit.ImpactPoint;
+			EntryImpact.ImpactNormal = CharacterHit.ImpactNormal;
+			EntryImpact.Kind = EBulletImpactKind::Entry;
+			EntryImpact.ImpactActor = TargetChar;
+			OutImpacts.Add(EntryImpact);
+		}
+
+		// Find exit point for this world object
+		if (bHitWorld)
+		{
+			FVector ExitPos = FVector::ZeroVector;
+			bool bFoundExit = false;
+
+			for (float Depth = SurfaceExitStep; Depth <= MaxPenetrationDepth; Depth += SurfaceExitStep)
+			{
+				const FVector Probe = WorldHit.ImpactPoint + ShotDir * Depth;
+
+				if (!World->LineTraceTestByObjectType(
+					Probe,
+					Probe + ShotDir * StartOffset,
+					ObjectParams,
+					Params
+				))
+				{
+					ExitPos = Probe;
+					bFoundExit = true;
+					break;
+				}
+			}
+
+			if (!bFoundExit)
+			{
+				break;
+			}
+
+			FBulletImpactData ExitImpact;
+			ExitImpact.ImpactPoint = ExitPos;
+			ExitImpact.ImpactNormal = -ShotDir;
+			ExitImpact.Kind = EBulletImpactKind::Exit;
+			OutImpacts.Add(ExitImpact);
+
+			const float Thickness = FVector::Distance(WorldHit.ImpactPoint, ExitPos);
+			Damage -= Thickness * PenetrationPerCent;
+			UE_LOG(LogTemp, Log, TEXT("Trace Shot: Thickness=%.1f, Damage=%.1f"), Thickness, Damage);
+
+			if (Damage <= 0.f)
+			{
+				break;
+			}
+
+			Start = ExitPos + ShotDir * StartOffset;
+			bDidPenetrate = true;
+		}
+		else {
+			break;
 		}
 	}
-
-	if (bFoundRewindCharHit)
-	{
-		//UE_LOG(LogTemp, Log, TEXT("Rewind hit confirmed on %s at time %.2f"), *BestRewindHit.GetActor()->GetName(), ShotTime);
-		OutHit = BestRewindHit;
-		OutEnd = BestRewindHit.ImpactPoint;
-		return true;
-	}
-
-	// 2) No character hit by rewind -> do normal trace for world / non-character hits
-	FCollisionQueryParams Params(SCENE_QUERY_STAT(WeaponTrace), false);
-	if (IgnoredActor)
-	{
-		Params.AddIgnoredActor(IgnoredActor);
-	}
-
-	const bool bHitWorld = GetWorld()->LineTraceSingleByChannel(
-		OutHit,
-		Start,
-		FullTraceEnd,
-		ECC_Visibility, // Or use WeaponTraceChannel if that is your main weapon channel
-		Params
-	);
-
-	if (bHitWorld)
-	{
-		OutEnd = OutHit.ImpactPoint;
-	}
-
-	return bHitWorld;
 }
 
 float UWeaponFireComponent::GetServerTimeSeconds() const

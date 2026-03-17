@@ -34,8 +34,7 @@ protected:
 	virtual void EndRound(ETeamId WinningTeam) override;
 	virtual void EndGame(ETeamId WinningTeam) override;
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
-	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists,
-		ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void HandleCharacterKilled(const FCharacterKilledEvent& Event) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapons")

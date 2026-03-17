@@ -565,6 +565,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
     LastHitByController = EventInstigator;
 	bLastHitWasHeadshot = false;
+	bLastHitWasPenetration = false;
     if (EventInstigator)
     {
         DamageInstigators.AddUnique(EventInstigator);
@@ -579,6 +580,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         EItemId WeaponId = static_cast<EItemId>(MyEvent->WeaponID);
 		LastDamageCauser = ItemsMgr->GetItemById(WeaponId);
 		bLastHitWasHeadshot = MyEvent->bIsHeadshot;
+		bLastHitWasPenetration = MyEvent->bIsPenetrationHit;
     }
     else if (DamageCauser) {
         if (const AThrownProjectile* Projectile = Cast<AThrownProjectile>(DamageCauser))
@@ -591,7 +593,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
         }
     }
     HealthComp->ApplyDamage(ActualDamage);
-    ClientPlayHitEffect();
+
 	// if bot, notify AI perception
     if (IsBot()) {
         if (ABotAIController* AICon = Cast<ABotAIController>(GetController()))
@@ -647,9 +649,25 @@ void ABaseCharacter::OnHealthDepleted()
         if (!GM) {
             return;
         }
-        GM->HandleCharacterKilled(LastHitByController.Get(), DamageInstigators, this, LastDamageCauser.Get(), bLastHitWasHeadshot);
-        LastHitByController = nullptr; // reset after use
-        LastDamageCauser = nullptr; // reset after use
+
+		FCharacterKilledEvent KillEvent;
+		KillEvent.Killer = LastHitByController.Get();
+        for (auto& Inst : DamageInstigators)
+        {
+            if (Inst.IsValid() && Inst.Get() != LastHitByController.Get())
+            {
+                KillEvent.Assists.Add(Inst.Get());
+            }
+		}
+		KillEvent.Victim = this;
+		KillEvent.DamageCauser = LastDamageCauser.Get();
+		KillEvent.bIsHeadShot = bLastHitWasHeadshot;
+		KillEvent.bIsPenetrationHit = bLastHitWasPenetration;
+        GM->HandleCharacterKilled(KillEvent);
+
+		// reset after death
+        LastHitByController = nullptr;
+        LastDamageCauser = nullptr; 
         DamageInstigators.Reset();
 
         if (bIsAiming) {
@@ -758,14 +776,10 @@ void ABaseCharacter::MulticastCharacterDeath_Implementation()
     }
 }
 
-void ABaseCharacter::ClientPlayHitEffect_Implementation()
-{
-	OnHit.Broadcast();
-}
-
 void ABaseCharacter::PlayBloodFx(const FVector& HitLocation, const FVector& HitNormal)
 {
     PlayEffectHitReact();
+	OnHit.Broadcast();
     if (IsFpsViewMode()) {
 		return; // no blood fx in fps mode
     }

@@ -15,7 +15,7 @@ class FPSDEMO_API AZombieMode : public AShooterGameMode
 	GENERATED_BODY()
 
 public:
-	virtual void HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists, ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot) override;
+	virtual void HandleCharacterKilled(const FCharacterKilledEvent& Event) override;
 	void BecomeHero(ABaseCharacter* Character);
 	EMatchMode GetMatchMode() const final { return EMatchMode::Zombie; }
 

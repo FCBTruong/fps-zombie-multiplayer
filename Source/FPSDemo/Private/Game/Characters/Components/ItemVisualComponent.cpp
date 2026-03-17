@@ -11,6 +11,7 @@
 #include "Game/Characters/Components/CharCameraComponent.h"
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "Game/Characters/Components/AnimationComponent.h"
+#include "Game/Characters/Components/WeaponFireComponent.h"
 
 // Sets default values for this component's properties
 UItemVisualComponent::UItemVisualComponent()
@@ -198,7 +199,7 @@ const UItemConfig* UItemVisualComponent::GetItemConfig(EItemId ItemId) const
 	return ItemsManager->GetItemById(ItemId);
 }
 
-void UItemVisualComponent::PlayFireFX(FVector TargetPoint)
+void UItemVisualComponent::PlayFireFX(const TArray<FBulletImpactData>& Impacts, FVector ShotEnd)
 {
     AWeaponFirearm* Firearm = Cast<AWeaponFirearm>(EquippedActor);
     if (!Firearm)
@@ -209,7 +210,7 @@ void UItemVisualComponent::PlayFireFX(FVector TargetPoint)
     FRotator ViewRot;
     FVector OutStart;
     Character->GetActorEyesViewPoint(OutStart, ViewRot);
-    Firearm->OnFire(TargetPoint, true, OutStart);
+    Firearm->OnFire(Impacts, ShotEnd);
 
     // fire montage
 	const UItemConfig* Data = EquippedActor->GetItemConfig();

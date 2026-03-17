@@ -6,6 +6,7 @@
 #include "Game/Items/EquippedItem.h"
 #include "WeaponFirearm.generated.h"
 
+struct FBulletImpactData;
 /**
  * 
  */
@@ -15,12 +16,13 @@ class FPSDEMO_API AWeaponFirearm : public AEquippedItem
 	GENERATED_BODY()
 
 protected:
-	void ApplyConfig() override;
 	virtual void BeginPlay() override;
+	void ApplyConfig() override;
+	void TraceBehindPawnAndSpawnBloodDecal(FVector PawnHit, FVector Dir);
 public:
 	AWeaponFirearm();
 	
-	void OnFire(const FVector& TargetPoint, bool bCustomStart, const FVector& StartPoint);
+	void OnFire(const TArray<FBulletImpactData>& Impacts, FVector TargetPoint);
 	void PlayOutOfAmmoSound();
 	void PlayReloadSound();
 

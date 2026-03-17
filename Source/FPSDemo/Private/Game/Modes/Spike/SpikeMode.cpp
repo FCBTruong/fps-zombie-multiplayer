@@ -219,10 +219,11 @@ AActor* ASpikeMode::ChoosePlayerStart_Implementation(AController* Player)
 	return Super::ChoosePlayerStart_Implementation(Player); // fallback
 }
 
-void ASpikeMode::HandleCharacterKilled(AController* Killer, const TArray<TWeakObjectPtr<AController>>& Assists,  ABaseCharacter* VictimPawn, const UItemConfig* DamageCauser, bool bWasHeadShot)
+void ASpikeMode::HandleCharacterKilled(const FCharacterKilledEvent& Event)
 {
-	Super::HandleCharacterKilled(Killer, Assists, VictimPawn, DamageCauser, bWasHeadShot);
+	Super::HandleCharacterKilled(Event);
 
+	ABaseCharacter* VictimPawn = Event.Victim;
 	OnCharacterDead.Broadcast(VictimPawn);
 	RegisterCorpse(VictimPawn);
 	VictimPawn->ApplyRealDeath(/*bDropInventory=*/true);

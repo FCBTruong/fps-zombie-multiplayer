@@ -143,14 +143,15 @@ void UPlayerUI::OnEnter()
     MatchToastPn->SetVisibility(ESlateVisibility::Hidden);
 }
 
-void UPlayerUI::NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victim, const UItemConfig* WeaponConf, bool bIsHeadShot)
+void UPlayerUI::NotifyKill(const AMyPlayerState* Killer, const AMyPlayerState* Victim, 
+    const UItemConfig* WeaponConf, bool bIsHeadShot, bool bIsPenetrationHit)
 {
     if (KillNotifyWidgetClass && KillNotifyStack)
     {
         UKillNotifySlot* KillNotifyWidget = CreateWidget<UKillNotifySlot>(GetWorld(), KillNotifyWidgetClass);
         if (KillNotifyWidget)
         {
-            KillNotifyWidget->SetInfo(Killer, Victim, WeaponConf, bIsHeadShot);
+            KillNotifyWidget->SetInfo(Killer, Victim, WeaponConf, bIsHeadShot, bIsPenetrationHit);
             KillNotifyStack->AddChild(KillNotifyWidget);
             FTimerHandle TimerHandle;
             TWeakObjectPtr<UKillNotifySlot> WeakKillNotifyWidget = KillNotifyWidget;
