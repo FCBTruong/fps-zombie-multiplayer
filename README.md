@@ -26,6 +26,7 @@ The project focuses on the **technical side** of **shooter development**, includ
 - **Lag compensation**
 - **Anti-cheat foundations**
 - **AI bots**
+- **HUD/UI**
 
 The goal is to build a **reliable**, **scalable foundation** for a **competitive shooting game**.
 
@@ -83,13 +84,23 @@ Click here: [FCBTruong/fps-zombie-multiplayer-backend](https://github.com/FCBTru
 ![Folders diagram](./Docs/Asset/Folders.drawio.svg)
 
 ## Technical Challenges Solved
-### 1. Recoil Prediction (Client-Side)
-![Recoil Prediction](./Docs/Asset/RecoilPrediction.png)
-- The client starts firing with a recoil seed and sends it to the server.
-- Both client and server use the same seed and shot index to generate the same deterministic recoil/spread values.
-- The shot index is incremented on both client and server for each shot.
-- The client plays immediate local firing feedback (muzzle flash, recoil, tracer) without waiting for a server response.
-- The server performs authoritative raycast/hit validation, applies damage, and replicates the hit result to other clients.
+### 1. Client-Side Prediction
+
+#### 1.1 Shooting & Recoil
+https://github.com/user-attachments/assets/fcf5dcaf-4818-4cb6-acb6-226f5a8b6fe9
+
+- The client predicts firing immediately when the player presses shoot, without waiting for a server response.
+- A recoil seed is generated at the start of firing and sent to the server.
+- Both client and server use the same seed and shot index to compute deterministic recoil/spread for each shot.
+- The shot index advances identically on both sides to keep the firing sequence synchronized.
+- The client immediately plays local feedback such as recoil kick, muzzle flash, tracers, and firing animation.
+- This keeps weapon handling responsive while maintaining consistency between local prediction and server simulation.
+
+#### 1.2 Movement
+- The client predicts local movement immediately from player input without waiting for the server.
+- Direction changes, start/stop movement, jump, and crouch are applied locally for responsive control.
+- Jump and crouch state changes are simulated on the client using the same movement rules as the server.
+- The predicted position and movement state are later checked against the server-authoritative state and corrected if needed.
 ### 2. Latency
 #### Lag Compensation (Hit Registration)
 
