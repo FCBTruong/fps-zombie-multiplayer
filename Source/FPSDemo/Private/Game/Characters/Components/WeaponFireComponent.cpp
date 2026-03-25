@@ -64,18 +64,14 @@ void UWeaponFireComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 #if !UE_SERVER
 	if (!IsOwningClient()) return;
 
-	// Tune these
-	const float RecoilApplySpeed = 20.0f;   // how fast camera moves to recoil target
+	const bool bIsFiring = ActionStateComp->IsInState(EActionState::Firing);
+	const float InterpSpeed = bIsFiring ? RecoilApplySpeed : RecoilReturnSpeed;
 
-	// Current smoothly follows target
-	const FVector2D Prev = RecoilCurrent;
-	RecoilCurrent = FMath::Vector2DInterpTo(RecoilCurrent, RecoilTarget, DeltaTime, RecoilApplySpeed);
+	const float PrevPitch = RecoilPitchCurrent;
+	RecoilPitchCurrent = FMath::FInterpTo(RecoilPitchCurrent, RecoilPitchTarget, DeltaTime, InterpSpeed);
 
-	// Apply only the frame delta
-	const FVector2D Delta = RecoilCurrent - Prev;
-
-	Character->AddControllerPitchInput(Delta.X);
-	Character->AddControllerYawInput(Delta.Y);
+	const float DeltaPitch = RecoilPitchCurrent - PrevPitch;
+	Character->AddControllerPitchInput(DeltaPitch);
 #endif
 }
 
@@ -207,6 +203,11 @@ void UWeaponFireComponent::RequestStartFire()
 void UWeaponFireComponent::RequestStopFire()
 {
 #if !UE_SERVER
+	if (IsOwningClient())
+	{
+		RecoilPitchTarget = 0.0f;
+	}
+
 	if (!Character->HasAuthority() && IsOwningClient())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(FireTimer_Local);
@@ -370,7 +371,7 @@ void UWeaponFireComponent::FireOnce_ServerAuth()
 	if (IsOwningClient()) // listen server host
 	{
 		VisualComp->PlayFireFX(Impacts, ShotEnd);
-		// ApplyRecoilLocal();
+		ApplyRecoilLocal();
 	}
 #endif
 }
@@ -583,17 +584,33 @@ FVector UWeaponFireComponent::ComputeShotDirDeterministic(
 	int32 Seed
 ) const
 {
-	const int32 ShotIndex = ComputeShotIndex(NowServerTime);
-	const int32 PerShotSeed = Seed ^ (ShotIndex * 196613);
+	const int32 PerShotSeed = Seed ^ (ShotCount * 196613);
 	FRandomStream Stream(PerShotSeed);
+
 	const float SpreadDeg = GetTotalSpreadDeg(NowServerTime);
 	float SpreadRad = FMath::DegreesToRadians(SpreadDeg);
 
-	// if crouching, reduce spread by half
-	if (Character->bIsCrouched) {
+	// Reduce spread while crouching.
+	if (Character->bIsCrouched)
+	{
 		SpreadRad *= 0.5f;
 	}
-	return Stream.VRandCone(AimDir, SpreadRad, SpreadRad).GetSafeNormal();
+
+	const FVector Forward = AimDir.GetSafeNormal();
+	const FRotator BaseRot = Forward.Rotation();
+
+	// Random left/right inside the cone.
+	const float RandYawDeg = FMath::RadiansToDegrees(
+		Stream.FRandRange(-SpreadRad, SpreadRad)
+	);
+
+	// Random only upward. No negative pitch.
+	const float RandPitchDeg = FMath::RadiansToDegrees(
+		Stream.FRandRange(0.0f, SpreadRad)
+	);
+
+	const FRotator OffsetRot(RandPitchDeg, RandYawDeg, 0.0f);
+	return (BaseRot + OffsetRot).Vector().GetSafeNormal();
 }
 
 float UWeaponFireComponent::GetTotalSpreadDeg(float NowServerTime) const
@@ -770,20 +787,26 @@ bool UWeaponFireComponent::CanWeaponAim() const {
 void UWeaponFireComponent::ApplyRecoilLocal()
 {
 #if !UE_SERVER
-	if (!IsOwningClient()) {
+	if (!IsOwningClient() || !CurrentFirearmConfig)
+	{
 		return;
 	}
 
-	const float PitchKick =
-		CurrentFirearmConfig->RecoilPitchPerShot +
-		FMath::FRandRange(-CurrentFirearmConfig->RecoilPitchJitter, CurrentFirearmConfig->RecoilPitchJitter);
+	const float FalloffStrength = 0.25f; // tune
+	const float MinScale = 0.4f;
 
-	const float YawKick =
-		FMath::FRandRange(-CurrentFirearmConfig->RecoilYawPerShot, CurrentFirearmConfig->RecoilYawPerShot);
+	const float RecoilScale = FMath::Max(
+		MinScale,
+		1.0f / (1.0f + static_cast<float>(ShotCount) * FalloffStrength)
+	);
 
-	// Add recoil into target (negative pitch = camera goes up)
-	RecoilTarget.X += -PitchKick;
-	RecoilTarget.Y += YawKick;
+	const float PitchKick = CurrentFirearmConfig->RecoilPitchPerShot * RecoilScale;
+
+	RecoilPitchTarget = FMath::Clamp(
+		RecoilPitchTarget + PitchKick,
+		RecoilPitchMaxOffset,
+		0.0f
+	);
 #endif
 }
 

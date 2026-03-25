@@ -126,6 +126,7 @@ void ABotAIController::RequestFireOnce()
     ABaseCharacter* MyChar = GetBotChar();
     if (!MyChar) return;
 	UWeaponFireComponent* WFC = MyChar->GetWeaponFireComponent();
+    if (!WFC) return;
 	auto CanFireState = WFC->CanFireNow();
     if (CanFireState != EFireEnableReason::OK) {
         return;

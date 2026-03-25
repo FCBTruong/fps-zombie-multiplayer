@@ -83,10 +83,23 @@ void UNetworkManager::OnRawMessage(const void* Data, SIZE_T Size, SIZE_T /*Bytes
         return;
     }
 
+    TWeakObjectPtr<UNetworkManager> WeakThis(this);
+
     AsyncTask(ENamedThreads::GameThread,
-        [this, Packet = std::move(Packet)]()
+        [WeakThis, Packet = std::move(Packet)]() mutable
         {
-            Dispatcher->Dispatch(Packet);
+            if (!WeakThis.IsValid())
+            {
+                return;
+            }
+
+            UNetworkManager* NetworkManager = WeakThis.Get();
+            if (!NetworkManager->Dispatcher)
+            {
+                return;
+            }
+
+            NetworkManager->Dispatcher->Dispatch(Packet);
         });
 }
 

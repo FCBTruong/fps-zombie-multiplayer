@@ -173,10 +173,13 @@ private:
 	float BurstResetDelay = 0.25f;
 	int ShotCount = 0;
 
-	// Smooth recoil state
-	FVector2D RecoilCurrent = FVector2D::ZeroVector; // applied this frame (Pitch, Yaw)
-	FVector2D RecoilTarget = FVector2D::ZeroVector;  // where recoil wants to go
-
 	UPROPERTY(Transient)
 	TObjectPtr<const UFirearmConfig> CurrentFirearmConfig = nullptr;
+
+	float RecoilPitchCurrent = 0.0f;
+	float RecoilPitchTarget = 0.0f;
+
+	float RecoilPitchMaxOffset = -4.0f;     // clamp max upward offset
+	float RecoilApplySpeed = 25.0f;
+	float RecoilReturnSpeed = 10.0f;
 };

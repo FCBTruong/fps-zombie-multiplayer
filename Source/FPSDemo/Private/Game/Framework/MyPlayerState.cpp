@@ -45,12 +45,22 @@ void AMyPlayerState::ProcessBuy(const UItemConfig* Item)
 		if (MyChar)
 		{
 			UInventoryComponent* InvComp = MyChar->GetInventoryComponent();
+			if (!InvComp)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("MyCharacter does not have an InventoryComponent"));
+				return;
+			}
 			FPickupData PickupData;
 			PickupData.ItemId = Item->Id;
 
 			// for weapons, set initial ammo
 			if (Item->GetItemType() == EItemType::Firearm) {
 				const UFirearmConfig* FirearmItem = Cast<UFirearmConfig>(Item);
+				if (!FirearmItem)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Failed to cast Item to UFirearmConfig"));
+					return;
+				}
 				PickupData.AmmoInClip = FirearmItem->MaxAmmoInClip;
 				PickupData.AmmoReserve = FirearmItem->AmmoBonus;
 			}

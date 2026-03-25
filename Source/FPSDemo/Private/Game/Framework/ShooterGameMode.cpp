@@ -49,6 +49,7 @@ void AShooterGameMode::InitGameState()
     CachedGS->Slots.Empty();
 
     int Idx = 0;
+    const int32 HalfCount = MatchInfo.Players.Num() / 2;
     for (const FPlayerMatchInfo& Player : MatchInfo.Players)
     {
         Idx++;
@@ -69,7 +70,7 @@ void AShooterGameMode::InitGameState()
         int32 CharacterSkin = FGameConstants::SKIN_CHARACTER_ATTACKER;
         if (MatchMode == EMatchMode::Spike)
         {
-			if (Idx <= 5) // First 5 players are in a team (hardcoded for now)
+			if (Idx < HalfCount) // First 5 players are in a team (hardcoded for now)
             {
                 Slot->SetTeamId(ETeamId::Defender);
                 CharacterSkin = FGameConstants::SKIN_CHARACTER_DEFENDER;

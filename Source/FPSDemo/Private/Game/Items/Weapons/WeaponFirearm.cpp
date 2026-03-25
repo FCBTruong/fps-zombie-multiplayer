@@ -10,7 +10,7 @@
 #include "Shared/Data/Items/FirearmConfig.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 #include "Game/Characters/Components/WeaponFireComponent.h"
-#include "Game/Projectiles/BulletData.h"
+#include "Game/Data/BulletData.h"
 #include "Components/DecalComponent.h"
 #include "Game/Characters/BaseCharacter.h"
 #include "Game/GameManager.h"
